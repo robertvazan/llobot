@@ -1,6 +1,6 @@
 # Llobot
 
-Llobot is a LLM context stuffing tool and Python library. It sits between LLM frontend (chat UI) and inference engine (which is serving the model), intercepts chat completion requests sent via supported LLM chat protocol (Ollama or OpenAI), and manipulates them in some way, usually by prepending large synthetic context. Synthetic context commonly includes system instructions, documents from knowledge base, examples, and optionally prompt-dependent retrievals. While the whole setup is highly configurable, llobot is currently best suited for stuffing the context with source code in order to create expert chatbots that are knowledgeable about particular codebase. In this sens
+Llobot is a LLM context stuffing tool and a Python library. It sits between LLM frontend (chat UI) and inference engine (which is serving the model), intercepts chat completion requests sent via supported LLM chat protocol (Ollama or OpenAI), and manipulates them in some way, usually by prepending large synthetic context. Synthetic context commonly includes system instructions, documents from knowledge base, examples, and optionally prompt-dependent retrievals. While the whole setup is highly configurable, llobot is currently best suited for stuffing the context with source code in order to create expert chatbots that are knowledgeable about particular codebase.
 
 ## What is context stuffing?
 
@@ -55,29 +55,36 @@ import llobot.experts.java
 import llobot.experts.wrappers
 import llobot.experts.memory
 import llobot.models.experts
+import llobot.models.ollama.listeners
 
 # Backend models that respond to the assembled prompt
 backend_models = ModelCatalog(
     # This will use qwen2.5-coder:7b on localhost instance of Ollama.
-    # Second parameter is context size. This has to be always specified, because Ollama defaults are tiny.
-    llobot.models.ollama.create('qwen2.5-coder', 24 * 1024, top_k=1, aliases=['local']),
-    # Context size in this case limits spending as llobot would otherwise use the whole supported context window.
-    llobot.models.openai.proprietary('gpt4.1-mini', 32 * 1024, 'YOUR_OPENAI_API_KEY', aliases=['cloud']),
+    # Context size has to be always specified, because Ollama defaults are tiny.
+    llobot.models.ollama.create(
+        'qwen2.5-coder', 24 * 1024, top_k=1, aliases=['local']),
+    # Context size in this case just limits spending.
+    llobot.models.openai.proprietary(
+        'gpt4.1-mini', 32 * 1024, 'YOUR_OPENAI_API_KEY', aliases=['cloud']),
 )
 
 # Projects that will be used as knowledge bases
 projects = [
-    llobot.projects.create('llobot', llobot.knowledge.sources.directory(Path.home() / 'Sources' / 'llobot')),
-    llobot.projects.create('myproject', llobot.knowledge.sources.directory(Path.home() / 'Sources' / 'myproject')),
+    llobot.projects.create('llobot',
+        llobot.knowledge.sources.directory(Path.home() / 'Sources' / 'llobot')),
+    llobot.projects.create('myproject',
+        llobot.knowledge.sources.directory(Path.home() / 'Sources' / 'myproject')),
 ]
 
-# Experts determine what goes in the context. This function configures bare expert to serve as a virtual model.
+# Experts determine what goes in the context.
+# This function configures bare expert to serve as a virtual model.
 def define_expert(name, expert):
     # This wraps the expert in a virtual model.
     return llobot.models.experts.standard(
-        # This adds standard expert functionality like reserved tokens and cache-friendly delta prompts.
+        # Standard expert functionality: reserved tokens, cache-friendly prompts
         expert | llobot.experts.wrappers.standard(),
-        # This determines where the expert will store data (archived chats and examples). We will use defaults.
+        # This determines where the expert will store data
+        # (archived chats and examples). We will use defaults.
         llobot.experts.memory.standard(name),
         # Default backend model.
         backend_models['local'],
@@ -96,7 +103,7 @@ experts = ModelCatalog(
 llobot.models.ollama.listeners.create(experts, port=11435).listen()
 ```
 
-Run this script and add `localhost:11435` as an additional Ollama endpoint to your UI frontend like Open WebUI (which is [no longer open source](https://github.com/open-webui/open-webui/issues/13579), so feel free to look for alternatives). You should now see virtual models `coder`, `python`, and `java` listed in the UI.
+Run this script and add `localhost:11435` as an additional Ollama endpoint to your UI frontend (like Open WebUI, which is [no longer open source](https://github.com/open-webui/open-webui/issues/13579), so feel free to look for alternatives). You should now see virtual models `coder`, `python`, and `java` listed in the UI.
 
 ## How to use
 
@@ -106,7 +113,7 @@ You should now be able to issue queries against the experts. Select `python` exp
 >
 > ~llobot
 
-The last line is a command that tells the expert to use `llobot` project as its knowledge base. If you wanted to work on `myproject`, you would write there `~myproject`. When you submit this prompt, you should get a response like this:
+The last line is a command that tells the expert to use `llobot` project as its knowledge base. If you wanted to work on `myproject`, you would write `~myproject` there. When you submit this prompt, you should get a response like this:
 
 > Use `llobot.models.ollama.remote(host, port, path)` to get the endpoint URL, then pass it to `llobot.models.ollama.create()` as the `endpoint` argument. For example:
 >
@@ -142,7 +149,7 @@ The `~llobot` command in the prompt can be more complicated:
 
 If the context does not include the file you need, just mention it in the prompt, for example as `projects.py` or `ollama/listeners.py`, and llobot will include it in the context in preference to default knowledge.
 
-Finally, if you are happy with the output, issue command `/ok` after the response you like. Llobot will save it as a correct example. Recent examples are included in the context. LLMs have propensity to imitate what is already in the context, so putting correct examples in the context increases probability that the next response will be correct too. If the response is wrong, you can still show llobot how to do it right. Impersonate the LLM (edit the response, a function that is in Open WebUI but not necessarily in other frontends), put there the correct response, and then issue `/ok` command. While this seems laborious, you usually have the correct response anyway in your code, so this is just about letting lobot know about it.
+Finally, if you are happy with the output, issue command `/ok` after the response you like. Llobot will save it as a correct example. Recent examples are included in the context. LLMs have propensity to imitate what is already in the context, so putting correct examples in the context increases probability that the next response will be correct too. If the response is wrong, you can still show llobot how to do it right. Impersonate the LLM (edit the response, a function that is in Open WebUI but not necessarily in other frontends), put there the correct response, and then issue `/ok` command. While this seems laborious, you usually have the correct response anyway in your code, so this is just about letting llobot know about it.
 
 ## Status
 
