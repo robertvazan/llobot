@@ -47,7 +47,7 @@ class _OllamaModel(Model):
     # Context size is a mandatory parameter for two reasons. Firstly, Ollama has only 2K-token default, which is useless for real applications.
     # Secondly, even if Ollama introduces better default in the future, we don't have any easy way to query it.
     def __init__(self, name: str, context_size: int, *,
-        endpoint: OllamaEndpoint | None = None,
+        endpoint: str | None = None,
         aliases: Iterable[str] = [],
         estimator: TokenLengthEstimator = llobot.models.estimators.standard(),
         cache: PromptStorage | None = None,
