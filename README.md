@@ -181,6 +181,10 @@ Contemporary LLMs are all divergent. They stray from the correct path and introd
 
 It's not necessary to be excessively precise in your prompts. LLMs are good at filling in the details. Try minimalist prompt first. If the output isn't what you wanted, edit the prompt to clarify the task. Llobot is designed to be used interactively like this. If you have meantime modified your code using the imperfect output, take the timestamp from model's response and add it to the command in your prompt, for example `~myproject:20250526-222015`. Llobot will use the unmodified version of the knowledge base to answer the new prompt.
 
+It is a good idea to standardize on knowledge base organization that prefixes every path with name of the source directory even if there's currently only one. So if you are loading knowledge from directory `myproject`, then path `subdir/file.txt` would be mapped to `myproject/subdir/file.txt` in the knowledge base. `Knowledge` class has some helpful methods for this purpose. This organization has several advantages. You can now disambiguate mentions of files in the root directory, so for example `myproject/README.md` instead of `README.md`, which would also match `myproject/subdir/README.md`. You can add dependencies, sibling projects, and documentation into the knowledge base without causing conflicts with the main project.
+
+Finally, do not use LLMs compulsively for everything. Sometimes it's easier to do things by hand in the editor or to use refactoring tools offered by IDEs.
+
 ## Status
 
 Experimental. Undocumented. Untested. Incomplete. Unstable APIs. Likely some bugs. But it works for me and I hope others might find it useful too.
