@@ -17,10 +17,12 @@ def simple_imports() -> Scraper:
 
 @cache
 def from_imports() -> Scraper:
-    pattern = re.compile(r'^ *from ([\w_]+(?:\.[\w_]+)*) import', re.MULTILINE)
+    pattern = re.compile(r'^ *from ([\w_.]+) import', re.MULTILINE)
     def scrape(path: Path, content: str) -> Iterable[Link]:
         for module in pattern.findall(content):
-            yield llobot.links.python.from_from(module, path=path)
+            link = llobot.links.python.from_from(module, path=path)
+            if link:
+                yield link
     return llobot.scrapers.create(scrape) & suffix()
 
 @cache

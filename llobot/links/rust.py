@@ -99,8 +99,9 @@ class _RelativeRustLink(Link):
             mod_path = Path(*self.parts[:length], 'mod.rs')
             for path in (rs_path, mod_path):
                 abbreviated = llobot.links.abbreviated(path)
-                if abbreviated.resolve_indexed(knowledge, indexes) if indexes is not None else abbreviated.resolve(knowledge):
-                    return {path}
+                resolved = abbreviated.resolve_indexed(knowledge, indexes) if indexes is not None else abbreviated.resolve(knowledge)
+                if resolved:
+                    return resolved
         return set()
 
     def resolve(self, knowledge: Knowledge) -> set[Path]:
