@@ -50,10 +50,10 @@ def _handler(models: ModelCatalog) -> type:
                 self.send_error(404)
     return OpenAIHttpHandler
 
-def create(port: int, models: ModelCatalog) -> ModelListener:
+def create(port: int, models: ModelCatalog, *, host: str = '127.0.0.1') -> ModelListener:
     def listen():
         _logger.info(f'Serving {len(models)} models via OpenAI protocol on port {port}.')
-        ThreadingHTTPServer(('127.0.0.1', port), _handler(models)).serve_forever()
+        ThreadingHTTPServer((host, port), _handler(models)).serve_forever()
     return llobot.models.listeners.create(listen)
 
 __all__ = [
