@@ -78,8 +78,14 @@ def standard(*,
     update_trimmer: Trimmer = llobot.trimmers.eager(),
     update_formatter: KnowledgeFormatter = llobot.formatters.knowledge.updates(),
     deletion_formatter: DeletionFormatter = llobot.formatters.deletions.standard(),
-    # Share of the budget to dedicate to the change buffer.
-    buffer_share: float = 0.5,
+    # Default share of the budget to dedicate to the change buffer is a bit controversial.
+    # Dedicating 50% of the budget to the change buffer balances memory and compute overhead (it minimizes their product),
+    # but even cloud models have limited context windows, which we don't want to waste on huge change buffer.
+    # Cloud models cannot even utilize the large change buffer, because they come with very short-lived prompt cache.
+    # On top of that, large change buffer means a lot of outdated information in the context, which confuses the model.
+    # For these reasons, we will default to smaller change buffer, say 20% of the context window.
+    # That should still be enough for several smaller documents or examples.
+    buffer_share: float = 0.2,
 ) -> Expert:
     def stuff(expert: Expert, request: ExpertRequest) -> Context:
         if not request.cache.enabled:
