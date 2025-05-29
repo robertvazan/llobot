@@ -65,7 +65,9 @@ def latest(
             if path.exists():
                 length = llobot.models.stats.json.load(path).token_length
                 if length:
-                    return length
+                    # Do not let token length estimates drop below 1.
+                    # This can happen when the stats include system prompt that we do not see.
+                    return max(length, 1)
             return fallback.estimate(zone)
     return LatestEstimator()
 
