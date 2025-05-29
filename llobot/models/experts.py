@@ -110,7 +110,7 @@ class _StandardExpertRequest:
         assembled = self.assemble(self.prompt[:-1] + ChatRole.USER.message('Now just respond with "Okay" to confirm you are paying attention. Do not say anything else.'))
         return (self.model.generate(assembled, self.zone)
             | llobot.models.streams.silence()
-            | llobot.models.streams.notify(lambda stream: _logger.info(f'Ready: {self.zone} ({stream.stats().prompt_tokens:,} tokens)')))
+            | llobot.models.streams.notify(lambda stream: _logger.info(f'Ready: {self.zone} ({stream.stats().prompt_tokens or 0:,} tokens)')))
 
     def calibrate(self):
         # Loop in case the token estimator needs several rounds to be fully initialized.

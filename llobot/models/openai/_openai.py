@@ -6,6 +6,7 @@ from llobot.models import Model
 from llobot.models.streams import ModelStream
 from llobot.models.stats import ModelStats
 from llobot.models.caches import PromptCache, PromptStorage
+from llobot.models.estimators import TokenLengthEstimator
 import llobot.models.streams
 import llobot.models.estimators
 import llobot.models.caches

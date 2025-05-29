@@ -157,7 +157,7 @@ Finally, if you are happy with the output, issue command `/ok` after the respons
 
 Llobot is not a framework. It's a library. You are in control. Llobot is merely a gallery of functionality, from which you can pick and choose. Defaults are provided for everything, but most of the high-level functions have numerous parameters you can customize. Everything is interface-based, so that you can add your own implementation if necessary. The list below is an overview of llobot's built-in features.
 
-- **Protocols**: Clients and servers are implemented for Ollama and OpenAI protocols. Llobot can intercept these protocols in order to inject additional context.
+- **Protocols**: Clients and servers are implemented for Ollama and OpenAI protocols. Llobot can intercept these protocols in order to inject additional context. There's also client-only implementation for Anthropic models.
 - **Languages**: Llobot has some built-in intelligence for handling files in several popular programming languages and file formats: Markdown, Python, Java, Rust, shell, XML, JSON, TOML, and others.
 - **Knowledge**: Llobot can scan a directory for knowledge using built-in or custom filters. Interface is provided for fetching knowledge from alternative sources.
 - **Scorers**: Documents in knowledge base are prioritized by score to select the most important ones that fit in given token budget. PageRank is used to discover utility and base code that is frequently referenced from other files. Project *scopes* can prioritize some subset of the knowledge base. Every expert prioritizes files it is supposed to handle (regular, non-test Java files in Java expert, for example). Document length is incorporated in the score to deprioritize excessively long documents.
