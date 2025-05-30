@@ -65,11 +65,25 @@ def latest(
             if path.exists():
                 length = llobot.models.stats.json.load(path).token_length
                 if length:
-                    # Do not let token length estimates drop below 1.
-                    # This can happen when the stats include system prompt that we do not see.
-                    return max(length, 1)
+                    return length
             return fallback.estimate(zone)
     return LatestEstimator()
+
+@lru_cache
+def sane(
+    underlying: TokenLengthEstimator,
+    minimum: float = 1.0,
+    maximum: float = 10.0,
+) -> TokenLengthEstimator:
+    class SaneEstimator(TokenLengthEstimator):
+        def calibrated(self, zone: str) -> bool:
+            return underlying.calibrated(zone)
+        def update(self, zone: str, stats: ModelStats):
+            underlying.update(zone, stats)
+        def estimate(self, zone: str) -> float:
+            length = underlying.estimate(zone)
+            return max(minimum, min(maximum, length))
+    return SaneEstimator()
 
 @lru_cache
 def stable(underlying: TokenLengthEstimator, deadband: float = 0.1) -> TokenLengthEstimator:
@@ -109,7 +123,7 @@ def log_changes(underlying: TokenLengthEstimator) -> TokenLengthEstimator:
 
 @cache
 def standard() -> TokenLengthEstimator:
-    return log_changes(stable(latest()))
+    return log_changes(stable(sane(latest())))
 
 def prefixed(prefix: str, underlying: TokenLengthEstimator) -> TokenLengthEstimator:
     class PrefixedEstimator(TokenLengthEstimator):
@@ -129,6 +143,7 @@ __all__ = [
     'pessimistic',
     'optimistic',
     'latest',
+    'sane',
     'stable',
     'standard',
     'prefixed',

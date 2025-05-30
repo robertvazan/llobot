@@ -74,6 +74,9 @@ class ChatBranch:
     def as_example(self) -> ChatBranch:
         return ChatBranch([message.as_example() for message in self if message.as_example().is_example() and not message.is_example()]).with_metadata(self.metadata)
 
+    def context_only(self) -> ChatBranch:
+        return ChatBranch([message for message in self if message.intent not in (ChatIntent.PROMPT, ChatIntent.RESPONSE)]).with_metadata(self.metadata)
+
     def monolithic(self) -> str:
         return llobot.text.concat(*(message.monolithic() for message in self))
 

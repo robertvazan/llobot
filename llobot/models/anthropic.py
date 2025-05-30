@@ -4,9 +4,11 @@ from llobot.chats import ChatRole, ChatBranch
 from llobot.models import Model
 from llobot.models.streams import ModelStream
 from llobot.models.stats import ModelStats
-from llobot.models.caches import PromptCache
+from llobot.models.caches import PromptCache, PromptStorage
 from llobot.models.estimators import TokenLengthEstimator
 import llobot.models.caches
+import llobot.models.caches.lru
+import llobot.models.streams
 import llobot.models.estimators
 
 class _AnthropicStream(ModelStream):
@@ -19,6 +21,7 @@ class _AnthropicStream(ModelStream):
         model: str,
         max_tokens: int,
         prompt: ChatBranch,
+        cached: bool,
         temperature: float | None,
         top_k: int | None,
         top_p: float | None,
@@ -26,13 +29,14 @@ class _AnthropicStream(ModelStream):
         super().__init__()
         self._length = prompt.cost
         self._stats = ModelStats()
-        self._iterator = iter(self._iterate(client, model, max_tokens, prompt, temperature, top_k, top_p))
+        self._iterator = iter(self._iterate(client, model, max_tokens, prompt, cached, temperature, top_k, top_p))
 
     def _iterate(self,
         client: Anthropic,
         model: str,
         max_tokens: int,
         prompt: ChatBranch,
+        cached: bool,
         temperature: float | None,
         top_k: int | None,
         top_p: float | None,
@@ -43,6 +47,15 @@ class _AnthropicStream(ModelStream):
                 'role': 'user' if message.role == ChatRole.USER else 'assistant',
                 'content': message.content,
             })
+        cacheable = prompt.context_only()
+        if cached and cacheable:
+            breakpoints = [int(bp * cacheable.cost) for bp in (0.25, 0.5, 0.75, 1.0)]
+            cumulative = 0
+            for i, message in enumerate(cacheable):
+                cumulative += message.cost
+                if breakpoints and cumulative >= breakpoints[0]:
+                    messages[i]['content'] = [{'type': 'text', 'text': messages[i]['content'], 'cache_control': {'type': 'ephemeral'}}]
+                    breakpoints.pop(0)
         parameters = {
             'model': model,
             'max_tokens': max_tokens,
@@ -60,8 +73,9 @@ class _AnthropicStream(ModelStream):
                 yield chunk
             usage = stream.get_final_message().usage
             self._stats = ModelStats(
-                prompt_tokens = usage.input_tokens,
+                prompt_tokens = usage.input_tokens + (usage.cache_creation_input_tokens or 0) + (usage.cache_read_input_tokens or 0),
                 response_tokens = usage.output_tokens,
+                cached_tokens = usage.cache_read_input_tokens,
                 total_chars = self._length,
             )
 
@@ -81,6 +95,8 @@ class _AnthropicModel(Model):
     _context_size: int
     _max_tokens: int
     _estimator: TokenLengthEstimator
+    _cached: bool
+    _cache: PromptStorage
     _temperature: float | None
     _top_k: int | None
     _top_p: float | None
@@ -90,6 +106,7 @@ class _AnthropicModel(Model):
         auth: str | None = None,
         aliases: Iterable[str] = [],
         estimator: TokenLengthEstimator = llobot.models.estimators.standard(),
+        cached: bool = True,
         temperature: float | None = None,
         top_k: int | None = None,
         top_p: float | None = None,
@@ -106,6 +123,8 @@ class _AnthropicModel(Model):
         self._context_size = context_size
         self._max_tokens = max_tokens
         self._estimator = estimator
+        self._cached = cached
+        self._cache = llobot.models.caches.lru.create('anthropic', timeout=5*60) if cached else llobot.models.caches.disabled()
         self._temperature = temperature
         self._top_k = top_k
         self._top_p = top_p
@@ -148,6 +167,7 @@ class _AnthropicModel(Model):
             int(options.get('max_tokens', self._max_tokens)),
             client=self._client,
             estimator=self._estimator,
+            cached=self._cached,
             temperature=float(temperature) if temperature is not None and temperature != '' else None,
             top_k=int(top_k) if top_k else None,
             top_p=float(top_p) if top_p else None,
@@ -163,18 +183,21 @@ class _AnthropicModel(Model):
 
     @property
     def cache(self) -> PromptCache:
-        return llobot.models.caches.disabled()['disabled']
+        return self._cache[self._name]
 
     def _connect(self, prompt: ChatBranch) -> ModelStream:
-        return _AnthropicStream(
+        result = _AnthropicStream(
             self._client,
             self._name,
             self._max_tokens,
             prompt,
+            self._cached,
             self._temperature,
             self._top_k,
             self._top_p
         )
+        result |= llobot.models.streams.notify(lambda _: self.cache.write(prompt.context_only()))
+        return result
 
 def create(name: str, context_size: int, max_tokens: int, **kwargs) -> Model:
     return _AnthropicModel(name, context_size, max_tokens, **kwargs)
