@@ -12,7 +12,7 @@ class ModelCatalog:
             self.add(model)
 
     def add(self, model: Model):
-        self._models = [other for other in self._models if other.name != model.name]
+        self._models = [other for other in self._models if other.name != model.name or other.options != model.options]
         self._models.append(model)
 
     def alias(self, model: Model | str, *aliases: str):
