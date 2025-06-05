@@ -1,39 +1,29 @@
 # Llobot
 
-Llobot is a LLM context stuffing tool and a Python library. It sits between LLM frontend (chat UI) and inference engine (which is serving the model), intercepts chat completion requests sent via supported LLM chat protocol (Ollama or OpenAI), and manipulates them in some way, usually by prepending large synthetic context. Synthetic context commonly includes system instructions, documents from knowledge base, examples, and optionally prompt-dependent retrievals. While the whole setup is highly configurable, llobot is currently best suited for stuffing the context with source code in order to create expert chatbots that are knowledgeable about particular codebase.
+Llobot is a LLM library and a LLM tool that makes it easy to build simple conversational LLM applications. It's somewhat general-purpose, but it has a particular focus on:
 
-## What is context stuffing?
+- **Protocol interception**: Llobot can act as a model server, using Ollama or OpenAI protocol, so that you can use it with standard LLM clients.
+- **Examples**: When you mark LLM response (or user-provided demonstration) as correct, it will be prepended to future prompts as an example to leverage [in-context learning](https://arxiv.org/abs/2005.14165). Simple LLM applications (translations, conversions) can be built by just accumulating correct examples.
+- **Context stuffing**: Instead of letting the LLM fetch one file at a time in an agentic loop, knowledge is stuffed into the context proactively, which is usually cheaper and faster.
 
-No, it's not RAG. LLM *context stuffing* (or *prompt stuffing*) leverages [in-context learning](https://arxiv.org/abs/2005.14165) to improve LLM performance. It aims to fill the context window (up to some token budget) with relevant information. What you put in the context is somewhat application-dependent, but it usually includes instructions, documents from knowledge base, real examples (from prior tasks), and prompt-dependent retrievals (usually whole documents referenced by name). This can be complemented with LLM-guided agentic retrieval and digested with reasoning (where supported by the model).
+Llobot also supports:
 
-Assembled prompt can then look something like this:
+- **Repo packing**: Llobot can do any context stuffing, but it has particularly good support for stuffing code repositories. It can be used as a more powerful alternative to [Repomix](https://repomix.com/), [Gitingest](https://gitingest.com/), or [code2prompt](https://github.com/mufeedvh/code2prompt/).
+- **System prompts**: You can stuff arbitrary long texts into the context, including dynamically generated ones.
+- **Retrievals**: Any files named in the prompt will be preferentially stuffed into the context.
 
-- document1
-- ...
-- documentN
-- example1
-- ...
-- exampleN
-- retrieved_document1
-- ...
-- retrieved_documentN
-- user prompt
+There is currently no support for reasoning models, agentic loops, RAG, uploads, URLs, or actions/approvals, although these features could be added in the future.
 
-Model then responds like this:
+Llobot also has some nice features:
 
-- optional agentic loop for LLM-guided retrievals
-- optional reasoning
-- response
-
-Context stuffing differs from other similar techniques:
-
-- **Repo packing**: Tools like [Repomix](https://repomix.com/), [Gitingest](https://gitingest.com/), and [code2prompt](https://github.com/mufeedvh/code2prompt/) are the closest relative of llobot and the best prior example of context stuffing I could find. Llobot can be thought of as repo packing on steroids that features protocol interception, token budget, retrieval, prioritization, sorting, trimming, cache-friendly prompts, and more.
-- **RAG**: Contrary to RAG, which usually retrieves chunks from vector store, context stuffing incorporates wider selection of information (instructions, examples, prompt-independent knowledge). RAG can be thought of as a cheap extra attention layer prepended to the LLM. It's a workaround for tiny context windows in early LLMs. Context stuffing instead relies on accurate native attention mechanism built into LLMs to identify relevant information in a large native context window.
-- **Agents**: Agents populate the context gradually, guided by LLM decisions. This is arguably more selective, but it's also slower and more expensive. Since context stuffing ideally prepares the whole prompt in one step, it mostly relies on the fast, cheap, and cacheable input tokens. Lower cost has the advantage of much larger prompts for given price. And shorter response time encourages conveniently interactive workflow.
-- **Reasoning**: Reasoning (or thinking) is fundamentally different from context stuffing in that it can only unpack information that is already in the context. It can however complement context stuffing by analyzing the stuffed context in light of user prompt.
-- **Uploads**: File uploads (or attachments, input documents) are the easiest way to supply knowledge to the LLM. [Aider](https://aider.chat/) in particular relies on users manually selecting source files instead of using the more common agentic retrieval. While this saves tokens and makes the context more focused, it is also very laborious, especially in projects with extensive utility code that is used everywhere. Llobot can identify this utility code automatically and populates the context with it. Manual document selection is still possible simply by mentioning the documents in user prompt.
-
-You might be thinking that it's unreasonable to cram the entire codebase or knowledge base into the context window. That was the original reasoning behind RAG and that's also what motivates agentic retrieval. But context windows keep growing whether you measure them by declared size, actual long-context performance, or by how much context you can get at fixed cost. Prompt caching could definitely be better (long-lived and modular), which is where I expect considerable improvement, especially for local models. Llobot is designed for this future, but it can also deal with present-day limits by prioritizing and trimming content, offering retrieval on top of context stuffing, and assembling cache-friendly prompts.
+- **Protocol implementations**: Llobot can connect to local and cloud models. It can also act as a server and expose virtual models via Ollama and OpenAI protocols.
+- **Knowledge management**: You can load, filter, transform, and time-travel plaintext knowledge bases and source code.
+- **Formatters**: Llobot builds clean prompts consisting of several chat turns using readable Markdown for easier auditing.
+- **Trimmers**: You can filter out boilerplate and less important content from files to save on tokens and to fit more content in the context window.
+- **Scrapers**: Llobot can scrape documents for links and source code for dependencies to build knowledge graph, which is processed with PageRank to prioritize core files for context stuffing.
+- **Crammers**: Llobot's crammers fit the most important information in given token budget.
+- **Scorers**: Llobot can prioritize files in the knowledge base by position in knowledge graph (see scrapers above), file name patterns, selected project subset (called scope in llobot), and file size. It can also prioritize examples.
+- **Cache-friendly prompts**: Prompts are assembled in reproducible order from whole documents to minimize cache invalidations. Llobot can construct delta prompts that reuse already cached prompts.
 
 ## Setup
 
@@ -153,37 +143,19 @@ If the context does not include the file you need, just mention it in the prompt
 
 Finally, if you are happy with the output, issue command `/ok` after the response you like. Llobot will save it as a correct example. Recent examples are included in the context. LLMs have propensity to imitate what is already in the context, so putting correct examples in the context increases probability that the next response will be correct too. If the response is wrong, you can still show llobot how to do it right. Impersonate the LLM (edit the response, a function that is in Open WebUI but not necessarily in other frontends), put there the correct response, and then issue `/ok` command. While this seems laborious, you usually have the correct response anyway in your code, so this is just about letting llobot know about it.
 
-## Features
-
-Llobot is not a framework. It's a library. You are in control. Llobot is merely a gallery of functionality, from which you can pick and choose. Defaults are provided for everything, but most of the high-level functions have numerous parameters you can customize. Everything is interface-based, so that you can add your own implementation if necessary. The list below is an overview of llobot's built-in features.
-
-- **Protocols**: Clients and servers are implemented for Ollama and OpenAI protocols. Llobot can intercept these protocols in order to inject additional context. There's also client-only implementation for Anthropic models.
-- **Languages**: Llobot has some built-in intelligence for handling files in several popular programming languages and file formats: Markdown, Python, Java, Rust, shell, XML, JSON, TOML, and others.
-- **Knowledge**: Llobot can scan a directory for knowledge using built-in or custom filters. Interface is provided for fetching knowledge from alternative sources.
-- **Scorers**: Documents in knowledge base are prioritized by score to select the most important ones that fit in given token budget. PageRank is used to discover utility and base code that is frequently referenced from other files. Project *scopes* can prioritize some subset of the knowledge base. Every expert prioritizes files it is supposed to handle (regular, non-test Java files in Java expert, for example). Document length is incorporated in the score to deprioritize excessively long documents.
-- **Examples**: Model outputs or user-provided sample outputs can be marked as correct examples. Recent examples are included in the prompt to support in-context learning.
-- **Trimmers**: Some non-essential boilerplate, for example imports and package declarations in Java, can be trimmed to fit more useful content in the context. Llobot can optionally also trim comments, method bodies, and other detail in order to fit more of the high-level code structure in the context.
-- **Formatters**: By default, llobot builds clean prompts consisting of several chat turns using readable Markdown. Clean prompts add a bit of overhead, but they are easier to audit by humans.
-- **Crammers**: While high-level experts decide what goes in the prompt, it's crammers that actually implement algorithms that apply scorers, trimmers, and formatters to build sections of the prompt for given token budget.
-- **Scrapers**: To support prioritization, llobot can scrape documents for links to other documents. In source code, that mainly means import statements. Retrieval also uses scrapers to find document links in user prompt.
-- **Archives**: Examples as well as all chats and knowledge base revisions are archived locally to build datasets for later evaluations and fine-tuning.
-- **Cache-friendly**: Prompts are assembled in reproducible order from whole documents to minimize cache invalidations. Llobot has cache estimators that predict what is most likely already cached. It constructs delta prompts that try to at least partially reuse already cached prompts.
-
 ## Best practices
 
-Llobot works best with cloud models, which have plenty of burst compute to handle reprocessing of large prompts. Cloud models are also smart enough to be useful. Local models will have to wait until some local inference engine implements highly effective prompt cache. If you want to use llobot with local models anyway, prime the cache by issuing `/hi` command, e.g. `~myproject/hi`. If you submit empty prompt with only the command (`~myproject`), then `/hi` is implied. You can compose your prompt while the model is processing the cache priming request.
+Here are some practical tips for using llobot:
 
-Make every task meaningful on its own. Do not reference prior conversations. This will give llobot freedom to choose examples and their ordering in the prompt.
-
-If the prompt absolutely depends on the model seeing particular file, mention it in the prompt as `file.ext` or `path/prefix/file.ext` (in backticks), whichever is sufficiently unique to match only one file. This ensures the document will be added to the assembled prompt regardless of how llobot prioritizes documents for inclusion.
-
-Contemporary LLMs are all divergent. They stray from the correct path and introduce bugs and other flaws. If you don't correct them, this imperfect content will make it back into the prompt, at least when llobot is used to support editing. And LLMs, being dutiful imitators, will multiply the flaws in following output. If you were to let the LLM work autonomously for a long time in some sort of agentic loop, you would likely come back to a repository (or knowledge base) that is an unrecognizable mess and a LLM that has meantime went mad. This is what I mean when I say LLMs are divergent. If we had convergent LLMs, we could fire most people. Divergent LLMs are still useful, but you have to periodically stop them, review changes, and correct mistakes. Llobot encourages this collaborative workflow by eschewing agentic loops in favor of interactive prompt adjustments and visible output waiting for review.
-
-It's not necessary to be excessively precise in your prompts. LLMs are good at filling in the details. Try minimalist prompt first. If the output isn't what you wanted, edit the prompt to clarify the task. Llobot is designed to be used interactively like this. If you have meantime modified your code using the imperfect output, take the timestamp from model's response and add it to the command in your prompt, for example `~myproject:20250526-222015`. Llobot will use the unmodified version of the knowledge base to answer the new prompt.
-
-It is a good idea to standardize on knowledge base organization that prefixes every path with name of the source directory even if there's currently only one. So if you are loading knowledge from directory `myproject`, then path `subdir/file.txt` would be mapped to `myproject/subdir/file.txt` in the knowledge base. `Knowledge` class has some helpful methods for this purpose. This organization has several advantages. You can now disambiguate mentions of files in the root directory, so for example `myproject/README.md` instead of `README.md`, which would also match `myproject/subdir/README.md`. You can add dependencies, sibling projects, and documentation into the knowledge base without causing conflicts with the main project.
-
-Finally, do not use LLMs compulsively for everything. Sometimes it's easier to do things by hand in the editor or to use refactoring tools offered by IDEs.
+- Llobot works best with cloud models, which have plenty of burst compute to handle reprocessing of large prompts. Cloud models are also smart enough to be useful.
+- If you want to use llobot with local models anyway, prime the cache by issuing `/hi` command, e.g. `~myproject/hi`. If you submit empty prompt with only the command (`~myproject`), then `/hi` is implied. You can compose your prompt while the model is processing the cache priming request.
+- Make every task meaningful on its own. Do not reference prior conversations. This will give llobot freedom to choose examples and their ordering in the prompt.
+- If the prompt absolutely depends on the model seeing a particular file, mention it in the prompt as `file.ext` or `path/prefix/file.ext` (in backticks), whichever is sufficiently unique to match only one file. This ensures the document will be added to the assembled prompt regardless of how llobot prioritizes documents for context stuffing.
+- Contemporary LLMs are all divergent. Just letting them run alone on a large task will drive them mad. You have to give them a small task, review the response, correct mistakes, and repeat.
+- It's not necessary to be excessively precise in your prompts. LLMs are good at filling in the details. Try minimalist prompt first and refine it iteratively.
+- If you have modified your code (or other knowledge base) since querying the LLM and you don't want the changes to be visible to the LLM after you edit the prompt, take the timestamp from llobot's response and add it to the command in your prompt, for example `~myproject:20250526-222015`. Llobot will use the unmodified version of the knowledge base to answer the new prompt.
+- It is a good idea to standardize on knowledge base organization that prefixes every path with name of the source directory even if there's currently only one. So if you are loading knowledge from directory `myproject`, then path `subdir/file.txt` would be mapped to `myproject/subdir/file.txt` in the knowledge base.
+- Finally, do not use LLMs compulsively for everything. Sometimes it's easier to do things by hand in the editor or to use refactoring tools offered by IDEs.
 
 ## Status
 
