@@ -52,7 +52,7 @@ def block(*,
 
 @cache
 def standard_body() -> EnvelopeFormatter:
-    return block()
+    return block(min_backticks=4) & llobot.knowledge.subsets.markdown.suffix() | block()
 
 # Best for unquoted content like Markdown.
 @lru_cache
