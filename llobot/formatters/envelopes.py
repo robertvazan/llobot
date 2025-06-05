@@ -11,17 +11,6 @@ from llobot.formatters.languages import LanguageGuesser
 from llobot.formatters.paths import PathFormatter
 from llobot.formatters.decorators import Decorator
 
-# Language can be an empty string. Code block without language will be produced in that case.
-def quote(lang: str, document: str) -> str:
-    backtick_count = 3
-    while '`' * backtick_count in document:
-        backtick_count += 1
-    backticks = '`' * backtick_count
-    return f'{backticks}{lang}\n{document.strip()}\n{backticks}'
-
-def quote_file(path: Path, content: str, guesser: LanguageGuesser | None = llobot.formatters.languages.standard()) -> str:
-    return quote(guesser(path, content), content) if guesser else content.strip()
-
 class EnvelopeFormatter:
     # May return None to indicate it cannot handle the file, which is useful for combining several formatters.
     def wrap(self, path: Path, content: str, note: str = '') -> str | None:
@@ -43,31 +32,51 @@ def create(function: Callable[[Path, str, str], str | None]) -> EnvelopeFormatte
             return function(path, content, note)
     return LambdaEnvelopeFormatter()
 
-# Best for unquoted content like Markdown. If guesser is provided, content inside the details tag will be wrapped in a code block.
-@lru_cache
-def details(paths: PathFormatter = llobot.formatters.paths.comment(), guesser: LanguageGuesser | None = None) -> EnvelopeFormatter:
-    return create(lambda path, content, note: f'<details>\n<summary>{paths(path, note)}</summary>\n\n{quote_file(path, content, guesser)}\n\n</details>')
+@cache
+def vanilla() -> EnvelopeFormatter:
+    return create(lambda path, content, note: content)
 
 @lru_cache
-def decorated(decorator: Decorator = llobot.formatters.decorators.minimal(), guesser: LanguageGuesser | None = llobot.formatters.languages.standard()) -> EnvelopeFormatter:
-    if guesser:
-        return create(lambda path, content, note: quote(guesser(path, content), decorator(path, content, note)))
-    else:
-        return create(lambda path, content, note: decorator(path, content, note))
+def block(*,
+    guesser: LanguageGuesser = llobot.formatters.languages.standard(),
+    min_backticks: int = 3
+) -> EnvelopeFormatter:
+    def wrap(path: Path, content: str, note: str = '') -> str:
+        lang = guesser(path, content)
+        backtick_count = min_backticks
+        while '`' * backtick_count in content:
+            backtick_count += 1
+        backticks = '`' * backtick_count
+        return f'{backticks}{lang}\n{content.strip()}\n{backticks}'
+    return create(wrap)
+
+@cache
+def standard_body() -> EnvelopeFormatter:
+    return block()
+
+# Best for unquoted content like Markdown.
+@lru_cache
+def details(paths: PathFormatter = llobot.formatters.paths.comment(), body: EnvelopeFormatter = vanilla()) -> EnvelopeFormatter:
+    return create(lambda path, content, note: f'<details>\n<summary>{paths(path, note)}</summary>\n\n{body(path, content, note)}\n\n</details>')
 
 @lru_cache
-def header(paths: PathFormatter = llobot.formatters.paths.standard(), guesser: LanguageGuesser | None = llobot.formatters.languages.standard()) -> EnvelopeFormatter:
-    return create(lambda path, content, note: paths(path, note) + quote_file(path, content, guesser))
+def decorated(decorator: Decorator = llobot.formatters.decorators.minimal(), body: EnvelopeFormatter = standard_body()) -> EnvelopeFormatter:
+    return create(lambda path, content, note: body(path, content, decorator(path, content, note)))
+
+@lru_cache
+def header(paths: PathFormatter = llobot.formatters.paths.standard(), body: EnvelopeFormatter = standard_body()) -> EnvelopeFormatter:
+    return create(lambda path, content, note: paths(path, note) + body(path, content, note))
 
 @cache
 def standard() -> EnvelopeFormatter:
-    return details() & llobot.knowledge.subsets.markdown.suffix() | decorated()
+    return header()
 
 __all__ = [
-    'quote',
-    'quote_file',
     'EnvelopeFormatter',
     'create',
+    'vanilla',
+    'block',
+    'standard_body',
     'details',
     'decorated',
     'header',

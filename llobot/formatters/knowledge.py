@@ -44,7 +44,7 @@ def amalgamated(*,
         if language == 'markdown' and inline_markdown:
             return amalgamated
         else:
-            return llobot.formatters.envelopes.quote(language, amalgamated)
+            return llobot.text.quote(language, amalgamated)
     def render(knowledge: Knowledge, ranking: KnowledgeRanking) -> Context:
         knowledge &= ranking
         if not knowledge:

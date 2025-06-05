@@ -18,20 +18,15 @@ def standard(*, relevance_scorer: KnowledgeScorer | KnowledgeSubset = llobot.kno
     return llobot.experts.coders.standard(relevance_scorer=relevance_scorer, **kwargs)
 
 @cache
-def junit_instructions() -> str:
-    return llobot.text.concat(llobot.experts.coders.standard_instructions(), (resources.files()/'junit.md').read_text().strip())
-
-@cache
 def junit_relevant() -> KnowledgeSubset:
     return llobot.knowledge.subsets.java.regular() - llobot.knowledge.subsets.java.benchmarks()
 
 @lru_cache
 def junit(*,
-    instructions: str = junit_instructions(),
     relevance_scorer: KnowledgeScorer | KnowledgeSubset = junit_relevant(),
     **kwargs
 ) -> Expert:
-    editor = llobot.experts.coders.standard(instructions=instructions, relevance_scorer=relevance_scorer, **kwargs)
+    editor = llobot.experts.coders.standard(relevance_scorer=relevance_scorer, **kwargs)
     def stuff(request: ExpertRequest) -> Context:
         chunks = editor(request).chunks
         tail_index = max((index + 1 for index, chunk in enumerate(chunks) if isinstance(chunk, ExampleChunk)), default=0)
@@ -43,7 +38,6 @@ def junit(*,
 
 __all__ = [
     'standard',
-    'junit_instructions',
     'junit_relevant',
     'junit',
 ]
