@@ -16,12 +16,13 @@ class PathFormatter:
     def parse(self, formatted: str) -> str:
         return ''
 
+    @property
     def consumes_note(self) -> bool:
         return True
 
     def __or__(self, other: PathFormatter) -> PathFormatter:
         return create(
-            lambda path, note: other(self(path, note), '' if self.consumes_note() else note),
+            lambda path, note: other(self(path, note), '' if self.consumes_note else note),
             lambda formatted: self.parse(other.parse(formatted))
         )
 
@@ -31,6 +32,7 @@ def create(formatter: Callable[[Path | str, str], str], parser: Callable[[str], 
             return formatter(path, note)
         def parse(self, formatted: str) -> str:
             return parser(formatted)
+        @property
         def consumes_note(self) -> bool:
             return True
     return LambdaFormatter()
@@ -41,6 +43,7 @@ def create_filter(formatter: Callable[[Path | str, str], str], parser: Callable[
             return formatter(path, note)
         def parse(self, formatted: str) -> str:
             return parser(formatted)
+        @property
         def consumes_note(self) -> bool:
             return False
     return FilterFormatter()
