@@ -24,8 +24,20 @@ class EnvelopeFormatter:
     def regex(self) -> re.Pattern | None:
         return None
 
+    # Path can be None even if parsing succeeds, because some envelopes do not encode path.
+    # Success is therefore signaled with non-empty content.
     def parse(self, formatted: str) -> tuple[Path | None, str]:
         return None, ''
+
+    def parse_all(self, message: str) -> list[tuple[Path, str]]:
+        if not self.regex:
+            return []
+        results = []
+        for match in self.regex.finditer(message):
+            path, content = self.parse(match.group(0))
+            if path and content:
+                results.append((path, content))
+        return results
 
     def __or__(self, other: EnvelopeFormatter) -> EnvelopeFormatter:
         def parse(formatted: str) -> tuple[Path | None, str]:
