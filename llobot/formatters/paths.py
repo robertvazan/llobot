@@ -24,7 +24,7 @@ class PathFormatter:
     def regex(self) -> re.Pattern:
         patterns = []
         for formatted in list(dict.fromkeys([self('PLACEHOLDER'), self('PLACEHOLDER', 'PLACEHOLDER')])):
-            pattern = re.escape(formatted).replace('PLACEHOLDER', '.+?')
+            pattern = re.escape(formatted).replace('PLACEHOLDER', r'[^\n]+?')
             patterns.append(pattern)
         return re.compile('|'.join(f'(?:{p})' for p in patterns) if len(patterns) > 1 else patterns[0])
 
@@ -58,9 +58,9 @@ def create_filter(formatter: Callable[[Path | str, str], str], parser: Callable[
 
 @cache
 def pattern(basic_pattern: str, note_pattern: str = '') -> PathFormatter:
-    basic_regex = re.compile(re.escape(basic_pattern.format('PATH')).replace(r'PATH', r'(.+?)'))
+    basic_regex = re.compile(re.escape(basic_pattern.format('PATH')).replace(r'PATH', r'([^\n]+?)'))
     if note_pattern:
-        note_regex = re.compile(re.escape(note_pattern.format('PATH', 'NOTE')).replace(r'PATH', r'(.+?)').replace(r'NOTE', r'.*?'))
+        note_regex = re.compile(re.escape(note_pattern.format('PATH', 'NOTE')).replace(r'PATH', r'([^\n]+?)').replace(r'NOTE', r'[^\n]*?'))
     else:
         note_regex = None
     def parse(formatted: str) -> str:
