@@ -5,12 +5,14 @@ from llobot.contexts import Context
 from llobot.scorers.history import HistoryScorer
 from llobot.scorers.ranks import RankScorer
 from llobot.scorers.chats import ChatScorer
+from llobot.formatters.envelopes import EnvelopeFormatter
 import llobot.contexts
 import llobot.contexts.examples
 import llobot.scores.history
 import llobot.scorers.history
 import llobot.scorers.ranks
 import llobot.scorers.chats
+import llobot.formatters.envelopes
 
 class ExampleCrammer:
     # Context parameter contains already assembled parts of the prompt, whether preceding or following crammer's output.
@@ -23,8 +25,8 @@ def create(function: Callable[[list[Iterable[ChatBranch]], int, Context], Contex
             return function(streams, budget, context)
     return LambdaExampleCrammer()
 
-@cache
-def greedy() -> ExampleCrammer:
+@lru_cache
+def greedy(parser: EnvelopeFormatter = llobot.formatters.envelopes.standard()) -> ExampleCrammer:
     def merge(streams: list[Iterable[ChatBranch]]) -> Iterable[ChatBranch]:
         for stream in streams:
             yield from stream
@@ -40,7 +42,7 @@ def greedy() -> ExampleCrammer:
             examples.append(example)
             budget -= example.cost
         examples.reverse()
-        return llobot.contexts.examples.annotate(*examples)
+        return llobot.contexts.examples.annotate(*examples, formatter=parser)
     return create(cram)
 
 @lru_cache
@@ -53,6 +55,7 @@ def prioritized(
     depth: int = 10,
     # Do not overscan when we reach reasonable fill rate.
     fill: float = 0.8,
+    parser: EnvelopeFormatter = llobot.formatters.envelopes.standard(),
 ) -> ExampleCrammer:
     def cram(streams: list[Iterable[ChatBranch]], budget: int, context: Context = llobot.contexts.empty()) -> Context:
         if budget <= 0:
@@ -79,7 +82,7 @@ def prioritized(
             budget -= example.cost
         # If the sort key scorer was not provided or the sort key is not available for some chats, default to ascending score order.
         examples.reverse()
-        return llobot.contexts.examples.annotate(*(sorted(examples, key=sort_key) if sort_key else examples))
+        return llobot.contexts.examples.annotate(*(sorted(examples, key=sort_key) if sort_key else examples), formatter=parser)
     return create(cram)
 
 @cache
