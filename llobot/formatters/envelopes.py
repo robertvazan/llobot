@@ -14,11 +14,11 @@ import re
 
 class EnvelopeFormatter:
     # May return None to indicate it cannot handle the file, which is useful for combining several formatters.
-    def wrap(self, path: Path, content: str, note: str = '') -> str | None:
+    def format(self, path: Path, content: str, note: str = '') -> str | None:
         return None
 
     def __call__(self, path: Path, content: str, note: str = '') -> str | None:
-        return self.wrap(path, content, note)
+        return self.format(path, content, note)
 
     @cached_property
     def regex(self) -> re.Pattern | None:
@@ -71,7 +71,7 @@ def create(
     regex: re.Pattern | None = None
 ) -> EnvelopeFormatter:
     class LambdaEnvelopeFormatter(EnvelopeFormatter):
-        def wrap(self, path: Path, content: str, note: str = '') -> str | None:
+        def format(self, path: Path, content: str, note: str = '') -> str | None:
             return formatter(path, content, note)
         @cached_property
         def regex(self) -> re.Pattern | None:
@@ -93,7 +93,7 @@ def block(*,
     guesser: LanguageGuesser = llobot.formatters.languages.standard(),
     min_backticks: int = 3
 ) -> EnvelopeFormatter:
-    def wrap(path: Path, content: str, note: str = '') -> str:
+    def format(path: Path, content: str, note: str = '') -> str:
         lang = guesser(path, content)
         backtick_count = min_backticks
         backticks = '`' * backtick_count
@@ -111,7 +111,7 @@ def block(*,
         if not match:
             return None, ''
         return None, match.group(1)
-    return create(wrap, parse, detection_regex)
+    return create(format, parse, detection_regex)
 
 @cache
 def standard_body() -> EnvelopeFormatter:
