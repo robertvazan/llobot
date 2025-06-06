@@ -1,10 +1,12 @@
 from __future__ import annotations
 from llobot.chats import ChatBranch, ChatIntent
 from llobot.knowledge import Knowledge
+from llobot.scores.knowledge import KnowledgeScores
 from llobot.contexts import Context, ContextChunk
 from llobot.formatters.envelopes import EnvelopeFormatter
 import llobot.contexts
 import llobot.formatters.envelopes
+import llobot.scores.knowledge
 
 # Contains exactly one example and nothing else.
 # There is no padding around the example. Chunk's chat is just the example.
@@ -16,10 +18,12 @@ class ExampleChunk(ContextChunk):
 class _AnnotatedExampleChunk(ExampleChunk):
     _chat: ChatBranch
     _knowledge: Knowledge
+    _knowledge_cost: KnowledgeScores
 
     def __init__(self, chat: ChatBranch, knowledge: Knowledge = Knowledge()):
         self._chat = chat
         self._knowledge = knowledge
+        self._knowledge_cost = llobot.scores.knowledge.length(knowledge)
 
     @property
     def chat(self) -> ChatBranch:
@@ -28,6 +32,10 @@ class _AnnotatedExampleChunk(ExampleChunk):
     @property
     def knowledge(self) -> Knowledge:
         return self._knowledge
+
+    @property
+    def knowledge_cost(self) -> KnowledgeScores:
+        return self._knowledge_cost
 
 def annotate(*examples: ChatBranch, formatter: EnvelopeFormatter = llobot.formatters.envelopes.standard()) -> Context:
     chunks = []
