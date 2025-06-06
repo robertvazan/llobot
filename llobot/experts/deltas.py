@@ -108,33 +108,36 @@ def standard(*,
             consistent = _discard_inconsistent(cache, fresh, request)
             if len(consistent.chunks) != len(cache.chunks):
                 report += f" -> {consistent.pretty_cost} consistent"
-            # Prepare document updates and deletions, so that the code below, which merges fresh context,
-            # doesn't have to worry about outdated knowledge in the context.
-            fresh_knowledge = request.scope.project.knowledge(request.cutoff).transform(update_trimmer.trim_fully) if request.scope else Knowledge()
-            cache_knowledge = consistent.knowledge
-            deletions = cache_knowledge.keys() - fresh_knowledge.keys()
-            updates = fresh_knowledge & llobot.knowledge.subsets.create(lambda path, content: path in cache_knowledge and cache_knowledge[path] != content)
-            cache_knowledge = (cache_knowledge - deletions) | updates
-            modified = llobot.contexts.compose(
-                deletion_formatter(deletions),
-                update_formatter(updates, llobot.knowledge.rankings.lexicographical(updates)))
-            # Now merge the fresh context. Append only chunks that are not yet part of the context and that aren't included in the document updates added below.
+            # Go over the fresh prompt and include new or modified chunks.
             new_chunks = []
             cache_chats = {chunk.chat.monolithic() for chunk in consistent.chunks}
+            consistent_knowledge = consistent.knowledge
             for chunk in fresh.chunks:
                 if isinstance(chunk, DocumentChunk):
-                    if chunk.path not in cache_knowledge:
+                    # Include document chunks that are new or differ from knowledge in consistent context.
+                    if chunk.path not in consistent_knowledge or consistent_knowledge[chunk.path] != chunk.content:
                         new_chunks.append(chunk)
                 elif chunk.chat.monolithic() not in cache_chats:
+                    # Include all non-document chunks that are not in the consistent context.
                     new_chunks.append(chunk)
             new = llobot.contexts.compose(*new_chunks)
             if new:
                 report += f" + {new.pretty_cost} new"
-            # Finally, append document updates and deletions to deal with outdated documents in the cache.
-            # We have to add them last, so that the last example is added exactly where the cache expects it most of the time.
+            delta = llobot.contexts.compose(consistent, new)
+            # Delta context can still contain outdated documents, because:
+            # - Cached context may include outdated documents that are absent from fresh context.
+            # - Model responses in examples may contain outdated documents that have been modified since.
+            # We will therefore compare delta context with fresh knowledge and inform the model about deletions and updates.
+            fresh_knowledge = request.scope.project.knowledge(request.cutoff).transform(update_trimmer.trim_fully) if request.scope else Knowledge()
+            delta_knowledge = delta.knowledge
+            deletions = delta_knowledge.keys() - fresh_knowledge.keys()
+            updates = fresh_knowledge & llobot.knowledge.subsets.create(lambda path, content: path in delta_knowledge and delta_knowledge[path] != content)
+            modified = llobot.contexts.compose(
+                deletion_formatter(deletions),
+                update_formatter(updates, llobot.knowledge.rankings.lexicographical(updates)))
             if modified:
                 report += f" + {modified.pretty_cost} modified"
-            proposal = llobot.contexts.compose(consistent, new, modified)
+            proposal = llobot.contexts.compose(delta, modified)
             report += f" = {proposal.pretty_cost} incremental"
         else:
             report += " (no cache)"
