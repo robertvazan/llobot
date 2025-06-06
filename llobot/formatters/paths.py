@@ -1,6 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
-from functools import cache
+from functools import cache, cached_property
 import re
 
 class PathFormatter:
@@ -19,6 +19,14 @@ class PathFormatter:
     @property
     def consumes_note(self) -> bool:
         return True
+
+    @cached_property
+    def regex(self) -> re.Pattern:
+        patterns = []
+        for formatted in list(dict.fromkeys([self('PLACEHOLDER'), self('PLACEHOLDER', 'PLACEHOLDER')])):
+            pattern = re.escape(formatted).replace('PLACEHOLDER', '.+?')
+            patterns.append(pattern)
+        return re.compile('|'.join(f'(?:{p})' for p in patterns) if len(patterns) > 1 else patterns[0])
 
     def __or__(self, other: PathFormatter) -> PathFormatter:
         return create(
