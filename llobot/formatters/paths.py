@@ -1,6 +1,7 @@
 from __future__ import annotations
 from pathlib import Path
 from functools import cache
+import re
 
 class PathFormatter:
     # Path may be an already formatted string, in which case it is not manipulated.
@@ -10,34 +11,58 @@ class PathFormatter:
     def __call__(self, path: Path | str, note: str = '') -> str:
         return self.format(path, note)
 
+    # Since format() can accept an already formatted string, we can only return string here.
+    # Parsing may fail, in which case we just return an empty string.
+    def parse(self, formatted: str) -> str:
+        return ''
+
     def consumes_note(self) -> bool:
         return True
 
     def __or__(self, other: PathFormatter) -> PathFormatter:
-        return create(lambda path, note: other(self(path, note), '' if self.consumes_note() else note))
+        return create(
+            lambda path, note: other(self(path, note), '' if self.consumes_note() else note),
+            lambda formatted: self.parse(other.parse(formatted))
+        )
 
-def create(function: Callable[[Path | str, str], str]) -> PathFormatter:
+def create(formatter: Callable[[Path | str, str], str], parser: Callable[[str], str] = lambda _: '') -> PathFormatter:
     class LambdaFormatter(PathFormatter):
         def format(self, path: Path | str, note: str = '') -> str:
-            return function(path, note)
+            return formatter(path, note)
+        def parse(self, formatted: str) -> str:
+            return parser(formatted)
         def consumes_note(self) -> bool:
             return True
     return LambdaFormatter()
 
-def create_filter(function: Callable[[Path | str, str], bool]) -> PathFilter:
+def create_filter(formatter: Callable[[Path | str, str], str], parser: Callable[[str], str] = lambda _: '') -> PathFormatter:
     class FilterFormatter(PathFormatter):
         def format(self, path: Path | str, note: str = '') -> str:
-            return function(path, note)
+            return formatter(path, note)
+        def parse(self, formatted: str) -> str:
+            return parser(formatted)
         def consumes_note(self) -> bool:
             return False
     return FilterFormatter()
 
 @cache
 def pattern(basic_pattern: str, note_pattern: str = '') -> PathFormatter:
+    basic_regex = re.compile(re.escape(basic_pattern.format('PATH')).replace(r'PATH', r'(.+?)'))
     if note_pattern:
-        return create(lambda path, note: note_pattern.format(path, note) if note else basic_pattern.format(path))
+        note_regex = re.compile(re.escape(note_pattern.format('PATH', 'NOTE')).replace(r'PATH', r'(.+?)').replace(r'NOTE', r'.*?'))
     else:
-        return create_filter(lambda path, note: basic_pattern.format(path))
+        note_regex = None
+    def parse(formatted: str) -> str:
+        for regex in (note_regex, basic_regex):
+            if regex:
+                match = re.fullmatch(regex, formatted)
+                if match:
+                    return match.group(1)
+        return ''
+    if note_pattern:
+        return create(lambda path, note: note_pattern.format(path, note) if note else basic_pattern.format(path), parse)
+    else:
+        return create_filter(lambda path, note: basic_pattern.format(path), parse)
 
 @cache
 def line(basic_pattern: str, note_pattern: str = '') -> PathFormatter:
