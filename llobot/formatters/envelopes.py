@@ -49,7 +49,7 @@ class EnvelopeFormatter:
         return create(
             lambda path, content, note: self(path, content, note) or other(path, content, note),
             lambda formatted: self.parse(formatted) if self.parse(formatted)[1] else other.parse(formatted),
-            re.compile('|'.join(patterns)) if patterns else None
+            re.compile('|'.join(patterns), re.MULTILINE | re.DOTALL) if patterns else None
         )
 
     def __and__(self, whitelist: KnowledgeSubset | str) -> EnvelopeFormatter:
@@ -85,7 +85,7 @@ def vanilla() -> EnvelopeFormatter:
     return create(
         lambda path, content, note: content,
         lambda formatted: (None, formatted),
-        re.compile(r'.+', re.DOTALL)
+        re.compile(r'.+', re.MULTILINE | re.DOTALL)
     )
 
 @lru_cache
@@ -102,8 +102,8 @@ def block(*,
             backtick_count += 1
             backticks = '`' * backtick_count
         return f'{backticks}{lang}\n{content.strip()}\n{backticks}'
-    detection_regex = re.compile(r'^(?:```[^`\n]*\n.*?\n```|````[^`\n]*\n.*?\n````|`````[^`\n]*\n.*?\n`````)$', re.DOTALL)
-    parsing_regex = re.compile(r'```+[^\n]*\n(.*)\n```+', re.DOTALL)
+    detection_regex = re.compile(r'^(?:```[^`\n]*\n.*?\n```|````[^`\n]*\n.*?\n````|`````[^`\n]*\n.*?\n`````)$', re.MULTILINE | re.DOTALL)
+    parsing_regex = re.compile(r'```+[^\n]*\n(.*)\n```+', re.MULTILINE | re.DOTALL)
     def parse(formatted: str) -> tuple[Path | None, str]:
         if not detection_regex.fullmatch(formatted):
             return None, ''
@@ -122,8 +122,8 @@ def standard_body() -> EnvelopeFormatter:
 def details(paths: PathFormatter = llobot.formatters.paths.comment(), body: EnvelopeFormatter = vanilla()) -> EnvelopeFormatter:
     parseable = paths.regex and body.regex
     if parseable:
-        detection_regex = re.compile(rf'^<details>\n<summary>{paths.regex.pattern}</summary>\n\n{body.regex.pattern}\n\n</details>$', re.DOTALL)
-        parsing_regex = re.compile(rf'<details>\n<summary>({paths.regex.pattern})</summary>\n\n({body.regex.pattern})\n\n</details>', re.DOTALL)
+        detection_regex = re.compile(rf'^<details>\n<summary>{paths.regex.pattern}</summary>\n\n{body.regex.pattern}\n\n</details>$', re.MULTILINE | re.DOTALL)
+        parsing_regex = re.compile(rf'<details>\n<summary>({paths.regex.pattern})</summary>\n\n({body.regex.pattern})\n\n</details>', re.MULTILINE | re.DOTALL)
     def parse(formatted: str) -> tuple[Path | None, str]:
         if not parseable or not detection_regex.fullmatch(formatted):
             return None, ''
@@ -150,8 +150,8 @@ def decorated(decorator: Decorator = llobot.formatters.decorators.minimal(), bod
 def header(paths: PathFormatter = llobot.formatters.paths.standard(), body: EnvelopeFormatter = standard_body()) -> EnvelopeFormatter:
     parseable = paths.regex and body.regex
     if parseable:
-        detection_regex = re.compile(f'^(?:{paths.regex.pattern})(?:{body.regex.pattern})$', re.DOTALL)
-        parsing_regex = re.compile(f'({paths.regex.pattern})({body.regex.pattern})', re.DOTALL)
+        detection_regex = re.compile(f'^(?:{paths.regex.pattern})(?:{body.regex.pattern})$', re.MULTILINE | re.DOTALL)
+        parsing_regex = re.compile(f'({paths.regex.pattern})({body.regex.pattern})', re.MULTILINE | re.DOTALL)
     def parse(formatted: str) -> tuple[Path | None, str]:
         if not parseable:
             return None, ''
