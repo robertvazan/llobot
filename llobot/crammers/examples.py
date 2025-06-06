@@ -42,7 +42,7 @@ def greedy(parser: EnvelopeFormatter = llobot.formatters.envelopes.standard()) -
             examples.append(example)
             budget -= example.cost
         examples.reverse()
-        return llobot.contexts.examples.annotate(*examples, formatter=parser)
+        return llobot.contexts.examples.annotate(*examples, parser=parser)
     return create(cram)
 
 @lru_cache
@@ -82,7 +82,7 @@ def prioritized(
             budget -= example.cost
         # If the sort key scorer was not provided or the sort key is not available for some chats, default to ascending score order.
         examples.reverse()
-        return llobot.contexts.examples.annotate(*(sorted(examples, key=sort_key) if sort_key else examples), formatter=parser)
+        return llobot.contexts.examples.annotate(*(sorted(examples, key=sort_key) if sort_key else examples), parser=parser)
     return create(cram)
 
 @cache

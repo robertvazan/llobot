@@ -37,7 +37,7 @@ class _AnnotatedExampleChunk(ExampleChunk):
     def knowledge_cost(self) -> KnowledgeScores:
         return self._knowledge_cost
 
-def annotate(*examples: ChatBranch, formatter: EnvelopeFormatter = llobot.formatters.envelopes.standard()) -> Context:
+def annotate(*examples: ChatBranch, parser: EnvelopeFormatter = llobot.formatters.envelopes.standard()) -> Context:
     chunks = []
     for example in examples:
         if not example.is_example():
@@ -45,7 +45,7 @@ def annotate(*examples: ChatBranch, formatter: EnvelopeFormatter = llobot.format
         documents = {}
         for message in example:
             if message.intent == ChatIntent.EXAMPLE_RESPONSE:
-                for path, content in formatter.parse_all(message.content):
+                for path, content in parser.parse_all(message.content):
                     documents[path] = content
         chunks.append(_AnnotatedExampleChunk(example, Knowledge(documents)))
     return llobot.contexts.compose(*chunks)
