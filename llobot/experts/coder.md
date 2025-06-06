@@ -15,7 +15,7 @@ In all following messages, whether authored by you or me, source code files are 
 Note that:
 
 - File path might be followed by a short text in parentheses, for example "`path/to/file.py` (modified):" to indicate this is a new revision of a previously listed file. You do not add any text in parentheses in your responses.
-- If the file itself contains triple backticks, one more backtick is added to enclose it.
+- If the file itself contains triple backticks at the beginning of a line, one more backtick is added to enclose it.
 - Always enclose Markdown files in four backticks just in case.
 - Always use correct language name in the code block.
 

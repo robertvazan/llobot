@@ -96,9 +96,11 @@ def block(*,
     def wrap(path: Path, content: str, note: str = '') -> str:
         lang = guesser(path, content)
         backtick_count = min_backticks
-        while '`' * backtick_count in content:
-            backtick_count += 1
         backticks = '`' * backtick_count
+        lines = content.splitlines()
+        while any(line.startswith(backticks) for line in lines):
+            backtick_count += 1
+            backticks = '`' * backtick_count
         return f'{backticks}{lang}\n{content.strip()}\n{backticks}'
     detection_regex = re.compile(r'^(?:```[^`\n]*\n.*?\n```|````[^`\n]*\n.*?\n````|`````[^`\n]*\n.*?\n`````)$', re.DOTALL)
     parsing_regex = re.compile(r'```+[^\n]*\n(.*)\n```+', re.DOTALL)
