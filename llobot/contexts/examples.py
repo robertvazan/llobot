@@ -1,7 +1,10 @@
 from __future__ import annotations
-from llobot.chats import ChatBranch
+from llobot.chats import ChatBranch, ChatIntent
+from llobot.knowledge import Knowledge
 from llobot.contexts import Context, ContextChunk
+from llobot.formatters.envelopes import EnvelopeFormatter
 import llobot.contexts
+import llobot.formatters.envelopes
 
 # Contains exactly one example and nothing else.
 # There is no padding around the example. Chunk's chat is just the example.
@@ -12,40 +15,35 @@ class ExampleChunk(ContextChunk):
 
 class _AnnotatedExampleChunk(ExampleChunk):
     _chat: ChatBranch
+    _knowledge: Knowledge
 
-    def __init__(self, chat: ChatBranch):
+    def __init__(self, chat: ChatBranch, knowledge: Knowledge = Knowledge()):
         self._chat = chat
+        self._knowledge = knowledge
 
     @property
     def chat(self) -> ChatBranch:
         return self._chat
 
-def annotate(*examples: ChatBranch) -> Context:
+    @property
+    def knowledge(self) -> Knowledge:
+        return self._knowledge
+
+def annotate(*examples: ChatBranch, formatter: EnvelopeFormatter = llobot.formatters.envelopes.standard()) -> Context:
     chunks = []
     for example in examples:
         if not example.is_example():
             raise ValueError('Not an example chat')
-        chunks.append(_AnnotatedExampleChunk(example))
+        documents = {}
+        for message in example:
+            if message.intent == ChatIntent.EXAMPLE_RESPONSE:
+                for path, content in formatter.parse_all(message.content):
+                    documents[path] = content
+        chunks.append(_AnnotatedExampleChunk(example, Knowledge(documents)))
     return llobot.contexts.compose(*chunks)
-
-def bulk(chat: ChatBranch, examples: Iterable[ChatBranch]) -> Context:
-    examples = list(examples)
-    if not chat or not examples:
-        return llobot.contexts.empty()
-    if any(not example.is_example() for example in examples):
-        raise ValueError('Not an example chat')
-    class BulkExampleChunk(ContextChunk):
-        @property
-        def chat(self) -> ChatBranch:
-            return chat
-        @property
-        def examples(self) -> list[ChatBranch]:
-            return examples
-    return BulkExampleChunk()
 
 __all__ = [
     'ExampleChunk',
     'annotate',
-    'bulk',
 ]
 
