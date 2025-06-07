@@ -20,13 +20,24 @@ class Context:
     def pretty_cost(self) -> str:
         return self.chat.pretty_cost
 
-    def __bool__(self) -> bool:
-        return bool(self.chat)
-
     # Context hierarchy is flat. If this is a container, it returns children. If this is a child, it returns itself.
     @property
     def chunks(self) -> tuple[ContextChunk, ...]:
         raise NotImplementedError
+
+    def __bool__(self) -> bool:
+        return bool(self.chunks)
+
+    def __len__(self) -> int:
+        return len(self.chunks)
+
+    def __iter__(self) -> Iterator[ContextChunk]:
+        return iter(self.chunks)
+
+    def __getitem__(self, key: int | slice) -> ContextChunk | Context:
+        if isinstance(key, slice):
+            return compose(*self.chunks[key])
+        return self.chunks[key]
 
     @property
     def knowledge(self) -> Knowledge:
