@@ -1,7 +1,10 @@
 from __future__ import annotations
+from collections import deque
 from llobot.chats import ChatBranch
 from llobot.contexts import Context, ContextChunk
 from llobot.contexts.examples import ExampleChunk
+from llobot.contexts.documents import DocumentChunk
+from llobot.contexts.deletions import DeletionChunk
 import llobot.contexts
 
 def common_prefix(left: Context | ChatBranch, right: Context | ChatBranch) -> Context:
@@ -40,12 +43,40 @@ def take_until(context: Context, predicate: Callable[[ContextChunk], bool]) -> C
     return take_while(context, lambda chunk: not predicate(chunk))
 
 def check_examples(context: Context, validation: Callable[[ChatBranch], bool]) -> Context:
-    return take_until(context, lambda chunk: isinstance(chunk, ExampleChunk) and any(not validation(example) for example in chunk.examples))
+    return take_until(context, lambda chunk: any(not validation(example) for example in chunk.examples))
 
 def compatible_prefix(cache: Context, fresh: Context) -> Context:
     identical = cache & fresh
-    consistent = cache[len(identical):]
-    consistent = take_while(consistent, lambda chunk: isinstance(chunk, (DocumentChunk, DeletionChunk, ExampleChunk)))
+    fresh_examples = deque(chunk.chat for chunk in fresh if isinstance(chunk, ExampleChunk))
+    def acceptable(chunk: ContextChunk) -> bool:
+        # Documents and deletions are always acceptable.
+        if isinstance(chunk, (DocumentChunk, DeletionChunk)):
+            return True
+        # Reject unrecognized chunks.
+        if not isinstance(chunk, ExampleChunk):
+            return False
+        # If this condition holds, then either the cache contains examples while the fresh context doesn't
+        # or the cache contains an example that is younger than all fresh examples.
+        # Both cases are unlikely. If we encounter either one, it is safe to allow the example.
+        if not fresh_examples:
+            return True
+        cache_timestamp = chunk.chat.metadata.time
+        fresh_timestamp = fresh_examples[0].metadata.time
+        # Timestamps should always be there.
+        # If they are inexplicably missing, accepting the example is the safe option.
+        if not cache_timestamp or not fresh_timestamp:
+            return True
+        # Allow cache example that is identical to the next fresh example.
+        # Force conversion to list to ignore chat metadata.
+        if list(chunk.chat) == list(fresh_examples[0]):
+            fresh_examples.popleft()
+            return True
+        # Allow cache example that is older than the next fresh example,
+        # because example order is preserved in that case.
+        if cache_timestamp < fresh_timestamp:
+            return True
+        return False
+    consistent = take_while(cache[len(identical):], acceptable)
     return identical + consistent
 
 __all__ = [

@@ -64,7 +64,7 @@ def _reorder_fresh(cache: Context, fresh: Context) -> tuple[Context, Context]:
                 break
             reordered.append(chunk)
             unused.remove(monolithic)
-        remainder = llobot.contexts.compose(*[chunk for chunk in remainder if chunk.monolithic() in unused])
+        remainder = llobot.contexts.compose(*[chunk for chunk in remainder if chunk.chat.monolithic() in unused])
     return llobot.contexts.compose(*reordered), remainder
 
 @lru_cache
