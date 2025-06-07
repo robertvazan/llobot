@@ -35,9 +35,10 @@ _cache = LRUCache(maxsize=128)
 def _discard_inconsistent(cache: Context, fresh: Context, request: ExpertRequest) -> Context:
     identical = cache & fresh
     consistent = cache[len(identical):]
-    consistent = llobot.contexts.deltas.take_while(consistent, lambda chunk: isinstance(chunk, (DocumentChunk, DeletionChunk, ExampleChunk)))
-    outdated_example = lambda example: example.metadata.time and not request.memory.has_example(request.scope, example.metadata.time)
-    consistent = llobot.contexts.deltas.take_until(consistent, lambda chunk: isinstance(chunk, ExampleChunk) and any(outdated_example(example) for example in chunk.examples))
+    consistent = llobot.contexts.deltas.take_while(consistent,
+        lambda chunk: isinstance(chunk, (DocumentChunk, DeletionChunk, ExampleChunk)))
+    consistent = llobot.contexts.deltas.check_examples(consistent,
+        lambda example: not example.metadata.time or request.memory.has_example(request.scope, example.metadata.time))
     return identical + consistent
 
 def _reorder_fresh(cache: Context, fresh: Context) -> tuple[Context, Context]:

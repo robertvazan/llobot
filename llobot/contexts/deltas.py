@@ -1,6 +1,7 @@
 from __future__ import annotations
 from llobot.chats import ChatBranch
 from llobot.contexts import Context, ContextChunk
+from llobot.contexts.examples import ExampleChunk
 import llobot.contexts
 
 def common_prefix(left: Context | ChatBranch, right: Context | ChatBranch) -> Context:
@@ -38,9 +39,13 @@ def take_while(context: Context, predicate: Callable[[ContextChunk], bool]) -> C
 def take_until(context: Context, predicate: Callable[[ContextChunk], bool]) -> Context:
     return take_while(context, lambda chunk: not predicate(chunk))
 
+def check_examples(context: Context, validation: Callable[[ChatBranch], bool]) -> Context:
+    return take_until(context, lambda chunk: isinstance(chunk, ExampleChunk) and any(not validation(example) for example in chunk.examples))
+
 __all__ = [
     'common_prefix',
     'take_while',
     'take_until',
+    'check_examples',
 ]
 
