@@ -33,8 +33,8 @@ _cache = LRUCache(maxsize=128)
 # Discard chunks with unrecoverable errors: modified examples and changes in unidentified chunks.
 def _discard_inconsistent(cache: Context, fresh: Context, request: ExpertRequest) -> Context:
     # Preserve identical context prefix.
-    prefix = list((cache & fresh).chunks)
-    for chunk in cache.chunks[len(prefix):]:
+    prefix = list(cache & fresh)
+    for chunk in cache[len(prefix):]:
         if isinstance(chunk, ExampleChunk):
             # Outdated example that has been deleted/replaced.
             if any(example.metadata.time and not request.memory.has_example(request.scope, example.metadata.time) for example in chunk.examples):
@@ -46,9 +46,9 @@ def _discard_inconsistent(cache: Context, fresh: Context, request: ExpertRequest
 
 def _reorder_fresh(cache: Context, fresh: Context) -> tuple[Context, Context]:
     # Skip identical chunks.
-    reordered = list((cache & fresh).chunks)
+    reordered = list(cache & fresh)
     # Reorder chunks whenever possible.
-    remainder = fresh.chunks[len(reordered):]
+    remainder = fresh[len(reordered):]
     unused = {chunk.chat.monolithic() for chunk in remainder}
     paths = Counter()
     for chunk in remainder:
@@ -56,7 +56,7 @@ def _reorder_fresh(cache: Context, fresh: Context) -> tuple[Context, Context]:
             paths[path] += 1
     # Reordering is practical only if all chunks are unique, which is an assumption that is nearly always true.
     if len(unused) == len(remainder):
-        for chunk in cache.chunks[len(reordered):]:
+        for chunk in cache[len(reordered):]:
             # If the chunk is not in the fresh context, don't reorder it.
             monolithic = chunk.chat.monolithic()
             if monolithic not in unused:
@@ -77,8 +77,8 @@ def _reorder_fresh(cache: Context, fresh: Context) -> tuple[Context, Context]:
                 break
             reordered.append(chunk)
             unused.remove(monolithic)
-        remainder = [chunk for chunk in remainder if chunk.monolithic() in unused]
-    return llobot.contexts.compose(*reordered), llobot.contexts.compose(*remainder)
+        remainder = llobot.contexts.compose(*[chunk for chunk in remainder if chunk.monolithic() in unused])
+    return llobot.contexts.compose(*reordered), remainder
 
 @lru_cache
 def standard(*,
@@ -109,17 +109,17 @@ def standard(*,
         cache1, cache2 = _cache.get(zone, (llobot.contexts.empty(), llobot.contexts.empty()))
         prompt_cache1 = request.cache.cached_context(cache1)
         prompt_cache2 = request.cache.cached_context(cache2)
-        cache = prompt_cache1 if len(prompt_cache1.chunks) > len(prompt_cache2.chunks) else prompt_cache2
+        cache = prompt_cache1 if len(prompt_cache1) > len(prompt_cache2) else prompt_cache2
         if cache:
             report += f", {cache.pretty_cost} cached"
             consistent = _discard_inconsistent(cache, fresh, request)
-            if len(consistent.chunks) != len(cache.chunks):
+            if len(consistent) != len(cache):
                 report += f" -> {consistent.pretty_cost} consistent"
             # Go over the fresh prompt and include new or modified chunks.
             new_chunks = []
-            cache_chats = {chunk.chat.monolithic() for chunk in consistent.chunks}
+            cache_chats = {chunk.chat.monolithic() for chunk in consistent}
             consistent_knowledge = consistent.knowledge
-            for chunk in fresh.chunks:
+            for chunk in fresh:
                 if isinstance(chunk, DocumentChunk):
                     # Include document chunks that are new or differ from knowledge in consistent context.
                     if chunk.path not in consistent_knowledge or consistent_knowledge[chunk.path] != chunk.content:

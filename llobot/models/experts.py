@@ -200,13 +200,13 @@ class _StandardExpertRequest:
             ''')
         context = self.stuff()
         if context:
-            context_knowledge = sum(chunk.cost for chunk in context.chunks if chunk.knowledge or chunk.deletions)
-            context_outdated = sum(chunk.cost for chunk in context.chunks if chunk.knowledge and chunk.knowledge != (context.knowledge & chunk.knowledge.keys()) or chunk.deletions)
+            context_knowledge = sum(chunk.cost for chunk in context if chunk.knowledge or chunk.deletions)
+            context_outdated = sum(chunk.cost for chunk in context if chunk.knowledge and chunk.knowledge != (context.knowledge & chunk.knowledge.keys()) or chunk.deletions)
             context_examples_cost = sum(example.cost for example in context.examples)
             info += dedent(f'''
                 Context:
 
-                - Size: {len(context.chunks):,} chunks, {context.pretty_cost}
+                - Size: {len(context):,} chunks, {context.pretty_cost}
                 - Knowledge: {len(context.knowledge):,} documents, {context.knowledge.cost / 1024:,.0f} KB, \
                   {context_knowledge / context.cost:.0%} of context, \
                   {context_outdated / context_knowledge if context_knowledge else 0:.0%} outdated, \

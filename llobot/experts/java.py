@@ -28,12 +28,12 @@ def junit(*,
 ) -> Expert:
     editor = llobot.experts.coders.standard(relevance_scorer=relevance_scorer, **kwargs)
     def stuff(request: ExpertRequest) -> Context:
-        chunks = editor(request).chunks
-        tail_index = max((index + 1 for index, chunk in enumerate(chunks) if isinstance(chunk, ExampleChunk)), default=0)
+        context = editor(request)
+        tail_index = max((index + 1 for index, chunk in enumerate(context) if isinstance(chunk, ExampleChunk)), default=0)
         has_tests = lambda chunk: chunk.knowledge & llobot.knowledge.subsets.java.tests()
-        withheld = [chunk for chunk in chunks[:tail_index] if has_tests(chunk)]
-        filtered = [chunk for chunk in chunks[:tail_index] if not has_tests(chunk)]
-        return llobot.contexts.compose(*filtered, *withheld, *chunks[tail_index:])
+        withheld = [chunk for chunk in context[:tail_index] if has_tests(chunk)]
+        filtered = [chunk for chunk in context[:tail_index] if not has_tests(chunk)]
+        return llobot.contexts.compose(*filtered, *withheld, context[tail_index:])
     return llobot.experts.create(stuff)
 
 __all__ = [

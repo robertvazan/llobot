@@ -64,7 +64,7 @@ class Context:
 
     def pretty_structure(self) -> str:
         codes = []
-        for chunk in self.chunks:
+        for chunk in self:
             if chunk.knowledge:
                 codes.append('K')
             elif chunk.deletions:
@@ -169,7 +169,7 @@ class _CompositeContext(Context):
         return self._examples
 
 def compose(*contexts: Context) -> Context:
-    chunks = tuple(chunk for context in contexts for chunk in context.chunks)
+    chunks = tuple(chunk for context in contexts for chunk in context)
     if not chunks:
         return empty()
     if len(chunks) == 1:

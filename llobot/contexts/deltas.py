@@ -16,7 +16,7 @@ def common_prefix(left: Context | ChatBranch, right: Context | ChatBranch) -> Co
     prefix = []
     right = right.chat if isinstance(right, Context) else right
     offset = 0
-    for chunk in left.chunks:
+    for chunk in left:
         length = len(chunk.chat)
         if offset + length > len(right):
             break
@@ -28,11 +28,8 @@ def common_prefix(left: Context | ChatBranch, right: Context | ChatBranch) -> Co
     return llobot.contexts.compose(*prefix)
 
 def unique_suffix(left: Context, right: Context) -> tuple[Context, Context]:
-    prefix = common_prefix(left, right)
-    skip = len(prefix.chunks)
-    left_suffix = llobot.contexts.compose(*left.chunks[skip:])
-    right_suffix = llobot.contexts.compose(*right.chunks[skip:])
-    return left_suffix, right_suffix
+    skip = len(common_prefix(left, right))
+    return left[skip:], right[skip:]
 
 __all__ = [
     'common_prefix',
