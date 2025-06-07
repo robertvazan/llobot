@@ -7,15 +7,11 @@ from cachetools import LRUCache
 from llobot.chats import ChatBranch
 from llobot.knowledge import Knowledge
 from llobot.contexts import Context
-from llobot.contexts.examples import ExampleChunk
 from llobot.contexts.documents import DocumentChunk
-from llobot.contexts.deletions import DeletionChunk
 from llobot.formatters.knowledge import KnowledgeFormatter
 from llobot.formatters.deletions import DeletionFormatter
 from llobot.experts import Expert
 from llobot.experts.requests import ExpertRequest
-from llobot.experts.memory import ExpertMemory
-from llobot.experts.wrappers import ExpertWrapper
 import llobot.knowledge.subsets
 import llobot.knowledge.rankings
 import llobot.contexts
@@ -30,42 +26,6 @@ _logger = logging.getLogger(__name__)
 # Cached contexts could eventually grow up to 1MB each, but we have plenty of RAM,
 # so let's optimize for cache hit rate with large number of cached contexts.
 _cache = LRUCache(maxsize=128)
-
-def _reorder_fresh(cache: Context, fresh: Context) -> tuple[Context, Context]:
-    # Skip identical chunks.
-    reordered = list(cache & fresh)
-    # Reorder chunks whenever possible.
-    remainder = fresh[len(reordered):]
-    unused = {chunk.chat.monolithic() for chunk in remainder}
-    paths = Counter()
-    for chunk in remainder:
-        for path in chunk.knowledge.keys():
-            paths[path] += 1
-    # Reordering is practical only if all chunks are unique, which is an assumption that is nearly always true.
-    if len(unused) == len(remainder):
-        for chunk in cache[len(reordered):]:
-            # If the chunk is not in the fresh context, don't reorder it.
-            monolithic = chunk.chat.monolithic()
-            if monolithic not in unused:
-                break
-            for path in chunk.knowledge.keys():
-                paths[path] -= 1
-            if isinstance(chunk, ExampleChunk):
-                # Moving examples up in the context does no harm even if they contain outdated documents.
-                # This could cause a small amount of example reordering, but that's usually harmless.
-                pass
-            elif isinstance(chunk, DocumentChunk):
-                # Moving documents up in the context is only possible if there's no other chunk with the same document.
-                # This can happen with examples that contain outdated version of the document.
-                if any(paths[path] > 0 for path in chunk.knowledge.keys()):
-                    break
-            else:
-                # We cannot reorder unknown chunk types.
-                break
-            reordered.append(chunk)
-            unused.remove(monolithic)
-        remainder = llobot.contexts.compose(*[chunk for chunk in remainder if chunk.chat.monolithic() in unused])
-    return llobot.contexts.compose(*reordered), remainder
 
 @lru_cache
 def standard(*,
@@ -151,7 +111,8 @@ def standard(*,
                 # We could however reconsider bubble popping in the future as an optional extra to boost efficiency rather than as a primary compaction mechanism.
                 report += " (overflow)"
                 # We will at least try to reorder chunks to reuse as much of the cache as possible.
-                reordered, new = _reorder_fresh(cache, fresh)
+                reordered = llobot.contexts.deltas.shuffled_prefix(cache, fresh)
+                new = llobot.contexts.deltas.difference(reordered, fresh)
                 if reordered:
                     report += f"; {reordered.pretty_cost} reordered + {new.pretty_cost} new"
                 proposal = llobot.contexts.compose(reordered, new)
