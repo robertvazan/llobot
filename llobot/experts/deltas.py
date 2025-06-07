@@ -19,6 +19,7 @@ from llobot.experts.wrappers import ExpertWrapper
 import llobot.knowledge.subsets
 import llobot.knowledge.rankings
 import llobot.contexts
+import llobot.contexts.deltas
 import llobot.formatters.knowledge
 import llobot.formatters.deletions
 import llobot.experts.wrappers
@@ -32,17 +33,12 @@ _cache = LRUCache(maxsize=128)
 
 # Discard chunks with unrecoverable errors: modified examples and changes in unidentified chunks.
 def _discard_inconsistent(cache: Context, fresh: Context, request: ExpertRequest) -> Context:
-    # Preserve identical context prefix.
-    prefix = list(cache & fresh)
-    for chunk in cache[len(prefix):]:
-        if isinstance(chunk, ExampleChunk):
-            # Outdated example that has been deleted/replaced.
-            if any(example.metadata.time and not request.memory.has_example(request.scope, example.metadata.time) for example in chunk.examples):
-                break
-        elif not isinstance(chunk, (DocumentChunk, DeletionChunk)):
-            break
-        prefix.append(chunk)
-    return llobot.contexts.compose(*prefix)
+    identical = cache & fresh
+    consistent = cache[len(identical):]
+    consistent = llobot.contexts.deltas.take_while(consistent, lambda chunk: isinstance(chunk, (DocumentChunk, DeletionChunk, ExampleChunk)))
+    outdated_example = lambda example: example.metadata.time and not request.memory.has_example(request.scope, example.metadata.time)
+    consistent = llobot.contexts.deltas.take_until(consistent, lambda chunk: isinstance(chunk, ExampleChunk) and any(outdated_example(example) for example in chunk.examples))
+    return identical + consistent
 
 def _reorder_fresh(cache: Context, fresh: Context) -> tuple[Context, Context]:
     # Skip identical chunks.
