@@ -1,7 +1,7 @@
 from __future__ import annotations
 from functools import lru_cache
 from datetime import datetime
-from collections import OrderedDict
+from collections import OrderedDict, Counter
 import logging
 from llobot.chats import ChatBranch
 from llobot.knowledge import Knowledge
@@ -84,23 +84,29 @@ def _reorder_fresh(cache: Context, fresh: Context) -> tuple[Context, Context]:
     # Reorder chunks whenever possible.
     remainder = fresh.chunks[len(reordered):]
     unused = {chunk.chat.monolithic() for chunk in remainder}
+    paths = Counter()
+    for chunk in remainder:
+        for path in chunk.knowledge.keys():
+            paths[path] += 1
     # Reordering is practical only if all chunks are unique, which is an assumption that is nearly always true.
     if len(unused) == len(remainder):
         for chunk in cache.chunks[len(reordered):]:
             # If the chunk is not in the fresh context, don't reorder it.
-            monolithic = chunk.monolithic()
+            monolithic = chunk.chat.monolithic()
             if monolithic not in unused:
                 break
+            for path in chunk.knowledge.keys():
+                paths[path] -= 1
             if isinstance(chunk, ExampleChunk):
                 # Moving examples up in the context does no harm even if they contain outdated documents.
                 # This could cause a small amount of example reordering, but that's usually harmless.
                 pass
-            if isinstance(chunk, DocumentChunk):
+            elif isinstance(chunk, DocumentChunk):
                 # Moving documents up in the context is only possible if there's no other chunk with the same document.
                 # This can happen with examples that contain outdated version of the document.
-                if chunk.path in llobot.contexts.compose(*remainder).knowledge:
+                if any(paths[path] > 0 for path in chunk.knowledge.keys()):
                     break
-            elif not isinstance(chunk, ExampleChunk):
+            else:
                 # We cannot reorder unknown chunk types.
                 break
             reordered.append(chunk)

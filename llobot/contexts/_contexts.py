@@ -25,7 +25,7 @@ class Context:
 
     # Context hierarchy is flat. If this is a container, it returns children. If this is a child, it returns itself.
     @property
-    def chunks(self) -> Iterable[ContextChunk]:
+    def chunks(self) -> list[ContextChunk]:
         raise NotImplementedError
 
     @property
@@ -77,7 +77,7 @@ class Context:
 
 class ContextChunk(Context):
     @property
-    def chunks(self) -> Iterable[ContextChunk]:
+    def chunks(self) -> list[ContextChunk]:
         return [self]
 
 @cache
@@ -90,7 +90,7 @@ def empty() -> Context:
         def cost(self) -> int:
             return 0
         @property
-        def chunks(self) -> Iterable[ContextChunk]:
+        def chunks(self) -> list[ContextChunk]:
             return []
     return EmptyContext()
 
@@ -146,7 +146,7 @@ class _CompositeContext(Context):
         return self._cost
 
     @property
-    def chunks(self) -> Iterable[ContextChunk]:
+    def chunks(self) -> list[ContextChunk]:
         return self._chunks
 
     @property
