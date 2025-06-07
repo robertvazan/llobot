@@ -6,7 +6,13 @@ from llobot.contexts import Context, ContextChunk
 from llobot.contexts.examples import ExampleChunk
 from llobot.contexts.documents import DocumentChunk
 from llobot.contexts.deletions import DeletionChunk
+from llobot.formatters.knowledge import KnowledgeFormatter
+from llobot.formatters.deletions import DeletionFormatter
 import llobot.contexts
+import llobot.knowledge.subsets
+import llobot.knowledge.rankings
+import llobot.formatters.knowledge
+import llobot.formatters.deletions
 
 def common_prefix(left: Context | ChatBranch, right: Context | ChatBranch) -> Context:
     # If both are ChatBranch, delegate to ChatBranch's & operator
@@ -145,11 +151,26 @@ def difference(cache: Context, fresh: Context) -> Context:
             # Include all chunks that are not document, deletion, nor example.
             pass
         changes.append(chunk)
-        for path in chunk.deletions():
-            del knowledge[path]
+        for path in chunk.deletions:
+            knowledge.pop(path, None)
         for path, content in chunk.knowledge:
             knowledge[path] = content
     return llobot.contexts.compose(*changes)
+
+def sync(
+    context: Context,
+    knowledge: Knowledge,
+    *,
+    update_formatter: KnowledgeFormatter = llobot.formatters.knowledge.updates(),
+    deletion_formatter: DeletionFormatter = llobot.formatters.deletions.standard(),
+) -> Context:
+    context_knowledge = context.knowledge
+    deletions = context_knowledge.keys() - knowledge.keys()
+    updates = knowledge & llobot.knowledge.subsets.create(lambda path, content: path in context_knowledge and context_knowledge[path] != content)
+    return llobot.contexts.compose(
+        deletion_formatter(deletions),
+        update_formatter(updates, llobot.knowledge.rankings.lexicographical(updates))
+    )
 
 __all__ = [
     'common_prefix',
@@ -159,5 +180,6 @@ __all__ = [
     'compatible_prefix',
     'shuffled_prefix',
     'difference',
+    'sync',
 ]
 
