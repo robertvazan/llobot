@@ -33,12 +33,7 @@ _cache = LRUCache(maxsize=128)
 # Discard chunks with unrecoverable errors: modified examples and changes in unidentified chunks.
 def _discard_inconsistent(cache: Context, fresh: Context, request: ExpertRequest) -> Context:
     # Preserve identical context prefix.
-    prefix = []
-    for chunk, fresh_chunk in zip(cache.chunks, fresh.chunks):
-        # Force conversion to a list to compare only messages, not metadata.
-        if list(chunk.chat) != list(fresh_chunk.chat):
-            break
-        prefix.append(chunk)
+    prefix = (cache & fresh).chunks.copy()
     for chunk in cache.chunks[len(prefix):]:
         if isinstance(chunk, ExampleChunk):
             # Outdated example that has been deleted/replaced.
@@ -50,13 +45,8 @@ def _discard_inconsistent(cache: Context, fresh: Context, request: ExpertRequest
     return llobot.contexts.compose(*prefix)
 
 def _reorder_fresh(cache: Context, fresh: Context) -> tuple[Context, Context]:
-    reordered = []
     # Skip identical chunks.
-    for chunk, fresh_chunk in zip(cache.chunks, fresh.chunks):
-        # Force conversion to a list to compare only messages, not metadata.
-        if list(chunk.chat) != list(fresh_chunk.chat):
-            break
-        reordered.append(chunk)
+    reordered = (cache & fresh).chunks.copy()
     # Reorder chunks whenever possible.
     remainder = fresh.chunks[len(reordered):]
     unused = {chunk.chat.monolithic() for chunk in remainder}
