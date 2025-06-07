@@ -27,7 +27,15 @@ def common_prefix(left: Context | ChatBranch, right: Context | ChatBranch) -> Co
         offset += length
     return llobot.contexts.compose(*prefix)
 
+def unique_suffix(left: Context, right: Context) -> tuple[Context, Context]:
+    prefix = common_prefix(left, right)
+    skip = len(prefix.chunks)
+    left_suffix = llobot.contexts.compose(*left.chunks[skip:])
+    right_suffix = llobot.contexts.compose(*right.chunks[skip:])
+    return left_suffix, right_suffix
+
 __all__ = [
     'common_prefix',
+    'unique_suffix',
 ]
 
