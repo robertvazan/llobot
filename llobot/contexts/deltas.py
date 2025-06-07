@@ -14,16 +14,17 @@ def common_prefix(left: Context | ChatBranch, right: Context | ChatBranch) -> Co
 
     # Now left is Context and right is Context | ChatBranch
     prefix = []
-    remaining = right.chat if isinstance(right, Context) else right
+    right = right.chat if isinstance(right, Context) else right
+    offset = 0
     for chunk in left.chunks:
         length = len(chunk.chat)
-        if length > len(remaining):
+        if offset + length > len(right):
             break
         # Force conversion to list, so that we don't compare chat metadata.
-        if list(chunk.chat) != list(remaining[:length]):
+        if list(chunk.chat) != list(right[offset:offset+length]):
             break
         prefix.append(chunk)
-        remaining = remaining[length:]
+        offset += length
     return llobot.contexts.compose(*prefix)
 
 __all__ = [
