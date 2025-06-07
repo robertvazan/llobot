@@ -64,19 +64,7 @@ def standard(*,
                 lambda example: not example.metadata.time or request.memory.has_example(request.scope, example.metadata.time))
             if len(consistent) != len(cache):
                 report += f" -> {consistent.pretty_cost} consistent"
-            # Go over the fresh prompt and include new or modified chunks.
-            new_chunks = []
-            cache_chats = {chunk.chat.monolithic() for chunk in consistent}
-            consistent_knowledge = consistent.knowledge
-            for chunk in fresh:
-                if isinstance(chunk, DocumentChunk):
-                    # Include document chunks that are new or differ from knowledge in consistent context.
-                    if chunk.path not in consistent_knowledge or consistent_knowledge[chunk.path] != chunk.content:
-                        new_chunks.append(chunk)
-                elif chunk.chat.monolithic() not in cache_chats:
-                    # Include all non-document chunks that are not in the consistent context.
-                    new_chunks.append(chunk)
-            new = llobot.contexts.compose(*new_chunks)
+            new = llobot.contexts.deltas.difference(consistent, fresh)
             if new:
                 report += f" + {new.pretty_cost} new"
             delta = llobot.contexts.compose(consistent, new)
