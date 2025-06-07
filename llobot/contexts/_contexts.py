@@ -25,7 +25,7 @@ class Context:
 
     # Context hierarchy is flat. If this is a container, it returns children. If this is a child, it returns itself.
     @property
-    def chunks(self) -> list[ContextChunk]:
+    def chunks(self) -> tuple[ContextChunk, ...]:
         raise NotImplementedError
 
     @property
@@ -67,8 +67,8 @@ class Context:
 
 class ContextChunk(Context):
     @property
-    def chunks(self) -> list[ContextChunk]:
-        return [self]
+    def chunks(self) -> tuple[ContextChunk, ...]:
+        return (self,)
 
 @cache
 def empty() -> Context:
@@ -80,12 +80,12 @@ def empty() -> Context:
         def cost(self) -> int:
             return 0
         @property
-        def chunks(self) -> list[ContextChunk]:
-            return []
+        def chunks(self) -> tuple[ContextChunk, ...]:
+            return ()
     return EmptyContext()
 
 class _CompositeContext(Context):
-    _chunks: list[ContextChunk]
+    _chunks: tuple[ContextChunk, ...]
     _chat: ChatBranch
     _cost: int
     _knowledge: Knowledge
@@ -93,7 +93,7 @@ class _CompositeContext(Context):
     _deletions: KnowledgeIndex
     _examples: list[ChatBranch]
 
-    def __init__(self, chunks: list[ContextChunk]):
+    def __init__(self, chunks: tuple[ContextChunk, ...]):
         from llobot.contexts.documents import DocumentChunk
         from llobot.contexts.deletions import DeletionChunk
         from llobot.contexts.examples import ExampleChunk
@@ -138,7 +138,7 @@ class _CompositeContext(Context):
         return self._cost
 
     @property
-    def chunks(self) -> list[ContextChunk]:
+    def chunks(self) -> tuple[ContextChunk, ...]:
         return self._chunks
 
     @property
@@ -158,7 +158,7 @@ class _CompositeContext(Context):
         return self._examples
 
 def compose(*contexts: Context) -> Context:
-    chunks = [chunk for context in contexts for chunk in context.chunks]
+    chunks = tuple(chunk for context in contexts for chunk in context.chunks)
     if not chunks:
         return empty()
     if len(chunks) == 1:
