@@ -1,6 +1,7 @@
 from __future__ import annotations
 from collections import deque, Counter
 from llobot.chats import ChatBranch
+from llobot.knowledge import Knowledge
 from llobot.contexts import Context, ContextChunk
 from llobot.contexts.examples import ExampleChunk
 from llobot.contexts.documents import DocumentChunk
@@ -122,6 +123,34 @@ def shuffled_prefix(cache: Context, fresh: Context) -> Context:
     consistent = take_while(cache[len(identical):], acceptable)
     return identical + consistent
 
+# Find chunks in fresh context that are still necessary following cache context.
+def difference(cache: Context, fresh: Context) -> Context:
+    knowledge = dict(cache.knowledge)
+    examples = {example.monolithic() for example in cache.examples}
+    changes = []
+    for chunk in fresh:
+        if isinstance(chunk, DeletionChunk):
+            # Skip deletions of documents that do not exist anyway.
+            if chunk.path not in knowledge:
+                continue
+        elif isinstance(chunk, DocumentChunk):
+            # Skip documents that are already in prior knowledge.
+            if chunk.path in knowledge and knowledge[chunk.path] == chunk.content:
+                continue
+        elif isinstance(chunk, ExampleChunk):
+            # Skip examples that are already in the cache context.
+            if chunk.chat.monolithic() in examples:
+                continue
+        else:
+            # Include all chunks that are not document, deletion, nor example.
+            pass
+        changes.append(chunk)
+        for path in chunk.deletions():
+            del knowledge[path]
+        for path, content in chunk.knowledge:
+            knowledge[path] = content
+    return llobot.contexts.compose(*changes)
+
 __all__ = [
     'common_prefix',
     'take_while',
@@ -129,5 +158,6 @@ __all__ = [
     'check_examples',
     'compatible_prefix',
     'shuffled_prefix',
+    'difference',
 ]
 
