@@ -124,6 +124,8 @@ class _CompositeContext(Context):
                 knowledge_cost.pop(chunk.path, None)
             elif isinstance(chunk, ExampleChunk):
                 examples.append(chunk.chat)
+                knowledge |= dict(chunk.knowledge)
+                knowledge_cost |= dict(chunk.knowledge_cost)
             else:
                 knowledge |= dict(chunk.knowledge)
                 knowledge_cost |= dict(chunk.knowledge_cost)
