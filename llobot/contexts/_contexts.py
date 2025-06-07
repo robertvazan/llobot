@@ -48,18 +48,8 @@ class Context:
         return compose(self, other)
 
     def __and__(self, other: Context | ChatBranch) -> Context:
-        prefix = []
-        remaining = other.chat if isinstance(other, Context) else other
-        for chunk in self.chunks:
-            length = len(chunk.chat)
-            if length > len(remaining):
-                break
-            # Force conversion to list, so that we don't compare chat metadata.
-            if list(chunk.chat) != list(remaining[:length]):
-                break
-            prefix.append(chunk)
-            remaining = remaining[length:]
-        return compose(*prefix)
+        from llobot.contexts.deltas import common_prefix
+        return common_prefix(self, other)
 
     def pretty_structure(self) -> str:
         codes = []
