@@ -43,12 +43,17 @@ def standard(*,
         # Budget distribution priorities: instructions, retrievals, examples, knowledge.
         system = instructions(request)
         remaining_budget = request.budget - system.cost
+        # Stuff retrievals first, because they are the highest priority for the user.
         retrieval_budget = min(remaining_budget, int(retrieval_share * request.budget))
         retrievals = retrieval_expert(request.replace(budget=retrieval_budget, context=request.context+system))
         remaining_budget -= retrievals.cost
         example_budget = min(remaining_budget, int(example_share * request.budget))
-        examples = example_expert(request.replace(budget=example_budget, context=request.context+system+retrievals))
-        remaining_budget -= examples.cost
+        examples = example_expert(request.replace(budget=example_budget, context=request.context+system))
+        # Stuff retrievals again, this time with examples in the context to avoid document duplication.
+        remaining_budget = request.budget - system.cost - examples.cost
+        retrieval_budget = min(remaining_budget, int(retrieval_share * request.budget))
+        retrievals = retrieval_expert(request.replace(budget=retrieval_budget, context=request.context+system+examples))
+        remaining_budget -= retrievals.cost
         knowledge_budget = min(remaining_budget, int(knowledge_share * request.budget))
         knowledge = knowledge_expert(request.replace(budget=knowledge_budget, context=request.context+system+examples+retrievals))
         return system + knowledge + examples + retrievals
