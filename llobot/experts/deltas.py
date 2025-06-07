@@ -31,16 +31,6 @@ _logger = logging.getLogger(__name__)
 # so let's optimize for cache hit rate with large number of cached contexts.
 _cache = LRUCache(maxsize=128)
 
-# Discard chunks with unrecoverable errors: modified examples and changes in unidentified chunks.
-def _discard_inconsistent(cache: Context, fresh: Context, request: ExpertRequest) -> Context:
-    identical = cache & fresh
-    consistent = cache[len(identical):]
-    consistent = llobot.contexts.deltas.take_while(consistent,
-        lambda chunk: isinstance(chunk, (DocumentChunk, DeletionChunk, ExampleChunk)))
-    consistent = llobot.contexts.deltas.check_examples(consistent,
-        lambda example: not example.metadata.time or request.memory.has_example(request.scope, example.metadata.time))
-    return identical + consistent
-
 def _reorder_fresh(cache: Context, fresh: Context) -> tuple[Context, Context]:
     # Skip identical chunks.
     reordered = list(cache & fresh)
@@ -109,7 +99,9 @@ def standard(*,
         cache = prompt_cache1 if len(prompt_cache1) > len(prompt_cache2) else prompt_cache2
         if cache:
             report += f", {cache.pretty_cost} cached"
-            consistent = _discard_inconsistent(cache, fresh, request)
+            consistent = llobot.contexts.deltas.compatible_prefix(cache, fresh)
+            consistent = llobot.contexts.deltas.check_examples(consistent,
+                lambda example: not example.metadata.time or request.memory.has_example(request.scope, example.metadata.time))
             if len(consistent) != len(cache):
                 report += f" -> {consistent.pretty_cost} consistent"
             # Go over the fresh prompt and include new or modified chunks.

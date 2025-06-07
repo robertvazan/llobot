@@ -42,10 +42,17 @@ def take_until(context: Context, predicate: Callable[[ContextChunk], bool]) -> C
 def check_examples(context: Context, validation: Callable[[ChatBranch], bool]) -> Context:
     return take_until(context, lambda chunk: isinstance(chunk, ExampleChunk) and any(not validation(example) for example in chunk.examples))
 
+def compatible_prefix(cache: Context, fresh: Context) -> Context:
+    identical = cache & fresh
+    consistent = cache[len(identical):]
+    consistent = take_while(consistent, lambda chunk: isinstance(chunk, (DocumentChunk, DeletionChunk, ExampleChunk)))
+    return identical + consistent
+
 __all__ = [
     'common_prefix',
     'take_while',
     'take_until',
     'check_examples',
+    'compatible_prefix',
 ]
 
