@@ -73,6 +73,41 @@ def _discard_inconsistent(cache: Context, fresh: Context, request: ExpertRequest
         prefix.append(chunk)
     return llobot.contexts.compose(*prefix)
 
+def _reorder_fresh(cache: Context, fresh: Context) -> tuple[Context, Context]:
+    reordered = []
+    # Skip identical chunks.
+    for chunk, fresh_chunk in zip(cache.chunks, fresh.chunks):
+        # Force conversion to a list to compare only messages, not metadata.
+        if list(chunk.chat) != list(fresh_chunk.chat):
+            break
+        reordered.append(chunk)
+    # Reorder chunks whenever possible.
+    remainder = fresh.chunks[len(reordered):]
+    unused = {chunk.chat.monolithic() for chunk in remainder}
+    # Reordering is practical only if all chunks are unique, which is an assumption that is nearly always true.
+    if len(unused) == len(remainder):
+        for chunk in cache.chunks[len(reordered):]:
+            # If the chunk is not in the fresh context, don't reorder it.
+            monolithic = chunk.monolithic()
+            if monolithic not in unused:
+                break
+            if isinstance(chunk, ExampleChunk):
+                # Moving examples up in the context does no harm even if they contain outdated documents.
+                # This could cause a small amount of example reordering, but that's usually harmless.
+                pass
+            if isinstance(chunk, DocumentChunk):
+                # Moving documents up in the context is only possible if there's no other chunk with the same document.
+                # This can happen with examples that contain outdated version of the document.
+                if chunk.path in llobot.contexts.compose(*remainder).knowledge:
+                    break
+            elif not isinstance(chunk, ExampleChunk):
+                # We cannot reorder unknown chunk types.
+                break
+            reordered.append(chunk)
+            unused.remove(monolithic)
+        remainder = [chunk for chunk in remainder if chunk.monolithic() in unused]
+    return llobot.contexts.compose(*reordered), llobot.contexts.compose(*remainder)
+
 @lru_cache
 def standard(*,
     update_trimmer: Trimmer = llobot.trimmers.eager(),
@@ -139,24 +174,28 @@ def standard(*,
                 report += f" + {modified.pretty_cost} modified"
             proposal = llobot.contexts.compose(delta, modified)
             report += f" = {proposal.pretty_cost} incremental"
+            # We want to discard the proposal not only when it is over budget, but also when it grows too big relative to fresh context,
+            # because we don't want disproportionately large change buffer when the underlying expert does not need the whole context window.
+            if proposal.cost > request.budget or fresh.cost < fresh_share * proposal.cost:
+                # If the incremental context does not fit, rewrite the whole context from scratch using the fresh context.
+                # We could opt to rewrite only some suffix of the context that contains most "bubbles" of outdated content, but that has several issues:
+                #
+                # - Document updates cannot be considered bubbles unless the original document is a bubble too, which complicates calculation of optimal suffix.
+                # - Suffix choice policies are either suboptimal (shortest, longest) or they could choose suffix that is too short (shortest, highest bubble share).
+                # - If the suffix is too short, we could loop to remove more suffixes, but that can introduce costly quadratic loops.
+                # - And even if all these problems are addressed, there's the problem of context documents reaching wide range of ages over time.
+                #
+                # Just rewriting the whole context is simple, compute-efficient, ensures consistent maximum document age, and it's predictable.
+                # Its only problem is that it suffers from occasional full context refresh, but that's always a problem and there are incremental solutions to that.
+                # We could however reconsider bubble popping in the future as an optional extra to boost efficiency rather than as a primary compaction mechanism.
+                report += " (overflow)"
+                # We will at least try to reorder chunks to reuse as much of the cache as possible.
+                reordered, new = _reorder_fresh(cache, fresh)
+                if reordered:
+                    report += f"; {reordered.pretty_cost} reordered + {new.pretty_cost} new"
+                proposal = llobot.contexts.compose(reordered, new)
         else:
             report += " (no cache)"
-            proposal = fresh
-        # We want to discard the proposal not only when it is over budget, but also when it grows too big relative to fresh context,
-        # because we don't want disproportionately large change buffer when the underlying expert does not need the whole context window.
-        if proposal.cost > request.budget or fresh.cost < fresh_share * proposal.cost:
-            # If the incremental context does not fit, rewrite the whole context from scratch using the fresh context.
-            # We could opt to rewrite only some suffix of the context that contains most "bubbles" of outdated content, but that has several issues:
-            #
-            # - Document updates cannot be considered bubbles unless the original document is a bubble too, which complicates calculation of optimal suffix.
-            # - Suffix choice policies are either suboptimal (shortest, longest) or they could choose suffix that is too short (shortest, highest bubble share).
-            # - If the suffix is too short, we could loop to remove more suffixes, but that can introduce costly quadratic loops.
-            # - And even if all these problems are addressed, there's the problem of context documents reaching wide range of ages over time.
-            #
-            # Just rewriting the whole context is simple, compute-efficient, ensures consistent maximum document age, and it's predictable.
-            # Its only problem is that it suffers from occasional full context refresh, but that's always a problem and there are incremental solutions to that.
-            # We could however reconsider bubble popping in the future as an optional extra to boost efficiency rather than as a primary compaction mechanism.
-            report += " (overflow)"
             proposal = fresh
         report += f" @ {zone} ({proposal.pretty_structure()})"
         if (cache, proposal) != (cache1, cache2):
