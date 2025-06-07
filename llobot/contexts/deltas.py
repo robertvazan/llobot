@@ -1,5 +1,5 @@
 from __future__ import annotations
-from collections import deque
+from collections import deque, Counter
 from llobot.chats import ChatBranch
 from llobot.contexts import Context, ContextChunk
 from llobot.contexts.examples import ExampleChunk
@@ -45,6 +45,8 @@ def take_until(context: Context, predicate: Callable[[ContextChunk], bool]) -> C
 def check_examples(context: Context, validation: Callable[[ChatBranch], bool]) -> Context:
     return take_until(context, lambda chunk: any(not validation(example) for example in chunk.examples))
 
+# Find the longest prefix that does not contain incompatible chunks:
+# unrecognized non-identical chunks or reordered examples.
 def compatible_prefix(cache: Context, fresh: Context) -> Context:
     identical = cache & fresh
     fresh_examples = deque(chunk.chat for chunk in fresh if isinstance(chunk, ExampleChunk))
@@ -79,11 +81,53 @@ def compatible_prefix(cache: Context, fresh: Context) -> Context:
     consistent = take_while(cache[len(identical):], acceptable)
     return identical + consistent
 
+# Find the longest prefix that can be constructed by safely reordering fresh context chunks.
+# Same as above but no deletions are allowed and documents must be moved carefully,
+# so that update/deletion chunks don't have to be appended to fix issues created by moves.
+def shuffled_prefix(cache: Context, fresh: Context) -> Context:
+    identical = cache & fresh
+    fresh_examples = deque(chunk.chat for chunk in fresh if isinstance(chunk, ExampleChunk))
+    fresh_documents = {chunk.chat.monolithic() for chunk in fresh if isinstance(chunk, DocumentChunk)}
+    paths = Counter()
+    for chunk in fresh[len(identical):]:
+        for path in chunk.knowledge.keys():
+            paths[path] += 1
+    def acceptable(chunk: ContextChunk) -> bool:
+        for path in chunk.knowledge.keys():
+            paths[path] -= 1
+        if isinstance(chunk, DocumentChunk):
+            # Documents are only allowed if they are present in the fresh context.
+            if chunk.chat.monolithic() not in fresh_documents:
+                return False
+            # Moving documents up in the context is only possible if there's no other chunk with the same document.
+            # This can happen with examples that contain outdated version of the document.
+            if any(paths[path] > 0 for path in chunk.knowledge.keys()):
+                return False
+            return True
+        # Code for examples is the same as in compatible_prefix().
+        if not isinstance(chunk, ExampleChunk):
+            return False
+        if not fresh_examples:
+            return True
+        cache_timestamp = chunk.chat.metadata.time
+        fresh_timestamp = fresh_examples[0].metadata.time
+        if not cache_timestamp or not fresh_timestamp:
+            return True
+        if list(chunk.chat) == list(fresh_examples[0]):
+            fresh_examples.popleft()
+            return True
+        if cache_timestamp < fresh_timestamp:
+            return True
+        return False
+    consistent = take_while(cache[len(identical):], acceptable)
+    return identical + consistent
+
 __all__ = [
     'common_prefix',
     'take_while',
     'take_until',
     'check_examples',
     'compatible_prefix',
+    'shuffled_prefix',
 ]
 
