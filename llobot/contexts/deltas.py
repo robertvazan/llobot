@@ -1,6 +1,6 @@
 from __future__ import annotations
 from llobot.chats import ChatBranch
-from llobot.contexts import Context
+from llobot.contexts import Context, ContextChunk
 import llobot.contexts
 
 def common_prefix(left: Context | ChatBranch, right: Context | ChatBranch) -> Context:
@@ -27,7 +27,20 @@ def common_prefix(left: Context | ChatBranch, right: Context | ChatBranch) -> Co
         offset += length
     return llobot.contexts.compose(*prefix)
 
+def take_while(context: Context, predicate: Callable[[ContextChunk], bool]) -> Context:
+    prefix = []
+    for chunk in context:
+        if not predicate(chunk):
+            break
+        prefix.append(chunk)
+    return llobot.contexts.compose(*prefix)
+
+def take_until(context: Context, predicate: Callable[[ContextChunk], bool]) -> Context:
+    return take_while(context, lambda chunk: not predicate(chunk))
+
 __all__ = [
     'common_prefix',
+    'take_while',
+    'take_until',
 ]
 
