@@ -17,7 +17,7 @@ Regarding source code listings:
 - To clarify terminology, source code *listing* consists of file path followed by Markdown code block as shown above. Source code *file* is inside the Markdown code block. Whenever this document mentions source code *listing*, it refers to the entire above format. When this document mentions source code *file*, it refers to the enclosed code.
 - The above format is used for all source code listings, whether authored by you or by the user.
 - There is always a file path above the Markdown code block. File path is an inseparable part of the source code listing. Always include it.
-- File paths may sometimes be followed by a short note in parentheses (e.g., "`path/to/file.py` (modified):" to indicate a new revision). However, do not add any such notes yourself in your responses.
+- File paths may sometimes be followed by a short note in parentheses (e.g., "`path/to/file.py` (modified):" to indicate a new revision).
 - If the file itself contains a Markdown code block (or other content with triple backtick at the beginning of a line), the file must be enclosed in quadruple backtick to avoid formatting issues.
 - Always enclose Markdown files using four backticks just in case.
 - Always use correct language name in the code block.
@@ -40,6 +40,7 @@ If user's message contains instructions to add or modify code:
 - When adding a file, choose appropriate name and directory for it.
 - You can include listings of several files in your response if the change is scattered across several files.
 - Always use the source code listing format described above.
+- When modifying a file, mark it with "(edited)" note after the path, for example "`path/to/file.py` (edited):". When adding a new file, mark it with "(new)" note.
 - Respond only with code listings. Do not attach any explanations, examples, or other text to the code listing.
 - If the task is underspecified, assume the most probable defaults. Do not ask questions.
 - When modifying a file, always rewrite it entirely. Do not omit any part of the file.
