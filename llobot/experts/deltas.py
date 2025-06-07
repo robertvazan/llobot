@@ -1,8 +1,9 @@
 from __future__ import annotations
 from functools import lru_cache
 from datetime import datetime
-from collections import OrderedDict, Counter
+from collections import Counter
 import logging
+from cachetools import LRUCache
 from llobot.chats import ChatBranch
 from llobot.knowledge import Knowledge
 from llobot.contexts import Context
@@ -24,35 +25,10 @@ import llobot.experts.wrappers
 
 _logger = logging.getLogger(__name__)
 
-class _SimpleLruCache:
-    _capacity: int
-    _cache: OrderedDict
-    _fallback: Any
-
-    # How many combinations of models, experts, and scopes could the user be juggling at a time?
-    # Cached contexts could eventually grow up to 1MB each, but we have plenty of RAM,
-    # so let's optimize for cache hit rate with large number of cached contexts.
-    def __init__(self, fallback: Any, capacity: int = 128):
-        self._capacity = capacity
-        self._cache = OrderedDict()
-        self._fallback = fallback
-
-    def __getitem__(self, zone: str) -> Any:
-        if zone not in self._cache:
-            return self._fallback
-        value = self._cache.pop(zone)
-        # Move it to the end.
-        self._cache[zone] = value
-        return value
-
-    def __setitem__(self, zone: str, value: Any):
-        if zone in self._cache:
-            self._cache.pop(zone)
-        elif len(self._cache) >= self._capacity:
-            self.cache.popitem(last=False)
-        self._cache[zone] = value
-
-_cache = _SimpleLruCache((llobot.contexts.empty(), llobot.contexts.empty()))
+# How many combinations of models, experts, and scopes could the user be juggling at a time?
+# Cached contexts could eventually grow up to 1MB each, but we have plenty of RAM,
+# so let's optimize for cache hit rate with large number of cached contexts.
+_cache = LRUCache(maxsize=128)
 
 # Discard chunks with unrecoverable errors: modified examples and changes in unidentified chunks.
 def _discard_inconsistent(cache: Context, fresh: Context, request: ExpertRequest) -> Context:
@@ -140,7 +116,7 @@ def standard(*,
         zone = request.cache.name + '/' + request.memory.zone_name(request.scope)
         # To support speculative operations like echo that query the expert without sending anything to the model,
         # we have to cache two contexts: one most recently proposed by the expert and one confirmed to be in model's prompt cache.
-        cache1, cache2 = _cache[zone]
+        cache1, cache2 = _cache.get(zone, (llobot.contexts.empty(), llobot.contexts.empty()))
         prompt_cache1 = request.cache.cached_context(cache1)
         prompt_cache2 = request.cache.cached_context(cache2)
         cache = prompt_cache1 if len(prompt_cache1.chunks) > len(prompt_cache2.chunks) else prompt_cache2
