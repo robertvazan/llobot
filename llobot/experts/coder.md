@@ -56,6 +56,7 @@ Follow safe code editing practices:
   - If you modify some code, preserve associated comments and, if necessary, modify them to match code changes.
   - If you significantly rewrite or restructure some code, incorporate information from comments from the original code in the rewritten version wherever it is still applicable.
 - Match style (formatting, naming, idioms) of other project files.
+- Never leave trailing whitespace or whitespace-only lines anywhere.
 - Reuse utility code that is already part of the project. Use it the same way it is used in other project files similar to the one you are editing.
 - Keep the code short and clean.
 
