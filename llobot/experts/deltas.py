@@ -7,13 +7,10 @@ from cachetools import LRUCache
 from llobot.chats import ChatBranch
 from llobot.knowledge import Knowledge
 from llobot.contexts import Context
-from llobot.contexts.documents import DocumentChunk
 from llobot.formatters.knowledge import KnowledgeFormatter
 from llobot.formatters.deletions import DeletionFormatter
 from llobot.experts import Expert
 from llobot.experts.requests import ExpertRequest
-import llobot.knowledge.subsets
-import llobot.knowledge.rankings
 import llobot.contexts
 import llobot.contexts.deltas
 import llobot.formatters.knowledge
@@ -67,21 +64,16 @@ def standard(*,
             new = llobot.contexts.deltas.difference(consistent, fresh)
             if new:
                 report += f" + {new.pretty_cost} new"
-            delta = llobot.contexts.compose(consistent, new)
-            # Delta context can still contain outdated documents, because:
+            presync = llobot.contexts.compose(consistent, new)
+            # Pre-sync context can still contain outdated documents, because:
             # - Cached context may include outdated documents that are absent from fresh context.
             # - Model responses in examples may contain outdated documents that have been modified since.
-            # We will therefore compare delta context with fresh knowledge and inform the model about deletions and updates.
+            # We will therefore sync the pre-sync context with fresh knowledge.
             fresh_knowledge = request.scope.project.knowledge(request.cutoff).transform(update_trimmer.trim_fully) if request.scope else Knowledge()
-            delta_knowledge = delta.knowledge
-            deletions = delta_knowledge.keys() - fresh_knowledge.keys()
-            updates = fresh_knowledge & llobot.knowledge.subsets.create(lambda path, content: path in delta_knowledge and delta_knowledge[path] != content)
-            modified = llobot.contexts.compose(
-                deletion_formatter(deletions),
-                update_formatter(updates, llobot.knowledge.rankings.lexicographical(updates)))
-            if modified:
-                report += f" + {modified.pretty_cost} modified"
-            proposal = llobot.contexts.compose(delta, modified)
+            sync = llobot.contexts.deltas.sync(presync, fresh_knowledge, update_formatter=update_formatter, deletion_formatter=deletion_formatter)
+            if sync:
+                report += f" + {sync.pretty_cost} sync"
+            proposal = llobot.contexts.compose(presync, sync)
             report += f" = {proposal.pretty_cost} incremental"
             # We want to discard the proposal not only when it is over budget, but also when it grows too big relative to fresh context,
             # because we don't want disproportionately large change buffer when the underlying expert does not need the whole context window.

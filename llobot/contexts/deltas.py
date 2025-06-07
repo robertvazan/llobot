@@ -129,7 +129,7 @@ def shuffled_prefix(cache: Context, fresh: Context) -> Context:
     consistent = take_while(cache[len(identical):], acceptable)
     return identical + consistent
 
-# Find chunks in fresh context that are still necessary following cache context.
+# Find chunks in the fresh context that are still necessary when the fresh context is preceded by the cache context.
 def difference(cache: Context, fresh: Context) -> Context:
     knowledge = dict(cache.knowledge)
     examples = {example.monolithic() for example in cache.examples}
@@ -157,6 +157,7 @@ def difference(cache: Context, fresh: Context) -> Context:
             knowledge[path] = content
     return llobot.contexts.compose(*changes)
 
+# Handle outdated knowledge in the context. Sync it with given fresh knowledge.
 def sync(
     context: Context,
     knowledge: Knowledge,
