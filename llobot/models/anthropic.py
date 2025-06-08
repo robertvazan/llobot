@@ -73,9 +73,11 @@ class _AnthropicStream(ModelStream):
                 yield chunk
             usage = stream.get_final_message().usage
             self._stats = ModelStats(
+                # Annoyingly, Claude API does not include cache writes and reads in the total number of input tokens, so we sum it here.
                 prompt_tokens = usage.input_tokens + (usage.cache_creation_input_tokens or 0) + (usage.cache_read_input_tokens or 0),
                 response_tokens = usage.output_tokens,
-                cached_tokens = usage.cache_read_input_tokens,
+                # If caching is enabled and there were no cache reads, we want to record zero to indicate cache miss.
+                cached_tokens = (usage.cache_read_input_tokens or 0) if cached else usage.cache_read_input_tokens,
                 total_chars = self._length,
             )
 

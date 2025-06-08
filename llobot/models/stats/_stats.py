@@ -16,14 +16,23 @@ class ModelStats(Mapping):
     def __getitem__(self, key: str) -> Any:
         return self._data[key]
 
+    # Prompt token count covers the whole submitted prompt
+    # regardless of how much of the prompt was processed or just retrieved from cache.
+    # Prompt tokens would ideally exclude the invisible system prompt inserted by the cloud,
+    # but we usually have no way to subtract it from the total prompt tokens, so it's counted in.
     @property
     def prompt_tokens(self) -> int | None:
         return self._data.get('prompt-tokens', None)
 
+    # Repsonse tokens cover only the visible part of the prompt.
+    # Since thinking is usually hidden in current models, it is not included here.
     @property
     def response_tokens(self) -> int | None:
         return self._data.get('response-tokens', None)
 
+    # This covers all visible tokens in prompt and response.
+    # All prompt tokens are included in the total, whether they are cached or not.
+    # Since thinking tokens are hidden in most current models, they are not counted into the total.
     @property
     def total_tokens(self) -> int | None:
         if 'total-tokens' in self._data:
@@ -32,9 +41,16 @@ class ModelStats(Mapping):
             return self.prompt_tokens + self.response_tokens
         return None
 
+    # Part of the prompt that was successfully retrieved from the cache.
+    # This may be zero if caching is enabled but it was a cache miss.
     @property
     def cached_tokens(self) -> int | None:
         return self._data.get('cached-tokens', None)
+
+    # Number of thinking tokens that were spent before the response was generated.
+    @property
+    def thinking_tokens(self) -> int | None:
+        return self._data.get('thinking-tokens', None)
 
     @property
     def total_chars(self) -> int | None:

@@ -55,6 +55,7 @@ class _GeminiStream(ModelStream):
                 prompt_tokens = usage.prompt_token_count,
                 response_tokens = usage.candidates_token_count,
                 cached_tokens = usage.cached_content_token_count or 0,
+                thinking_tokens = usage.thoughts_token_count,
                 total_chars = self._length,
             )
 
