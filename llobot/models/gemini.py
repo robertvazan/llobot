@@ -10,6 +10,8 @@ import llobot.models.openai
 import llobot.models.estimators
 
 class _GeminiStream(ModelStream):
+    _length: int
+    _stats: ModelStats
     _iterator: Iterator[str]
 
     def __init__(self,
@@ -18,6 +20,8 @@ class _GeminiStream(ModelStream):
         prompt: ChatBranch,
     ):
         super().__init__()
+        self._length = prompt.cost
+        self._stats = ModelStats()
         self._iterator = iter(self._iterate(client, model, prompt))
 
     def _iterate(self,
@@ -35,15 +39,26 @@ class _GeminiStream(ModelStream):
             model=model,
             contents=contents
         )
+        last_chunk = None
         for chunk in stream:
             if chunk.text:
+                self._length += len(chunk.text)
                 yield chunk.text
+            last_chunk = chunk
+        if last_chunk:
+            usage = last_chunk.usage_metadata
+            self._stats = ModelStats(
+                prompt_tokens = usage.prompt_token_count,
+                response_tokens = usage.candidates_token_count,
+                cached_tokens = usage.cached_content_token_count or 0,
+                total_chars = self._length,
+            )
 
     def _receive(self) -> str | ModelStats:
         try:
             return next(self._iterator)
         except StopIteration:
-            return ModelStats()
+            return self._stats
 
 class _GeminiModel(Model):
     _client: genai.Client
