@@ -5,9 +5,13 @@ from llobot.chats import ChatRole, ChatBranch
 from llobot.models import Model
 from llobot.models.streams import ModelStream
 from llobot.models.stats import ModelStats
+from llobot.models.caches import PromptCache, PromptStorage
 from llobot.models.estimators import TokenLengthEstimator
 import llobot.models.openai
 import llobot.models.estimators
+import llobot.models.caches
+import llobot.models.caches.lru
+import llobot.models.streams
 
 class _GeminiStream(ModelStream):
     _length: int
@@ -66,12 +70,14 @@ class _GeminiModel(Model):
     _aliases: list[str]
     _context_size: int
     _estimator: TokenLengthEstimator
+    _cache: PromptStorage
 
     def __init__(self, name: str, context_size: int, *,
         client: genai.Client | None = None,
         auth: str | None = None,
         aliases: Iterable[str] = [],
         estimator: TokenLengthEstimator = llobot.models.estimators.standard(),
+        cache: PromptStorage = llobot.models.caches.lru.create('gemini', timeout=5*60),
     ):
         if client:
             self._client = client
@@ -84,6 +90,7 @@ class _GeminiModel(Model):
         self._aliases = list(aliases)
         self._context_size = context_size
         self._estimator = estimator
+        self._cache = cache
 
     @property
     def name(self) -> str:
@@ -112,6 +119,7 @@ class _GeminiModel(Model):
             client=self._client,
             aliases=self._aliases,
             estimator=self._estimator,
+            cache=self._cache,
         )
 
     @property
@@ -122,12 +130,19 @@ class _GeminiModel(Model):
     def estimator(self) -> TokenLengthEstimator:
         return self._estimator
 
+    @property
+    def cache(self) -> PromptCache:
+        return self._cache[self._name]
+
     def _connect(self, prompt: ChatBranch) -> ModelStream:
-        return _GeminiStream(
+        self.cache.trim(prompt)
+        result = _GeminiStream(
             self._client,
             self._name,
             prompt,
         )
+        result |= llobot.models.streams.notify(lambda stream: self.cache.write(llobot.models.streams.chat(prompt, stream)))
+        return result
 
 def create(name: str, context_size: int, **kwargs) -> Model:
     return _GeminiModel(name, context_size, **kwargs)
