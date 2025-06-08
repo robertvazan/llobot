@@ -210,7 +210,7 @@ class _StandardExpertRequest:
                 - Knowledge: {len(context.knowledge):,} documents, {context.knowledge.cost / 1024:,.0f} KB, \
                   {context_knowledge / context.cost:.0%} of context, \
                   {context_outdated / context_knowledge if context_knowledge else 0:.0%} outdated, \
-                  {1 - context.knowledge.cost / context.knowledge_cost.total() if context_knowledge else 0:.0%} formatting overhead
+                  {1 - context.knowledge.cost / context.knowledge_cost.total() if context.knowledge_cost else 0:.0%} formatting overhead
                 - Examples: {len(context.examples):,} examples, {context_examples_cost / 1024:,.0f} KB, \
                   {context_examples_cost / context.cost:.0%} of context
                 - Structure: {context.pretty_structure()}
@@ -227,17 +227,17 @@ class _StandardExpertRequest:
         info += dedent('''
             Header help:
 
-            - Structure: `~scope:cutoff/command@model?k1=v1&k2=v2`
+            - Structure: `~scope:cutoff@model?k1=v1&k2=v2!command`
             - All parts of the header are optional. Defaults will be substituted automatically.
             - Header may be placed at the top or bottom of the prompt (the first message).
             - Command may be specified separately at the top of a later message.
 
             Command help:
 
-            - `/hi`: Warm up the model.
-            - `/ok`: Save this chat as an example.
-            - `/echo`: Output the assembled prompt instead of sending it to the model.
-            - `/info`: Show this message.
+            - `!hi`: Warm up the model.
+            - `!ok`: Save this chat as an example.
+            - `!echo`: Output the assembled prompt instead of sending it to the model.
+            - `!info`: Show this message.
             - If no command is given, the prompt is submitted to the model.
         ''')
         info += '\nModels:\n\n' + '\n'.join([f'- {self.format_model(model)}' for model in self.owner.alternatives]) + '\n'
@@ -301,9 +301,9 @@ class _StandardExpertModel(Model):
     def estimator(self) -> TokenLengthEstimator:
         return llobot.models.estimators.optimistic()
 
-    HEADER_RE = re.compile(r'(?:~([a-zA-Z0-9_-]+))?(?::([0-9-]+))?(?:/([a-z]+))?(?:@([a-zA-Z0-9:/_-]+))?(?:\?(\S+))?')
+    HEADER_RE = re.compile(r'(?:~([a-zA-Z0-9_/.-]+))?(?::([0-9-]+))?(?:@([a-zA-Z0-9:/._-]+))?(?:\?(\S+))?(?:!([a-z]+))?')
     CUTOFF_RE = re.compile(r'`:([0-9-]+)`')
-    COMMAND_RE = re.compile(r'/([a-z]+)')
+    COMMAND_RE = re.compile(r'!([a-z]+)')
 
     def decode_scope(self, name: str) -> Scope:
         for project in self.projects:
@@ -335,9 +335,9 @@ class _StandardExpertModel(Model):
             return None
         scope = self.decode_scope(m[1]) if m[1] else None
         cutoff = llobot.time.parse(m[2]) if m[2] else None
-        command = self.decode_command(m[3]) if m[3] else None
-        model = self.alternatives[m[4]] if m[4] else self.backend
-        options = self.decode_options(m[5]) if m[5] else None
+        model = self.alternatives[m[3]] if m[3] else self.backend
+        options = self.decode_options(m[4]) if m[4] else None
+        command = self.decode_command(m[5]) if m[5] else None
         return [scope, cutoff, command, model, options]
 
     def decode_message_header(self, message: str) -> tuple[Scope | None, datetime | None, _StandardExpertCommand | None, Model, dict | None]:
