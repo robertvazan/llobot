@@ -5,7 +5,9 @@ from llobot.chats import ChatRole, ChatBranch
 from llobot.models import Model
 from llobot.models.streams import ModelStream
 from llobot.models.stats import ModelStats
+from llobot.models.estimators import TokenLengthEstimator
 import llobot.models.openai
+import llobot.models.estimators
 
 class _GeminiStream(ModelStream):
     _iterator: Iterator[str]
@@ -48,11 +50,13 @@ class _GeminiModel(Model):
     _name: str
     _aliases: list[str]
     _context_size: int
+    _estimator: TokenLengthEstimator
 
     def __init__(self, name: str, context_size: int, *,
         client: genai.Client | None = None,
         auth: str | None = None,
         aliases: Iterable[str] = [],
+        estimator: TokenLengthEstimator = llobot.models.estimators.standard(),
     ):
         if client:
             self._client = client
@@ -64,6 +68,7 @@ class _GeminiModel(Model):
         self._name = name
         self._aliases = list(aliases)
         self._context_size = context_size
+        self._estimator = estimator
 
     @property
     def name(self) -> str:
@@ -91,11 +96,16 @@ class _GeminiModel(Model):
             int(options.get('context_size', self._context_size)),
             client=self._client,
             aliases=self._aliases,
+            estimator=self._estimator,
         )
 
     @property
     def context_size(self) -> int:
         return self._context_size
+
+    @property
+    def estimator(self) -> TokenLengthEstimator:
+        return self._estimator
 
     def _connect(self, prompt: ChatBranch) -> ModelStream:
         return _GeminiStream(
