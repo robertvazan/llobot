@@ -22,16 +22,18 @@ class _GeminiStream(ModelStream):
         client: genai.Client,
         model: str,
         prompt: ChatBranch,
+        thinking: int | None = None,
     ):
         super().__init__()
         self._length = prompt.cost
         self._stats = ModelStats()
-        self._iterator = iter(self._iterate(client, model, prompt))
+        self._iterator = iter(self._iterate(client, model, prompt, thinking))
 
     def _iterate(self,
         client: genai.Client,
         model: str,
         prompt: ChatBranch,
+        thinking: int | None = None,
     ) -> Iterable[str]:
         contents = []
         for message in prompt:
@@ -39,9 +41,15 @@ class _GeminiStream(ModelStream):
                 contents.append(types.UserContent(parts=[types.Part(text=message.content)]))
             else:
                 contents.append(types.ModelContent(parts=[types.Part(text=message.content)]))
+        config = None
+        if thinking is not None:
+            config = types.GenerateContentConfig(
+                thinking_config=types.ThinkingConfig(thinking_budget=thinking)
+            )
         stream = client.models.generate_content_stream(
             model=model,
-            contents=contents
+            contents=contents,
+            config=config
         )
         last_chunk = None
         for chunk in stream:
@@ -54,8 +62,10 @@ class _GeminiStream(ModelStream):
             self._stats = ModelStats(
                 prompt_tokens = usage.prompt_token_count,
                 response_tokens = usage.candidates_token_count,
+                # Implicit caching is always enabled, so signal cache miss by reporting zero cached tokens if there were no cache reads.
                 cached_tokens = usage.cached_content_token_count or 0,
-                thinking_tokens = usage.thoughts_token_count,
+                # Report zero thinking tokens when thinking is enabled and no thinking was done by the model.
+                thinking_tokens = usage.thoughts_token_count or 0 if thinking is None or thinking > 0 else usage.thoughts_token_count,
                 total_chars = self._length,
             )
 
@@ -70,6 +80,7 @@ class _GeminiModel(Model):
     _name: str
     _aliases: list[str]
     _context_size: int
+    _thinking: int | None
     _estimator: TokenLengthEstimator
     _cache: PromptStorage
 
@@ -77,6 +88,7 @@ class _GeminiModel(Model):
         client: genai.Client | None = None,
         auth: str | None = None,
         aliases: Iterable[str] = [],
+        thinking: int | None = None,
         estimator: TokenLengthEstimator = llobot.models.estimators.standard(),
         cache: PromptStorage = llobot.models.caches.lru.create('gemini', timeout=5*60),
     ):
@@ -90,6 +102,7 @@ class _GeminiModel(Model):
         self._name = name
         self._aliases = list(aliases)
         self._context_size = context_size
+        self._thinking = thinking
         self._estimator = estimator
         self._cache = cache
 
@@ -104,21 +117,26 @@ class _GeminiModel(Model):
 
     @property
     def options(self) -> dict:
-        return {
+        options = {
             'context_size': self._context_size,
         }
+        if self._thinking is not None:
+            options['thinking'] = self._thinking
+        return options
 
     def validate_options(self, options: dict):
-        allowed = {'context_size'}
+        allowed = {'context_size', 'thinking'}
         for unrecognized in set(options) - allowed:
             raise ValueError(f"Unrecognized option: {unrecognized}")
 
     def configure(self, options: dict) -> Model:
+        thinking = options.get('thinking', self._thinking)
         return _GeminiModel(
             self._name,
             int(options.get('context_size', self._context_size)),
             client=self._client,
             aliases=self._aliases,
+            thinking=int(thinking) if thinking else None,
             estimator=self._estimator,
             cache=self._cache,
         )
@@ -141,6 +159,7 @@ class _GeminiModel(Model):
             self._client,
             self._name,
             prompt,
+            self._thinking,
         )
         result |= llobot.models.streams.notify(lambda stream: self.cache.write(llobot.models.streams.chat(prompt, stream)))
         return result
