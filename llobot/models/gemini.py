@@ -26,9 +26,9 @@ class _GeminiStream(ModelStream):
         contents = []
         for message in prompt:
             if message.role == ChatRole.USER:
-                contents.append(types.UserContent(parts=[types.Part.from_text(message.content)]))
+                contents.append(types.UserContent(parts=[types.Part(text=message.content)]))
             else:
-                contents.append(types.ModelContent(parts=[types.Part.from_text(message.content)]))
+                contents.append(types.ModelContent(parts=[types.Part(text=message.content)]))
         stream = client.models.generate_content_stream(
             model=model,
             contents=contents
