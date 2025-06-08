@@ -23,17 +23,19 @@ class _GeminiStream(ModelStream):
         model: str,
         prompt: ChatBranch,
         thinking: int | None = None,
+        temperature: float | None = None,
     ):
         super().__init__()
         self._length = prompt.cost
         self._stats = ModelStats()
-        self._iterator = iter(self._iterate(client, model, prompt, thinking))
+        self._iterator = iter(self._iterate(client, model, prompt, thinking, temperature))
 
     def _iterate(self,
         client: genai.Client,
         model: str,
         prompt: ChatBranch,
         thinking: int | None = None,
+        temperature: float | None = None,
     ) -> Iterable[str]:
         contents = []
         for message in prompt:
@@ -41,15 +43,15 @@ class _GeminiStream(ModelStream):
                 contents.append(types.UserContent(parts=[types.Part(text=message.content)]))
             else:
                 contents.append(types.ModelContent(parts=[types.Part(text=message.content)]))
-        config = None
+        config = types.GenerateContentConfig()
         if thinking is not None:
-            config = types.GenerateContentConfig(
-                thinking_config=types.ThinkingConfig(thinking_budget=thinking)
-            )
+            config.thinking_config = types.ThinkingConfig(thinking_budget=thinking)
+        if temperature is not None:
+            config.temperature = temperature
         stream = client.models.generate_content_stream(
             model=model,
             contents=contents,
-            config=config
+            config=config,
         )
         last_chunk = None
         for chunk in stream:
@@ -81,6 +83,7 @@ class _GeminiModel(Model):
     _aliases: list[str]
     _context_size: int
     _thinking: int | None
+    _temperature: float | None
     _estimator: TokenLengthEstimator
     _cache: PromptStorage
 
@@ -89,6 +92,7 @@ class _GeminiModel(Model):
         auth: str | None = None,
         aliases: Iterable[str] = [],
         thinking: int | None = None,
+        temperature: float | None = None,
         estimator: TokenLengthEstimator = llobot.models.estimators.standard(),
         cache: PromptStorage = llobot.models.caches.lru.create('gemini', timeout=5*60),
     ):
@@ -103,6 +107,7 @@ class _GeminiModel(Model):
         self._aliases = list(aliases)
         self._context_size = context_size
         self._thinking = thinking
+        self._temperature = temperature
         self._estimator = estimator
         self._cache = cache
 
@@ -122,21 +127,29 @@ class _GeminiModel(Model):
         }
         if self._thinking is not None:
             options['thinking'] = self._thinking
+        if self._temperature is not None:
+            options['temperature'] = self._temperature
         return options
 
     def validate_options(self, options: dict):
-        allowed = {'context_size', 'thinking'}
+        allowed = {'context_size', 'thinking', 'temperature'}
         for unrecognized in set(options) - allowed:
             raise ValueError(f"Unrecognized option: {unrecognized}")
+        if options.get('temperature'):
+            temperature = float(options['temperature'])
+            if not (0.0 <= temperature <= 2.0):
+                raise ValueError(f"Temperature must be between 0.0 and 2.0, got {temperature}")
 
     def configure(self, options: dict) -> Model:
         thinking = options.get('thinking', self._thinking)
+        temperature = options.get('temperature', self._temperature)
         return _GeminiModel(
             self._name,
             int(options.get('context_size', self._context_size)),
             client=self._client,
             aliases=self._aliases,
             thinking=int(thinking) if thinking else None,
+            temperature=float(temperature) if temperature is not None and temperature != '' else None,
             estimator=self._estimator,
             cache=self._cache,
         )
@@ -160,6 +173,7 @@ class _GeminiModel(Model):
             self._name,
             prompt,
             self._thinking,
+            self._temperature,
         )
         result |= llobot.models.streams.notify(lambda stream: self.cache.write(llobot.models.streams.chat(prompt, stream)))
         return result
