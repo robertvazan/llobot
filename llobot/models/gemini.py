@@ -46,11 +46,13 @@ class _GeminiStream(ModelStream):
 class _GeminiModel(Model):
     _client: genai.Client
     _name: str
+    _aliases: list[str]
     _context_size: int
 
     def __init__(self, name: str, context_size: int, *,
         client: genai.Client | None = None,
         auth: str | None = None,
+        aliases: Iterable[str] = [],
     ):
         if client:
             self._client = client
@@ -60,11 +62,17 @@ class _GeminiModel(Model):
             # API key is taken from GOOGLE_API_KEY environment variable.
             self._client = genai.Client()
         self._name = name
+        self._aliases = list(aliases)
         self._context_size = context_size
 
     @property
     def name(self) -> str:
         return f'gemini/{self._name}'
+
+    @property
+    def aliases(self) -> Iterable[str]:
+        yield self._name
+        yield from self._aliases
 
     @property
     def options(self) -> dict:
@@ -82,6 +90,7 @@ class _GeminiModel(Model):
             self._name,
             int(options.get('context_size', self._context_size)),
             client=self._client,
+            aliases=self._aliases,
         )
 
     @property
