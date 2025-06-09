@@ -35,6 +35,7 @@ def new_function():
 class ExistingClass:
     # ...
 
+    # add after existing_method()
     def new_method(self):
         return "modified or new method"
 
@@ -49,6 +50,9 @@ How to create partial source code listings:
 - Skip unmodified sections of the file. Show only added, modified, and replaced code.
 - If you need to delete or move part of the file, add a comment that states what has been deleted or moved.
 - Use `# ...` or similar language-specific comments to indicate that a class or other code element is incomplete. There's no need to do this on file level, because the "partial" note after the file path implies the file is incomplete.
+- Always include enclosing element (namespace, class, etc.) when modifying nested code (methods, members, etc.), even if the enclosing element itself is unchanged. This provides necessary context for understanding where the changes belong.
+- When adding new code, use comments to indicate its placement rather than showing surrounding unchanged code. For example: `# add after existing_method()`.
+- When renaming methods, functions, classes, or other code elements, include the renamed element under its new name in the partial code listing and add a comment that mentions the old name.
 - Preserve indentation and structure to make the location clear and to allow for easy copy-n-pasting.
 
 When to use partial listings:
