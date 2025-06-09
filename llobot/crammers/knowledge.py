@@ -123,11 +123,18 @@ def standard() -> KnowledgeCrammer:
 def retrieval() -> KnowledgeCrammer:
     return whole(scorer=llobot.scorers.knowledge.constant())
 
+# Intended to be used for files that are already in the context but they have changed since.
+@cache
+def sync() -> KnowledgeCrammer:
+    # We would ideally want to score relevance, but that's currently not possible, because score parameter is used for filtering.
+    return whole(formatter=llobot.formatters.knowledge.updates(), scorer=llobot.scorers.knowledge.constant())
+
 __all__ = [
     'KnowledgeCrammer',
     'trimming',
     'whole',
     'standard',
     'retrieval',
+    'sync',
 ]
 

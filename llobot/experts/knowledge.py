@@ -14,6 +14,7 @@ import llobot.scorers.ranks
 import llobot.scorers.knowledge
 import llobot.crammers.knowledge
 import llobot.scrapers
+import llobot.formatters.deletions
 import llobot.experts
 
 @lru_cache
@@ -45,8 +46,29 @@ def retrieval(*,
         return crammer.cram(knowledge, request.budget, llobot.scores.knowledge.coerce(retrievals), request.context)
     return llobot.experts.create(stuff)
 
+# This expert is actually intended to be used together with other experts,
+# because it assumes there can be some outdated knowledge in the context already.
+@lru_cache
+def sync(*,
+    deletion_formatter: DeletionFormatter = llobot.formatters.deletions.standard(),
+    crammer: KnowledgeCrammer = llobot.crammers.knowledge.sync(),
+) -> Expert:
+    def stuff(request: ExpertRequest) -> Context:
+        fresh_knowledge = request.scope.project.knowledge(request.cutoff) if request.scope else Knowledge()
+        context_knowledge = request.context.knowledge
+        deletions = context_knowledge.keys() - fresh_knowledge.keys()
+        output = deletion_formatter(deletions)
+        if output.cost > request.budget:
+            return llobot.contexts.empty()
+        # Cram all documents in the context and rely an the crammer to filter out exact duplicates.
+        # We would ideally want to score relevance, but that's currently not possible, because score parameter is used for filtering.
+        output += crammer.cram(fresh_knowledge, request.budget - output.cost, llobot.scores.knowledge.coerce(context_knowledge.keys()), request.context + output)
+        return output
+    return llobot.experts.create(stuff)
+
 __all__ = [
     'standard',
     'retrieval',
+    'sync',
 ]
 
