@@ -58,7 +58,7 @@ def updates(*,
         fresh_knowledge = request.scope.project.knowledge(request.cutoff) if request.scope else Knowledge()
         context_knowledge = request.context.knowledge
         deletions = context_knowledge.keys() - fresh_knowledge.keys()
-        output = deletion_crammer.cram(deletions, request.budget, request.context)
+        output = deletion_crammer.cram(deletions, request.budget)
         # Cram all documents in the context and rely an the crammer to filter out exact duplicates.
         # We would ideally want to score relevance, but that's currently not possible, because score parameter is used for filtering.
         output += update_crammer.cram(fresh_knowledge, request.budget - output.cost, llobot.scores.knowledge.coerce(context_knowledge.keys()), request.context + output)
