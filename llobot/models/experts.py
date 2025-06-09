@@ -86,7 +86,7 @@ class _StandardExpertRequest:
 
     def stuff(self, prompt: ChatBranch | None = None) -> Context:
         prompt = prompt or self.prompt
-        request = ExpertRequest(memory=self.memory, prompt=prompt[0].content, scope=self.scope, cutoff=self.cutoff, budget=self.budget, cache=self.model.cache)
+        request = ExpertRequest(memory=self.memory, prompt=prompt, scope=self.scope, cutoff=self.cutoff, budget=self.budget, cache=self.model.cache)
         return self.expert.stuff(request)
 
     def assemble(self, prompt: ChatBranch | None = None) -> ChatBranch:

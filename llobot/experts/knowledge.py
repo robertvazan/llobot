@@ -1,6 +1,7 @@
 from __future__ import annotations
 from datetime import datetime
 from functools import lru_cache
+from llobot.chats import ChatRole
 from llobot.knowledge import Knowledge
 from llobot.scorers.ranks import RankScorer
 from llobot.scorers.knowledge import KnowledgeScorer
@@ -10,6 +11,7 @@ from llobot.scrapers import Scraper
 from llobot.contexts import Context
 from llobot.experts import Expert
 from llobot.experts.requests import ExpertRequest
+import llobot.text
 import llobot.scores.knowledge
 import llobot.scorers.ranks
 import llobot.scorers.knowledge
@@ -42,7 +44,9 @@ def retrieval(*,
     def stuff(request: ExpertRequest) -> Context:
         knowledge = request.scope.project.knowledge(request.cutoff) if request.scope else Knowledge()
         scores = llobot.scores.knowledge.scope(knowledge, request.scope, scope_scorer) * relevance_scorer(knowledge)
-        retrievals = llobot.links.resolve_best(scraper.scrape_prompt(request.prompt), knowledge, scores)
+        messages = (message.content for message in request.prompt if message.role == ChatRole.USER)
+        prompt = llobot.text.concat(*messages)
+        retrievals = llobot.links.resolve_best(scraper.scrape_prompt(prompt), knowledge, scores)
         # It is important we do not use priority scorer here, because that one can use zero score to exclude files.
         return crammer.cram(knowledge, request.budget, llobot.scores.knowledge.coerce(retrievals), request.context)
     return llobot.experts.create(stuff)

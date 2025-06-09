@@ -35,7 +35,7 @@ def reserve(chars: int = 25_000, share: float = 0.2) -> ExpertWrapper:
     def stuff(expert: Expert, request: ExpertRequest) -> Context:
         # User prompts can be very long and they usually result in comparably long responses.
         # We will therefore subtract prompt length from the budget here, so that it does not eat into space reserved for the response and/or token length inaccuracies.
-        reservation = max(chars, int(share * request.budget)) + len(request.prompt)
+        reservation = max(chars, int(share * request.budget)) + request.prompt.cost
         # Limit reserved budget to 50% of the total budget, so that it does not eat (nearly) the whole budget.
         # This is particularly important when token length estimator is not initialized and returns a tiny pessimistic estimates.
         reasonable_reservation = min(reservation, request.budget // 2)

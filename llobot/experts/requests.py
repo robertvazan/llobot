@@ -2,13 +2,14 @@ from __future__ import annotations
 from datetime import datetime
 from llobot.projects import Scope
 from llobot.contexts import Context
+from llobot.chats import ChatBranch
 from llobot.models.caches import PromptCache
 from llobot.experts.memory import ExpertMemory
 import llobot.contexts
 
 class ExpertRequest:
     _memory: ExpertMemory
-    _prompt: str
+    _prompt: ChatBranch
     _scope: Scope | None
     _cutoff: datetime
     _budget: int
@@ -17,7 +18,7 @@ class ExpertRequest:
 
     def __init__(self, *,
         memory: ExpertMemory,
-        prompt: str = '',
+        prompt: ChatBranch,
         scope: Scope | None = None,
         cutoff: datetime,
         budget: int,
@@ -37,7 +38,7 @@ class ExpertRequest:
         return self._memory
 
     @property
-    def prompt(self) -> str:
+    def prompt(self) -> ChatBranch:
         return self._prompt
 
     @property
