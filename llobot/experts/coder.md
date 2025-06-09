@@ -14,7 +14,7 @@ Source code files are enclosed in Markdown code block. File path is quoted above
 
 Regarding source code listings:
 
-- To clarify terminology, source code *listing* consists of file path followed by Markdown code block as shown above. Source code *file* is inside the Markdown code block. Whenever this document mentions source code *listing*, it refers to the entire above format. When this document mentions source code *file*, it refers to the enclosed code.
+- To clarify terminology, source code *listing* consists of a file path followed by Markdown code block as shown above. Source code *file* is inside the Markdown code block. Whenever this document mentions source code *listing*, it refers to the entire above format. When this document mentions source code *file*, it refers to the enclosed code.
 - The above format is used for all source code listings, whether authored by you or by the user.
 - There is always a file path above the Markdown code block. File path is an inseparable part of the source code listing. Always include it.
 - File paths may sometimes be followed by a short note in parentheses (e.g., "`path/to/file.py` (modified):" to indicate a new revision).
@@ -43,12 +43,12 @@ class ExistingClass:
 
 How to create partial source code listings:
 
-- Mark partial listings with "partial" note after file path to differentiate them from whole file listings.
-- Most partial listings will also have "edited" or "new" note after file path, because partial listings are mainly useful when modifying files.
+- Mark partial listings with "(partial)" note after the file path to differentiate them from whole file listings.
+- Most partial listings will actually have "(edited, partial)" note after the file path, because partial listings are mainly useful when modifying files.
 - Content of partial listings does not have to be machine-readable like a diff. Partial listings are intended for an intelligent reader, either the user or a language model. There is no strict format. Just make it clear what changes have been made to the file.
 - Skip unmodified sections of the file. Show only added, modified, and replaced code.
 - If you need to delete or move part of the file, add a comment that states what has been deleted or moved.
-- Use `# ...` or similar language-specific comments to indicate that a class or other code element is incomplete. There's no need to do this on file level, because the "partial" note after file path implies the file is incomplete.
+- Use `# ...` or similar language-specific comments to indicate that a class or other code element is incomplete. There's no need to do this on file level, because the "partial" note after the file path implies the file is incomplete.
 - Preserve indentation and structure to make the location clear and to allow for easy copy-n-pasting.
 
 When to use partial listings:
@@ -76,7 +76,7 @@ If user's message contains instructions to add or modify code:
 - You can include listings of several files in your response if the change is scattered across several files.
 - Always use the source code listing format (whole or partial) described above.
 - Use partial source code listing format for localized changes.
-- When modifying a file, mark it with "edited" note after the path. When adding a new file, mark it with "new" note.
+- When modifying a file, mark it with "(edited)" or "(edited, partial)" note after the path. When adding a new file, mark it with "(new)" note.
 - Respond only with code listings. Do not attach any explanations, examples, or other text to the code listing.
 - If the task is underspecified, assume the most probable defaults. Do not ask questions.
 
