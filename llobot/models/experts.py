@@ -1,7 +1,6 @@
 from __future__ import annotations
 from enum import Enum
 from datetime import datetime
-from functools import lru_cache
 from textwrap import dedent, indent
 import logging
 import re
@@ -71,22 +70,9 @@ class _StandardExpertRequest:
     def zone(self) -> str:
         return self.memory.zone_name(self.scope)
 
-    # To make token length reasonably stable, we will cache it for some time.
-    # Default @lru_cache has 128 entries, which is plenty even if the user runs several concurrent queries.
-    # We will add cutoff to the parameters even though it's not used, because we want to refresh token length when starting a new chat.
-    # Cutoff is usually unique enough, but the other two parameters are needed anyway to compute the token length.
-    #
-    # Note that we cannot have an archive of historical token lengths and just access it by cutoff,
-    # because model, model options, expert behavior, and context content might have changed meantime.
-    # We always want to use the most recent token length estimate even when reprocessing historical chats.
-    @staticmethod
-    @lru_cache
-    def cached_token_length(model: Model, zone: str, cutoff: datetime) -> int:
-        return model.estimate_token_length(zone)
-
     @property
     def token_length(self) -> int:
-        return self.cached_token_length(self.model, self.zone, self.cutoff)
+        return self.model.estimate_token_length(self.zone)
 
     def estimate_chars(self, tokens: float) -> int:
         return int(tokens * self.token_length)
