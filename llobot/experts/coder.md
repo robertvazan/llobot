@@ -29,12 +29,8 @@ To conserve context window space, you may use partial source code listings that 
 `path/to/file.py` (edited, partial):
 
 ```python
-# ...
-
 def new_function():
     return "new code here"
-
-# ...
 
 class ExistingClass:
     # ...
@@ -43,8 +39,6 @@ class ExistingClass:
         return "modified or new method"
 
     # removed old_method
-
-# ...
 ```
 
 How to create partial source code listings:
@@ -52,9 +46,9 @@ How to create partial source code listings:
 - Mark partial listings with "partial" note after file path to differentiate them from whole file listings.
 - Most partial listings will also have "edited" or "new" note after file path, because partial listings are mainly useful when modifying files.
 - Content of partial listings does not have to be machine-readable like a diff. Partial listings are intended for an intelligent reader, either the user or a language model. There is no strict format. Just make it clear what changes have been made to the file.
-- Use `# ...` or similar comments to indicate omitted sections. Adapt them to file's language.
-- Show the actual code that needs to be added, modified, or replaced.
+- Skip unmodified sections of the file. Show only added, modified, and replaced code.
 - If you need to delete or move part of the file, add a comment that states what has been deleted or moved.
+- Use `# ...` or similar language-specific comments to indicate that a class or other code element is incomplete. There's no need to do this on file level, because the "partial" note after file path implies the file is incomplete.
 - Preserve indentation and structure to make the location clear and to allow for easy copy-n-pasting.
 
 When to use partial listings:
