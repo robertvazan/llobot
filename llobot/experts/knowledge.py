@@ -5,6 +5,7 @@ from llobot.knowledge import Knowledge
 from llobot.scorers.ranks import RankScorer
 from llobot.scorers.knowledge import KnowledgeScorer
 from llobot.crammers.knowledge import KnowledgeCrammer
+from llobot.crammers.deletions import DeletionCrammer
 from llobot.scrapers import Scraper
 from llobot.contexts import Context
 from llobot.experts import Expert
@@ -13,8 +14,8 @@ import llobot.scores.knowledge
 import llobot.scorers.ranks
 import llobot.scorers.knowledge
 import llobot.crammers.knowledge
+import llobot.crammers.deletions
 import llobot.scrapers
-import llobot.formatters.deletions
 import llobot.experts
 
 @lru_cache
@@ -47,28 +48,26 @@ def retrieval(*,
     return llobot.experts.create(stuff)
 
 # This expert is actually intended to be used together with other experts,
-# because it assumes there can be some outdated knowledge in the context already.
+# because it only does something if there is some outdated knowledge in the context already.
 @lru_cache
-def sync(*,
-    deletion_formatter: DeletionFormatter = llobot.formatters.deletions.standard(),
-    crammer: KnowledgeCrammer = llobot.crammers.knowledge.sync(),
+def updates(*,
+    deletion_crammer: DeletionCrammer = llobot.crammers.deletions.standard(),
+    update_crammer: KnowledgeCrammer = llobot.crammers.knowledge.updates(),
 ) -> Expert:
     def stuff(request: ExpertRequest) -> Context:
         fresh_knowledge = request.scope.project.knowledge(request.cutoff) if request.scope else Knowledge()
         context_knowledge = request.context.knowledge
         deletions = context_knowledge.keys() - fresh_knowledge.keys()
-        output = deletion_formatter(deletions)
-        if output.cost > request.budget:
-            return llobot.contexts.empty()
+        output = deletion_crammer.cram(deletions, request.budget, request.context)
         # Cram all documents in the context and rely an the crammer to filter out exact duplicates.
         # We would ideally want to score relevance, but that's currently not possible, because score parameter is used for filtering.
-        output += crammer.cram(fresh_knowledge, request.budget - output.cost, llobot.scores.knowledge.coerce(context_knowledge.keys()), request.context + output)
+        output += update_crammer.cram(fresh_knowledge, request.budget - output.cost, llobot.scores.knowledge.coerce(context_knowledge.keys()), request.context + output)
         return output
     return llobot.experts.create(stuff)
 
 __all__ = [
     'standard',
     'retrieval',
-    'sync',
+    'updates',
 ]
 
