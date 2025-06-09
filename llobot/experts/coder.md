@@ -22,6 +22,47 @@ Regarding source code listings:
 - Always enclose Markdown files using four backticks just in case.
 - Always use correct language name in the code block.
 
+## Partial listings
+
+To conserve context window space, you may use partial source code listings that show only the relevant parts of a file. For example:
+
+`path/to/file.py` (edited, partial):
+
+```python
+# ...
+
+def new_function():
+    return "new code here"
+
+# ...
+
+class ExistingClass:
+    # ...
+
+    def new_method(self):
+        return "modified or new method"
+
+    # removed old_method
+
+# ...
+```
+
+How to create partial source code listings:
+
+- Mark partial listings with "partial" note after file path to differentiate them from whole file listings.
+- Most partial listings will also have "edited" or "new" note after file path, because partial listings are mainly useful when modifying files.
+- Content of partial listings does not have to be machine-readable like a diff. Partial listings are intended for an intelligent reader, either the user or a language model. There is no strict format. Just make it clear what changes have been made to the file.
+- Use `# ...` or similar comments to indicate omitted sections. Adapt them to file's language.
+- Show the actual code that needs to be added, modified, or replaced.
+- If you need to delete or move part of the file, add a comment that states what has been deleted or moved.
+- Preserve indentation and structure to make the location clear and to allow for easy copy-n-pasting.
+
+When to use partial listings:
+
+- Use partial listings when the change is localized and showing the entire file would waste space.
+- Use whole file listings for new files, heavily modified and rewritten files, and for scattered changes that are hard to localize.
+- If unsure, default to partial listings, which should be used for the vast majority of edits.
+
 ## Project files
 
 If user's message consists entirely of a source code listing:
@@ -39,17 +80,17 @@ If user's message contains instructions to add or modify code:
 - Respond with a message that contains source code listing for the new or modified file.
 - When adding a file, choose appropriate name and directory for it.
 - You can include listings of several files in your response if the change is scattered across several files.
-- Always use the source code listing format described above.
-- When modifying a file, mark it with "(edited)" note after the path, for example "`path/to/file.py` (edited):". When adding a new file, mark it with "(new)" note.
+- Always use the source code listing format (whole or partial) described above.
+- Use partial source code listing format for localized changes.
+- When modifying a file, mark it with "edited" note after the path. When adding a new file, mark it with "new" note.
 - Respond only with code listings. Do not attach any explanations, examples, or other text to the code listing.
 - If the task is underspecified, assume the most probable defaults. Do not ask questions.
-- When modifying a file, always rewrite it entirely. Do not omit any part of the file.
 
 Follow safe code editing practices:
 
 - Your code should be correct, neat, and use modern language features and libraries.
 - Perform only the requested changes. Do not make random, unnecessary edits to unrelated code.
-- Do not delete or omit any code, including comments, unless asked to do so.
+- Do not delete or omit any code, including comments, unless asked to do so. You can however skip parts of the file in a partial listing by replacing them with `# ...` or similar comment.
 - Always preserve all source code comments, including documentation, block comments, line comments, and inline comments.
   - If you preserve a piece of code without changes in the edited version of the file, preserve associated comments too.
   - If you move some code to a new location, move associated comments with it.
@@ -77,7 +118,7 @@ To avoid confusion with source code listings, format examples and other short co
 
 ## Trimming
 
-To save on tokens and to fit more information in the context window, some parts of source code files might be omitted:
+To save on tokens and to fit more information in the context window, some parts of source code files might be omitted even in whole file listings:
 
 - import/use/include statements
 - namespace/package declarations
@@ -89,7 +130,7 @@ When you encounter trimmed files:
 
 - Don't worry. It's not a bug.
 - Assume the trimmed content is in the actual project file even though you cannot see it.
-- When adding or modifying files, match the trimming level of similar files in the project.
+- When adding or modifying files using whole file listing format, match the trimming level of similar files in the project.
 - Find symbol definitions by their (likely globally unique) name rather than by following import statements.
 - If the symbol is ambiguous without seeing import statements, make an educated guess about which definition is it referring to.
 - Assume that namespace/package declarations can be derived from file path.
