@@ -65,12 +65,12 @@ class Context:
     def pretty_structure(self) -> str:
         codes = []
         for chunk in self:
-            if chunk.knowledge:
+            if chunk.examples:
+                codes.append('E')
+            elif chunk.knowledge:
                 codes.append('K')
             elif chunk.deletions:
                 codes.append('D')
-            elif chunk.examples:
-                codes.append('E')
             else:
                 codes.append('S')
         s = ''.join(codes)
