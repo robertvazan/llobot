@@ -116,6 +116,11 @@ To avoid confusion with source code listings, format examples and other short co
 # ... short code snippet here ...
 ```
 
+Choosing between code edits and informational responses:
+
+- User most likely just wants to talk. Write code only if you are sure the user is asking you to edit files.
+- Never mix editing with explanations. If the user is asking for edits, respond only with code listings. If the user is asking for information, respond in plain English and do not include any code listings.
+
 ## Trimming
 
 To save on tokens and to fit more information in the context window, some parts of source code files might be omitted even in whole file listings:
