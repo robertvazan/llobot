@@ -52,12 +52,28 @@ import llobot.models.ollama.listeners
 # Backend models that respond to the assembled prompt
 backend_models = ModelCatalog(
     # This will use qwen2.5-coder:7b on localhost instance of Ollama.
-    # Context size has to be always specified, because Ollama defaults are tiny.
     llobot.models.ollama.create(
-        'qwen2.5-coder', 24 * 1024, top_k=1, aliases=['local']),
-    # Context size in this case just limits spending.
-    llobot.models.openai.proprietary(
-        'gpt4.1-mini', 32 * 1024, 'YOUR_OPENAI_API_KEY', aliases=['cloud']),
+        'qwen2.5-coder',
+        # Context size has to be always specified, because Ollama defaults are tiny.
+        24 * 1024,
+        top_k=1,
+        aliases=['local']
+    ),
+    llobot.models.gemini.create(
+        'gemini-2.5-flash-preview-05-20',
+        # Context size in this case just limits spending.
+        32 * 1024,
+        temperature=0,
+        auth='YOUR_GOOGLE_API_KEY',
+        aliases=['cloud']
+    ),
+    llobot.models.anthropic.create(
+        'claude-sonnet-4-0',
+        32 * 1024,
+        8000,
+        auth='YOUR_ANTHROPIC_API_KEY',
+        aliases=['claude']
+    ),
 )
 
 # Projects that will be used as knowledge bases
