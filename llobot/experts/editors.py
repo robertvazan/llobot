@@ -34,7 +34,8 @@ def standard(*,
     update_crammer: KnowledgeCrammer = llobot.crammers.knowledge.updates(),
     retrieval_crammer: KnowledgeCrammer = llobot.crammers.knowledge.retrieval(),
     knowledge_share: float = 1.0,
-    example_share: float = 0.25,
+    # This share is directly occupied by examples. Examples however consume space also indirectly by forcing stuffing of updates.
+    example_share: float = 0.2,
     retrieval_share: float = 1.0,
 ) -> Expert:
     if isinstance(relevance_scorer, KnowledgeSubset):
