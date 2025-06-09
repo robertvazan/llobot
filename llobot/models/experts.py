@@ -346,17 +346,19 @@ class _StandardExpertModel(Model):
         m = _StandardExpertModel.CUTOFF_RE.fullmatch(lines[-1])
         return llobot.time.parse(m[1]) if m else None
 
+    def decode_command_line(self, line: str) -> _StandardExpertCommand | None:
+        m = _StandardExpertModel.COMMAND_RE.fullmatch(line.strip())
+        return self.decode_command(m[1]) if m else None
+
     def decode_command_message(self, message: str) -> _StandardExpertCommand | None:
         lines = message.strip().splitlines()
         if not lines:
             return None
-        m = _StandardExpertModel.COMMAND_RE.fullmatch(lines[0].strip())
-        if not m:
-            return None
-        for command in _StandardExpertCommand:
-            if command.value == m[1]:
-                return command
-        llobot.models.streams.fail(f'Invalid command: {m[1]}')
+        top = self.decode_command_line(lines[0])
+        bottom = self.decode_command_line(lines[-1]) if len(lines) > 1 else None
+        if top and bottom:
+            llobot.models.streams.fail('Command is both at the top and bottom of the message.')
+        return top or bottom
 
     def decode_chat_header(self, chat: ChatBranch) -> tuple[Scope | None, datetime | None, _StandardExpertCommand | None, Model, dict | None]:
         scope, cutoff, command, model, options = self.decode_message_header(chat[0].content)
@@ -400,12 +402,11 @@ class _StandardExpertModel(Model):
 
     def clean_command_message(self, message: str) -> str:
         lines = message.strip().splitlines()
-        if not lines:
-            return message
-        m = _StandardExpertModel.COMMAND_RE.fullmatch(lines[0].strip())
-        if not m:
-            return message
-        return '\n'.join(lines[1:]).strip()
+        if lines and self.decode_command_line(lines[0]):
+            lines = lines[1:]
+        if lines and self.decode_command_line(lines[-1]):
+            lines = lines[:-1]
+        return '\n'.join(lines).strip()
 
     def clean_chat(self, chat: ChatBranch) -> ChatBranch:
         clean = ChatBuilder()
