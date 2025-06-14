@@ -90,9 +90,15 @@ def encode_done_event(model: str, stats: ModelStats) -> dict:
 def decode_event(data: dict) -> str | ModelStats:
     return decode_stats(data) if data['done'] else data['message']['content']
 
+MAX_CHUNK_SIZE = 1000
+
 def format_stream(model: str, stream: ModelStream) -> Iterator[str]:
     for token in stream:
-        yield json.dumps(encode_content_event(model, ChatRole.ASSISTANT, token))
+        # Chunk long responses. This is a workaround for bad clients that do not like to receive everything at once.
+        while token:
+            chunk = token[:MAX_CHUNK_SIZE]
+            token = token[MAX_CHUNK_SIZE:]
+            yield json.dumps(encode_content_event(model, ChatRole.ASSISTANT, chunk))
     yield json.dumps(encode_done_event(model, stream.stats()))
 
 def parse_stream(lines: Iterator[str]) -> Iterator[str | ModelStats]:
