@@ -233,7 +233,8 @@ class _StandardExpertRequest:
             info += '\nKnowledge in context:\n\n' + '\n'.join([f'- `{path}`' for path in context.knowledge.keys().sorted()]) + '\n'
         if self.scope:
             for scope in self.scope.ancestry:
-                info += f'\nKnowledge in `~{scope.name}`:\n\n' + '\n'.join([f'- `{path}`' for path in (knowledge.keys() & scope.subset).sorted()]) + '\n'
+                # Pack it all into one Markdown code block. This is a workaround for inefficiency in Open WebUI.
+                info += f'\nKnowledge in `~{scope.name}`:\n\n```\n' + '\n'.join([str(path) for path in (knowledge.keys() & scope.subset).sorted()]) + '\n```\n'
         return llobot.models.streams.status(info)
 
     def handle_prompt(self) -> ModelStream:
