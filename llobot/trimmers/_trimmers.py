@@ -90,18 +90,6 @@ def re(pattern: str, flags=0, *, replacement: str = '', incremental=False) -> Tr
     else:
         return create(lambda path, content: pattern.sub(replacement, content+'\n').strip())
 
-@cache
-def tabs_to_spaces() -> Trimmer:
-    return create(lambda path, content: content.replace('\t', '    '))
-
-@cache
-def blank_lines() -> Trimmer:
-    return re(r'^ *$', regexlib.MULTILINE)
-
-@cache
-def normalize_whitespace() -> Trimmer:
-    return tabs_to_spaces() + blank_lines()
-
 # Trims boilerplate content from the beginning and end of the file.
 # Content is considered boilerplate when it is never edited manually,
 # either because it never changes (e.g. package declaration in Java)
@@ -109,14 +97,12 @@ def normalize_whitespace() -> Trimmer:
 # This trimmer also normalizes whitespace.
 @cache
 def boilerplate() -> Trimmer:
-    from llobot.trimmers import markdown, python, java, rust, cpp, xml, toml
-    return (markdown.boilerplate()
+    from llobot.trimmers import whitespace
+    from llobot.trimmers import python, java, rust
+    return (whitespace.normalize()
         + python.boilerplate()
         + java.boilerplate()
-        + rust.boilerplate()
-        + cpp.boilerplate()
-        + xml.boilerplate()
-        + toml.boilerplate())
+        + rust.boilerplate())
 
 __all__ = [
     'Trimmer',
@@ -126,9 +112,6 @@ __all__ = [
     'first',
     'largest',
     're',
-    'tabs_to_spaces',
-    'blank_lines',
-    'normalize_whitespace',
     'boilerplate',
 ]
 

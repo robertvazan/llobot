@@ -5,10 +5,6 @@ import llobot.trimmers
 from llobot.knowledge.subsets.rust import suffix
 
 @cache
-def normalize_whitespace() -> Trimmer:
-    return llobot.trimmers.normalize_whitespace() & suffix()
-
-@cache
 def uses() -> Trimmer:
     return llobot.trimmers.re(r'^ *(?:pub )?use [^;]+;\n+', re.MULTILINE) & suffix()
 
@@ -18,10 +14,9 @@ def mod_declarations() -> Trimmer:
 
 @cache
 def boilerplate() -> Trimmer:
-    return normalize_whitespace() + mod_declarations() + uses()
+    return mod_declarations() + uses()
 
 __all__ = [
-    'normalize_whitespace',
     'uses',
     'mod_declarations',
     'boilerplate'

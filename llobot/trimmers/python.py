@@ -5,10 +5,6 @@ import llobot.trimmers
 from llobot.knowledge.subsets.python import suffix
 
 @cache
-def normalize_whitespace() -> Trimmer:
-    return llobot.trimmers.normalize_whitespace() & suffix()
-
-@cache
 def shebang() -> Trimmer:
     return llobot.trimmers.re(r'^#!.*\n+') & suffix()
 
@@ -26,10 +22,9 @@ def exports() -> Trimmer:
 
 @cache
 def boilerplate() -> Trimmer:
-    return normalize_whitespace() + shebang()
+    return shebang()
 
 __all__ = [
-    'normalize_whitespace',
     'shebang',
     'imports',
     'exports',
