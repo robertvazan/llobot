@@ -9,11 +9,11 @@ def normalize_whitespace() -> Trimmer:
     return llobot.trimmers.normalize_whitespace() & suffix()
 
 @cache
-def eager() -> Trimmer:
+def boilerplate() -> Trimmer:
     return normalize_whitespace()
 
 __all__ = [
     'normalize_whitespace',
-    'eager',
+    'boilerplate',
 ]
 

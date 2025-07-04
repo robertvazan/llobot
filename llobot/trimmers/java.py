@@ -17,13 +17,13 @@ def imports() -> Trimmer:
     return llobot.trimmers.re(r'^import (?:static )?[\w\.\*]+;\n+', re.MULTILINE) & suffix()
 
 @cache
-def eager() -> Trimmer:
+def boilerplate() -> Trimmer:
     return normalize_whitespace() + package() + imports()
 
 __all__ = [
     'normalize_whitespace',
     'package',
     'imports',
-    'eager'
+    'boilerplate'
 ]
 

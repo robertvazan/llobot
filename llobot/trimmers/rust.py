@@ -17,13 +17,13 @@ def mod_declarations() -> Trimmer:
     return llobot.trimmers.re(r'^ *(?:pub )?mod ([\w_]+);\n+', re.MULTILINE) & suffix()
 
 @cache
-def eager() -> Trimmer:
+def boilerplate() -> Trimmer:
     return normalize_whitespace() + mod_declarations() + uses()
 
 __all__ = [
     'normalize_whitespace',
     'uses',
     'mod_declarations',
-    'eager'
+    'boilerplate'
 ]
 

@@ -25,7 +25,7 @@ def exports() -> Trimmer:
     return llobot.trimmers.re(r'''^__all__ = \[\s*['"][\w_]+['"](?:,\s*['"][\w_]+['"])*,?\s*\]\n+''', re.MULTILINE) & suffix()
 
 @cache
-def eager() -> Trimmer:
+def boilerplate() -> Trimmer:
     return normalize_whitespace() + shebang()
 
 __all__ = [
@@ -33,6 +33,6 @@ __all__ = [
     'shebang',
     'imports',
     'exports',
-    'eager'
+    'boilerplate'
 ]
 

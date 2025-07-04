@@ -26,8 +26,8 @@ class KnowledgeCrammer:
 
 @lru_cache
 def priority(*,
-    # Eager trimmer is applied to all documents regardless of whether that's necessary to save space.
-    trimmer: Trimmer = llobot.trimmers.eager(),
+    # Trimmer is applied to all documents regardless of whether that's necessary to save space.
+    trimmer: Trimmer = llobot.trimmers.boilerplate(),
     scorer: KnowledgeScorer = llobot.scorers.knowledge.standard(),
     formatter: KnowledgeFormatter = llobot.formatters.knowledge.standard(),
     ranker: KnowledgeRanker = llobot.knowledge.rankers.standard(),

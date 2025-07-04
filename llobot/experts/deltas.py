@@ -26,7 +26,7 @@ _cache = LRUCache(maxsize=128)
 
 @lru_cache
 def standard(*,
-    update_trimmer: Trimmer = llobot.trimmers.eager(),
+    update_trimmer: Trimmer = llobot.trimmers.boilerplate(),
     update_formatter: KnowledgeFormatter = llobot.formatters.knowledge.updates(),
     deletion_formatter: DeletionFormatter = llobot.formatters.deletions.standard(),
     # Default share of the budget to dedicate to the change buffer is a bit controversial.
