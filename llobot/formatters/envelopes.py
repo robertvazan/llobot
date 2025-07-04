@@ -36,74 +36,67 @@ class EnvelopeFormatter:
         return results
 
     def __or__(self, other: EnvelopeFormatter) -> EnvelopeFormatter:
-        def parse(formatted: str) -> tuple[Path | None, str]:
-            path, content = self.parse(formatted)
-            if content:
-                return path, content
-            return other.parse(formatted)
-        patterns = [f'(?:{regex.pattern})' for regex in (self.regex, other.regex) if regex]
-        return create(
-            lambda path, content, note: self(path, content, note) or other(path, content, note),
-            lambda formatted: self.parse(formatted) if self.parse(formatted)[1] else other.parse(formatted),
-            re.compile('|'.join(patterns), re.MULTILINE | re.DOTALL) if patterns else None
-        )
+        myself = self
+        class OrEnvelopeFormatter(EnvelopeFormatter):
+            def format(self, path: Path, content: str, note: str = '') -> str | None:
+                return myself.format(path, content, note) or other.format(path, content, note)
+            @cached_property
+            def regex(self) -> re.Pattern | None:
+                patterns = [f'(?:{regex.pattern})' for regex in (myself.regex, other.regex) if regex]
+                return re.compile('|'.join(patterns), re.MULTILINE | re.DOTALL) if patterns else None
+            def parse(self, formatted: str) -> tuple[Path | None, str]:
+                path, content = myself.parse(formatted)
+                if content:
+                    return path, content
+                return other.parse(formatted)
+        return OrEnvelopeFormatter()
 
     def __and__(self, whitelist: KnowledgeSubset | str) -> EnvelopeFormatter:
+        myself = self
         whitelist = llobot.knowledge.subsets.coerce(whitelist)
-        def parse(formatted: str) -> tuple[Path | None, str]:
-            path, content = self.parse(formatted)
-            if path and not whitelist(path, content):
-                return None, ''
-            return path, content
-        return create(
-            lambda path, content, note: self(path, content, note) if whitelist(path, content) else None,
-            parse,
-            self.regex
-        )
-
-def create(
-    formatter: Callable[[Path, str, str], str | None],
-    parser: Callable[[str], tuple[Path | None, str]] = lambda _: (None, ''),
-    regex: re.Pattern | None = None
-) -> EnvelopeFormatter:
-    class LambdaEnvelopeFormatter(EnvelopeFormatter):
-        def format(self, path: Path, content: str, note: str = '') -> str | None:
-            return formatter(path, content, note)
-        @cached_property
-        def regex(self) -> re.Pattern | None:
-            return regex
-        def parse(self, formatted: str) -> tuple[Path | None, str]:
-            return parser(formatted)
-    return LambdaEnvelopeFormatter()
+        class AndEnvelopeFormatter(EnvelopeFormatter):
+            def format(self, path: Path, content: str, note: str = '') -> str | None:
+                return myself.format(path, content, note) if whitelist(path, content) else None
+            @cached_property
+            def regex(self) -> re.Pattern | None:
+                return myself.regex
+            def parse(self, formatted: str) -> tuple[Path | None, str]:
+                path, content = myself.parse(formatted)
+                if path and not whitelist(path, content):
+                    return None, ''
+                return path, content
+        return AndEnvelopeFormatter()
 
 @lru_cache
 def header(*, guesser: LanguageGuesser = llobot.formatters.languages.standard(), min_backticks: int = 3) -> EnvelopeFormatter:
-    def format(path: Path, content: str, note: str = '') -> str:
-        note_suffix = f' ({note})' if note else ''
-        lang = guesser(path, content)
-
-        # Determine backtick count
-        backtick_count = min_backticks
-        backticks = '`' * backtick_count
-        lines = content.splitlines()
-        while any(line.startswith(backticks) for line in lines):
-            backtick_count += 1
-            backticks = '`' * backtick_count
-
-        return f'`{path}`{note_suffix}:\n\n{backticks}{lang}\n{content.strip()}\n{backticks}'
-    
-    detection_regex = re.compile(r'^`[^\n]+?`(?: \([^\n]*?\))?:\n\n(?:```[^`\n]*\n.*?\n```|````[^`\n]*\n.*?\n````|`````[^`\n]*\n.*?\n`````)$', re.MULTILINE | re.DOTALL)
     parsing_regex = re.compile(r'`([^\n]+?)`(?: \([^\n]*?\))?:\n\n```+[^\n]*\n(.*)\n```+', re.MULTILINE | re.DOTALL)
-    
-    def parse(formatted: str) -> tuple[Path | None, str]:
-        if not detection_regex.fullmatch(formatted):
-            return None, ''
-        match = parsing_regex.fullmatch(formatted)
-        if not match:
-            return None, ''
-        return Path(match.group(1)), match.group(2)
+    class HeaderEnvelopeFormatter(EnvelopeFormatter):
+        def format(self, path: Path, content: str, note: str = '') -> str:
+            note_suffix = f' ({note})' if note else ''
+            lang = guesser(path, content)
 
-    return create(format, parse, detection_regex)
+            # Determine backtick count
+            backtick_count = min_backticks
+            backticks = '`' * backtick_count
+            lines = content.splitlines()
+            while any(line.startswith(backticks) for line in lines):
+                backtick_count += 1
+                backticks = '`' * backtick_count
+
+            return f'`{path}`{note_suffix}:\n\n{backticks}{lang}\n{content.strip()}\n{backticks}'
+
+        @cached_property
+        def regex(self) -> re.Pattern | None:
+            return re.compile(r'^`[^\n]+?`(?: \([^\n]*?\))?:\n\n(?:```[^`\n]*\n.*?\n```|````[^`\n]*\n.*?\n````|`````[^`\n]*\n.*?\n`````)$', re.MULTILINE | re.DOTALL)
+
+        def parse(self, formatted: str) -> tuple[Path | None, str]:
+            if not self.regex.fullmatch(formatted):
+                return None, ''
+            match = parsing_regex.fullmatch(formatted)
+            if not match:
+                return None, ''
+            return Path(match.group(1)), match.group(2)
+    return HeaderEnvelopeFormatter()
 
 @cache
 def standard() -> EnvelopeFormatter:
