@@ -4,11 +4,9 @@ from pathlib import Path
 import re
 from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.formatters.languages import LanguageGuesser
-from llobot.formatters.paths import PathFormatter
 import llobot.knowledge.subsets
 import llobot.knowledge.subsets.markdown
 import llobot.formatters.languages
-import llobot.formatters.paths
 
 class EnvelopeFormatter:
     # May return None to indicate it cannot handle the file, which is useful for combining several formatters.
@@ -79,66 +77,41 @@ def create(
     return LambdaEnvelopeFormatter()
 
 @lru_cache
-def block(*,
-    guesser: LanguageGuesser = llobot.formatters.languages.standard(),
-    min_backticks: int = 3
-) -> EnvelopeFormatter:
+def header(*, guesser: LanguageGuesser = llobot.formatters.languages.standard(), min_backticks: int = 3) -> EnvelopeFormatter:
     def format(path: Path, content: str, note: str = '') -> str:
+        header = f'`{path}` ({note}):\n\n' if note else f'`{path}`:\n\n'
         lang = guesser(path, content)
+
+        # Determine backtick count
         backtick_count = min_backticks
         backticks = '`' * backtick_count
         lines = content.splitlines()
         while any(line.startswith(backticks) for line in lines):
             backtick_count += 1
             backticks = '`' * backtick_count
-        return f'{backticks}{lang}\n{content.strip()}\n{backticks}'
-    detection_regex = re.compile(r'^(?:```[^`\n]*\n.*?\n```|````[^`\n]*\n.*?\n````|`````[^`\n]*\n.*?\n`````)$', re.MULTILINE | re.DOTALL)
-    parsing_regex = re.compile(r'```+[^\n]*\n(.*)\n```+', re.MULTILINE | re.DOTALL)
+
+        return f'{header}{backticks}{lang}\n{content.strip()}\n{backticks}'
+    
+    detection_regex = re.compile(r'^`[^\n]+?`(?: \([^\n]*?\))?:\n\n(?:```[^`\n]*\n.*?\n```|````[^`\n]*\n.*?\n````|`````[^`\n]*\n.*?\n`````)$', re.MULTILINE | re.DOTALL)
+    parsing_regex = re.compile(r'`([^\n]+?)`(?: \([^\n]*?\))?:\n\n```+[^\n]*\n(.*)\n```+', re.MULTILINE | re.DOTALL)
+    
     def parse(formatted: str) -> tuple[Path | None, str]:
         if not detection_regex.fullmatch(formatted):
             return None, ''
         match = parsing_regex.fullmatch(formatted)
         if not match:
             return None, ''
-        return None, match.group(1)
+        return Path(match.group(1)), match.group(2)
+
     return create(format, parse, detection_regex)
 
 @cache
-def standard_body() -> EnvelopeFormatter:
-    return block(min_backticks=4) & llobot.knowledge.subsets.markdown.suffix() | block()
-
-@lru_cache
-def header(paths: PathFormatter = llobot.formatters.paths.standard(), body: EnvelopeFormatter = standard_body()) -> EnvelopeFormatter:
-    parseable = paths.regex and body.regex
-    if parseable:
-        detection_regex = re.compile(f'^(?:{paths.regex.pattern})(?:{body.regex.pattern})$', re.MULTILINE | re.DOTALL)
-        parsing_regex = re.compile(f'({paths.regex.pattern})({body.regex.pattern})', re.MULTILINE | re.DOTALL)
-    def parse(formatted: str) -> tuple[Path | None, str]:
-        if not parseable:
-            return None, ''
-        match = parsing_regex.fullmatch(formatted)
-        if not match:
-            return None, ''
-        path = paths.parse(match.group(1))
-        _, content = body.parse(match.group(2))
-        if not path or not content:
-            return None, ''
-        return Path(path), content
-    return create(
-        lambda path, content, note: paths(path, note) + body(path, content, note),
-        parse,
-        detection_regex if parseable else None
-    )
-
-@cache
 def standard() -> EnvelopeFormatter:
-    return header()
+    return header(min_backticks=4) & llobot.knowledge.subsets.markdown.suffix() | header()
 
 __all__ = [
     'EnvelopeFormatter',
     'create',
-    'block',
-    'standard_body',
     'header',
     'standard',
 ]
