@@ -23,22 +23,7 @@ def create(function: Callable[[KnowledgeIndex], Context]) -> DeletionFormatter:
     return LambdaDeletionFormatter()
 
 @lru_cache
-def bullets(header: str = 'Some files have been deleted:', paths: PathFormatter = llobot.formatters.paths.backtick(), affirmation: str = 'I see.') -> DeletionFormatter:
-    def render(deletions: KnowledgeIndex) -> Context:
-        if not deletions:
-            return llobot.contexts.empty()
-        # We don't care about order. Just use lexicographical ranking for consistency.
-        ranking = llobot.knowledge.rankings.lexicographical(deletions)
-        chat = ChatBuilder()
-        chat.add(ChatIntent.SYSTEM)
-        chat.add(f'{header}\n\n' + '\n'.join(['- ' + paths(path) for path in ranking]))
-        chat.add(ChatIntent.AFFIRMATION)
-        chat.add(affirmation)
-        return llobot.contexts.deletions.bulk(chat.build(), deletions)
-    return create(render)
-
-@lru_cache
-def chunked(pattern: PathFormatter = llobot.formatters.paths.pattern('Deleted: `{}`'), affirmation: str = 'I see.') -> DeletionFormatter:
+def granular(pattern: PathFormatter = llobot.formatters.paths.pattern('Deleted: `{}`'), affirmation: str = 'I see.') -> DeletionFormatter:
     def render(deletions: KnowledgeIndex) -> Context:
         if not deletions:
             return llobot.contexts.empty()
@@ -56,13 +41,12 @@ def chunked(pattern: PathFormatter = llobot.formatters.paths.pattern('Deleted: `
 
 @cache
 def standard() -> DeletionFormatter:
-    return chunked()
+    return granular()
 
 __all__ = [
     'DeletionFormatter',
     'create',
-    'bullets',
-    'chunked',
+    'granular',
     'standard',
 ]
 

@@ -84,25 +84,12 @@ def parens() -> PathFormatter:
     return pattern('{}', '{} ({})')
 
 @cache
-def filename() -> PathFormatter:
-    return create_filter(lambda path, note: path.name if isinstance(path, Path) else path)
-
-@cache
-def abbreviated() -> PathFormatter:
-    return create_filter(lambda path, note: f'.../{path.name}' if isinstance(path, Path) and path.parent != path else str(path))
-
-@cache
 def backtick() -> PathFormatter:
     return pattern('`{}`')
 
 @cache
 def header() -> PathFormatter:
     return pattern('{}:\n\n')
-
-# Default formatter to use in decorators.
-@cache
-def comment() -> PathFormatter:
-    return parens()
 
 @cache
 def standard() -> PathFormatter:
@@ -115,11 +102,8 @@ __all__ = [
     'pattern',
     'line',
     'parens',
-    'filename',
-    'abbreviated',
     'backtick',
     'header',
-    'comment',
     'standard',
 ]
 

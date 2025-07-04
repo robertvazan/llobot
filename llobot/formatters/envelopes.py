@@ -1,16 +1,14 @@
 from __future__ import annotations
 from functools import cache, lru_cache, cached_property
 from pathlib import Path
+import re
 from llobot.knowledge.subsets import KnowledgeSubset
+from llobot.formatters.languages import LanguageGuesser
+from llobot.formatters.paths import PathFormatter
 import llobot.knowledge.subsets
 import llobot.knowledge.subsets.markdown
 import llobot.formatters.languages
 import llobot.formatters.paths
-import llobot.formatters.decorators
-from llobot.formatters.languages import LanguageGuesser
-from llobot.formatters.paths import PathFormatter
-from llobot.formatters.decorators import Decorator
-import re
 
 class EnvelopeFormatter:
     # May return None to indicate it cannot handle the file, which is useful for combining several formatters.
@@ -80,14 +78,6 @@ def create(
             return parser(formatted)
     return LambdaEnvelopeFormatter()
 
-@cache
-def vanilla() -> EnvelopeFormatter:
-    return create(
-        lambda path, content, note: content,
-        lambda formatted: (None, formatted),
-        re.compile(r'.+', re.MULTILINE | re.DOTALL)
-    )
-
 @lru_cache
 def block(*,
     guesser: LanguageGuesser = llobot.formatters.languages.standard(),
@@ -116,35 +106,6 @@ def block(*,
 @cache
 def standard_body() -> EnvelopeFormatter:
     return block(min_backticks=4) & llobot.knowledge.subsets.markdown.suffix() | block()
-
-# Best for unquoted content like Markdown.
-@lru_cache
-def details(paths: PathFormatter = llobot.formatters.paths.comment(), body: EnvelopeFormatter = vanilla()) -> EnvelopeFormatter:
-    parseable = paths.regex and body.regex
-    if parseable:
-        detection_regex = re.compile(rf'^<details>\n<summary>{paths.regex.pattern}</summary>\n\n{body.regex.pattern}\n\n</details>$', re.MULTILINE | re.DOTALL)
-        parsing_regex = re.compile(rf'<details>\n<summary>({paths.regex.pattern})</summary>\n\n({body.regex.pattern})\n\n</details>', re.MULTILINE | re.DOTALL)
-    def parse(formatted: str) -> tuple[Path | None, str]:
-        if not parseable or not detection_regex.fullmatch(formatted):
-            return None, ''
-        match = parsing_regex.fullmatch(formatted)
-        if not match:
-            return None, ''
-        path = paths.parse(match.group(1))
-        _, content = body.parse(match.group(2))
-        if not path or not content:
-            return None, ''
-        return Path(path), content
-    return create(
-        lambda path, content, note: f'<details>\n<summary>{paths(path, note)}</summary>\n\n{body(path, content, note)}\n\n</details>',
-        parse,
-        detection_regex if parseable else None
-    )
-
-@lru_cache
-def decorated(decorator: Decorator = llobot.formatters.decorators.minimal(), body: EnvelopeFormatter = standard_body()) -> EnvelopeFormatter:
-    # Decorators don't currently support parsing.
-    return create(lambda path, content, note: body(path, content, decorator(path, content, note)))
 
 @lru_cache
 def header(paths: PathFormatter = llobot.formatters.paths.standard(), body: EnvelopeFormatter = standard_body()) -> EnvelopeFormatter:
@@ -176,11 +137,8 @@ def standard() -> EnvelopeFormatter:
 __all__ = [
     'EnvelopeFormatter',
     'create',
-    'vanilla',
     'block',
     'standard_body',
-    'details',
-    'decorated',
     'header',
     'standard',
 ]
