@@ -16,9 +16,8 @@ class EnvelopeFormatter:
     def __call__(self, path: Path, content: str, note: str = '') -> str | None:
         return self.format(path, content, note)
 
-    @cached_property
-    def regex(self) -> re.Pattern | None:
-        return None
+    def find(self, message: str) -> list[str]:
+        return []
 
     # Path can be None even if parsing succeeds, because some envelopes do not encode path.
     # Success is therefore signaled with non-empty content.
@@ -26,11 +25,9 @@ class EnvelopeFormatter:
         return None, ''
 
     def parse_all(self, message: str) -> list[tuple[Path, str]]:
-        if not self.regex:
-            return []
         results = []
-        for match in self.regex.finditer(message):
-            path, content = self.parse(match.group(0))
+        for match in self.find(message):
+            path, content = self.parse(match)
             if path and content:
                 results.append((path, content))
         return results
@@ -40,10 +37,8 @@ class EnvelopeFormatter:
         class OrEnvelopeFormatter(EnvelopeFormatter):
             def format(self, path: Path, content: str, note: str = '') -> str | None:
                 return myself.format(path, content, note) or other.format(path, content, note)
-            @cached_property
-            def regex(self) -> re.Pattern | None:
-                patterns = [f'(?:{regex.pattern})' for regex in (myself.regex, other.regex) if regex]
-                return re.compile('|'.join(patterns), re.MULTILINE | re.DOTALL) if patterns else None
+            def find(self, message: str) -> list[str]:
+                return myself.find(message) + other.find(message)
             def parse(self, formatted: str) -> tuple[Path | None, str]:
                 path, content = myself.parse(formatted)
                 if content:
@@ -57,9 +52,8 @@ class EnvelopeFormatter:
         class AndEnvelopeFormatter(EnvelopeFormatter):
             def format(self, path: Path, content: str, note: str = '') -> str | None:
                 return myself.format(path, content, note) if whitelist(path, content) else None
-            @cached_property
-            def regex(self) -> re.Pattern | None:
-                return myself.regex
+            def find(self, message: str) -> list[str]:
+                return myself.find(message)
             def parse(self, formatted: str) -> tuple[Path | None, str]:
                 path, content = myself.parse(formatted)
                 if path and not whitelist(path, content):
@@ -69,6 +63,7 @@ class EnvelopeFormatter:
 
 @lru_cache
 def header(*, guesser: LanguageGuesser = llobot.formatters.languages.standard(), min_backticks: int = 3) -> EnvelopeFormatter:
+    detection_regex = re.compile(r'^`[^\n]+?`(?: \([^\n]*?\))?:\n\n(?:```[^`\n]*\n.*?\n```|````[^`\n]*\n.*?\n````|`````[^`\n]*\n.*?\n`````)$', re.MULTILINE | re.DOTALL)
     parsing_regex = re.compile(r'`([^\n]+?)`(?: \([^\n]*?\))?:\n\n```+[^\n]*\n(.*)\n```+', re.MULTILINE | re.DOTALL)
     class HeaderEnvelopeFormatter(EnvelopeFormatter):
         def format(self, path: Path, content: str, note: str = '') -> str:
@@ -85,12 +80,11 @@ def header(*, guesser: LanguageGuesser = llobot.formatters.languages.standard(),
 
             return f'`{path}`{note_suffix}:\n\n{backticks}{lang}\n{content.strip()}\n{backticks}'
 
-        @cached_property
-        def regex(self) -> re.Pattern | None:
-            return re.compile(r'^`[^\n]+?`(?: \([^\n]*?\))?:\n\n(?:```[^`\n]*\n.*?\n```|````[^`\n]*\n.*?\n````|`````[^`\n]*\n.*?\n`````)$', re.MULTILINE | re.DOTALL)
+        def find(self, message: str) -> list[str]:
+            return [match.group(0) for match in detection_regex.finditer(message)]
 
         def parse(self, formatted: str) -> tuple[Path | None, str]:
-            if not self.regex.fullmatch(formatted):
+            if not detection_regex.fullmatch(formatted):
                 return None, ''
             match = parsing_regex.fullmatch(formatted)
             if not match:
