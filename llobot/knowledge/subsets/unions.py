@@ -9,11 +9,11 @@ class UnionKnowledgeSubset(KnowledgeSubset):
     _children: list[KnowledgeSubset]
     _content_sensitive: bool
 
-    def __init__(self, suffixes: set[str] = set(), filenames: set[str] = set(), directories: set[str] = set(), children: list[KnowledgeSubset] = []):
+    def __init__(self, suffixes: set[str] = set(), filenames: set[str] = set(), directories: set[str] = set(), children: Iterable[KnowledgeSubset] = tuple()):
         self._suffixes = suffixes
         self._filenames = filenames
         self._directories = directories
-        self._children = children
+        self._children = tuple(children)
         self._content_sensitive = any(child.content_sensitive for child in children)
 
     @property
@@ -38,7 +38,7 @@ class UnionKnowledgeSubset(KnowledgeSubset):
             self._suffixes,
             self._filenames,
             self._directories,
-            self._children + [other]
+            self._children + (other,)
         )
 
 def suffix(*suffixes: str) -> UnionKnowledgeSubset:

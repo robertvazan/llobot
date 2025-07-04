@@ -11,6 +11,7 @@ from llobot.formatters.knowledge import KnowledgeFormatter
 from llobot.formatters.deletions import DeletionFormatter
 from llobot.experts import Expert
 from llobot.experts.requests import ExpertRequest
+import llobot.trimmers
 import llobot.contexts
 import llobot.contexts.deltas
 import llobot.formatters.knowledge

@@ -51,16 +51,16 @@ def contributing() -> KnowledgeSubset:
     return llobot.knowledge.subsets.filename('CONTRIBUTING', 'CONTRIBUTING.md', 'CONTRIBUTING.txt')
 
 @cache
+def boilerplate() -> KnowledgeSubset:
+    return legal() | changelog() | support() | security() | contributing()
+
+@cache
 def texts() -> KnowledgeSubset:
-    return legal() | readme() | changelog() | support() | security() | contributing()
+    return boilerplate() | readme()
 
 @cache
 def whitelist() -> KnowledgeSubset:
     return texts()
-
-@cache
-def boilerplate() -> KnowledgeSubset:
-    return texts() - readme()
 
 __all__ = [
     'readme',
@@ -75,8 +75,8 @@ __all__ = [
     'suport',
     'security',
     'contributing',
+    'boilerplate',
     'texts',
     'whitelist',
-    'boilerplate',
 ]
 

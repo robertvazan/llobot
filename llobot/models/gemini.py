@@ -179,11 +179,11 @@ class _GeminiModel(Model):
         result |= llobot.models.streams.notify(lambda stream: self.cache.write(llobot.models.streams.chat(prompt, stream)))
         return result
 
-def create(name: str, context_budget: int, **kwargs) -> Model:
-    return _GeminiModel(name, context_budget, **kwargs)
+def create(name: str, **kwargs) -> Model:
+    return _GeminiModel(name, **kwargs)
 
-def via_openai_protocol(name: str, context_budget: int, auth: str, **kwargs) -> Model:
-    return llobot.models.openai.compatible('https://generativelanguage.googleapis.com/v1beta/openai', 'gemini', name, context_budget, auth=auth, **kwargs)
+def via_openai_protocol(name: str, auth: str, **kwargs) -> Model:
+    return llobot.models.openai.compatible('https://generativelanguage.googleapis.com/v1beta/openai', 'gemini', name, auth=auth, **kwargs)
 
 __all__ = [
     'create',

@@ -151,19 +151,21 @@ def _relevance(
             for path, content in knowledge
         }))
 
+# Positive relevance scorer.
 @lru_cache
 def relevant(relevant: KnowledgeSubset, *,
     blacklist: KnowledgeSubset | None = llobot.knowledge.subsets.boilerplate(),
-    unimportant_weight: float = 0.1,
+    ancillary_weight: float = 0.1,
 ) -> KnowledgeScorer:
-    return _relevance(relevant, 1.0, unimportant_weight, blacklist)
+    return _relevance(relevant, 1.0, ancillary_weight, blacklist)
 
+# Negative relevance scorer.
 @lru_cache
-def irrelevant(unimportant: KnowledgeSubset = llobot.knowledge.subsets.unimportant(), *,
+def irrelevant(ancillary: KnowledgeSubset = llobot.knowledge.subsets.ancillary(), *,
     blacklist: KnowledgeSubset | None = llobot.knowledge.subsets.boilerplate(),
-    unimportant_weight: float = 0.1,
+    ancillary_weight: float = 0.1,
 ) -> KnowledgeScorer:
-    return _relevance(unimportant, unimportant_weight, 1.0, blacklist)
+    return _relevance(ancillary, ancillary_weight, 1.0, blacklist)
 
 @cache
 def standard() -> KnowledgeScorer:

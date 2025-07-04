@@ -24,27 +24,15 @@ def regular() -> KnowledgeSubset:
 
 @cache
 def tests() -> KnowledgeSubset:
-    return llobot.knowledge.subsets.glob('**/*Test.java')
+    return llobot.knowledge.subsets.glob('**/*Test.java', '**/*Tests.java') | llobot.knowledge.subsets.glob('**/src/test/**')
 
 @cache
 def benchmarks() -> KnowledgeSubset:
     return llobot.knowledge.subsets.glob('**/*Benchmark.java')
 
 @cache
-def main_tree() -> KnowledgeSubset:
-    return llobot.knowledge.subsets.glob('**/src/main/**')
-
-@cache
-def test_tree() -> KnowledgeSubset:
-    return llobot.knowledge.subsets.glob('**/src/test/**')
-
-@cache
 def resources() -> KnowledgeSubset:
     return llobot.knowledge.subsets.glob('**/src/*/resources/**')
-
-@cache
-def test_resources() -> KnowledgeSubset:
-    return llobot.knowledge.subsets.glob('**/src/test/resources/**')
 
 @cache
 def pom() -> KnowledgeSubset:
@@ -67,16 +55,8 @@ def blacklist() -> KnowledgeSubset:
     return build()
 
 @cache
-def boilerplate() -> KnowledgeSubset:
-    return test_resources()
-
-@cache
-def unimportant() -> KnowledgeSubset:
-    return boilerplate() | special() | resources() | pom() | properties()
-
-@cache
-def relevant() -> KnowledgeSubset:
-    return regular() - tests() - test_tree() - benchmarks()
+def ancillary() -> KnowledgeSubset:
+    return special() | tests() | resources() | pom() | properties()
 
 __all__ = [
     'suffix',
@@ -86,17 +66,12 @@ __all__ = [
     'regular',
     'tests',
     'benchmarks',
-    'main_tree',
-    'test_tree',
     'resources',
-    'test_resources',
     'pom',
     'properties',
     'build',
     'whitelist',
     'blacklist',
-    'boilerplate',
-    'unimportant',
-    'relevant',
+    'ancillary',
 ]
 

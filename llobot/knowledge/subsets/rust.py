@@ -27,12 +27,8 @@ def blacklist() -> KnowledgeSubset:
     return build()
 
 @cache
-def unimportant() -> KnowledgeSubset:
-    return cargo()
-
-@cache
-def relevant() -> KnowledgeSubset:
-    return suffix() - tests()
+def ancillary() -> KnowledgeSubset:
+    return cargo() | tests()
 
 __all__ = [
     'suffix',
@@ -41,7 +37,6 @@ __all__ = [
     'build',
     'whitelist',
     'blacklist',
-    'unimportant',
-    'relevant',
+    'ancillary',
 ]
 

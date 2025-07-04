@@ -42,8 +42,6 @@ import llobot.models.openai
 import llobot.projects
 import llobot.knowledge.sources
 import llobot.experts.coders
-import llobot.experts.python
-import llobot.experts.java
 import llobot.experts.wrappers
 import llobot.experts.memory
 import llobot.models.experts
@@ -102,19 +100,17 @@ def define_expert(name, expert):
 # Lets use some standard experts that come with llobot.
 experts = ModelCatalog(
     define_expert('coder', llobot.experts.coders.standard()),
-    define_expert('python', llobot.experts.python.standard()),
-    define_expert('java', llobot.experts.java.standard()),
 )
 
 # Backend Ollama listens on 11434, so we will listen on 11435 to avoid conflicts.
 llobot.models.ollama.listeners.create(experts, port=11435).listen()
 ```
 
-Run this script and add `localhost:11435` as an additional Ollama endpoint to your UI frontend (like Open WebUI, which is [no longer open source](https://github.com/open-webui/open-webui/issues/13579), so feel free to look for alternatives). You should now see virtual models `coder`, `python`, and `java` listed in the UI.
+Run this script and add `localhost:11435` as an additional Ollama endpoint to your UI frontend (like Open WebUI, which is [no longer open source](https://github.com/open-webui/open-webui/issues/13579), so feel free to look for alternatives). You should now see the virtual model `coder` listed in the UI.
 
 ## How to use
 
-You should now be able to issue queries against the experts. Select `python` expert and submit this prompt:
+You should now be able to issue queries against the experts. Select `coder` expert and submit this prompt:
 
 > How do I connect to remote Ollama instance?
 >

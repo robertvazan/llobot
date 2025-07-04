@@ -142,22 +142,26 @@ def blacklist() -> KnowledgeSubset:
         | vscode.blacklist()
         | eclipse.blacklist())
 
+# What we almost never want to put in the context.
+# This mostly covers files that are predictable and rarely edited.
 @cache
 def boilerplate() -> KnowledgeSubset:
     from llobot.knowledge.subsets import git, repo, github, java
     return (git.boilerplate()
         | repo.boilerplate()
-        | github.boilerplate()
-        | java.boilerplate())
+        | github.boilerplate())
 
+# Ancillary files accompany core files. They are always secondary in some way.
+# They are included in the context, but their default weight is much lower.
+# This also matches boilerplate files, so that it's a superset of boilerplate.
 @cache
-def unimportant() -> KnowledgeSubset:
-    from llobot.knowledge.subsets import java, rust, toml, xml
+def ancillary() -> KnowledgeSubset:
+    from llobot.knowledge.subsets import java, python, rust, toml, xml
     return (boilerplate()
-        | java.unimportant()
-        | rust.unimportant()
-        | toml.whitelist()
-        | xml.whitelist())
+        | java.ancillary()
+        | python.ancillary()
+        | rust.ancillary()
+        | toml.whitelist())
 
 __all__ = [
     'KnowledgeSubset',
@@ -175,6 +179,6 @@ __all__ = [
     'whitelist',
     'blacklist',
     'boilerplate',
-    'unimportant',
+    'ancillary',
 ]
 
