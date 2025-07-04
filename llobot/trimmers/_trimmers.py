@@ -75,12 +75,6 @@ def largest(*alternatives: Trimmer) -> Trimmer:
         return result
     return create(trim)
 
-def whitelist(subset: KnowledgeSubset) -> Trimmer:
-    return create(lambda path, content: content if subset(path, content) else '')
-
-def blacklist(subset: KnowledgeSubset) -> Trimmer:
-    return whitelist(~subset)
-
 def re(pattern: str, flags=0, *, replacement: str = '', incremental=False) -> Trimmer:
     pattern = regexlib.compile(pattern, flags)
     if incremental:
@@ -149,8 +143,6 @@ __all__ = [
     'terminal',
     'first',
     'largest',
-    'whitelist',
-    'blacklist',
     're',
     'tabs_to_spaces',
     'blank_lines',
