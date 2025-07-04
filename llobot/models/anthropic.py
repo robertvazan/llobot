@@ -94,7 +94,7 @@ class _AnthropicModel(Model):
     _client: Anthropic
     _name: str
     _aliases: list[str]
-    _context_size: int
+    _context_budget: int
     _max_tokens: int
     _estimator: TokenLengthEstimator
     _cached: bool
@@ -103,10 +103,12 @@ class _AnthropicModel(Model):
     _top_k: int | None
     _top_p: float | None
 
-    def __init__(self, name: str, context_size: int, max_tokens: int, *,
+    def __init__(self, name: str, *,
         client: Anthropic | None = None,
         auth: str | None = None,
         aliases: Iterable[str] = [],
+        context_budget: int = 25_000,
+        max_tokens: int = 8_000,
         estimator: TokenLengthEstimator = llobot.models.estimators.standard(),
         cached: bool = True,
         temperature: float | None = None,
@@ -122,7 +124,7 @@ class _AnthropicModel(Model):
             self._client = Anthropic()
         self._name = name
         self._aliases = list(aliases)
-        self._context_size = context_size
+        self._context_budget = context_budget
         self._max_tokens = max_tokens
         self._estimator = estimator
         self._cached = cached
@@ -143,7 +145,7 @@ class _AnthropicModel(Model):
     @property
     def options(self) -> dict:
         options = {
-            'context_size': self._context_size,
+            'context_budget': self._context_budget,
             'max_tokens': self._max_tokens,
         }
         if self._temperature is not None:
@@ -155,7 +157,7 @@ class _AnthropicModel(Model):
         return options
 
     def validate_options(self, options: dict):
-        allowed = {'context_size', 'max_tokens', 'temperature', 'top_k', 'top_p'}
+        allowed = {'context_budget', 'max_tokens', 'temperature', 'top_k', 'top_p'}
         for unrecognized in set(options) - allowed:
             raise ValueError(f"Unrecognized option: {unrecognized}")
 
@@ -165,9 +167,9 @@ class _AnthropicModel(Model):
         top_p = options.get('top_p', self._top_p)
         return _AnthropicModel(
             self._name,
-            int(options.get('context_size', self._context_size)),
-            int(options.get('max_tokens', self._max_tokens)),
             client=self._client,
+            context_budget=int(options.get('context_budget', self._context_budget)),
+            max_tokens=int(options.get('max_tokens', self._max_tokens)),
             estimator=self._estimator,
             cached=self._cached,
             temperature=float(temperature) if temperature is not None and temperature != '' else None,
@@ -176,8 +178,8 @@ class _AnthropicModel(Model):
         )
 
     @property
-    def context_size(self) -> int:
-        return self._context_size
+    def context_budget(self) -> int:
+        return self._context_budget
 
     @property
     def estimator(self) -> TokenLengthEstimator:
@@ -201,8 +203,8 @@ class _AnthropicModel(Model):
         result |= llobot.models.streams.notify(lambda _: self.cache.write(prompt.context_only()))
         return result
 
-def create(name: str, context_size: int, max_tokens: int, **kwargs) -> Model:
-    return _AnthropicModel(name, context_size, max_tokens, **kwargs)
+def create(name: str, **kwargs) -> Model:
+    return _AnthropicModel(name, **kwargs)
 
 __all__ = [
     'create',

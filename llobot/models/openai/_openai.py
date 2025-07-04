@@ -46,19 +46,18 @@ class _OpenAIModel(Model):
     _aliases: list[str]
     _endpoint: str
     _auth: str
-    _context_size: int
+    _context_budget: int
     _estimator: TokenLengthEstimator
     _cache: PromptStorage
     _cache_sensitivity: set[str]
     _temperature: float | None
 
-    # Context size is a mandatory, because we don't have any easy way to query it.
-    # Not to mention OpenAI-provided context window is huge and we never want to use it fully.
-    def __init__(self, name: str, context_size: int, *,
+    def __init__(self, name: str, *,
         auth: str = '',
         endpoint: str | None = None,
         namespace: str = 'openai',
         aliases: list[str] = [],
+        context_budget: int = 25_000,
         estimator: TokenLengthEstimator = llobot.models.estimators.standard(),
         cache: PromptStorage = llobot.models.caches.disabled(),
         cache_sensitivity: set[str] = set(),
@@ -70,7 +69,7 @@ class _OpenAIModel(Model):
         self._aliases = aliases
         self._endpoint = endpoint or endpoints.proprietary()
         self._auth = auth
-        self._context_size = context_size
+        self._context_budget = context_budget
         self._estimator = estimator
         # Proprietary OpenAI models have short-lived cache that could pessimistically exist only for 5 minutes.
         self._cache = cache
@@ -88,32 +87,32 @@ class _OpenAIModel(Model):
 
     @property
     def options(self) -> dict:
-        options = { 'context_size': self._context_size }
+        options = { 'context_budget': self._context_budget }
         if self._temperature is not None:
             options['temperature'] = self._temperature
         return options
 
     def validate_options(self, options: dict):
-        allowed = {'context_size', 'temperature'}
+        allowed = {'context_budget', 'temperature'}
         for unrecognized in set(options) - allowed:
             raise ValueError(f"Unrecognized option: {unrecognized}")
 
     def configure(self, options: dict) -> Model:
         temperature = options.get('temperature', self._temperature)
         return _OpenAIModel(self._name,
-            int(options.get('context_size', self._context_size)),
             auth=self._auth,
             endpoint=self._endpoint,
             namespace=self._namespace,
             aliases=self._aliases,
+            context_budget=int(options.get('context_budget', self._context_budget)),
             estimator=self._estimator,
             cache=self._cache,
             temperature=float(temperature) if temperature is not None and temperature != '' else None,
         )
 
     @property
-    def context_size(self) -> int:
-        return self._context_size
+    def context_budget(self) -> int:
+        return self._context_budget
 
     @property
     def estimator(self):
@@ -135,12 +134,11 @@ class _OpenAIModel(Model):
         result |= llobot.models.streams.notify(lambda stream: self.cache.write(llobot.models.streams.chat(prompt, stream)))
         return result
 
-# Always specify context size. This must be a conscious cost-benefit decision.
-def proprietary(name: str, context_size: int, auth: str, *, cache: PromptStorage = llobot.models.caches.lru.create('openai', timeout=5*60), **kwargs) -> Model:
-    return _OpenAIModel(name, context_size, auth=auth, cache=cache, **kwargs)
+def proprietary(name: str, auth: str, *, cache: PromptStorage = llobot.models.caches.lru.create('openai', timeout=5*60), **kwargs) -> Model:
+    return _OpenAIModel(name, auth=auth, cache=cache, **kwargs)
 
-def compatible(endpoint: str, namespace: str, name: str, context_size: int, **kwargs) -> Model:
-    return _OpenAIModel(name, context_size, endpoint=endpoint, namespace=namespace, **kwargs)
+def compatible(endpoint: str, namespace: str, name: str, **kwargs) -> Model:
+    return _OpenAIModel(name, endpoint=endpoint, namespace=namespace, **kwargs)
 
 __all__ = [
     'proprietary',

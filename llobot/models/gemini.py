@@ -81,16 +81,17 @@ class _GeminiModel(Model):
     _client: genai.Client
     _name: str
     _aliases: list[str]
-    _context_size: int
+    _context_budget: int
     _thinking: int | None
     _temperature: float | None
     _estimator: TokenLengthEstimator
     _cache: PromptStorage
 
-    def __init__(self, name: str, context_size: int, *,
+    def __init__(self, name: str, *,
         client: genai.Client | None = None,
         auth: str | None = None,
         aliases: Iterable[str] = [],
+        context_budget: int = 25_000,
         thinking: int | None = None,
         temperature: float | None = None,
         estimator: TokenLengthEstimator = llobot.models.estimators.standard(),
@@ -105,7 +106,7 @@ class _GeminiModel(Model):
             self._client = genai.Client()
         self._name = name
         self._aliases = list(aliases)
-        self._context_size = context_size
+        self._context_budget = context_budget
         self._thinking = thinking
         self._temperature = temperature
         self._estimator = estimator
@@ -123,7 +124,7 @@ class _GeminiModel(Model):
     @property
     def options(self) -> dict:
         options = {
-            'context_size': self._context_size,
+            'context_budget': self._context_budget,
         }
         if self._thinking is not None:
             options['thinking'] = self._thinking
@@ -132,7 +133,7 @@ class _GeminiModel(Model):
         return options
 
     def validate_options(self, options: dict):
-        allowed = {'context_size', 'thinking', 'temperature'}
+        allowed = {'context_budget', 'thinking', 'temperature'}
         for unrecognized in set(options) - allowed:
             raise ValueError(f"Unrecognized option: {unrecognized}")
         if options.get('temperature'):
@@ -145,9 +146,9 @@ class _GeminiModel(Model):
         temperature = options.get('temperature', self._temperature)
         return _GeminiModel(
             self._name,
-            int(options.get('context_size', self._context_size)),
             client=self._client,
             aliases=self._aliases,
+            context_budget=int(options.get('context_budget', self._context_budget)),
             thinking=int(thinking) if thinking else None,
             temperature=float(temperature) if temperature is not None and temperature != '' else None,
             estimator=self._estimator,
@@ -155,8 +156,8 @@ class _GeminiModel(Model):
         )
 
     @property
-    def context_size(self) -> int:
-        return self._context_size
+    def context_budget(self) -> int:
+        return self._context_budget
 
     @property
     def estimator(self) -> TokenLengthEstimator:
@@ -178,11 +179,11 @@ class _GeminiModel(Model):
         result |= llobot.models.streams.notify(lambda stream: self.cache.write(llobot.models.streams.chat(prompt, stream)))
         return result
 
-def create(name: str, context_size: int, **kwargs) -> Model:
-    return _GeminiModel(name, context_size, **kwargs)
+def create(name: str, context_budget: int, **kwargs) -> Model:
+    return _GeminiModel(name, context_budget, **kwargs)
 
-def via_openai_protocol(name: str, context_size: int, auth: str, **kwargs) -> Model:
-    return llobot.models.openai.compatible('https://generativelanguage.googleapis.com/v1beta/openai', 'gemini', name, context_size, auth=auth, **kwargs)
+def via_openai_protocol(name: str, context_budget: int, auth: str, **kwargs) -> Model:
+    return llobot.models.openai.compatible('https://generativelanguage.googleapis.com/v1beta/openai', 'gemini', name, context_budget, auth=auth, **kwargs)
 
 __all__ = [
     'create',

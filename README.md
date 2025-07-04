@@ -61,16 +61,15 @@ backend_models = ModelCatalog(
     ),
     llobot.models.gemini.create(
         'gemini-2.5-flash-preview-05-20',
-        # Context size in this case just limits spending.
-        32 * 1024,
+        # Context budget limits spending.
+        context_budget=25_000,
         temperature=0,
         auth='YOUR_GOOGLE_API_KEY',
         aliases=['cloud']
     ),
     llobot.models.anthropic.create(
         'claude-sonnet-4-0',
-        32 * 1024,
-        8000,
+        context_budget=25_000,
         auth='YOUR_ANTHROPIC_API_KEY',
         aliases=['claude']
     ),

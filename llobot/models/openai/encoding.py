@@ -146,7 +146,7 @@ def encode_request(model: str, options: dict, prompt: ChatBranch) -> dict:
         'stream_options': {
             'include_usage': True
         },
-        **{key: value for key, value in options.items() if key != 'context_size'}
+        **{key: value for key, value in options.items() if key != 'context_budget'}
     }
 
 def decode_request(data: dict) -> (str, dict, ChatBranch):

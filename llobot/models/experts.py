@@ -81,8 +81,12 @@ class _StandardExpertRequest:
         return int(chars / self.token_length)
 
     @property
+    def token_budget(self) -> int:
+        return self.model.context_budget
+
+    @property
     def budget(self) -> int:
-        return self.estimate_chars(self.model.context_size)
+        return self.estimate_chars(self.token_budget)
 
     def stuff(self, prompt: ChatBranch | None = None) -> Context:
         prompt = prompt or self.prompt
@@ -158,15 +162,13 @@ class _StandardExpertRequest:
             - Model: `@{self.model.name}`
             - Cutoff: `:{llobot.time.format(self.cutoff)}`
         ''')
-        model = self.model
-        token_length = model.estimate_token_length(self.zone)
         info += dedent(f'''
             Model:
 
-            - Name: `@{model.name}`
-            - Options: `{model.options}`
-            - Aliases: {', '.join([f'`@{alias}`' for alias in model.aliases]) if model.aliases else '-'}
-            - Context window: {model.context_size // 1024:,}K tokens, ~{model.context_size * token_length / 1024:,.0f} KB @ ~{token_length:.1f} token length
+            - Name: `@{self.model.name}`
+            - Options: `{self.model.options}`
+            - Aliases: {', '.join([f'`@{alias}`' for alias in self.model.aliases]) if self.model.aliases else '-'}
+            - Context budget: {self.token_budget / 1000:,.0f}K tokens, ~{self.budget / 1024:,.0f} KB @ ~{self.token_length:.1f} token length
         ''')
         if self.scope:
             knowledge = self.scope.project.knowledge(self.cutoff)
@@ -280,9 +282,9 @@ class _StandardExpertModel(Model):
         return f'expert/{self.memory.name}'
 
     @property
-    def context_size(self) -> int:
+    def context_budget(self) -> int:
         # This doesn't matter. Just propagate one from the primary model.
-        return self.backend.context_size
+        return self.backend.context_budget
 
     @property
     def estimator(self) -> TokenLengthEstimator:

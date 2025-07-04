@@ -40,16 +40,17 @@ class _OllamaModel(Model):
     _name: str
     _aliases: list[str]
     _endpoint: str
-    _context_size: int
+    _num_ctx: int
+    _context_budget: int
     _estimator: TokenLengthEstimator
     _cache: PromptStorage
     _top_k: int | None
 
-    # Context size is a mandatory parameter for two reasons. Firstly, Ollama has only 2K-token default, which is useless for real applications.
-    # Secondly, even if Ollama introduces better default in the future, we don't have any easy way to query it.
-    def __init__(self, name: str, context_size: int, *,
+    # Context size is a mandatory parameter, because Ollama has only 2K-token default, which is useless for real applications.
+    def __init__(self, name: str, num_ctx: int, *,
         endpoint: str | None = None,
         aliases: Iterable[str] = [],
+        context_budget: int | None = None,
         estimator: TokenLengthEstimator = llobot.models.estimators.standard(),
         cache: PromptStorage | None = None,
         top_k: int | None = None,
@@ -58,7 +59,8 @@ class _OllamaModel(Model):
         self._name = name.removeprefix('ollama/').removesuffix(':latest')
         self._aliases = list(aliases)
         self._endpoint = endpoint or endpoints.localhost()
-        self._context_size = context_size
+        self._num_ctx = num_ctx
+        self._context_budget = context_budget or min(25_000, max(0, int(0.8 * (num_ctx - 5000))))
         self._estimator = estimator
         # Ollama does not have proper prompt cache in system RAM, only one or more inference buffers in VRAM,
         # so pessimistically assume there is only one prompt cache per endpoint.
@@ -80,13 +82,16 @@ class _OllamaModel(Model):
 
     @property
     def options(self) -> dict:
-        options = { 'num_ctx': self._context_size }
+        options = {
+            'num_ctx': self._num_ctx,
+            'context_budget': self._context_budget,
+        }
         if self._top_k is not None:
             options['top_k'] = self._top_k
         return options
 
     def validate_options(self, options: dict):
-        allowed = {'num_ctx', 'top_k'}
+        allowed = {'num_ctx', 'context_budget', 'top_k'}
         for unrecognized in set(options) - allowed:
             raise ValueError(f"Unrecognized option: {unrecognized}")
 
@@ -94,17 +99,18 @@ class _OllamaModel(Model):
         top_k = options.get('top_k', self._top_k)
         return _OllamaModel(
             self._name,
-            int(options.get('num_ctx', self._context_size)),
+            int(options.get('num_ctx', self._num_ctx)),
             endpoint=self._endpoint,
             aliases=self._aliases,
+            context_budget=int(options.get('context_budget', self._context_budget)),
             estimator=self._estimator,
             cache=self._cache,
             top_k=int(top_k) if top_k else None,
         )
 
     @property
-    def context_size(self) -> int:
-        return self._context_size
+    def context_budget(self) -> int:
+        return self._context_budget
 
     @property
     def estimator(self) -> TokenLengthEstimator:
@@ -118,13 +124,15 @@ class _OllamaModel(Model):
 
     def _connect(self, prompt: ChatBranch) -> ModelStream:
         self.cache.trim(prompt)
-        result = _OllamaStream(self._endpoint, self._name, self.options, prompt)
+        options = self.options
+        del options['context_budget']
+        result = _OllamaStream(self._endpoint, self._name, options, prompt)
         result |= llobot.models.streams.notify(lambda stream: self.cache.write(llobot.models.streams.chat(prompt, stream)))
         return result
 
 # Default tag is :latest.
-def create(name: str, context_size: int, **kwargs) -> Model:
-    return _OllamaModel(name, context_size, **kwargs)
+def create(name: str, num_ctx: int, **kwargs) -> Model:
+    return _OllamaModel(name, num_ctx, **kwargs)
 
 __all__ = [
     'create',
