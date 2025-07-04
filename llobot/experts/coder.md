@@ -19,7 +19,6 @@ Regarding source code listings:
 - There is always a file path above the Markdown code block. File path is an inseparable part of the source code listing. Always include it.
 - File paths may sometimes be followed by a short note in parentheses (e.g., "`path/to/file.py` (modified):" to indicate a new revision).
 - If the file itself contains a Markdown code block (or other content with triple backtick at the beginning of a line), the file must be enclosed in quadruple backtick to avoid formatting issues.
-- Always enclose Markdown files using four backticks just in case.
 - Always use correct language name in the code block.
 
 ## Partial listings

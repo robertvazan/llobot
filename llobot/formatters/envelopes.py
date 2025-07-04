@@ -62,7 +62,7 @@ class EnvelopeFormatter:
         return AndEnvelopeFormatter()
 
 @lru_cache
-def header(*, guesser: LanguageGuesser = llobot.formatters.languages.standard(), min_backticks: int = 3) -> EnvelopeFormatter:
+def header(*, guesser: LanguageGuesser = llobot.formatters.languages.standard()) -> EnvelopeFormatter:
     detection_regex = re.compile(r'^`[^\n]+?`(?: \([^\n]*?\))?:\n\n(?:```[^`\n]*\n.*?\n```|````[^`\n]*\n.*?\n````|`````[^`\n]*\n.*?\n`````)$', re.MULTILINE | re.DOTALL)
     parsing_regex = re.compile(r'`([^\n]+?)`(?: \([^\n]*?\))?:\n\n```+[^\n]*\n(.*)\n```+', re.MULTILINE | re.DOTALL)
     class HeaderEnvelopeFormatter(EnvelopeFormatter):
@@ -71,7 +71,7 @@ def header(*, guesser: LanguageGuesser = llobot.formatters.languages.standard(),
             lang = guesser(path, content)
 
             # Determine backtick count
-            backtick_count = min_backticks
+            backtick_count = 3
             backticks = '`' * backtick_count
             lines = content.splitlines()
             while any(line.startswith(backticks) for line in lines):
@@ -94,7 +94,7 @@ def header(*, guesser: LanguageGuesser = llobot.formatters.languages.standard(),
 
 @cache
 def standard() -> EnvelopeFormatter:
-    return header(min_backticks=4) & llobot.knowledge.subsets.markdown.suffix() | header()
+    return header()
 
 __all__ = [
     'EnvelopeFormatter',
