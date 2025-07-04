@@ -1,5 +1,5 @@
 from __future__ import annotations
-import functools
+from functools import cache, lru_cache
 from pathlib import Path
 
 class KnowledgeSubset:
@@ -43,12 +43,12 @@ def path(predicate: Callable[[Path], bool]) -> KnowledgeSubset:
 def solo(solo_path: Path) -> KnowledgeSubset:
     return path(lambda other_path: solo_path == other_path)
 
-@functools.cache
+@cache
 def nothing() -> KnowledgeSubset:
     import llobot.knowledge.subsets.unions
     return llobot.knowledge.subsets.unions.union()
 
-@functools.cache
+@cache
 def everything() -> KnowledgeSubset:
     return path(lambda path: True)
 
@@ -104,8 +104,8 @@ def coerce(material: KnowledgeSubset | str | Path | 'KnowledgeIndex' | 'Knowledg
     return path(lambda path: path in index)
 
 # We will LRU-cache the cache() function itself, so that multiple requests to cache single subset do not create multiple memory-hungry caches.
-@functools.lru_cache
-def cache(uncached: KnowledgeSubset) -> KnowledgeSubset:
+@lru_cache
+def cached(uncached: KnowledgeSubset) -> KnowledgeSubset:
     if uncached.content_sensitive or uncached == everything() or uncached == nothing():
         return uncached
     memory = {}
@@ -117,7 +117,7 @@ def cache(uncached: KnowledgeSubset) -> KnowledgeSubset:
         return accepted
     return path(accepts)
 
-@functools.cache
+@cache
 def whitelist() -> KnowledgeSubset:
     from llobot.knowledge.subsets import git, repo, github, markdown, python, java, rust, shell, cpp, xml, toml, txt
     return (git.whitelist()
@@ -133,7 +133,7 @@ def whitelist() -> KnowledgeSubset:
         | toml.whitelist()
         | txt.whitelist())
 
-@functools.cache
+@cache
 def blacklist() -> KnowledgeSubset:
     from llobot.knowledge.subsets import git, java, rust, vscode, eclipse
     return (git.blacklist()
@@ -142,7 +142,7 @@ def blacklist() -> KnowledgeSubset:
         | vscode.blacklist()
         | eclipse.blacklist())
 
-@functools.cache
+@cache
 def boilerplate() -> KnowledgeSubset:
     from llobot.knowledge.subsets import git, repo, github, java
     return (git.boilerplate()
@@ -150,7 +150,7 @@ def boilerplate() -> KnowledgeSubset:
         | github.boilerplate()
         | java.boilerplate())
 
-@functools.cache
+@cache
 def unimportant() -> KnowledgeSubset:
     from llobot.knowledge.subsets import java, rust, toml, xml
     return (boilerplate()
@@ -171,7 +171,7 @@ __all__ = [
     'directory',
     'glob',
     'coerce',
-    'cache',
+    'cached',
     'whitelist',
     'blacklist',
     'boilerplate',

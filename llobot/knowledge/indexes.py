@@ -86,12 +86,12 @@ def directory(
     root = Path(root)
     if not root.exists():
         return KnowledgeIndex()
-    blacklist = llobot.knowledge.subsets.cache(llobot.knowledge.subsets.coerce(blacklist or llobot.knowledge.subsets.nothing()))
+    blacklist = llobot.knowledge.subsets.cached(llobot.knowledge.subsets.coerce(blacklist or llobot.knowledge.subsets.nothing()))
     # Special-case concrete whitelist, so that we don't recurse into potentially large directories unnecessarily.
     if isinstance(whitelist, (Path, KnowledgeIndex, KnowledgeRanking)):
         whitelist = coerce(whitelist)
         return KnowledgeIndex([path for path in whitelist if (root/path).is_file() and not blacklist(path)])
-    whitelist = llobot.knowledge.subsets.cache(llobot.knowledge.subsets.coerce(whitelist or llobot.knowledge.subsets.everything()))
+    whitelist = llobot.knowledge.subsets.cached(llobot.knowledge.subsets.coerce(whitelist or llobot.knowledge.subsets.everything()))
     # Carefully walk the tree recursively, so that we can blacklist entire directories.
     return KnowledgeIndex(_walk(root, root, whitelist, blacklist))
 

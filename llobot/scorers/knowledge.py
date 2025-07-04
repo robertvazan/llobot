@@ -138,9 +138,9 @@ def _relevance(
     blacklist: KnowledgeSubset | None
 ) -> KnowledgeScorer:
     # Relevancy scorers have to process the whole project, so optimize the process as much as possible.
-    condition = llobot.knowledge.subsets.cache(condition)
+    condition = llobot.knowledge.subsets.cached(condition)
     if blacklist:
-        blacklist = llobot.knowledge.subsets.cache(blacklist)
+        blacklist = llobot.knowledge.subsets.cached(blacklist)
         return create(lambda knowledge: KnowledgeScores({
             path: (match_score if condition(path, content) else non_match_score)
             for path, content in knowledge if not blacklist(path, content)
