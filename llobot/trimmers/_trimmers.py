@@ -102,29 +102,6 @@ def blank_lines() -> Trimmer:
 def normalize_whitespace() -> Trimmer:
     return tabs_to_spaces() + blank_lines()
 
-# It is tempting to place a comment or something at the end of the file to indicate it has been cut short,
-# but besides wasting tokens, such trimming indicator would usually have to be a comment, which would interfere with comment trimmers.
-@cache
-def tail(lines: int = 10) -> Trimmer:
-    def trim(path: Path, content: str) -> str:
-        content = content.strip().splitlines()
-        if len(content) <= lines:
-            return ''
-        cut = lines if len(content) < 2 * lines else -lines
-        return '\n'.join(content[:cut]).strip()
-    return create(trim)
-
-@cache
-def incremental() -> Trimmer:
-    from llobot.trimmers import markdown, python, java, rust, cpp, xml, toml
-    return (markdown.incremental()
-        + python.incremental()
-        + java.incremental()
-        + rust.incremental()
-        + cpp.incremental()
-        + xml.incremental()
-        + toml.incremental())
-
 @cache
 def eager() -> Trimmer:
     from llobot.trimmers import markdown, python, java, rust, cpp, xml, toml
@@ -147,8 +124,6 @@ __all__ = [
     'tabs_to_spaces',
     'blank_lines',
     'normalize_whitespace',
-    'tail',
-    'incremental',
     'eager',
 ]
 
