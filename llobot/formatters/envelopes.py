@@ -79,7 +79,7 @@ def create(
 @lru_cache
 def header(*, guesser: LanguageGuesser = llobot.formatters.languages.standard(), min_backticks: int = 3) -> EnvelopeFormatter:
     def format(path: Path, content: str, note: str = '') -> str:
-        header = f'`{path}` ({note}):\n\n' if note else f'`{path}`:\n\n'
+        note_suffix = f' ({note})' if note else ''
         lang = guesser(path, content)
 
         # Determine backtick count
@@ -90,7 +90,7 @@ def header(*, guesser: LanguageGuesser = llobot.formatters.languages.standard(),
             backtick_count += 1
             backticks = '`' * backtick_count
 
-        return f'{header}{backticks}{lang}\n{content.strip()}\n{backticks}'
+        return f'`{path}`{note_suffix}:\n\n{backticks}{lang}\n{content.strip()}\n{backticks}'
     
     detection_regex = re.compile(r'^`[^\n]+?`(?: \([^\n]*?\))?:\n\n(?:```[^`\n]*\n.*?\n```|````[^`\n]*\n.*?\n````|`````[^`\n]*\n.*?\n`````)$', re.MULTILINE | re.DOTALL)
     parsing_regex = re.compile(r'`([^\n]+?)`(?: \([^\n]*?\))?:\n\n```+[^\n]*\n(.*)\n```+', re.MULTILINE | re.DOTALL)
