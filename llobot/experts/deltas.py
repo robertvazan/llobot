@@ -29,20 +29,20 @@ def standard(*,
     update_trimmer: Trimmer = llobot.trimmers.boilerplate(),
     update_formatter: KnowledgeFormatter = llobot.formatters.knowledge.updates(),
     deletion_formatter: DeletionFormatter = llobot.formatters.deletions.standard(),
-    # Default share of the budget to dedicate to the change buffer is a bit controversial.
-    # Dedicating 50% of the budget to the change buffer balances memory and compute overhead (it minimizes their product),
+    # Change buffer budget as a fraction of the main context budget.
+    # Default size of the change buffer is a bit controversial.
+    # Dedicating 50% of the context to the change buffer balances memory and compute overhead (it minimizes their product),
     # but even cloud models have limited context windows, which we don't want to waste on huge change buffer.
     # Cloud models cannot even utilize the large change buffer, because they come with very short-lived prompt cache.
     # On top of that, large change buffer means a lot of outdated information in the context, which confuses the model.
-    # For these reasons, we will default to smaller change buffer, say 20% of the context window.
+    # For these reasons, we will default to smaller change buffer, say 20% on top of the fresh context budget.
     # That should still be enough for several smaller documents or examples.
-    buffer_share: float = 0.2,
+    overhead: float = 0.2,
 ) -> Expert:
     def stuff(expert: Expert, request: ExpertRequest) -> Context:
         if not request.cache.enabled:
             return expert(request)
-        fresh_share = 1 - buffer_share
-        fresh = (fresh_share * expert)(request)
+        fresh = expert(request)
         report = f"Delta prompt: {fresh.pretty_cost} fresh"
         # Even though we are including prompt cache, expert, and scope in the zone name, it might not be sufficiently unique.
         # If two models share the same prompt cache with wildly different context sizes, our context cache will be mostly ineffective.
@@ -77,7 +77,7 @@ def standard(*,
             report += f" = {proposal.pretty_cost} incremental"
             # We want to discard the proposal not only when it is over budget, but also when it grows too big relative to fresh context,
             # because we don't want disproportionately large change buffer when the underlying expert does not need the whole context window.
-            if proposal.cost > request.budget or fresh.cost < fresh_share * proposal.cost:
+            if proposal.cost > (1 + overhead) * fresh.cost:
                 # If the incremental context does not fit, rewrite the whole context from scratch using the fresh context.
                 # We could opt to rewrite only some suffix of the context that contains most "bubbles" of outdated content, but that has several issues:
                 #
