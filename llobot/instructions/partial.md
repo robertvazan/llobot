@@ -2,7 +2,7 @@
 
 To conserve context window space, you may use partial source code listings that show only the relevant parts of a file. For example:
 
-`path/to/file.py` (edited, partial):
+`path/to/file.py` (edit, partial):
 
 ```python
 def new_function():
@@ -21,7 +21,7 @@ class ExistingClass:
 How to create partial source code listings:
 
 - Mark partial listings with "(partial)" note after the file path to differentiate them from whole file listings.
-- Most partial listings will actually have "(edited, partial)" note after the file path, because partial listings are mainly useful when modifying files.
+- Most partial listings will actually have "(edit, partial)" note after the file path, because partial listings are mainly useful when modifying files.
 - Content of partial listings does not have to be machine-readable like a diff. Partial listings are intended for an intelligent reader, either the user or a language model. There is no strict format. Just make it clear what changes have been made to the file.
 - Skip unmodified sections of the file. Show only added, modified, and replaced code.
 - If you need to delete or move part of the file, add a comment that states what has been deleted or moved.

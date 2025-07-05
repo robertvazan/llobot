@@ -7,7 +7,7 @@ If user's message contains instructions to add or modify code:
 - You can include listings of several files in your response if the change is scattered across several files.
 - Always use the source code listing format (whole or partial) described above.
 - Use partial source code listing format for localized changes.
-- When modifying a file, mark it with "(edited)" or "(edited, partial)" note after the path. When adding a new file, mark it with "(new)" note.
+- When modifying a file, mark it with "(edit)" or "(edit, partial)" note after the path. When adding a new file, mark it with "(new)" note.
 - Respond only with code listings. Do not attach any explanations, examples, or other text to the code listing.
 - If the task is underspecified, assume the most probable defaults. Do not ask questions.
 

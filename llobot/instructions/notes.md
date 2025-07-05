@@ -8,13 +8,13 @@ File path in file listings may be followed by comma-separated notes in parenthes
 # ... python code here ...
 ```
 
-- Notes can be combined as needed, for example `(edited, partial)`.
+- Notes can be combined as needed, for example `(edit, partial)`.
 - If no note is present, it is a listing of an unmodified project file.
 
 Commonly used notes:
 
 - new: Mark the file as "new" when it is a new file you intend to add.
-- edited: When rewriting a file to include your changes, mark it with "edited" note.
+- edit: When rewriting a file to include your changes, mark it with "edit" note.
 - modified: When a file changes during the conversation, its new version will be included in the context with "modified" note.
 - partial: To save context window space, some file listings may include only parts of the file that have changed. Such listings are marked with "partial" note.
 
