@@ -17,4 +17,5 @@ Commonly used notes:
 - edit: When rewriting a file to include your changes, mark it with "edit" note.
 - modified: When a file changes during the conversation, its new version will be included in the context with "modified" note.
 - partial: To save context window space, some file listings may include only parts of the file that have changed. Such listings are marked with "partial" note.
+- moved from `original/location.py`: When a file is moved or renamed, this note indicates its original location. This note often supplements "edit" and "partial" notes.
 
