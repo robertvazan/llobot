@@ -27,27 +27,27 @@ def compile(role: str, *sections: str) -> str:
 
 @cache
 def listing() -> list[str]:
-    return [read('listing.md')]
+    return combine(read('listing.md'))
 
 @cache
 def partial() -> list[str]:
-    return listing() + [read('partial.md')]
+    return combine(*listing(), read('partial.md'))
 
 @cache
 def project() -> list[str]:
-    return listing() + [read('project.md')]
+    return combine(*listing(), read('project.md'))
 
 @cache
 def coding() -> list[str]:
-    return partial() + project() + [read('coding.md')]
+    return combine(*partial(), *project(), read('coding.md'))
 
 @cache
 def questions() -> list[str]:
-    return coding() + [read('questions.md')]
+    return combine(*coding(), read('questions.md'))
 
 @cache
 def trimming() -> list[str]:
-    return listing() + [read('trimming.md')]
+    return combine(*listing(), read('trimming.md'))
 
 __all__ = [
     'read',
