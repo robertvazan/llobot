@@ -18,5 +18,5 @@ Commonly used notes:
 - modified: When a file changes during the conversation, its new version will be included in the context with "modified" note.
 - delta: To save context window space, some file listings may include only parts of the file that have changed. Such listings are marked with "delta" note.
 - quote: When quoting a fragment of a file without modification, for example as part of an explanation or argument, mark it with "quote" note to differentiate it from the original file listing.
-- moved from `original/location.py`: When a file is moved or renamed, this note indicates its original location. This note often supplements "edit" and "delta" notes.
+- moved from `original/location.py`: When a file is moved or renamed, this note indicates its original location. Moved files are not considered to be new. This note is however often used together with "edit" and "delta" notes.
 
