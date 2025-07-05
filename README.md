@@ -17,6 +17,7 @@ There is currently no support for reasoning models, agentic loops, RAG, uploads,
 Llobot also has some nice features:
 
 - **Protocol implementations**: Llobot can connect to local and cloud models. It can also act as a server and expose virtual models via Ollama and OpenAI protocols.
+- **Modular instructions**: You can assemble your system prompt from reusable sections. Llobot includes some predefined sections.
 - **Knowledge management**: You can load, filter, transform, and time-travel plaintext knowledge bases and source code.
 - **Formatters**: Llobot builds clean prompts consisting of several chat turns using readable Markdown for easier auditing.
 - **Trimmers**: You can filter out boilerplate and less important content from files to save on tokens and to fit more content in the context window.
