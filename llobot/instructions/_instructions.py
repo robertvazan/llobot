@@ -38,8 +38,8 @@ def notes() -> list[str]:
     return combine(*listing(), read('notes.md'))
 
 @cache
-def partial() -> list[str]:
-    return combine(*notes(), read('partial.md'))
+def delta() -> list[str]:
+    return combine(*notes(), read('delta.md'))
 
 @cache
 def project() -> list[str]:
@@ -47,7 +47,7 @@ def project() -> list[str]:
 
 @cache
 def coding() -> list[str]:
-    return combine(*partial(), *project(), read('coding.md'))
+    return combine(*delta(), *project(), read('coding.md'))
 
 @cache
 def questions() -> list[str]:
@@ -64,7 +64,7 @@ __all__ = [
     'block',
     'listing',
     'notes',
-    'partial',
+    'delta',
     'project',
     'coding',
     'questions',
