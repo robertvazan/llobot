@@ -5,19 +5,24 @@ import llobot.experts.editors
 import llobot.instructions
 
 @cache
-def standard_instructions() -> str:
+def description() -> str:
+    return llobot.instructions.read('coder.md')
+
+@cache
+def instructions() -> str:
     return llobot.instructions.compile(
-        llobot.instructions.read('coder.md'),
+        description(),
         *llobot.instructions.coding(),
         *llobot.instructions.answering(),
     )
 
 @lru_cache
-def standard(*, instructions: Expert | str = standard_instructions(), **kwargs) -> Expert:
+def standard(*, instructions: Expert | str = instructions(), **kwargs) -> Expert:
     return llobot.experts.editors.standard(instructions=instructions, **kwargs)
 
 __all__ = [
-    'standard_instructions',
+    'description',
+    'instructions',
     'standard',
 ]
 

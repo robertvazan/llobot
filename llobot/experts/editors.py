@@ -1,5 +1,5 @@
 from __future__ import annotations
-from functools import lru_cache
+from functools import cache, lru_cache
 from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.scrapers import Scraper
 from llobot.scorers.ranks import RankScorer
@@ -17,14 +17,27 @@ import llobot.crammers.knowledge
 import llobot.crammers.deletions
 import llobot.crammers.examples
 import llobot.contexts
+import llobot.instructions
 import llobot.experts
 import llobot.experts.instructions
 import llobot.experts.knowledge
 import llobot.experts.examples
 
+@cache
+def description() -> str:
+    return llobot.instructions.read('editor.md')
+
+@cache
+def instructions() -> str:
+    return llobot.instructions.compile(
+        description(),
+        *llobot.instructions.editing(),
+        *llobot.instructions.answering(),
+    )
+
 @lru_cache
 def standard(*,
-    instructions: Expert | str = '',
+    instructions: Expert | str = instructions(),
     retrieval_scraper: Scraper = llobot.scrapers.retrieval(),
     scope_scorer: RankScorer = llobot.scorers.ranks.fast(),
     relevance_scorer: KnowledgeScorer | KnowledgeSubset = llobot.scorers.knowledge.irrelevant(),
@@ -69,6 +82,8 @@ def standard(*,
     return llobot.experts.create(stuff)
 
 __all__ = [
+    'description',
+    'instructions',
     'standard',
 ]
 
