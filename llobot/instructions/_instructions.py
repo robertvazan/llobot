@@ -34,8 +34,12 @@ def listing() -> list[str]:
     return combine(*block(), read('listing.md'))
 
 @cache
+def notes() -> list[str]:
+    return combine(*listing(), read('notes.md'))
+
+@cache
 def partial() -> list[str]:
-    return combine(*listing(), read('partial.md'))
+    return combine(*notes(), read('partial.md'))
 
 @cache
 def project() -> list[str]:
@@ -59,6 +63,7 @@ __all__ = [
     'compile',
     'block',
     'listing',
+    'notes',
     'partial',
     'project',
     'coding',
