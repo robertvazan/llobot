@@ -26,8 +26,12 @@ def compile(role: str, *sections: str) -> str:
     return llobot.text.concat(*parts)
 
 @cache
+def block() -> list[str]:
+    return combine(read('block.md'))
+
+@cache
 def listing() -> list[str]:
-    return combine(read('listing.md'))
+    return combine(*block(), read('listing.md'))
 
 @cache
 def partial() -> list[str]:
@@ -53,6 +57,7 @@ __all__ = [
     'read',
     'combine',
     'compile',
+    'block',
     'listing',
     'partial',
     'project',
