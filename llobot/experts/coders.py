@@ -9,7 +9,7 @@ def standard_instructions() -> str:
     return llobot.instructions.compile(
         llobot.instructions.read('coder.md'),
         *llobot.instructions.coding(),
-        *llobot.instructions.questions(),
+        *llobot.instructions.answering(),
     )
 
 @lru_cache

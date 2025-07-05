@@ -62,8 +62,8 @@ def coding() -> list[str]:
     return combine(*editing(), read('coding.md'))
 
 @cache
-def questions() -> list[str]:
-    return combine(*coding(), read('questions.md'))
+def answering() -> list[str]:
+    return combine(*knowledge(), *trimming(), *notes(), read('answering.md'))
 
 __all__ = [
     'read',
@@ -78,6 +78,6 @@ __all__ = [
     'edits',
     'editing',
     'coding',
-    'questions',
+    'answering',
 ]
 

@@ -1,4 +1,4 @@
-## File listing
+## File listings
 
 File listings are code blocks with file path header. For example:
 
