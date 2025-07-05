@@ -42,12 +42,12 @@ def delta() -> list[str]:
     return combine(*notes(), read('delta.md'))
 
 @cache
-def project() -> list[str]:
-    return combine(*listing(), read('project.md'))
+def knowledge() -> list[str]:
+    return combine(*listing(), read('knowledge.md'))
 
 @cache
 def coding() -> list[str]:
-    return combine(*delta(), *project(), read('coding.md'))
+    return combine(*delta(), *knowledge(), read('coding.md'))
 
 @cache
 def questions() -> list[str]:
@@ -65,7 +65,7 @@ __all__ = [
     'listing',
     'notes',
     'delta',
-    'project',
+    'knowledge',
     'coding',
     'questions',
     'trimming',
