@@ -147,20 +147,19 @@ The last line is a timestamp that the expert uses to stick to particular version
 
 The `~llobot` command in the prompt can be more complicated:
 
-- `~myproject/info` to show help, available options, lots of information
+- `~myproject!info` to show help, available options, lots of information
 - `~myproject@cloud` to run on backend model that we aliased as `cloud` in the above setup script
-- `~myproject/echo` to respond with the whole assembled prompt (good to get an idea what goes in there)
+- `~myproject!echo` to respond with the whole assembled prompt (good to get an idea what goes in there)
 
 If the context does not include the file you need, just mention it in the prompt, for example as `projects.py` or `ollama/listeners.py`, and llobot will include it in the context in preference to default knowledge.
 
-Finally, if you are happy with the output, issue command `/ok` after the response you like. Llobot will save it as a correct example. Recent examples are included in the context. LLMs have propensity to imitate what is already in the context, so putting correct examples in the context increases probability that the next response will be correct too. If the response is wrong, you can still show llobot how to do it right. Impersonate the LLM (edit the response, a function that is in Open WebUI but not necessarily in other frontends), put there the correct response, and then issue `/ok` command. While this seems laborious, you usually have the correct response anyway in your code, so this is just about letting llobot know about it.
+Finally, if you are happy with the output, issue command `!ok` after the response you like. Llobot will save it as a correct example. Recent examples are included in the context. LLMs have propensity to imitate what is already in the context, so putting correct examples in the context increases probability that the next response will be correct too. If the response is wrong, you can still show llobot how to do it right. Impersonate the LLM (edit the response, a function that is in Open WebUI but not necessarily in other frontends), put there the correct response, and then issue `!ok` command. While this seems laborious, you usually have the correct response anyway in your code, so this is just about letting llobot know about it.
 
 ## Best practices
 
 Here are some practical tips for using llobot:
 
 - Llobot works best with cloud models, which have plenty of burst compute to handle reprocessing of large prompts. Cloud models are also smart enough to be useful.
-- If you want to use llobot with local models anyway, prime the cache by issuing `/hi` command, e.g. `~myproject/hi`. If you submit empty prompt with only the command (`~myproject`), then `/hi` is implied. You can compose your prompt while the model is processing the cache priming request.
 - Make every task meaningful on its own. Do not reference prior conversations. This will give llobot freedom to choose examples and their ordering in the prompt.
 - If the prompt absolutely depends on the model seeing a particular file, mention it in the prompt as `file.ext` or `path/prefix/file.ext` (in backticks), whichever is sufficiently unique to match only one file. This ensures the document will be added to the assembled prompt regardless of how llobot prioritizes documents for context stuffing.
 - Contemporary LLMs are all divergent. Just letting them run alone on a large task will drive them mad. You have to give them a small task, review the response, correct mistakes, and repeat.
