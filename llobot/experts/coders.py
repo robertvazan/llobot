@@ -8,7 +8,6 @@ import llobot.instructions
 def standard_instructions() -> str:
     return llobot.instructions.compile(
         llobot.instructions.read('coder.md'),
-        *llobot.instructions.trimming(),
         *llobot.instructions.coding(),
         *llobot.instructions.questions(),
     )

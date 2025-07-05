@@ -39,23 +39,23 @@ def notes() -> list[str]:
 
 @cache
 def deltas() -> list[str]:
-    return combine(*notes(), read('deltas.md'))
+    return combine(*listings(), *notes(), read('deltas.md'))
 
 @cache
 def knowledge() -> list[str]:
     return combine(*listings(), read('knowledge.md'))
 
 @cache
+def trimming() -> list[str]:
+    return combine(*knowledge(), read('trimming.md'))
+
+@cache
 def coding() -> list[str]:
-    return combine(*deltas(), *knowledge(), read('coding.md'))
+    return combine(*knowledge(), *trimming(), *deltas(), read('coding.md'))
 
 @cache
 def questions() -> list[str]:
     return combine(*coding(), read('questions.md'))
-
-@cache
-def trimming() -> list[str]:
-    return combine(*listings(), read('trimming.md'))
 
 __all__ = [
     'read',
@@ -66,8 +66,8 @@ __all__ = [
     'notes',
     'deltas',
     'knowledge',
+    'trimming',
     'coding',
     'questions',
-    'trimming',
 ]
 
