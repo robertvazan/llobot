@@ -1,4 +1,4 @@
-## Code block
+## Code blocks
 
 Enclose all code in a Markdown code block. For example:
 

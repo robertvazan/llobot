@@ -26,28 +26,28 @@ def compile(role: str, *sections: str) -> str:
     return llobot.text.concat(*parts)
 
 @cache
-def block() -> list[str]:
-    return combine(read('block.md'))
+def blocks() -> list[str]:
+    return combine(read('blocks.md'))
 
 @cache
-def listing() -> list[str]:
-    return combine(*block(), read('listing.md'))
+def listings() -> list[str]:
+    return combine(*blocks(), read('listings.md'))
 
 @cache
 def notes() -> list[str]:
-    return combine(*listing(), read('notes.md'))
+    return combine(*listings(), read('notes.md'))
 
 @cache
-def delta() -> list[str]:
-    return combine(*notes(), read('delta.md'))
+def deltas() -> list[str]:
+    return combine(*notes(), read('deltas.md'))
 
 @cache
 def knowledge() -> list[str]:
-    return combine(*listing(), read('knowledge.md'))
+    return combine(*listings(), read('knowledge.md'))
 
 @cache
 def coding() -> list[str]:
-    return combine(*delta(), *knowledge(), read('coding.md'))
+    return combine(*deltas(), *knowledge(), read('coding.md'))
 
 @cache
 def questions() -> list[str]:
@@ -55,16 +55,16 @@ def questions() -> list[str]:
 
 @cache
 def trimming() -> list[str]:
-    return combine(*listing(), read('trimming.md'))
+    return combine(*listings(), read('trimming.md'))
 
 __all__ = [
     'read',
     'combine',
     'compile',
-    'block',
-    'listing',
+    'blocks',
+    'listings',
     'notes',
-    'delta',
+    'deltas',
     'knowledge',
     'coding',
     'questions',
