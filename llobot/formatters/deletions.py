@@ -21,7 +21,7 @@ def create(function: Callable[[KnowledgeIndex], Context]) -> DeletionFormatter:
     return LambdaDeletionFormatter()
 
 @lru_cache
-def granular(pattern: str = 'Deleted: `{}`', affirmation: str = 'I see.') -> DeletionFormatter:
+def granular(pattern: str = '`{}` (removed)', affirmation: str = 'I see.') -> DeletionFormatter:
     def render(deletions: KnowledgeIndex) -> Context:
         if not deletions:
             return llobot.contexts.empty()

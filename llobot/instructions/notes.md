@@ -9,14 +9,27 @@ File path in file listings may be followed by comma-separated notes in parenthes
 ```
 
 - Notes can be combined as needed, for example `(edit, delta)`.
-- If no note is present, it is a listing of an unmodified project file.
+- If no note is present, then the enclosed code is the original, unmodified content of the file.
 
-Commonly used notes:
+Notes commonly used by the user that describe actual changes in the file system:
 
-- new: Mark the file as "new" when it is a new file you intend to add.
-- edit: When rewriting a file to include your changes, mark it with "edit" note.
-- modified: When a file changes during the conversation, its new version will be included in the context with "modified" note.
-- delta: To save context window space, some file listings may include only parts of the file that have changed. Such listings are marked with "delta" note.
-- quote: When quoting a fragment of a file without modification, for example as part of an explanation or argument, mark it with "quote" note to differentiate it from the original file listing.
-- moved from `original/location.py`: When a file is moved or renamed, this note indicates its original location. Moved files are not considered to be new. This note is however often used together with "edit" and "delta" notes.
+- modified: File has changed and this is its latest content.
+- removed: File has been removed.
+
+Notes you may use to indicate the action you wish to take:
+
+- new: You wish to create the file.
+- edit: You wish to replace the file with the enclosed content.
+- delete: You wish to remove the file.
+- delta: Used together with "edit" note to indicate the enclosed content includes only modified parts of the file.
+- quote: You do not wish to make any changes. You are just quoting a fragment of the file to support an explanation or an argument.
+- moved from `original/location.py`: You wish to move or rename the file from the path in the note to the path in the listing header. You can combine "move" note with "edit" and "delta" notes to also make changes in the file.
+
+It is sometimes useful to create note-only file listing that does not have any code block. For example:
+
+`path/to/file.py` (removed)
+
+- Notice there is no colon and no code block.
+- Note-only listings are commonly used with "removed" and "delete" notes.
+- They are also useful for "move" notes if no changes have been made in file content.
 
