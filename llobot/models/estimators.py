@@ -9,16 +9,24 @@ import llobot.models.stats.json
 
 _logger = logging.getLogger(__name__)
 
-# We cannot really assume any content length in general. We have to fall back to the worst case of one-character tokens.
-# Even that could be optimistic with very extreme content consisting of rare unicode characters, but we don't have to care about those cases.
+# We cannot really assume any token length in general.
+# If we want to be safe, we have to fall back to the worst case of one-character tokens.
+# Even that could be optimistic with very extreme content consisting of rare unicode characters,
+# but we don't have to care about those cases.
 PESSIMISTIC_TOKEN_LENGTH: float = 1.0
 
-# Empirically observed 4+ characters per token for English text.
+# Empirically observed 4+ characters per token for English text and code.
+# Overshooting the token length will balloon the context, but that's rarely an issue these days
+# as technical context window limit is far higher than the economic one.
 OPTIMISTIC_TOKEN_LENGTH: float = 4.0
 
-# All models are tokenized. Even byte models skip most bytes. Tokenization may be unknown (cloud models) or expensive (byte/chunk models).
-# Context is always limited. Even models with infinite context (recursive, compressed) have practical limit on how many tokens they can process.
-# Models always measure context window in tokens rather than characters. We therefore need empirical estimators for token length.
+# All models are tokenized. Even byte models skip most bytes.
+# Tokenization algorithm may be unknown (cloud models) or expensive (byte/chunk models).
+# Context window is always limited, if not technically, then economically.
+# Even models with infinite context window (recursive, compressed)
+# have practical limit on how many tokens they can process.
+# Models always measure context window in tokens rather than characters.
+# We therefore need empirical estimators for token length.
 class TokenLengthEstimator:
     def calibrated(self, zone: str) -> bool:
         return True
@@ -47,10 +55,11 @@ def optimistic() -> TokenLengthEstimator:
 @lru_cache
 def latest(
     location: Zoning | Path | str = llobot.fs.cache()/'llobot/stats/*.json',
-    # We cannot afford to be optimistic with estimates even along the scope hierarchy.
-    # Since we are happy to extrapolate to 3-5x larger token count anyway, initialization of token estimator
-    # can be done in one turn by submitting prompt built using the pessimistic estimator.
-    fallback: TokenLengthEstimator = pessimistic()
+    # Context size is now an economic tradeoff rather than a technical limitation.
+    # We can afford to be optimistic about token length
+    # at the cost of occasionally ballooning the context.
+    # This saves us calibration roundtrips to the model.
+    fallback: TokenLengthEstimator = optimistic()
 ) -> TokenLengthEstimator:
     location = llobot.fs.zones.coerce(location)
     class LatestEstimator(TokenLengthEstimator):

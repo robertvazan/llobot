@@ -18,7 +18,6 @@ import llobot.models.streams
 _logger = logging.getLogger(__name__)
 
 class _StandardExpertCommand(Enum):
-    HI = 'hi'
     OK = 'ok'
     ECHO = 'echo'
     INFO = 'info'
@@ -96,21 +95,6 @@ class _StandardExpertRequest:
     def assemble(self, prompt: ChatBranch | None = None) -> ChatBranch:
         return self.stuff(prompt).chat + (prompt or self.prompt)
 
-    def warmup(self) -> ModelStream:
-        assembled = self.assemble(self.prompt[:-1] + ChatRole.USER.message('Now just respond with "Okay" to confirm you are paying attention. Do not say anything else.'))
-        return (self.model.generate(assembled, self.zone)
-            | llobot.models.streams.silence()
-            | llobot.models.streams.notify(lambda stream: _logger.info(f'Ready: {self.zone} ({stream.stats().prompt_tokens or 0:,} tokens)')))
-
-    def calibrate(self):
-        # Loop in case the token estimator needs several rounds to be fully initialized.
-        while not self.model.calibrated(self.zone):
-            _logger.info(f'Calibrating: {self.zone}')
-            self.warmup().receive_all()
-            # If we generated cutoff as part of the warmup, clear it,
-            # so that the next round of warmup or subsequent prompt assembly use fresh token length.
-            self.generated_cutoff = None
-
     def cutoff_footer(self) -> ModelStream:
         return llobot.models.streams.completed(f'`:{llobot.time.format(self.cutoff)}`')
 
@@ -121,13 +105,6 @@ class _StandardExpertRequest:
             cutoff=self.cutoff
         ))
 
-    def handle_hi(self) -> ModelStream:
-        self.calibrate()
-        stream = self.warmup() + llobot.models.streams.ok('Ready.')
-        if self.automatic_cutoff:
-            stream += self.cutoff_footer()
-        return stream
-
     def handle_ok(self) -> ModelStream:
         if len(self.prompt) < 3:
             return llobot.models.streams.error('Nothing to save.')
@@ -135,7 +112,6 @@ class _StandardExpertRequest:
         return llobot.models.streams.ok('Saved.')
 
     def handle_echo(self) -> ModelStream:
-        self.calibrate()
         # We don't want any header or cutoff here, because output of echo might be pasted into other chat interfaces.
         return llobot.models.streams.completed(self.assemble().monolithic())
 
@@ -222,7 +198,6 @@ class _StandardExpertRequest:
 
             Command help:
 
-            - `!hi`: Warm up the model.
             - `!ok`: Save this chat as an example.
             - `!echo`: Output the assembled prompt instead of sending it to the model.
             - `!info`: Show this message.
@@ -240,7 +215,6 @@ class _StandardExpertRequest:
         return llobot.models.streams.status(info)
 
     def handle_prompt(self) -> ModelStream:
-        self.calibrate()
         assembled = self.assemble()
         output = self.model.generate(assembled, self.zone)
         save_filter = llobot.models.streams.notify(lambda stream: self.memory.save_chat(self.add_metadata(assembled + ChatRole.ASSISTANT.message(stream.response())), self.scope))
@@ -252,9 +226,7 @@ class _StandardExpertRequest:
     def handle(self) -> ModelStream:
         if self.scope and len(self.prompt) == 1 and not self.given_cutoff:
             self.scope.project.refresh()
-        if self.command == _StandardExpertCommand.HI:
-            return self.handle_hi()
-        elif self.command == _StandardExpertCommand.OK:
+        if self.command == _StandardExpertCommand.OK:
             return self.handle_ok()
         elif self.command == _StandardExpertCommand.ECHO:
             return self.handle_echo()
@@ -365,11 +337,6 @@ class _StandardExpertModel(Model):
 
     def decode_chat_header(self, chat: ChatBranch) -> tuple[Scope | None, datetime | None, _StandardExpertCommand | None, Model, dict | None]:
         scope, cutoff, command, model, options = self.decode_message_header(chat[0].content)
-        # If initial message contains nothing but header (or nothing at all), we implicitly interpret it as warmup request.
-        if not command and self.clean_message_header(chat[0].content) == '':
-            command = _StandardExpertCommand.HI
-            if len(chat) > 1:
-                llobot.models.streams.fail('Followup message to an empty initial message.')
         if len(chat) > 1:
             if command:
                 llobot.models.streams.fail('Followup message even though command was given.')

@@ -71,9 +71,6 @@ class Model:
         except ModelException as ex:
             return ex.stream
 
-    def calibrated(self, zone: str) -> bool:
-        return self.__estimator.calibrated(zone)
-
     def estimate_token_length(self, zone: str) -> float:
         return self.__estimator.estimate(zone)
 
