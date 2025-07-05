@@ -28,9 +28,6 @@ OPTIMISTIC_TOKEN_LENGTH: float = 4.0
 # Models always measure context window in tokens rather than characters.
 # We therefore need empirical estimators for token length.
 class TokenLengthEstimator:
-    def calibrated(self, zone: str) -> bool:
-        return True
-
     def update(self, zone: str, stats: ModelStats):
         pass
 
@@ -63,8 +60,6 @@ def latest(
 ) -> TokenLengthEstimator:
     location = llobot.fs.zones.coerce(location)
     class LatestEstimator(TokenLengthEstimator):
-        def calibrated(self, zone: str) -> bool:
-            return location[zone].exists()
         def update(self, zone: str, stats: ModelStats):
             path = location[zone]
             llobot.models.stats.json.save(path, stats)
@@ -85,8 +80,6 @@ def sane(
     maximum: float = 10.0,
 ) -> TokenLengthEstimator:
     class SaneEstimator(TokenLengthEstimator):
-        def calibrated(self, zone: str) -> bool:
-            return underlying.calibrated(zone)
         def update(self, zone: str, stats: ModelStats):
             underlying.update(zone, stats)
         def estimate(self, zone: str) -> float:
@@ -98,8 +91,6 @@ def sane(
 def stable(underlying: TokenLengthEstimator, deadband: float = 0.1) -> TokenLengthEstimator:
     cache = {}
     class StableEstimator(TokenLengthEstimator):
-        def calibrated(self, zone: str) -> bool:
-            return underlying.calibrated(zone)
         def update(self, zone: str, stats: ModelStats):
             underlying.update(zone, stats)
             # Update is a good time to clear cache entries without causing too much disruption.
@@ -118,8 +109,6 @@ def stable(underlying: TokenLengthEstimator, deadband: float = 0.1) -> TokenLeng
 def log_changes(underlying: TokenLengthEstimator) -> TokenLengthEstimator:
     reported = {}
     class LoggingEstimator(TokenLengthEstimator):
-        def calibrated(self, zone: str) -> bool:
-            return underlying.calibrated(zone)
         def update(self, zone: str, stats: ModelStats):
             underlying.update(zone, stats)
         def estimate(self, zone: str) -> float:
@@ -136,8 +125,6 @@ def standard() -> TokenLengthEstimator:
 
 def prefixed(prefix: str, underlying: TokenLengthEstimator) -> TokenLengthEstimator:
     class PrefixedEstimator(TokenLengthEstimator):
-        def calibrated(self, zone: str) -> bool:
-            return underlying.calibrated(prefix + zone)
         def update(self, zone: str, stats: ModelStats):
             underlying.update(prefix + zone, stats)
         def estimate(self, zone: str) -> float:

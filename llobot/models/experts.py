@@ -130,7 +130,6 @@ class _StandardExpertRequest:
         return f'- `~{scope.name}`\n' + indent(''.join([_StandardExpertRequest.format_scope(child) for child in scope.children]), '  ')
 
     def handle_info(self) -> ModelStream:
-        self.calibrate()
         info = dedent(f'''\
             Configuration:
 
