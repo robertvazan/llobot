@@ -19,8 +19,7 @@ class EnvelopeFormatter:
     def find(self, message: str) -> list[str]:
         return []
 
-    # Path can be None even if parsing succeeds, because some envelopes do not encode path.
-    # Success is therefore signaled with non-empty content.
+    # Success is signaled with non-None path and non-empty content.
     def parse(self, formatted: str) -> tuple[Path | None, str]:
         return None, ''
 
@@ -62,7 +61,10 @@ class EnvelopeFormatter:
         return AndEnvelopeFormatter()
 
 @lru_cache
-def header(*, guesser: LanguageGuesser = llobot.formatters.languages.standard()) -> EnvelopeFormatter:
+def header(*,
+    guesser: LanguageGuesser = llobot.formatters.languages.standard(),
+    quad_backticks: list[str] = ['markdown'],
+) -> EnvelopeFormatter:
     detection_regex = re.compile(r'^`[^\n]+?`(?: \([^\n]*?\))?:\n\n(?:```[^`\n]*\n.*?\n```|````[^`\n]*\n.*?\n````|`````[^`\n]*\n.*?\n`````)$', re.MULTILINE | re.DOTALL)
     parsing_regex = re.compile(r'`([^\n]+?)`(?: \([^\n]*?\))?:\n\n```+[^\n]*\n(.*)\n```+', re.MULTILINE | re.DOTALL)
     class HeaderEnvelopeFormatter(EnvelopeFormatter):
@@ -71,7 +73,7 @@ def header(*, guesser: LanguageGuesser = llobot.formatters.languages.standard())
             lang = guesser(path, content)
 
             # Determine backtick count
-            backtick_count = 3
+            backtick_count = 4 if lang in quad_backticks else 3
             backticks = '`' * backtick_count
             lines = content.splitlines()
             while any(line.startswith(backticks) for line in lines):
