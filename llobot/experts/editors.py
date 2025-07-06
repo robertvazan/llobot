@@ -2,7 +2,6 @@ from __future__ import annotations
 from functools import cache, lru_cache
 from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.scrapers import Scraper
-from llobot.scorers.ranks import RankScorer
 from llobot.scorers.knowledge import KnowledgeScorer
 from llobot.crammers.knowledge import KnowledgeCrammer
 from llobot.crammers.deletions import DeletionCrammer
@@ -11,7 +10,6 @@ from llobot.contexts import Context
 from llobot.experts import Expert
 from llobot.experts.requests import ExpertRequest
 import llobot.scrapers
-import llobot.scorers.ranks
 import llobot.scorers.knowledge
 import llobot.crammers.knowledge
 import llobot.crammers.deletions
@@ -39,7 +37,6 @@ def instructions() -> str:
 def standard(*,
     instructions: Expert | str = instructions(),
     retrieval_scraper: Scraper = llobot.scrapers.retrieval(),
-    scope_scorer: RankScorer = llobot.scorers.ranks.fast(),
     relevance_scorer: KnowledgeScorer | KnowledgeSubset = llobot.scorers.knowledge.irrelevant(),
     knowledge_crammer: KnowledgeCrammer = llobot.crammers.knowledge.standard(),
     example_crammer: ExampleCrammer = llobot.crammers.examples.standard(),
@@ -54,10 +51,10 @@ def standard(*,
     if isinstance(relevance_scorer, KnowledgeSubset):
         relevance_scorer = llobot.scorers.knowledge.relevant(relevance_scorer)
     instructions = llobot.experts.instructions.coerce(instructions)
-    knowledge_expert = llobot.experts.knowledge.standard(scope_scorer=scope_scorer, relevance_scorer=relevance_scorer, crammer=knowledge_crammer)
+    knowledge_expert = llobot.experts.knowledge.standard(relevance_scorer=relevance_scorer, crammer=knowledge_crammer)
     example_expert = llobot.experts.examples.standard(crammer=example_crammer)
     updates_expert = llobot.experts.knowledge.updates(deletion_crammer=deletion_crammer, update_crammer=update_crammer)
-    retrieval_expert = llobot.experts.knowledge.retrieval(scraper=retrieval_scraper, crammer=retrieval_crammer, scope_scorer=scope_scorer, relevance_scorer=relevance_scorer)
+    retrieval_expert = llobot.experts.knowledge.retrieval(scraper=retrieval_scraper, crammer=retrieval_crammer, relevance_scorer=relevance_scorer)
     def stuff(request: ExpertRequest) -> Context:
         # Budget distribution priorities: instructions, retrievals, examples, updates, knowledge.
         system = instructions(request)

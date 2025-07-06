@@ -8,12 +8,10 @@ from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.rankings import KnowledgeRanking
 from llobot.knowledge.graphs import KnowledgeGraph
 from llobot.scores.decays import DecayScores
-from llobot.scorers.ranks import RankScorer
 import llobot.knowledge.indexes
 import llobot.knowledge.subsets
 import llobot.knowledge.rankings
 import llobot.scores.decays
-import llobot.scorers.ranks
 
 class KnowledgeScores:
     _scores: dict[Path, float]
@@ -192,18 +190,6 @@ def pagerank(
 def reverse_pagerank(graph: KnowledgeGraph, nodes: KnowledgeIndex = KnowledgeIndex(), **kwargs) -> KnowledgeScores:
     return pagerank(graph.reverse(), nodes, **kwargs)
 
-def scope(knowledge: Knowledge, scope: Scope | None, scope_scorer: RankScorer = llobot.scorers.ranks.fast(), knowledge_scorer: 'KnowledgeScorer' | None = None) -> KnowledgeScores:
-    if not scope:
-        return KnowledgeScores()
-    import llobot.scorers.knowledge
-    knowledge_scorer = knowledge_scorer or llobot.scorers.knowledge.uniform()
-    ancestors = scope.ancestry
-    ancestor_scores = scope_scorer(len(ancestors))
-    scores = KnowledgeScores()
-    for ancestor, ancestor_score in zip(ancestors, ancestor_scores):
-        scores += ancestor_score * knowledge_scorer(knowledge & ancestor.subset)
-    return scores
-
 __all__ = [
     'KnowledgeScores',
     'coerce',
@@ -218,6 +204,5 @@ __all__ = [
     'hub',
     'pagerank',
     'reverse_pagerank',
-    'scope',
 ]
 

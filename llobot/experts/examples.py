@@ -18,7 +18,7 @@ def standard(*,
     instructions = llobot.experts.instructions.coerce(instructions)
     def stuff(request: ExpertRequest) -> Context:
         output = instructions(request)
-        examples = request.memory.recent_ancestor_examples(request.scope, request.cutoff)
+        examples = request.memory.recent_examples(request.project, request.cutoff)
         output += crammer.cram(examples, request.budget - output.cost, request.context + output)
         return output
     return llobot.experts.create(stuff)

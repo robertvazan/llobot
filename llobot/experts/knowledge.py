@@ -3,7 +3,6 @@ from datetime import datetime
 from functools import lru_cache
 from llobot.chats import ChatRole
 from llobot.knowledge import Knowledge
-from llobot.scorers.ranks import RankScorer
 from llobot.scorers.knowledge import KnowledgeScorer
 from llobot.crammers.knowledge import KnowledgeCrammer
 from llobot.crammers.deletions import DeletionCrammer
@@ -12,8 +11,6 @@ from llobot.contexts import Context
 from llobot.experts import Expert
 from llobot.experts.requests import ExpertRequest
 import llobot.text
-import llobot.scores.knowledge
-import llobot.scorers.ranks
 import llobot.scorers.knowledge
 import llobot.crammers.knowledge
 import llobot.crammers.deletions
@@ -22,13 +19,12 @@ import llobot.experts
 
 @lru_cache
 def standard(*,
-    scope_scorer: RankScorer = llobot.scorers.ranks.fast(),
     relevance_scorer: KnowledgeScorer = llobot.scorers.knowledge.irrelevant(),
     crammer: KnowledgeCrammer = llobot.crammers.knowledge.standard(),
 ) -> Expert:
     def stuff(request: ExpertRequest) -> Context:
-        knowledge = request.scope.project.knowledge(request.cutoff) if request.scope else Knowledge()
-        scores = llobot.scores.knowledge.scope(knowledge, request.scope, scope_scorer) * relevance_scorer(knowledge)
+        knowledge = request.project.root.knowledge(request.cutoff) if request.project else Knowledge()
+        scores = relevance_scorer(knowledge)
         return crammer.cram(knowledge, request.budget, scores, request.context)
     return llobot.experts.create(stuff)
 
@@ -37,13 +33,12 @@ def retrieval(*,
     scraper: Scraper = llobot.scrapers.retrieval(),
     crammer: KnowledgeCrammer = llobot.crammers.knowledge.retrieval(),
     # Scoring is only used to pick the most likely document the user probably meant.
-    scope_scorer: RankScorer = llobot.scorers.ranks.fast(),
     # It's a bit controversial whether files should be picked by relevance, but it most likely does not hurt.
     relevance_scorer: KnowledgeScorer = llobot.scorers.knowledge.irrelevant(),
 ) -> Expert:
     def stuff(request: ExpertRequest) -> Context:
-        knowledge = request.scope.project.knowledge(request.cutoff) if request.scope else Knowledge()
-        scores = llobot.scores.knowledge.scope(knowledge, request.scope, scope_scorer) * relevance_scorer(knowledge)
+        knowledge = request.project.root.knowledge(request.cutoff) if request.project else Knowledge()
+        scores = relevance_scorer(knowledge)
         messages = (message.content for message in request.prompt if message.role == ChatRole.USER)
         prompt = llobot.text.concat(*messages)
         retrievals = llobot.links.resolve_best(scraper.scrape_prompt(prompt), knowledge, scores)
@@ -59,7 +54,7 @@ def updates(*,
     update_crammer: KnowledgeCrammer = llobot.crammers.knowledge.updates(),
 ) -> Expert:
     def stuff(request: ExpertRequest) -> Context:
-        fresh_knowledge = request.scope.project.knowledge(request.cutoff) if request.scope else Knowledge()
+        fresh_knowledge = request.project.root.knowledge(request.cutoff) if request.project else Knowledge()
         context_knowledge = request.context.knowledge
         deletions = context_knowledge.keys() - fresh_knowledge.keys()
         output = deletion_crammer.cram(deletions, request.budget)

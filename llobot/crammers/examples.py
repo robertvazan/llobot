@@ -3,52 +3,46 @@ from functools import cache, lru_cache
 from llobot.chats import ChatBranch
 from llobot.contexts import Context
 from llobot.scorers.history import HistoryScorer
-from llobot.scorers.ranks import RankScorer
 from llobot.scorers.chats import ChatScorer
 from llobot.formatters.envelopes import EnvelopeFormatter
 import llobot.contexts
 import llobot.contexts.examples
 import llobot.scores.history
 import llobot.scorers.history
-import llobot.scorers.ranks
 import llobot.scorers.chats
 import llobot.formatters.envelopes
 
 class ExampleCrammer:
     # Context parameter contains already assembled parts of the prompt, whether preceding or following crammer's output.
-    def cram(self, streams: list[Iterable[ChatBranch]], budget: int, context: Context = llobot.contexts.empty()) -> Context:
+    def cram(self, examples: Iterable[ChatBranch], budget: int, context: Context = llobot.contexts.empty()) -> Context:
         return llobot.contexts.empty()
 
-def create(function: Callable[[list[Iterable[ChatBranch]], int, Context], Context]) -> ExampleCrammer:
+def create(function: Callable[[Iterable[ChatBranch], int, Context], Context]) -> ExampleCrammer:
     class LambdaExampleCrammer(ExampleCrammer):
-        def cram(self, streams: list[Iterable[ChatBranch]], budget: int, context: Context = llobot.contexts.empty()) -> Context:
-            return function(streams, budget, context)
+        def cram(self, examples: Iterable[ChatBranch], budget: int, context: Context = llobot.contexts.empty()) -> Context:
+            return function(examples, budget, context)
     return LambdaExampleCrammer()
 
 @lru_cache
 def greedy(parser: EnvelopeFormatter = llobot.formatters.envelopes.standard()) -> ExampleCrammer:
-    def merge(streams: list[Iterable[ChatBranch]]) -> Iterable[ChatBranch]:
-        for stream in streams:
-            yield from stream
-    def cram(streams: list[Iterable[ChatBranch]], budget: int, context: Context = llobot.contexts.empty()) -> Context:
-        context = context.examples
-        examples = []
-        for example in merge(streams):
+    def cram(examples: Iterable[ChatBranch], budget: int, context: Context = llobot.contexts.empty()) -> Context:
+        context_examples = context.examples
+        selected_examples = []
+        for example in examples:
             # If there are several examples with the same prompt, include only the latest one.
-            if any(other[0].content == example[0].content for other in context + examples):
+            if any(other[0].content == example[0].content for other in context_examples + selected_examples):
                 continue
             if example.cost > budget:
                 break
-            examples.append(example)
+            selected_examples.append(example)
             budget -= example.cost
-        examples.reverse()
-        return llobot.contexts.examples.annotate(*examples, parser=parser)
+        selected_examples.reverse()
+        return llobot.contexts.examples.annotate(*selected_examples, parser=parser)
     return create(cram)
 
 @lru_cache
 def prioritized(
     history_scorer: HistoryScorer = llobot.scorers.history.standard(),
-    scope_scorer: RankScorer = llobot.scorers.ranks.fast_with_fallback(),
     # Sorting by timestamp preserves logical dependencies between examples and thus supports in-context learning.
     sort_key: ChatScorer | None = llobot.scorers.chats.timestamp(),
     # Overscan depth to prevent single large example from clogging the stream and leaving large unused budget.
@@ -57,19 +51,17 @@ def prioritized(
     fill: float = 0.8,
     parser: EnvelopeFormatter = llobot.formatters.envelopes.standard(),
 ) -> ExampleCrammer:
-    def cram(streams: list[Iterable[ChatBranch]], budget: int, context: Context = llobot.contexts.empty()) -> Context:
+    def cram(examples: Iterable[ChatBranch], budget: int, context: Context = llobot.contexts.empty()) -> Context:
         if budget <= 0:
             return llobot.contexts.empty()
-        context = context.examples
-        scope_scores = scope_scorer(len(streams))
-        history_scores = [scope_scores[index] * history_scorer(stream) for index, stream in enumerate(streams)]
-        merged_scores = llobot.scores.history.merge(*history_scores)
-        examples = []
+        context_examples = context.examples
+        history_scores = history_scorer(examples)
+        selected_examples = []
         skipped = 0
         max_waste = int(budget * (1 - fill))
-        for example in merged_scores.chats():
+        for example in history_scores.chats():
             # If there are several examples with the same prompt, include only the latest one.
-            if any(other[0].content == example[0].content for other in context + examples):
+            if any(other[0].content == example[0].content for other in context_examples + selected_examples):
                 continue
             # Soft budget limit hit.
             if example.cost > budget:
@@ -78,11 +70,11 @@ def prioritized(
                 if skipped > depth or budget < max_waste:
                     break
                 continue
-            examples.append(example)
+            selected_examples.append(example)
             budget -= example.cost
         # If the sort key scorer was not provided or the sort key is not available for some chats, default to ascending score order.
-        examples.reverse()
-        return llobot.contexts.examples.annotate(*(sorted(examples, key=sort_key) if sort_key else examples), parser=parser)
+        selected_examples.reverse()
+        return llobot.contexts.examples.annotate(*(sorted(selected_examples, key=sort_key) if sort_key else selected_examples), parser=parser)
     return create(cram)
 
 @cache

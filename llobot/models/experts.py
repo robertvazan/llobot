@@ -1,11 +1,11 @@
 from __future__ import annotations
 from enum import Enum
 from datetime import datetime
-from textwrap import dedent, indent
+from textwrap import dedent
 import logging
 import re
 from llobot.chats import ChatRole, ChatBranch, ChatBuilder, ChatMetadata
-from llobot.projects import Project, Scope
+from llobot.projects import Project
 from llobot.contexts import Context
 from llobot.experts import Expert
 from llobot.experts.requests import ExpertRequest
@@ -29,7 +29,7 @@ class _StandardExpertRequest:
     command: _StandardExpertCommand | None
     # Clean user prompt before assembly into the full prompt.
     prompt: ChatBranch
-    scope: Scope | None
+    project: Project | None
     # Cutoff parsed out of the prompt, whether from the header in the first message or from automatic cutoff in the second message.
     given_cutoff: datetime | None
     # Cutoff we have chosen, because there was no cutoff in the prompt.
@@ -37,13 +37,13 @@ class _StandardExpertRequest:
     # Options have been already applied to the model.
     model: Model
 
-    def __init__(self, owner: _StandardExpertModel, command: _StandardExpertCommand | None, prompt: ChatBranch, scope: Scope | None, cutoff: datetime | None, model: Model):
+    def __init__(self, owner: _StandardExpertModel, command: _StandardExpertCommand | None, prompt: ChatBranch, project: Project | None, cutoff: datetime | None, model: Model):
         self.owner = owner
         self.expert = owner.expert
         self.memory = owner.memory
         self.command = command
         self.prompt = prompt
-        self.scope = scope
+        self.project = project
         self.given_cutoff = cutoff
         self.generated_cutoff = None
         self.model = model
@@ -67,7 +67,7 @@ class _StandardExpertRequest:
 
     @property
     def zone(self) -> str:
-        return self.memory.zone_name(self.scope)
+        return self.memory.zone_name(self.project)
 
     @property
     def token_length(self) -> int:
@@ -89,7 +89,7 @@ class _StandardExpertRequest:
 
     def stuff(self, prompt: ChatBranch | None = None) -> Context:
         prompt = prompt or self.prompt
-        request = ExpertRequest(memory=self.memory, prompt=prompt, scope=self.scope, cutoff=self.cutoff, budget=self.budget, cache=self.model.cache)
+        request = ExpertRequest(memory=self.memory, prompt=prompt, project=self.project, cutoff=self.cutoff, budget=self.budget, cache=self.model.cache)
         return self.expert.stuff(request)
 
     def assemble(self, prompt: ChatBranch | None = None) -> ChatBranch:
@@ -108,7 +108,7 @@ class _StandardExpertRequest:
     def handle_ok(self) -> ModelStream:
         if len(self.prompt) < 3:
             return llobot.models.streams.error('Nothing to save.')
-        self.memory.save_example(self.add_metadata(self.assemble(self.prompt[:-2]) + self.prompt[-2]), self.scope)
+        self.memory.save_example(self.add_metadata(self.assemble(self.prompt[:-2]) + self.prompt[-2]), self.project)
         return llobot.models.streams.ok('Saved.')
 
     def handle_echo(self) -> ModelStream:
@@ -126,8 +126,8 @@ class _StandardExpertRequest:
         return f'`@{model.name}`{aliases}'
 
     @staticmethod
-    def format_scope(scope: Scope) -> str:
-        return f'- `~{scope.name}`\n' + indent(''.join([_StandardExpertRequest.format_scope(child) for child in scope.children]), '  ')
+    def format_project(project: Project) -> str:
+        return f'- `~{project.name}`' + ''.join([f'\n  - `~{subproject.name}`\n' for subproject in project.subprojects])
 
     def handle_info(self) -> ModelStream:
         info = dedent(f'''\
@@ -145,22 +145,22 @@ class _StandardExpertRequest:
             - Aliases: {', '.join([f'`@{alias}`' for alias in self.model.aliases]) if self.model.aliases else '-'}
             - Context budget: {self.token_budget / 1000:,.0f}K tokens, ~{self.budget / 1024:,.0f} KB @ ~{self.token_length:.1f} token length
         ''')
-        if self.scope:
-            knowledge = self.scope.project.knowledge(self.cutoff)
+        if self.project:
+            knowledge = self.project.root.knowledge(self.cutoff)
             info += dedent(f'''
                 Project:
 
-                - Name: `~{self.scope.project.name}`
+                - Name: `~{self.project.root.name}`
                 - Knowledge: {len(knowledge):,} documents, {knowledge.cost / 1024:,.0f} KB
             ''')
-            scope_knowledge = knowledge & self.scope.subset
-            info += dedent(f'''
-                Scope:
+            if self.project.root != self.project:
+                subproject_knowledge = knowledge & self.project.subset
+                info += dedent(f'''
+                    Subproject:
 
-                - Name: `~{self.scope.name}`
-                - Knowledge: {len(scope_knowledge):,} documents, {scope_knowledge.cost / 1024:,.0f} KB
-                - Ancestor chain: {', '.join([f'`~{ancestor.name}`' for ancestor in self.scope.ancestry])}
-            ''')
+                    - Name: `~{self.project.name}`
+                    - Knowledge: {len(subproject_knowledge):,} documents, {subproject_knowledge.cost / 1024:,.0f} KB
+                ''')
         context = self.stuff()
         if context:
             context_knowledge = sum(chunk.cost for chunk in context if chunk.knowledge or chunk.deletions)
@@ -190,7 +190,7 @@ class _StandardExpertRequest:
         info += dedent('''
             Header help:
 
-            - Structure: `~scope:cutoff@model?k1=v1&k2=v2!command`
+            - Structure: `~project:cutoff@model?k1=v1&k2=v2!command`
             - All parts of the header are optional. Defaults will be substituted automatically.
             - Header may be placed at the top or bottom of the prompt (the first message).
             - Command may be specified separately at the top of a later message.
@@ -204,27 +204,28 @@ class _StandardExpertRequest:
         ''')
         info += '\nModels:\n\n' + '\n'.join([f'- {self.format_model(model)}' for model in self.owner.alternatives]) + '\n'
         if self.owner.projects:
-            info += '\nProjects:\n\n' + '\n'.join([self.format_scope(project.scope) for project in self.owner.projects]) + '\n'
+            info += '\nProjects:\n\n' + '\n'.join([self.format_project(project) for project in self.owner.projects]) + '\n'
         if context.knowledge:
             info += '\nKnowledge in context:\n\n' + '\n'.join([f'- `{path}`' for path in context.knowledge.keys().sorted()]) + '\n'
-        if self.scope:
-            for scope in self.scope.ancestry:
-                # Pack it all into one Markdown code block. This is a workaround for inefficiency in Open WebUI.
-                info += f'\nKnowledge in `~{scope.name}`:\n\n```\n' + '\n'.join([str(path) for path in (knowledge.keys() & scope.subset).sorted()]) + '\n```\n'
+        if self.project:
+            # Pack it all into one Markdown code block. This is a workaround for inefficiency in Open WebUI.
+            if self.project.root != self.project:
+                info += f'\nKnowledge in `~{self.project.name}`:\n\n```\n' + '\n'.join([str(path) for path in (knowledge.keys() & self.project.subset).sorted()]) + '\n```\n'
+            info += f'\nKnowledge in `~{self.project.root.name}`:\n\n```\n' + '\n'.join([str(path) for path in knowledge.keys().sorted()]) + '\n```\n'
         return llobot.models.streams.status(info)
 
     def handle_prompt(self) -> ModelStream:
         assembled = self.assemble()
         output = self.model.generate(assembled, self.zone)
-        save_filter = llobot.models.streams.notify(lambda stream: self.memory.save_chat(self.add_metadata(assembled + ChatRole.ASSISTANT.message(stream.response())), self.scope))
+        save_filter = llobot.models.streams.notify(lambda stream: self.memory.save_chat(self.add_metadata(assembled + ChatRole.ASSISTANT.message(stream.response())), self.project))
         inner = output | save_filter
         if self.automatic_cutoff:
             inner += self.cutoff_footer()
         return inner | llobot.models.streams.handler(callback=lambda: _logger.error(f'Exception in {self.model.name} model ({self.memory.name} expert).', exc_info=True))
 
     def handle(self) -> ModelStream:
-        if self.scope and len(self.prompt) == 1 and not self.given_cutoff:
-            self.scope.project.refresh()
+        if self.project and len(self.prompt) == 1 and not self.given_cutoff:
+            self.project.root.refresh()
         if self.command == _StandardExpertCommand.OK:
             return self.handle_ok()
         elif self.command == _StandardExpertCommand.ECHO:
@@ -265,12 +266,12 @@ class _StandardExpertModel(Model):
     CUTOFF_RE = re.compile(r'`:([0-9-]+)`')
     COMMAND_RE = re.compile(r'!([a-z]+)')
 
-    def decode_scope(self, name: str) -> Scope:
+    def decode_project(self, name: str) -> Project:
         for project in self.projects:
             found = project.find(name)
             if found:
                 return found
-        llobot.models.streams.fail(f'No such project scope: {name}')
+        llobot.models.streams.fail(f'No such project: {name}')
 
     def decode_command(self, name: str) -> _StandardExpertCommand:
         for command in _StandardExpertCommand:
@@ -287,20 +288,20 @@ class _StandardExpertModel(Model):
             options[key] = value if value else None
         return options
 
-    def decode_header_line(self, line: str) -> tuple[Scope | None, datetime | None, _StandardExpertCommand | None, Model, dict | None] | None:
+    def decode_header_line(self, line: str) -> tuple[Project | None, datetime | None, _StandardExpertCommand | None, Model, dict | None] | None:
         if not line:
             return None
         m = _StandardExpertModel.HEADER_RE.fullmatch(line.strip())
         if not m:
             return None
-        scope = self.decode_scope(m[1]) if m[1] else None
+        project = self.decode_project(m[1]) if m[1] else None
         cutoff = llobot.time.parse(m[2]) if m[2] else None
         model = self.alternatives[m[3]] if m[3] else self.backend
         options = self.decode_options(m[4]) if m[4] else None
         command = self.decode_command(m[5]) if m[5] else None
-        return [scope, cutoff, command, model, options]
+        return [project, cutoff, command, model, options]
 
-    def decode_message_header(self, message: str) -> tuple[Scope | None, datetime | None, _StandardExpertCommand | None, Model, dict | None]:
+    def decode_message_header(self, message: str) -> tuple[Project | None, datetime | None, _StandardExpertCommand | None, Model, dict | None]:
         lines = message.strip().splitlines()
         if lines:
             top = self.decode_header_line(lines[0])
@@ -334,8 +335,8 @@ class _StandardExpertModel(Model):
             llobot.models.streams.fail('Command is both at the top and bottom of the message.')
         return top or bottom
 
-    def decode_chat_header(self, chat: ChatBranch) -> tuple[Scope | None, datetime | None, _StandardExpertCommand | None, Model, dict | None]:
-        scope, cutoff, command, model, options = self.decode_message_header(chat[0].content)
+    def decode_chat_header(self, chat: ChatBranch) -> tuple[Project | None, datetime | None, _StandardExpertCommand | None, Model, dict | None]:
+        project, cutoff, command, model, options = self.decode_message_header(chat[0].content)
         if len(chat) > 1:
             if command:
                 llobot.models.streams.fail('Followup message even though command was given.')
@@ -348,7 +349,7 @@ class _StandardExpertModel(Model):
                 if message.role == ChatRole.USER and self.decode_command_message(message.content):
                     llobot.models.streams.fail('Followup message after a command.')
             command = self.decode_command_message(chat[-1].content)
-        return scope, cutoff, command, model, options
+        return project, cutoff, command, model, options
 
     def clean_message_header(self, message: str) -> str:
         lines = message.strip().splitlines()
@@ -389,12 +390,12 @@ class _StandardExpertModel(Model):
         return clean.build()
 
     def decode_request(self, prompt: ChatBranch) -> _StandardExpertRequest:
-        scope, cutoff, command, model, options = self.decode_chat_header(prompt)
+        project, cutoff, command, model, options = self.decode_chat_header(prompt)
         clean = self.clean_chat(prompt)
         if options:
             model.validate_options(options)
             model = model.configure(options)
-        return _StandardExpertRequest(self, command, clean, scope, cutoff, model)
+        return _StandardExpertRequest(self, command, clean, project, cutoff, model)
 
     def _connect(self, prompt: ChatBranch) -> ModelStream:
         try:

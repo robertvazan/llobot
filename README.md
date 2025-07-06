@@ -23,7 +23,7 @@ Llobot also has some nice features:
 - **Trimmers**: You can filter out boilerplate and less important content from files to save on tokens and to fit more content in the context window.
 - **Scrapers**: Llobot can scrape documents for links and source code for dependencies to build knowledge graph, which is processed with PageRank to prioritize core files for context stuffing.
 - **Crammers**: Llobot's crammers fit the most important information in given token budget.
-- **Scorers**: Llobot can prioritize files in the knowledge base by position in knowledge graph (see scrapers above), file name patterns, selected project subset (called scope in llobot), and file size. It can also prioritize examples.
+- **Scorers**: Llobot can prioritize files in the knowledge base by position in knowledge graph (see scrapers above), file name patterns, selected subproject, and file size. It can also prioritize examples.
 - **Cache-friendly prompts**: Prompts are assembled in reproducible order from whole documents to minimize cache invalidations. Llobot can construct delta prompts that reuse already cached prompts.
 
 ## Setup

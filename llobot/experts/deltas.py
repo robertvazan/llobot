@@ -45,10 +45,10 @@ def standard(*,
             return expert(request)
         fresh = expert(request)
         report = f"Delta prompt: {fresh.pretty_cost} fresh"
-        # Even though we are including prompt cache, expert, and scope in the zone name, it might not be sufficiently unique.
+        # Even though we are including prompt cache, expert, and project in the zone name, it might not be sufficiently unique.
         # If two models share the same prompt cache with wildly different context sizes, our context cache will be mostly ineffective.
         # That's however quite an unusual scenario and we currently don't want to waste time dealing with it.
-        zone = request.cache.name + '/' + request.memory.zone_name(request.scope)
+        zone = request.cache.name + '/' + request.memory.zone_name(request.project)
         # To support speculative operations like echo that query the expert without sending anything to the model,
         # we have to cache two contexts: one most recently proposed by the expert and one confirmed to be in model's prompt cache.
         cache1, cache2 = _cache.get(zone, (llobot.contexts.empty(), llobot.contexts.empty()))
@@ -59,7 +59,7 @@ def standard(*,
             report += f", {cache.pretty_cost} cached"
             consistent = llobot.contexts.deltas.compatible_prefix(cache, fresh)
             consistent = llobot.contexts.deltas.check_examples(consistent,
-                lambda example: not example.metadata.time or request.memory.has_example(request.scope, example.metadata.time))
+                lambda example: not example.metadata.time or request.memory.has_example(request.project, example.metadata.time))
             if len(consistent) != len(cache):
                 report += f" -> {consistent.pretty_cost} consistent"
             new = llobot.contexts.deltas.difference(consistent, fresh)
@@ -70,7 +70,7 @@ def standard(*,
             # - Cached context may include outdated documents that are absent from fresh context.
             # - Model responses in examples may contain outdated documents that have been modified since.
             # We will therefore sync the pre-sync context with fresh knowledge.
-            fresh_knowledge = request.scope.project.knowledge(request.cutoff).transform(update_trimmer.trim_fully) if request.scope else Knowledge()
+            fresh_knowledge = request.project.root.knowledge(request.cutoff).transform(update_trimmer.trim_fully) if request.project else Knowledge()
             sync = llobot.contexts.deltas.sync(presync, fresh_knowledge, update_formatter=update_formatter, deletion_formatter=deletion_formatter)
             if sync:
                 report += f" + {sync.pretty_cost} sync"
