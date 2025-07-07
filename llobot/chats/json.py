@@ -11,7 +11,7 @@ def decode_time(node: str | None) -> datetime | None:
 
 def format_metadata(metadata: ChatMetadata) -> str:
     data = {
-        'bot': metadata.bot,
+        'role': metadata.role,
         'project': metadata.project,
         'subproject': metadata.subproject,
         'model': metadata.model,
@@ -24,7 +24,7 @@ def format_metadata(metadata: ChatMetadata) -> str:
 def parse_metadata(serialized: str) -> ChatMetadata:
     data = json.loads(serialized)
     return ChatMetadata(
-        bot = data.get('bot'),
+        role = data.get('role', data.get('bot')),
         project = data.get('project'),
         subproject = data.get('subproject', data.get('scope')),
         model = data.get('model'),

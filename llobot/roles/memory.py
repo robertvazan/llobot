@@ -41,7 +41,7 @@ class RoleMemory:
 
     def _save(self, chat: ChatBranch, project: Project | None, write: Callable[[str, ChatBranch], None], log_prefix: str):
         chat = chat.with_metadata(chat.metadata | ChatMetadata(
-            bot=self.name,
+            role=self.name,
             project=project.root.name if project else None,
             subproject=project.name if project and project.root != project else None,
             time=llobot.time.now(),
