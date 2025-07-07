@@ -9,9 +9,8 @@ def format_name(model: str):
     # This is OpenAI protocol, so don't qualify proprietary models released by OpenAI.
     # This will have to be expanded for providers compatible with OpenAI protocol and for local OpenAI-compatible servers.
     model = model.removeprefix('openai/')
-    model = model.removeprefix('gemini/')
     # Bot names are encountered only by listener. We want to expose them under short names.
-    model = model.removeprefix('expert/')
+    model = model.removeprefix('bot/')
     # Everything else remains qualified, although we shouldn't really encounter other registries here.
     # It is unclear what model name syntax is supported, but chances are that unmodified model name will work.
     return model

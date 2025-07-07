@@ -42,10 +42,10 @@ import llobot.models.ollama
 import llobot.models.openai
 import llobot.projects
 import llobot.knowledge.sources
-import llobot.experts.coders
-import llobot.experts.wrappers
-import llobot.experts.memory
-import llobot.models.experts
+import llobot.roles.coders
+import llobot.roles.wrappers
+import llobot.roles.memory
+import llobot.models.roles
 import llobot.models.ollama.listeners
 
 # Backend models that respond to the assembled prompt
@@ -82,42 +82,42 @@ projects = [
         llobot.knowledge.sources.directory(Path.home() / 'Sources' / 'myproject')),
 ]
 
-# Experts determine what goes in the context.
-# This function configures bare expert to serve as a virtual model.
-def define_expert(name, expert):
-    # This wraps the expert in a virtual model.
-    return llobot.models.experts.standard(
-        # Standard expert functionality: reserved tokens, cache-friendly prompts
-        expert | llobot.experts.wrappers.standard(),
-        # This determines where the expert will store data
+# Roles determine what goes in the context.
+# This function configures bare role to serve as a virtual model.
+def define_bot(name, role):
+    # This wraps the role in a virtual model.
+    return llobot.models.roles.standard(
+        # Standard role functionality: cache-friendly prompts
+        role | llobot.roles.wrappers.standard(),
+        # This determines where the bot will store data
         # (archived chats and examples). We will use defaults.
-        llobot.experts.memory.standard(name),
+        llobot.roles.memory.standard(name),
         # Default backend model.
         backend_models['local'],
         # Alternative backend models.
         backend_models,
         projects)
 
-# Lets use some standard experts that come with llobot.
-experts = ModelCatalog(
-    define_expert('coder', llobot.experts.coders.standard()),
+# Lets use some standard roles that come with llobot.
+bots = ModelCatalog(
+    define_bot('coder', llobot.roles.coders.standard()),
 )
 
 # Backend Ollama listens on 11434, so we will listen on 11435 to avoid conflicts.
-llobot.models.ollama.listeners.create(experts, port=11435).listen()
+llobot.models.ollama.listeners.create(bots, port=11435).listen()
 ```
 
 Run this script and add `localhost:11435` as an additional Ollama endpoint to your UI frontend (like Open WebUI, which is [no longer open source](https://github.com/open-webui/open-webui/issues/13579), so feel free to look for alternatives). You should now see the virtual model `coder` listed in the UI.
 
 ## How to use
 
-You should now be able to issue queries against the experts. Select `coder` expert and submit this prompt:
+You should now be able to issue queries against the bots. Select `coder` bot and submit this prompt:
 
 > How do I connect to remote Ollama instance?
 >
 > ~llobot
 
-The last line is a command that tells the expert to use `llobot` project as its knowledge base. If you wanted to work on `myproject`, you would write `~myproject` there. When you submit this prompt, you should get a response like this:
+The last line is a command that tells the bot to use `llobot` project as its knowledge base. If you wanted to work on `myproject`, you would write `~myproject` there. When you submit this prompt, you should get a response like this:
 
 > Use `llobot.models.ollama.remote(host, port, path)` to get the endpoint URL, then pass it to `llobot.models.ollama.create()` as the `endpoint` argument. For example:
 >
@@ -128,7 +128,7 @@ The last line is a command that tells the expert to use `llobot` project as its 
 >
 > `:20250526-221039`
 
-NB: Response this informative relies on using a large model and on having prior related conversations with the expert. For comparison, response from 'qwen2.5-coder' without prior conversations is below. It's close, but it's not quite there.
+NB: Response this informative relies on using a large model and on having prior related conversations with the bot. For comparison, response from 'qwen2.5-coder' without prior conversations is below. It's close, but it's not quite there.
 
 > To connect to a remote Ollama instance, you need to use the `remote()` function from the `ollama/endpoints.py` module. Here's an example of how to do it:
 >
@@ -143,7 +143,7 @@ NB: Response this informative relies on using a large model and on having prior 
 >
 > `:20250526-222015`
 
-The last line is a timestamp that the expert uses to stick to particular version of the knowledge base in case you continue the conversation.
+The last line is a timestamp that the bot uses to stick to particular version of the knowledge base in case you continue the conversation.
 
 The `~llobot` command in the prompt can be more complicated:
 

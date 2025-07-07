@@ -9,7 +9,7 @@ def format_name(model: str):
     # This is Ollama protocol, so don't qualify models coming from Ollama registry.
     model = model.removeprefix('ollama/')
     # Bot names are encountered only by listener. We want to expose them under short names.
-    model = model.removeprefix('expert/')
+    model = model.removeprefix('bot/')
     # Everything else remains qualified, although we shouldn't really encounter other registries here.
     # Ollama supports slashes in model names for user-uploaded models, so most model names should be compatible.
     if ':' not in model:

@@ -8,7 +8,7 @@ from llobot.projects import Project
 
 _logger = logging.getLogger(__name__)
 
-class ExpertMemory:
+class RoleMemory:
     def __init__(self, name: str, *, chat_archive: ChatArchive, example_archive: ChatArchive):
         self._name = name
         self._chat_archive = chat_archive
@@ -81,14 +81,14 @@ class ExpertMemory:
 def standard(name: str, *,
     chat_archive: ChatArchive | Zoning | Path | str = llobot.chats.archives.standard(llobot.fs.data()/'llobot/chats'),
     example_archive: ChatArchive | Zoning | Path | str = llobot.chats.archives.standard(llobot.fs.data()/'llobot/examples'),
-) -> ExpertMemory:
-    return ExpertMemory(name,
+) -> RoleMemory:
+    return RoleMemory(name,
         chat_archive=llobot.chats.archives.coerce(chat_archive),
         example_archive=llobot.chats.archives.coerce(example_archive),
     )
 
 __all__ = [
-    'ExpertMemory',
+    'RoleMemory',
     'standard',
 ]
 

@@ -9,18 +9,18 @@ from llobot.knowledge import Knowledge
 from llobot.contexts import Context
 from llobot.formatters.knowledge import KnowledgeFormatter
 from llobot.formatters.deletions import DeletionFormatter
-from llobot.experts import Expert
-from llobot.experts.requests import ExpertRequest
+from llobot.roles import Role
+from llobot.roles.requests import RoleRequest
 import llobot.trimmers
 import llobot.contexts
 import llobot.contexts.deltas
 import llobot.formatters.knowledge
 import llobot.formatters.deletions
-import llobot.experts.wrappers
+import llobot.roles.wrappers
 
 _logger = logging.getLogger(__name__)
 
-# How many combinations of models, experts, and scopes could the user be juggling at a time?
+# How many combinations of models, roles, and scopes could the user be juggling at a time?
 # Cached contexts could eventually grow up to 1MB each, but we have plenty of RAM,
 # so let's optimize for cache hit rate with large number of cached contexts.
 _cache = LRUCache(maxsize=128)
@@ -39,18 +39,18 @@ def standard(*,
     # For these reasons, we will default to smaller change buffer, say 20% on top of the fresh context budget.
     # That should still be enough for several smaller documents or examples.
     overhead: float = 0.2,
-) -> Expert:
-    def stuff(expert: Expert, request: ExpertRequest) -> Context:
+) -> Role:
+    def stuff(role: Role, request: RoleRequest) -> Context:
         if not request.cache.enabled:
-            return expert(request)
-        fresh = expert(request)
+            return role(request)
+        fresh = role(request)
         report = f"Delta prompt: {fresh.pretty_cost} fresh"
-        # Even though we are including prompt cache, expert, and project in the zone name, it might not be sufficiently unique.
+        # Even though we are including prompt cache, role, and project in the zone name, it might not be sufficiently unique.
         # If two models share the same prompt cache with wildly different context sizes, our context cache will be mostly ineffective.
         # That's however quite an unusual scenario and we currently don't want to waste time dealing with it.
         zone = request.cache.name + '/' + request.memory.zone_name(request.project)
-        # To support speculative operations like echo that query the expert without sending anything to the model,
-        # we have to cache two contexts: one most recently proposed by the expert and one confirmed to be in model's prompt cache.
+        # To support speculative operations like echo that query the role without sending anything to the model,
+        # we have to cache two contexts: one most recently proposed by the role and one confirmed to be in model's prompt cache.
         cache1, cache2 = _cache.get(zone, (llobot.contexts.empty(), llobot.contexts.empty()))
         prompt_cache1 = request.cache.cached_context(cache1)
         prompt_cache2 = request.cache.cached_context(cache2)
@@ -77,7 +77,7 @@ def standard(*,
             proposal = llobot.contexts.compose(presync, sync)
             report += f" = {proposal.pretty_cost} incremental"
             # We want to discard the proposal not only when it is over budget, but also when it grows too big relative to fresh context,
-            # because we don't want disproportionately large change buffer when the underlying expert does not need the whole context window.
+            # because we don't want disproportionately large change buffer when the underlying role does not need the whole context window.
             if proposal.cost > (1 + overhead) * fresh.cost:
                 # If the incremental context does not fit, rewrite the whole context from scratch using the fresh context.
                 # We could opt to rewrite only some suffix of the context that contains most "bubbles" of outdated content, but that has several issues:
@@ -105,7 +105,7 @@ def standard(*,
             _logger.info(report)
         _cache[zone] = (cache, proposal)
         return proposal
-    return llobot.experts.wrappers.stateless(stuff)
+    return llobot.roles.wrappers.stateless(stuff)
 
 __all__ = [
     'standard',

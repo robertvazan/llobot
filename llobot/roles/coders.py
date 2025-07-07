@@ -1,7 +1,7 @@
 from __future__ import annotations
 from functools import cache, lru_cache
-from llobot.experts import Expert
-import llobot.experts.editors
+from llobot.roles import Role
+import llobot.roles.editors
 import llobot.instructions
 
 @cache
@@ -17,8 +17,8 @@ def instructions() -> str:
     )
 
 @lru_cache
-def standard(*, instructions: Expert | str = instructions(), **kwargs) -> Expert:
-    return llobot.experts.editors.standard(instructions=instructions, **kwargs)
+def standard(*, instructions: Role | str = instructions(), **kwargs) -> Role:
+    return llobot.roles.editors.standard(instructions=instructions, **kwargs)
 
 __all__ = [
     'description',

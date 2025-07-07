@@ -4,11 +4,11 @@ from llobot.projects import Project
 from llobot.contexts import Context
 from llobot.chats import ChatBranch
 from llobot.models.caches import PromptCache
-from llobot.experts.memory import ExpertMemory
+from llobot.roles.memory import RoleMemory
 import llobot.contexts
 
-class ExpertRequest:
-    _memory: ExpertMemory
+class RoleRequest:
+    _memory: RoleMemory
     _prompt: ChatBranch
     _project: Project | None
     _cutoff: datetime
@@ -17,7 +17,7 @@ class ExpertRequest:
     _cache: PromptCache
 
     def __init__(self, *,
-        memory: ExpertMemory,
+        memory: RoleMemory,
         prompt: ChatBranch,
         project: Project | None = None,
         cutoff: datetime,
@@ -34,7 +34,7 @@ class ExpertRequest:
         self._cache = cache
 
     @property
-    def memory(self) -> ExpertMemory:
+    def memory(self) -> RoleMemory:
         return self._memory
 
     @property
@@ -61,13 +61,13 @@ class ExpertRequest:
     def cache(self) -> PromptCache:
         return self._cache
 
-    def replace(self, **kwargs) -> ExpertRequest:
-        return ExpertRequest(**({key[1:]: value for key, value in vars(self).items()} | kwargs))
+    def replace(self, **kwargs) -> RoleRequest:
+        return RoleRequest(**({key[1:]: value for key, value in vars(self).items()} | kwargs))
 
     def __str__(self) -> str:
         return str(vars(self))
 
 __all__ = [
-    'ExpertRequest',
+    'RoleRequest',
 ]
 

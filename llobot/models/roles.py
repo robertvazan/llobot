@@ -7,26 +7,27 @@ import re
 from llobot.chats import ChatRole, ChatBranch, ChatBuilder, ChatMetadata
 from llobot.projects import Project
 from llobot.contexts import Context
-from llobot.experts import Expert
-from llobot.experts.requests import ExpertRequest
+from llobot.roles import Role
+from llobot.roles.requests import RoleRequest
 from llobot.models import Model
 from llobot.models.catalogs import ModelCatalog
 from llobot.models.streams import ModelStream, ModelException
+from llobot.roles.memory import RoleMemory
 import llobot.time
 import llobot.models.streams
 
 _logger = logging.getLogger(__name__)
 
-class _StandardExpertCommand(Enum):
+class _StandardRoleCommand(Enum):
     OK = 'ok'
     ECHO = 'echo'
     INFO = 'info'
 
-class _StandardExpertRequest:
-    owner: _StandardExpertModel
-    expert: Expert
-    memory: ExpertMemory
-    command: _StandardExpertCommand | None
+class _StandardRoleRequest:
+    owner: _StandardRoleModel
+    role: Role
+    memory: RoleMemory
+    command: _StandardRoleCommand | None
     # Clean user prompt before assembly into the full prompt.
     prompt: ChatBranch
     project: Project | None
@@ -37,9 +38,9 @@ class _StandardExpertRequest:
     # Options have been already applied to the model.
     model: Model
 
-    def __init__(self, owner: _StandardExpertModel, command: _StandardExpertCommand | None, prompt: ChatBranch, project: Project | None, cutoff: datetime | None, model: Model):
+    def __init__(self, owner: _StandardRoleModel, command: _StandardRoleCommand | None, prompt: ChatBranch, project: Project | None, cutoff: datetime | None, model: Model):
         self.owner = owner
-        self.expert = owner.expert
+        self.role = owner.role
         self.memory = owner.memory
         self.command = command
         self.prompt = prompt
@@ -89,8 +90,8 @@ class _StandardExpertRequest:
 
     def stuff(self, prompt: ChatBranch | None = None) -> Context:
         prompt = prompt or self.prompt
-        request = ExpertRequest(memory=self.memory, prompt=prompt, project=self.project, cutoff=self.cutoff, budget=self.budget, cache=self.model.cache)
-        return self.expert.stuff(request)
+        request = RoleRequest(memory=self.memory, prompt=prompt, project=self.project, cutoff=self.cutoff, budget=self.budget, cache=self.model.cache)
+        return self.role.stuff(request)
 
     def assemble(self, prompt: ChatBranch | None = None) -> ChatBranch:
         return self.stuff(prompt).chat + (prompt or self.prompt)
@@ -133,7 +134,7 @@ class _StandardExpertRequest:
         info = dedent(f'''\
             Configuration:
 
-            - Expert: {self.memory.name}
+            - Role: `{self.memory.name}`
             - Model: `@{self.model.name}`
             - Cutoff: `:{llobot.time.format(self.cutoff)}`
         ''')
@@ -221,29 +222,29 @@ class _StandardExpertRequest:
         inner = output | save_filter
         if self.automatic_cutoff:
             inner += self.cutoff_footer()
-        return inner | llobot.models.streams.handler(callback=lambda: _logger.error(f'Exception in {self.model.name} model ({self.memory.name} expert).', exc_info=True))
+        return inner | llobot.models.streams.handler(callback=lambda: _logger.error(f'Exception in {self.model.name} model ({self.memory.name} role).', exc_info=True))
 
     def handle(self) -> ModelStream:
         if self.project and len(self.prompt) == 1 and not self.given_cutoff:
             self.project.root.refresh()
-        if self.command == _StandardExpertCommand.OK:
+        if self.command == _StandardRoleCommand.OK:
             return self.handle_ok()
-        elif self.command == _StandardExpertCommand.ECHO:
+        elif self.command == _StandardRoleCommand.ECHO:
             return self.handle_echo()
-        elif self.command == _StandardExpertCommand.INFO:
+        elif self.command == _StandardRoleCommand.INFO:
             return self.handle_info()
         else:
             return self.handle_prompt()
 
-class _StandardExpertModel(Model):
-    expert: Expert
-    memory: ExpertMemory
+class _StandardRoleModel(Model):
+    role: Role
+    memory: RoleMemory
     backend: Model
     alternatives: ModelCatalog
     projects: list[Project]
 
-    def __init__(self, expert: Expert, memory: ExpertMemory, backend: Model, alternatives: ModelCatalog, projects: list[Project]):
-        self.expert = expert
+    def __init__(self, role: Role, memory: RoleMemory, backend: Model, alternatives: ModelCatalog, projects: list[Project]):
+        self.role = role
         self.memory = memory
         self.backend = backend
         self.alternatives = alternatives | ModelCatalog(backend)
@@ -251,7 +252,7 @@ class _StandardExpertModel(Model):
 
     @property
     def name(self) -> str:
-        return f'expert/{self.memory.name}'
+        return f'bot/{self.memory.name}'
 
     @property
     def context_budget(self) -> int:
@@ -273,8 +274,8 @@ class _StandardExpertModel(Model):
                 return found
         llobot.models.streams.fail(f'No such project: {name}')
 
-    def decode_command(self, name: str) -> _StandardExpertCommand:
-        for command in _StandardExpertCommand:
+    def decode_command(self, name: str) -> _StandardRoleCommand:
+        for command in _StandardRoleCommand:
             if command.value == name:
                 return command
         llobot.models.streams.fail(f'Invalid command: {name}')
@@ -288,10 +289,10 @@ class _StandardExpertModel(Model):
             options[key] = value if value else None
         return options
 
-    def decode_header_line(self, line: str) -> tuple[Project | None, datetime | None, _StandardExpertCommand | None, Model, dict | None] | None:
+    def decode_header_line(self, line: str) -> tuple[Project | None, datetime | None, _StandardRoleCommand | None, Model, dict | None] | None:
         if not line:
             return None
-        m = _StandardExpertModel.HEADER_RE.fullmatch(line.strip())
+        m = _StandardRoleModel.HEADER_RE.fullmatch(line.strip())
         if not m:
             return None
         project = self.decode_project(m[1]) if m[1] else None
@@ -301,7 +302,7 @@ class _StandardExpertModel(Model):
         command = self.decode_command(m[5]) if m[5] else None
         return [project, cutoff, command, model, options]
 
-    def decode_message_header(self, message: str) -> tuple[Project | None, datetime | None, _StandardExpertCommand | None, Model, dict | None]:
+    def decode_message_header(self, message: str) -> tuple[Project | None, datetime | None, _StandardRoleCommand | None, Model, dict | None]:
         lines = message.strip().splitlines()
         if lines:
             top = self.decode_header_line(lines[0])
@@ -318,14 +319,14 @@ class _StandardExpertModel(Model):
         lines = message.strip().splitlines()
         if not lines:
             return None
-        m = _StandardExpertModel.CUTOFF_RE.fullmatch(lines[-1])
+        m = _StandardRoleModel.CUTOFF_RE.fullmatch(lines[-1])
         return llobot.time.parse(m[1]) if m else None
 
-    def decode_command_line(self, line: str) -> _StandardExpertCommand | None:
-        m = _StandardExpertModel.COMMAND_RE.fullmatch(line.strip())
+    def decode_command_line(self, line: str) -> _StandardRoleCommand | None:
+        m = _StandardRoleModel.COMMAND_RE.fullmatch(line.strip())
         return self.decode_command(m[1]) if m else None
 
-    def decode_command_message(self, message: str) -> _StandardExpertCommand | None:
+    def decode_command_message(self, message: str) -> _StandardRoleCommand | None:
         lines = message.strip().splitlines()
         if not lines:
             return None
@@ -335,7 +336,7 @@ class _StandardExpertModel(Model):
             llobot.models.streams.fail('Command is both at the top and bottom of the message.')
         return top or bottom
 
-    def decode_chat_header(self, chat: ChatBranch) -> tuple[Project | None, datetime | None, _StandardExpertCommand | None, Model, dict | None]:
+    def decode_chat_header(self, chat: ChatBranch) -> tuple[Project | None, datetime | None, _StandardRoleCommand | None, Model, dict | None]:
         project, cutoff, command, model, options = self.decode_message_header(chat[0].content)
         if len(chat) > 1:
             if command:
@@ -363,7 +364,7 @@ class _StandardExpertModel(Model):
         lines = message.strip().splitlines()
         if not lines:
             return message
-        m = _StandardExpertModel.CUTOFF_RE.fullmatch(lines[-1])
+        m = _StandardRoleModel.CUTOFF_RE.fullmatch(lines[-1])
         if not m:
             return message
         # The rstrip() call here will modify the response if it contains extraneous newlines.
@@ -389,13 +390,13 @@ class _StandardExpertModel(Model):
             clean.add(chat[-1].with_content(self.clean_command_message(chat[-1].content)))
         return clean.build()
 
-    def decode_request(self, prompt: ChatBranch) -> _StandardExpertRequest:
+    def decode_request(self, prompt: ChatBranch) -> _StandardRoleRequest:
         project, cutoff, command, model, options = self.decode_chat_header(prompt)
         clean = self.clean_chat(prompt)
         if options:
             model.validate_options(options)
             model = model.configure(options)
-        return _StandardExpertRequest(self, command, clean, project, cutoff, model)
+        return _StandardRoleRequest(self, command, clean, project, cutoff, model)
 
     def _connect(self, prompt: ChatBranch) -> ModelStream:
         try:
@@ -407,7 +408,7 @@ class _StandardExpertModel(Model):
             return llobot.models.streams.exception(ex)
 
 def standard(*args) -> Model:
-    return _StandardExpertModel(*args)
+    return _StandardRoleModel(*args)
 
 __all__ = [
     'standard',

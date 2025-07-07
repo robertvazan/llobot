@@ -2,7 +2,7 @@ from __future__ import annotations
 from datetime import datetime
 
 class ChatMetadata:
-    # Bot (usually expert) that was used to process user's prompt.
+    # Bot that was used to process user's prompt.
     _bot: str | None
     # Project upon which the bot operated if any.
     _project: str | None
