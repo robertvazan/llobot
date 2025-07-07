@@ -1,4 +1,6 @@
 from __future__ import annotations
+import logging
+from pathlib import Path
 from datetime import datetime
 from llobot.fs.zones import Zoning
 from llobot.chats import ChatBranch
@@ -8,9 +10,16 @@ import llobot.fs.time
 import llobot.fs.zones
 import llobot.chats.markdown
 
+_logger = logging.getLogger(__name__)
+
 class ChatArchive:
     def add(self, zone: str, chat: ChatBranch):
         pass
+
+    def scatter(self, zones: Iterable[str], chat: ChatBranch):
+        """Add the same chat to multiple zones, potentially using hardlinks for efficiency."""
+        for zone in zones:
+            self.add(zone, chat)
 
     def remove(self, zone: str, time: datetime):
         pass
@@ -30,10 +39,25 @@ class ChatArchive:
 def markdown(location: Zoning | Path | str) -> ChatArchive:
     location = llobot.fs.zones.coerce(location)
     class MarkdownChatArchive(ChatArchive):
-        def _path(self, zone: str, time: datetime):
+        def _path(self, zone: str, time: datetime) -> Path:
             return llobot.fs.time.path(location[zone], time, llobot.chats.markdown.SUFFIX)
         def add(self, zone: str, chat: ChatBranch):
             llobot.chats.markdown.save(self._path(zone, chat.metadata.time), chat)
+        def scatter(self, zones: Iterable[str], chat: ChatBranch):
+            zones = list(zones)
+            if not zones:
+                return
+            self.add(zones[0], chat)
+            for zone in zones[1:]:
+                source_path = self._path(zones[0], chat.metadata.time)
+                target_path = self._path(zone, chat.metadata.time)
+                try:
+                    llobot.fs.create_parents(target_path)
+                    target_path.hardlink_to(source_path)
+                except Exception as ex:
+                    # Fall back to regular saving if hardlink fails
+                    _logger.warning(f"Failed to create hardlink from {source_path} to {target_path}: {ex}")
+                    self.add(zone, chat)
         def remove(self, zone: str, time: datetime):
             self._path(zone, time).unlink(missing_ok=True)
         def read(self, zone: str, time: datetime) -> ChatBranch | None:
@@ -59,6 +83,8 @@ def rename(mapping: Callable[[str], str], underlying: ChatArchive) -> ChatArchiv
     class RenamingChatArchive(ChatArchive):
         def add(self, zone: str, chat: ChatBranch):
             underlying.add(mapping(zone), chat)
+        def scatter(self, zones: Iterable[str], chat: ChatBranch):
+            underlying.scatter([mapping(zone) for zone in zones], chat)
         def remove(self, zone: str, time: datetime):
             underlying.remove(mapping(zone), time)
         def read(self, zone: str, time: datetime) -> ChatBranch | None:
