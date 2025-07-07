@@ -39,7 +39,7 @@ class RoleMemory:
                 yield self.zone_name(project.root)
         yield self.zone_name(None)
 
-    def _save(self, chat: ChatBranch, project: Project | None, write: Callable[[Iterable[str], ChatBranch], None], log_prefix: str):
+    def _save(self, chat: ChatBranch, project: Project | None, archive: ChatArchive, log_prefix: str):
         chat = chat.with_metadata(chat.metadata | ChatMetadata(
             role=self.name,
             project=project.root.name if project else None,
@@ -50,14 +50,12 @@ class RoleMemory:
         # The context can be regenerated from the metadata.
         chat = chat.strip_context()
         zones = list(self.zone_names(project))
-        write(zones, chat)
+        archive.scatter(zones, chat)
         _logger.info(f"{log_prefix}: {', '.join(zones)}")
 
     # Chat must already have metadata with model, options, and cutoff.
     def save_chat(self, chat: ChatBranch, project: Project | None):
-        def write(zones: Iterable[str], chat: ChatBranch):
-            self.chat_archive.scatter(zones, chat)
-        self._save(chat, project, write, "Archived chat")
+        self._save(chat, project, self.chat_archive, "Archived chat")
 
     # Chat must already have metadata with model, options, and cutoff.
     def save_example(self, chat: ChatBranch, project: Project | None):
@@ -66,9 +64,7 @@ class RoleMemory:
             last = self.example_archive.last(zone)
             if last and last.as_example()[0].content == chat.as_example()[0].content:
                 self.example_archive.remove(zone, last.metadata.time)
-        def write(zones: Iterable[str], chat: ChatBranch):
-            self.example_archive.scatter(zones, chat)
-        self._save(chat, project, write, "Archived example")
+        self._save(chat, project, self.example_archive, "Archived example")
 
     def recent_examples(self, project: Project | None, cutoff: datetime | None = None) -> Iterable[ChatBranch]:
         for zone in self.zone_names(project):
