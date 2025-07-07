@@ -68,6 +68,14 @@ class ChatBranch:
         builder.add(self)
         return builder
 
+    def strip_context(self) -> ChatBranch:
+        from ._builders import ChatBuilder
+        builder = ChatBuilder()
+        for message in self:
+            if message.intent in (ChatIntent.PROMPT, ChatIntent.RESPONSE):
+                builder.add(message)
+        return builder.build().with_metadata(self.metadata)
+
     def is_example(self) -> ChatBranch:
         return self and all(message.is_example() for message in self)
 

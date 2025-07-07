@@ -46,6 +46,9 @@ class ExpertMemory:
             subproject=project.name if project and project.root != project else None,
             time=llobot.time.now(),
         ))
+        # Strip context messages before saving to reduce storage and avoid redundant information.
+        # The context can be regenerated from the metadata.
+        chat = chat.strip_context()
         zones = self.zone_names(project)
         for zone in zones:
             write(zone, chat)
