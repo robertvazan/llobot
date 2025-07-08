@@ -24,10 +24,6 @@ def stateless(function: Callable[[Role, RoleRequest], Context]) -> RoleWrapper:
     return create(lambda role: llobot.roles.create(lambda request: function(role, request)))
 
 @cache
-def limit(share: float) -> RoleWrapper:
-    return stateless(lambda role, request: role(request.replace(budget=int(share*request.budget))))
-
-@cache
 def standard() -> RoleWrapper:
     import llobot.roles.deltas
     return llobot.roles.deltas.standard()
@@ -36,7 +32,6 @@ __all__ = [
     'RoleWrapper',
     'create',
     'stateless',
-    'limit',
     'standard',
 ]
 

@@ -11,21 +11,6 @@ class Role:
     def __call__(self, request: 'RoleRequest') -> Context:
         return self.stuff(request)
 
-    def __add__(self, other: Role) -> Role:
-        from llobot.roles.requests import RoleRequest
-        def stuff(request: RoleRequest):
-            first = self(request)
-            second = other(request.replace(budget=request.budget-first.cost, context=request.context+first))
-            return first + second
-        return create(stuff)
-
-    def __mul__(self, other: float) -> Role:
-        import llobot.roles.wrappers
-        return self | llobot.roles.wrappers.limit(other)
-
-    def __rmul__(self, other: float) -> Role:
-        return self * other
-
     def __or__(self, wrapper: 'RoleWrapper') -> Role:
         return wrapper(self)
 
