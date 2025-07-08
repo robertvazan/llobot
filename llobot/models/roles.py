@@ -109,7 +109,7 @@ class _StandardRoleRequest:
     def handle_ok(self) -> ModelStream:
         if len(self.prompt) < 3:
             return llobot.models.streams.error('Nothing to save.')
-        self.memory.save_example(self.add_metadata(self.assemble(self.prompt[:-2]) + self.prompt[-2]), self.project)
+        self.memory.save_example(self.add_metadata(self.prompt[:-1]), self.project)
         return llobot.models.streams.ok('Saved.')
 
     def handle_echo(self) -> ModelStream:
@@ -218,7 +218,7 @@ class _StandardRoleRequest:
     def handle_prompt(self) -> ModelStream:
         assembled = self.assemble()
         output = self.model.generate(assembled, self.zone)
-        save_filter = llobot.models.streams.notify(lambda stream: self.memory.save_chat(self.add_metadata(assembled + ChatRole.ASSISTANT.message(stream.response())), self.project))
+        save_filter = llobot.models.streams.notify(lambda stream: self.memory.save_chat(self.add_metadata(self.prompt + ChatRole.ASSISTANT.message(stream.response())), self.project))
         inner = output | save_filter
         if self.automatic_cutoff:
             inner += self.cutoff_footer()
