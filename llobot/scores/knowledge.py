@@ -190,6 +190,21 @@ def pagerank(
 def reverse_pagerank(graph: KnowledgeGraph, nodes: KnowledgeIndex = KnowledgeIndex(), **kwargs) -> KnowledgeScores:
     return pagerank(graph.reverse(), nodes, **kwargs)
 
+def prioritize(
+    index: Knowledge | KnowledgeIndex | KnowledgeRanking | KnowledgeScores,
+    subset: KnowledgeSubset | str | Path | KnowledgeIndex,
+    *,
+    background_score: float = 0.001
+) -> KnowledgeScores:
+    """
+    Assigns a high score to documents in a subset and a low background score to other documents.
+    """
+    index = llobot.knowledge.indexes.coerce(index)
+    subset = llobot.knowledge.subsets.coerce(subset)
+    priority_scores = coerce(index & subset)
+    background_scores = uniform(index, background_score)
+    return background_scores + priority_scores
+
 __all__ = [
     'KnowledgeScores',
     'coerce',
@@ -204,5 +219,6 @@ __all__ = [
     'hub',
     'pagerank',
     'reverse_pagerank',
+    'prioritize',
 ]
 

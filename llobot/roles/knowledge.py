@@ -25,6 +25,8 @@ def standard(*,
     def stuff(request: RoleRequest) -> Context:
         knowledge = request.project.root.knowledge(request.cutoff) if request.project else Knowledge()
         scores = relevance_scorer(knowledge)
+        if request.project and request.project.root != request.project:
+            scores *= llobot.scores.knowledge.prioritize(knowledge, request.project.subset)
         return crammer.cram(knowledge, request.budget, scores, request.context)
     return llobot.roles.create(stuff)
 
@@ -39,6 +41,8 @@ def retrieval(*,
     def stuff(request: RoleRequest) -> Context:
         knowledge = request.project.root.knowledge(request.cutoff) if request.project else Knowledge()
         scores = relevance_scorer(knowledge)
+        if request.project and request.project.root != request.project:
+            scores *= llobot.scores.knowledge.prioritize(knowledge, request.project.subset)
         messages = (message.content for message in request.prompt if message.role == ChatRole.USER)
         prompt = llobot.text.concat(*messages)
         retrievals = llobot.links.resolve_best(scraper.scrape_prompt(prompt), knowledge, scores)
