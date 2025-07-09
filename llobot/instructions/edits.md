@@ -15,16 +15,16 @@ To add a file:
 To remove a file:
 
 - Use note-only listing format.
-- Mark it with "(delete)" note.
+- Mark it with "(removed)" note.
 
-`path/to/file.py` (delete)
+`path/to/file.py` (removed)
 
 To modify a file:
 
 - Use whole file listing format.
-- Mark it with "(edit)" note.
+- Mark it with "(modified)" note.
 
-`path/to/file.py` (edit):
+`path/to/file.py` (modified):
 
 ```python
 # ... changed code
@@ -41,11 +41,11 @@ To rename a file:
 To rename a file and also make changes to it:
 
 - Use whole file listing format.
-- Mark it with "move" and "edit" notes.
+- Mark it with "move" and "modified" notes.
 - Put source path in the note and destination path in header path.
 - Place new content in the code block.
 
-`MyClass.java` (edit, moved from `OriginalClass.java`):
+`MyClass.java` (modified, moved from `OriginalClass.java`):
 
 ```java
 class MyClass {
