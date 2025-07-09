@@ -8,7 +8,7 @@ File path in file listings may be followed by comma-separated notes in parenthes
 # ... python code here ...
 ```
 
-- Notes can be combined as needed, for example `(edit, delta)`.
+- Notes can be combined as needed, for example `(edit, moved from 'original/location.py')`.
 - If no note is present, then the enclosed code is the original, unmodified content of the file.
 
 Notes commonly used by the user that describe actual changes in the file system:
@@ -21,9 +21,8 @@ Notes you may use to indicate the action you wish to take:
 - new: You wish to create the file.
 - edit: You wish to replace the file with the enclosed content.
 - delete: You wish to remove the file.
-- delta: Used together with "edit" note to indicate the enclosed content includes only modified parts of the file.
 - quote: You do not wish to make any changes. You are just quoting a fragment of the file to support an explanation or an argument.
-- moved from `original/location.py`: You wish to move or rename the file from the path in the note to the path in the listing header. You can combine "move" note with "edit" and "delta" notes to also make changes in the file.
+- moved from `original/location.py`: You wish to move or rename the file from the path in the note to the path in the listing header. You can combine "move" note with "edit" note to also make changes in the file.
 
 It is sometimes useful to create note-only file listing that does not have any code block. For example:
 

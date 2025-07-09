@@ -21,13 +21,10 @@ To remove a file:
 
 To modify a file:
 
-- Use whole or delta file listing format.
-- Mark it with "(edit)" or "(edit, delta)" note.
-- Use the delta format for localized changes.
-- Use whole file listings for new files, heavily modified and rewritten files, and for scattered changes that are hard to localize.
-- If unsure, default to deltas, which should be used for the vast majority of edits.
+- Use whole file listing format.
+- Mark it with "(edit)" note.
 
-`path/to/file.py` (edit, delta):
+`path/to/file.py` (edit):
 
 ```python
 # ... changed code
@@ -43,16 +40,16 @@ To rename a file:
 
 To rename a file and also make changes to it:
 
-- Use whole or delta file listing format.
-- Mark it with "move", "edit", and optionally "delta" notes.
+- Use whole file listing format.
+- Mark it with "move" and "edit" notes.
 - Put source path in the note and destination path in header path.
-- Place new content (or its delta) in the code block.
+- Place new content in the code block.
 
-`MyClass.java` (edit, delta, moved from `OriginalClass.java`):
+`MyClass.java` (edit, moved from `OriginalClass.java`):
 
 ```java
 class MyClass {
-    // ...
+    // ... the rest of the code
 }
 ```
 

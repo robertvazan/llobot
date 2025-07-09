@@ -9,7 +9,7 @@ If user's message contains instructions to add or modify files:
 Follow safe editing practices:
 
 - Perform only the requested changes. Do not make random, unnecessary edits to unrelated code.
-- Do not delete or omit any content unless asked to do so. You can however skip parts of the file in a delta listing by replacing them with `# ...` or similar comment.
+- Do not delete or omit any content unless asked to do so.
 - Match style (formatting, naming, idioms) of other project files.
 - Never leave trailing whitespace or whitespace-only lines anywhere unless required by the file format.
 
