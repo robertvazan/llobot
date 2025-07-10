@@ -6,11 +6,9 @@ from llobot.chats import ChatBranch
 from llobot.models import Model
 from llobot.models.streams import ModelStream
 from llobot.models.stats import ModelStats
-from llobot.models.caches import PromptCache, PromptStorage
 from llobot.models.estimators import TokenLengthEstimator
 import llobot.models.streams
 import llobot.models.estimators
-import llobot.models.caches.last
 
 class _OllamaStream(ModelStream):
     def __init__(self, endpoint: str, model: str, options: dict, prompt: ChatBranch):
@@ -43,7 +41,6 @@ class _OllamaModel(Model):
     _num_ctx: int
     _context_budget: int
     _estimator: TokenLengthEstimator
-    _cache: PromptStorage
     _top_k: int | None
 
     # Context size is a mandatory parameter, because Ollama has only 2K-token default, which is useless for real applications.
@@ -52,7 +49,6 @@ class _OllamaModel(Model):
         aliases: Iterable[str] = [],
         context_budget: int | None = None,
         estimator: TokenLengthEstimator = llobot.models.estimators.standard(),
-        cache: PromptStorage | None = None,
         top_k: int | None = None,
     ):
         from llobot.models.ollama import endpoints
@@ -62,11 +58,6 @@ class _OllamaModel(Model):
         self._num_ctx = num_ctx
         self._context_budget = context_budget or min(25_000, max(0, int(0.8 * (num_ctx - 5000))))
         self._estimator = estimator
-        # Ollama does not have proper prompt cache in system RAM, only one or more inference buffers in VRAM,
-        # so pessimistically assume there is only one prompt cache per endpoint.
-        # Do not set any timeout, because any serious local Ollama setup is going to have cache that never expires.
-        # This code assumes that create() below is a cached function.
-        self._cache = cache or llobot.models.caches.last.create('ollama/' + endpoints.concise(self._endpoint))
         self._top_k = top_k
 
     @property
@@ -104,7 +95,6 @@ class _OllamaModel(Model):
             aliases=self._aliases,
             context_budget=int(options.get('context_budget', self._context_budget)),
             estimator=self._estimator,
-            cache=self._cache,
             top_k=int(top_k) if top_k else None,
         )
 
@@ -116,19 +106,10 @@ class _OllamaModel(Model):
     def estimator(self) -> TokenLengthEstimator:
         return self._estimator
 
-    @property
-    def cache(self) -> PromptCache:
-        # Not all options influence cache content, but Ollama so far does not care and restarts llama.cpp whenever any inference option changes.
-        # There are always some options, at least context size. We will use short name, because Ollama server is going to host only Ollama models.
-        return self._cache[self._name + '?' + '&'.join([f'{key}={value}' for key, value in sorted(self.options.items())])]
-
     def _connect(self, prompt: ChatBranch) -> ModelStream:
-        self.cache.trim(prompt)
         options = self.options
         del options['context_budget']
-        result = _OllamaStream(self._endpoint, self._name, options, prompt)
-        result |= llobot.models.streams.notify(lambda stream: self.cache.write(llobot.models.streams.chat(prompt, stream)))
-        return result
+        return _OllamaStream(self._endpoint, self._name, options, prompt)
 
 # Default tag is :latest.
 def create(name: str, num_ctx: int, **kwargs) -> Model:

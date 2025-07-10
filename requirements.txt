@@ -1,5 +1,4 @@
 requests
-cachetools
 anthropic
 google-genai
 

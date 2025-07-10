@@ -3,7 +3,6 @@ from datetime import datetime
 from llobot.projects import Project
 from llobot.contexts import Context
 from llobot.chats import ChatBranch
-from llobot.models.caches import PromptCache
 from llobot.roles.memory import RoleMemory
 import llobot.contexts
 
@@ -14,7 +13,6 @@ class RoleRequest:
     _cutoff: datetime
     _budget: int
     _context: Context
-    _cache: PromptCache
 
     def __init__(self, *,
         memory: RoleMemory,
@@ -23,7 +21,6 @@ class RoleRequest:
         cutoff: datetime,
         budget: int,
         context: Context = llobot.contexts.empty(),
-        cache: PromptCache = PromptCache(),
     ):
         self._memory = memory
         self._prompt = prompt
@@ -31,7 +28,6 @@ class RoleRequest:
         self._cutoff = cutoff
         self._budget = budget
         self._context = context
-        self._cache = cache
 
     @property
     def memory(self) -> RoleMemory:
@@ -56,10 +52,6 @@ class RoleRequest:
     @property
     def context(self) -> Context:
         return self._context
-
-    @property
-    def cache(self) -> PromptCache:
-        return self._cache
 
     def replace(self, **kwargs) -> RoleRequest:
         return RoleRequest(**({key[1:]: value for key, value in vars(self).items()} | kwargs))

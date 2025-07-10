@@ -47,11 +47,6 @@ class Model:
         # is not reset every time this property is read.
         return llobot.models.estimators.standard()
 
-    @property
-    def cache(self) -> 'PromptCache':
-        import llobot.models.caches
-        return llobot.models.caches.disabled()['disabled']
-
     # Stream may be either returned from the function or thrown as ModelException.
     def _connect(self, prompt: ChatBranch) -> 'ModelStream':
         raise NotImplementedError

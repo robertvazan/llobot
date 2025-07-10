@@ -90,7 +90,7 @@ class _StandardRoleRequest:
 
     def stuff(self, prompt: ChatBranch | None = None) -> Context:
         prompt = prompt or self.prompt
-        request = RoleRequest(memory=self.memory, prompt=prompt, project=self.project, cutoff=self.cutoff, budget=self.budget, cache=self.model.cache)
+        request = RoleRequest(memory=self.memory, prompt=prompt, project=self.project, cutoff=self.cutoff, budget=self.budget)
         return self.role.stuff(request)
 
     def assemble(self, prompt: ChatBranch | None = None) -> ChatBranch:

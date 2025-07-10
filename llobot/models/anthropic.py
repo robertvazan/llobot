@@ -4,10 +4,7 @@ from llobot.chats import ChatRole, ChatBranch
 from llobot.models import Model
 from llobot.models.streams import ModelStream
 from llobot.models.stats import ModelStats
-from llobot.models.caches import PromptCache, PromptStorage
 from llobot.models.estimators import TokenLengthEstimator
-import llobot.models.caches
-import llobot.models.caches.lru
 import llobot.models.streams
 import llobot.models.estimators
 
@@ -98,7 +95,6 @@ class _AnthropicModel(Model):
     _max_tokens: int
     _estimator: TokenLengthEstimator
     _cached: bool
-    _cache: PromptStorage
     _temperature: float | None
     _top_k: int | None
     _top_p: float | None
@@ -128,7 +124,6 @@ class _AnthropicModel(Model):
         self._max_tokens = max_tokens
         self._estimator = estimator
         self._cached = cached
-        self._cache = llobot.models.caches.lru.create('anthropic', timeout=5*60) if cached else llobot.models.caches.disabled()
         self._temperature = temperature
         self._top_k = top_k
         self._top_p = top_p
@@ -185,12 +180,8 @@ class _AnthropicModel(Model):
     def estimator(self) -> TokenLengthEstimator:
         return self._estimator
 
-    @property
-    def cache(self) -> PromptCache:
-        return self._cache[self._name]
-
     def _connect(self, prompt: ChatBranch) -> ModelStream:
-        result = _AnthropicStream(
+        return _AnthropicStream(
             self._client,
             self._name,
             self._max_tokens,
@@ -200,8 +191,6 @@ class _AnthropicModel(Model):
             self._top_k,
             self._top_p
         )
-        result |= llobot.models.streams.notify(lambda _: self.cache.write(prompt.context_only()))
-        return result
 
 def create(name: str, **kwargs) -> Model:
     return _AnthropicModel(name, **kwargs)
