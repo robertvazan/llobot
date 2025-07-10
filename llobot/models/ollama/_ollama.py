@@ -5,10 +5,7 @@ import requests
 from llobot.chats import ChatBranch
 from llobot.models import Model
 from llobot.models.streams import ModelStream
-from llobot.models.stats import ModelStats
-from llobot.models.estimators import TokenLengthEstimator
 import llobot.models.streams
-import llobot.models.estimators
 
 class _OllamaStream(ModelStream):
     def __init__(self, endpoint: str, model: str, options: dict, prompt: ChatBranch):
@@ -18,17 +15,9 @@ class _OllamaStream(ModelStream):
         self._http_response = requests.post(endpoint + '/chat', stream=True, json=request)
         self._http_response.raise_for_status()
         self._iterator = encoding.parse_stream(self._http_response.iter_lines())
-        self._length = prompt.cost
 
-    def _receive(self) -> str | ModelStats:
-        event = next(self._iterator, None)
-        # Improperly terminated stream?
-        if event is None:
-            return ModelStats()
-        if isinstance(event, ModelStats):
-            return event | ModelStats(total_chars=self._length)
-        self._length += len(event)
-        return event
+    def _receive(self) -> str | None:
+        return next(self._iterator, None)
 
     def _close(self):
         self._http_response.close()
@@ -40,7 +29,6 @@ class _OllamaModel(Model):
     _endpoint: str
     _num_ctx: int
     _context_budget: int
-    _estimator: TokenLengthEstimator
     _top_k: int | None
 
     # Context size is a mandatory parameter, because Ollama has only 2K-token default, which is useless for real applications.
@@ -48,7 +36,6 @@ class _OllamaModel(Model):
         endpoint: str | None = None,
         aliases: Iterable[str] = [],
         context_budget: int | None = None,
-        estimator: TokenLengthEstimator = llobot.models.estimators.standard(),
         top_k: int | None = None,
     ):
         from llobot.models.ollama import endpoints
@@ -56,8 +43,7 @@ class _OllamaModel(Model):
         self._aliases = list(aliases)
         self._endpoint = endpoint or endpoints.localhost()
         self._num_ctx = num_ctx
-        self._context_budget = context_budget or min(25_000, max(0, int(0.8 * (num_ctx - 5000))))
-        self._estimator = estimator
+        self._context_budget = context_budget or min(100_000, 4 * max(0, int(0.8 * (num_ctx - 5000))))
         self._top_k = top_k
 
     @property
@@ -94,17 +80,12 @@ class _OllamaModel(Model):
             endpoint=self._endpoint,
             aliases=self._aliases,
             context_budget=int(options.get('context_budget', self._context_budget)),
-            estimator=self._estimator,
             top_k=int(top_k) if top_k else None,
         )
 
     @property
     def context_budget(self) -> int:
         return self._context_budget
-
-    @property
-    def estimator(self) -> TokenLengthEstimator:
-        return self._estimator
 
     def _connect(self, prompt: ChatBranch) -> ModelStream:
         options = self.options

@@ -3,14 +3,9 @@ from anthropic import Anthropic
 from llobot.chats import ChatRole, ChatBranch
 from llobot.models import Model
 from llobot.models.streams import ModelStream
-from llobot.models.stats import ModelStats
-from llobot.models.estimators import TokenLengthEstimator
 import llobot.models.streams
-import llobot.models.estimators
 
 class _AnthropicStream(ModelStream):
-    _length: int
-    _stats: ModelStats
     _iterator: Iterator[str]
 
     def __init__(self,
@@ -24,9 +19,7 @@ class _AnthropicStream(ModelStream):
         top_p: float | None,
     ):
         super().__init__()
-        self._length = prompt.cost
-        self._stats = ModelStats()
-        self._iterator = iter(self._iterate(client, model, max_tokens, prompt, cached, temperature, top_k, top_p))
+        self._iterator = self._iterate(client, model, max_tokens, prompt, cached, temperature, top_k, top_p)
 
     def _iterate(self,
         client: Anthropic,
@@ -66,23 +59,13 @@ class _AnthropicStream(ModelStream):
             parameters['top_p'] = top_p
         with client.messages.stream(**parameters) as stream:
             for chunk in stream.text_stream:
-                self._length += len(chunk)
                 yield chunk
-            usage = stream.get_final_message().usage
-            self._stats = ModelStats(
-                # Annoyingly, Claude API does not include cache writes and reads in the total number of input tokens, so we sum it here.
-                prompt_tokens = usage.input_tokens + (usage.cache_creation_input_tokens or 0) + (usage.cache_read_input_tokens or 0),
-                response_tokens = usage.output_tokens,
-                # If caching is enabled and there were no cache reads, we want to record zero to indicate cache miss.
-                cached_tokens = (usage.cache_read_input_tokens or 0) if cached else usage.cache_read_input_tokens,
-                total_chars = self._length,
-            )
 
-    def _receive(self) -> str | ModelStats:
+    def _receive(self) -> str | None:
         try:
             return next(self._iterator)
         except StopIteration:
-            return self._stats
+            return None
 
     def _close(self):
         self._iterator.close()
@@ -93,7 +76,6 @@ class _AnthropicModel(Model):
     _aliases: list[str]
     _context_budget: int
     _max_tokens: int
-    _estimator: TokenLengthEstimator
     _cached: bool
     _temperature: float | None
     _top_k: int | None
@@ -103,9 +85,8 @@ class _AnthropicModel(Model):
         client: Anthropic | None = None,
         auth: str | None = None,
         aliases: Iterable[str] = [],
-        context_budget: int = 25_000,
+        context_budget: int = 100_000,
         max_tokens: int = 8_000,
-        estimator: TokenLengthEstimator = llobot.models.estimators.standard(),
         cached: bool = True,
         temperature: float | None = None,
         top_k: int | None = None,
@@ -122,7 +103,6 @@ class _AnthropicModel(Model):
         self._aliases = list(aliases)
         self._context_budget = context_budget
         self._max_tokens = max_tokens
-        self._estimator = estimator
         self._cached = cached
         self._temperature = temperature
         self._top_k = top_k
@@ -165,7 +145,6 @@ class _AnthropicModel(Model):
             client=self._client,
             context_budget=int(options.get('context_budget', self._context_budget)),
             max_tokens=int(options.get('max_tokens', self._max_tokens)),
-            estimator=self._estimator,
             cached=self._cached,
             temperature=float(temperature) if temperature is not None and temperature != '' else None,
             top_k=int(top_k) if top_k else None,
@@ -175,10 +154,6 @@ class _AnthropicModel(Model):
     @property
     def context_budget(self) -> int:
         return self._context_budget
-
-    @property
-    def estimator(self) -> TokenLengthEstimator:
-        return self._estimator
 
     def _connect(self, prompt: ChatBranch) -> ModelStream:
         return _AnthropicStream(

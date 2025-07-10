@@ -2,21 +2,18 @@ from __future__ import annotations
 from pathlib import Path
 import traceback
 from llobot.chats import ChatIntent, ChatBranch
-from llobot.models.stats import ModelStats
 
 class ModelStream:
     _response: str
-    _stats: ModelStats
     _done: bool
 
     def __init__(self):
         self._response = ''
-        self._stats = ModelStats()
         self._done = False
 
-    # Returns next chunk. Returns stats when the response is complete.
-    def _receive(self) -> str | ModelStats:
-        return ModelStats()
+    # Returns next chunk. Returns None when the response is complete.
+    def _receive(self) -> str | None:
+        return None
 
     # Must tolerate multiple close() calls. Must tolerate broken connection.
     def _close(self):
@@ -35,9 +32,8 @@ class ModelStream:
         if self._done:
             return None
         item = self._receive()
-        if isinstance(item, ModelStats):
+        if item is None:
             self._done = True
-            self._stats = item
             return None
         self._response += item
         return item
@@ -57,10 +53,6 @@ class ModelStream:
         self.receive_all()
         return self._response
 
-    def stats(self) -> ModelStats:
-        self.receive_all()
-        return self._stats
-
     def __add__(self, second: ModelStream) -> ModelStream:
         first = self
         class ConcatenatedStream(ModelStream):
@@ -68,17 +60,17 @@ class ModelStream:
             def __init__(self):
                 super().__init__()
                 self._separated = False
-            def _receive(self) -> str | ModelStats:
+            def _receive(self) -> str | None:
                 token1 = first.receive()
-                if token1:
+                if token1 is not None:
                     return token1
                 token2 = second.receive()
-                if token2:
+                if token2 is not None:
                     if not self._separated and first.response():
                         self._separated = True
                         token2 = '\n\n' + token2
                     return token2
-                return first.stats() + second.stats()
+                return None
             def _close(self):
                 first._close()
                 second._close()
@@ -101,15 +93,15 @@ class ModelException(Exception):
     def __init__(self, stream: ModelStream):
         self.stream = stream
 
-def completed(response: str, *, stats: ModelStats = ModelStats()) -> ModelStream:
+def completed(response: str) -> ModelStream:
     class CompletedStream(ModelStream):
         _consumed: bool
         def __init__(self):
             super().__init__()
             self._consumed = False
-        def _receive(self) -> str | ModelStats:
+        def _receive(self) -> str | None:
             if self._consumed:
-                return stats
+                return None
             self._consumed = True
             return response
     return CompletedStream()
@@ -144,14 +136,14 @@ def notify(callback: Callable[[ModelStream], None]) -> ModelFilter:
             def __init__(self):
                 super().__init__()
                 self._notified = False
-            def _receive(self) -> str | ModelStats:
+            def _receive(self) -> str | None:
                 token = stream.receive()
                 if token is not None:
                     return token
                 if not self._notified:
                     self._notified = True
                     callback(stream)
-                return stream.stats()
+                return None
             def _close(self):
                 stream.close()
         return NotifyStream()
@@ -162,9 +154,9 @@ def silence() -> ModelFilter:
         class SilenceStream(ModelStream):
             def __init__(self):
                 super().__init__()
-            def _receive(self) -> str | ModelStats:
+            def _receive(self) -> str | None:
                 stream.receive_all()
-                return stream.stats()
+                return None
             def _close(self):
                 stream.close()
         return SilenceStream()
@@ -179,9 +171,9 @@ def handler(*, callback: Callable[[], None] | None = None) -> ModelFilter:
                 super().__init__()
                 self._length = 0
                 self._failed = False
-            def _receive(self) -> str | ModelStats:
+            def _receive(self) -> str | None:
                 if self._failed:
-                    return ModelStats()
+                    return None
                 try:
                     token = stream.receive()
                 except Exception as ex:
@@ -193,7 +185,7 @@ def handler(*, callback: Callable[[], None] | None = None) -> ModelFilter:
                 if token is not None:
                     self._length += len(token)
                     return token
-                return stream.stats()
+                return None
             def _close(self):
                 stream.close()
         return HandlerStream()

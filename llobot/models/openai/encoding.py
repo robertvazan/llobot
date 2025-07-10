@@ -2,7 +2,6 @@ from __future__ import annotations
 import time
 import json
 from llobot.chats import ChatRole, ChatMessage, ChatBranch, ChatBuilder
-from llobot.models.stats import ModelStats
 from llobot.models.streams import ModelStream
 
 def format_name(model: str):
@@ -42,24 +41,6 @@ def decode_chat(data: list) -> ChatBranch:
     for item in data:
         chat.add(decode_message(item))
     return chat.build()
-
-def encode_stats(stats: ModelStats) -> dict:
-    data = {
-        'prompt_tokens': stats.prompt_tokens,
-        'completion_tokens': stats.response_tokens,
-        'total_tokens': stats.total_tokens,
-    }
-    if stats.cached_tokens is not None:
-        data.setdefault('prompt_tokens_details', {})['cached_tokens'] = stats.cached_tokens
-    return {key: value for key, value in data.items() if value is not None}
-
-def decode_stats(data: dict) -> ModelStats:
-    return ModelStats(
-        prompt_tokens = data.get('prompt_tokens', None),
-        response_tokens = data.get('completion_tokens', None),
-        total_tokens = data.get('total_tokens', None),
-        cached_tokens = data.get('prompt_tokens_details', {}).get('cached_tokens', None),
-    )
 
 def _encode_event_defaults(model: str) -> dict:
     return {
@@ -102,33 +83,25 @@ def encode_stop_event(model: str) -> dict:
         }]
     }
 
-def encode_usage_event(model: str, stats: ModelStats) -> dict:
-    return _encode_event_defaults(model) | {
-        "usage": encode_stats(stats),
-    }
-
-def decode_event(data: dict) -> Iterable[str | ModelStats]:
+def decode_event(data: dict) -> Iterable[str]:
     for choice in data.get("choices", []):
         if choice.get("index", 0) == 0:
             delta = choice.get("delta", {})
             content = delta.get("content")
             if content:
                 yield content
-    if data.get("usage") is not None:
-        yield decode_stats(data["usage"])
 
 def _format_event(data: dict) -> str:
     return f'data: {json.dumps(data)}'
 
-def format_stream(model: str, stream) -> Iterator[str]:
+def format_stream(model: str, stream: ModelStream) -> Iterator[str]:
     yield _format_event(encode_role_event(model, ChatRole.ASSISTANT))
     for token in stream:
         yield _format_event(encode_content_event(model, token))
     yield _format_event(encode_stop_event(model))
-    yield _format_event(encode_usage_event(model, stream.stats()))
     yield 'data: [DONE]'
 
-def parse_stream(lines: Iterator[str]) -> Iterator[str | ModelStats]:
+def parse_stream(lines: Iterator[str]) -> Iterator[str]:
     for line in lines:
         line = line.strip()
         if line.startswith("data:"):
@@ -142,9 +115,6 @@ def encode_request(model: str, options: dict, prompt: ChatBranch) -> dict:
         'model': format_name(model),
         'messages': encode_chat(prompt),
         'stream': True,
-        'stream_options': {
-            'include_usage': True
-        },
         **{key: value for key, value in options.items() if key != 'context_budget'}
     }
 
@@ -182,12 +152,9 @@ __all__ = [
     'decode_message',
     'encode_chat',
     'decode_chat',
-    'encode_stats',
-    'decode_stats',
     'encode_role_event',
     'encode_content_event',
     'encode_stop_event',
-    'encode_usage_event',
     'decode_event',
     'format_stream',
     'parse_stream',

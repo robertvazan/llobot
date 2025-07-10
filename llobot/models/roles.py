@@ -71,22 +71,8 @@ class _StandardRoleRequest:
         return self.memory.zone_name(self.project)
 
     @property
-    def token_length(self) -> int:
-        return self.model.estimate_token_length(self.zone)
-
-    def estimate_chars(self, tokens: float) -> int:
-        return int(tokens * self.token_length)
-
-    def estimate_tokens(self, chars: float) -> int:
-        return int(chars / self.token_length)
-
-    @property
-    def token_budget(self) -> int:
-        return self.model.context_budget
-
-    @property
     def budget(self) -> int:
-        return self.estimate_chars(self.token_budget)
+        return self.model.context_budget
 
     def stuff(self, prompt: ChatBranch | None = None) -> Context:
         prompt = prompt or self.prompt
@@ -144,7 +130,7 @@ class _StandardRoleRequest:
             - Name: `@{self.model.name}`
             - Options: `{self.model.options}`
             - Aliases: {', '.join([f'`@{alias}`' for alias in self.model.aliases]) if self.model.aliases else '-'}
-            - Context budget: {self.token_budget / 1000:,.0f}K tokens, ~{self.budget / 1024:,.0f} KB @ ~{self.token_length:.1f} token length
+            - Context budget: {self.budget / 1024:,.0f} KB
         ''')
         if self.project:
             knowledge = self.project.root.knowledge(self.cutoff)
@@ -180,12 +166,10 @@ class _StandardRoleRequest:
                 - Structure: {context.pretty_structure()}
             ''')
         assembled = self.assemble()
-        assembled_chars = assembled.cost
-        assembled_tokens = self.estimate_tokens(assembled_chars)
         info += dedent(f'''
             Assembled prompt:
 
-            - Size: {len(assembled):,} messages, {assembled.pretty_cost}, ~{assembled_tokens/ 1024:,.0f}K tokens
+            - Size: {len(assembled):,} messages, {assembled.pretty_cost}
             - Structure: {assembled.pretty_structure()}
         ''')
         info += dedent('''
@@ -258,10 +242,6 @@ class _StandardRoleModel(Model):
     def context_budget(self) -> int:
         # This doesn't matter. Just propagate one from the primary model.
         return self.backend.context_budget
-
-    @property
-    def estimator(self) -> TokenLengthEstimator:
-        return llobot.models.estimators.optimistic()
 
     HEADER_RE = re.compile(r'(?:~([a-zA-Z0-9_/.-]+))?(?::([0-9-]+))?(?:@([a-zA-Z0-9:/._-]+))?(?:\?(\S+))?(?:!([a-z]+))?')
     CUTOFF_RE = re.compile(r'`:([0-9-]+)`')

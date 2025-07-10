@@ -1,7 +1,6 @@
 from __future__ import annotations
 import json
 from llobot.chats import ChatRole, ChatMessage, ChatBranch, ChatBuilder
-from llobot.models.stats import ModelStats
 from llobot.models.streams import ModelStream
 import llobot.text
 
@@ -44,33 +43,6 @@ def decode_chat(data: list) -> ChatBranch:
         chat.add(decode_message(item))
     return chat.build()
 
-def encode_time(seconds: float | None) -> int | None:
-    return int(1e9 * seconds) if seconds else None
-
-def decode_time(nanos: int | None) -> float | None:
-    return nanos / 1e9 if nanos else None
-
-def encode_stats(stats: ModelStats) -> dict:
-    data = {
-        'prompt_eval_count': stats.prompt_tokens,
-        'eval_count': stats.response_tokens,
-        'load_duration': encode_time(stats.load_seconds),
-        'prompt_eval_duration': encode_time(stats.prompt_seconds),
-        'eval_duration': encode_time(stats.response_seconds),
-        'total_duration': encode_time(stats.total_seconds),
-    }
-    return {key: value for key, value in data.items() if value is not None}
-
-def decode_stats(data: dict) -> ModelStats:
-    return ModelStats(
-        prompt_tokens = data.get('prompt_eval_count', None),
-        response_tokens = data.get('eval_count', None),
-        load_seconds = decode_time(data.get('load_duration', None)),
-        prompt_seconds = decode_time(data.get('prompt_eval_duration', None)),
-        response_seconds = decode_time(data.get('eval_duration', None)),
-        total_seconds = decode_time(data.get('total_duration', None)),
-    )
-
 def encode_content_event(model: str, role: ChatRole, token: str) -> dict:
     return {
         'model': format_name(model),
@@ -81,14 +53,14 @@ def encode_content_event(model: str, role: ChatRole, token: str) -> dict:
         'done': False
     }
 
-def encode_done_event(model: str, stats: ModelStats) -> dict:
-    return encode_stats(stats) | {
+def encode_done_event(model: str) -> dict:
+    return {
         'model': format_name(model),
         'done': True
     }
 
-def decode_event(data: dict) -> str | ModelStats:
-    return decode_stats(data) if data['done'] else data['message']['content']
+def decode_event(data: dict) -> str | None:
+    return data.get('message', {}).get('content')
 
 MAX_CHUNK_SIZE = 1000
 
@@ -99,12 +71,18 @@ def format_stream(model: str, stream: ModelStream) -> Iterator[str]:
             chunk = token[:MAX_CHUNK_SIZE]
             token = token[MAX_CHUNK_SIZE:]
             yield json.dumps(encode_content_event(model, ChatRole.ASSISTANT, chunk))
-    yield json.dumps(encode_done_event(model, stream.stats()))
+    yield json.dumps(encode_done_event(model))
 
-def parse_stream(lines: Iterator[str]) -> Iterator[str | ModelStats]:
+def parse_stream(lines: Iterator[str]) -> Iterator[str]:
     for line in lines:
-        if line:
-            yield decode_event(json.loads(line))
+        if not line:
+            continue
+        data = json.loads(line)
+        if data.get('done'):
+            break
+        content = decode_event(data)
+        if content:
+            yield content
 
 def encode_request(model: str, options: dict, prompt: ChatBranch) -> dict:
     return {
@@ -135,10 +113,6 @@ __all__ = [
     'decode_message',
     'encode_chat',
     'decode_chat',
-    'encode_time',
-    'decode_time',
-    'encode_stats',
-    'decode_stats',
     'encode_content_event',
     'encode_done_event',
     'decode_event',

@@ -4,15 +4,10 @@ from google.genai import types
 from llobot.chats import ChatRole, ChatBranch
 from llobot.models import Model
 from llobot.models.streams import ModelStream
-from llobot.models.stats import ModelStats
-from llobot.models.estimators import TokenLengthEstimator
 import llobot.models.openai
-import llobot.models.estimators
 import llobot.models.streams
 
 class _GeminiStream(ModelStream):
-    _length: int
-    _stats: ModelStats
     _iterator: Iterator[str]
 
     def __init__(self,
@@ -23,9 +18,7 @@ class _GeminiStream(ModelStream):
         temperature: float | None = None,
     ):
         super().__init__()
-        self._length = prompt.cost
-        self._stats = ModelStats()
-        self._iterator = iter(self._iterate(client, model, prompt, thinking, temperature))
+        self._iterator = self._iterate(client, model, prompt, thinking, temperature)
 
     def _iterate(self,
         client: genai.Client,
@@ -50,29 +43,15 @@ class _GeminiStream(ModelStream):
             contents=contents,
             config=config,
         )
-        last_chunk = None
         for chunk in stream:
             if chunk.text:
-                self._length += len(chunk.text)
                 yield chunk.text
-            last_chunk = chunk
-        if last_chunk:
-            usage = last_chunk.usage_metadata
-            self._stats = ModelStats(
-                prompt_tokens = usage.prompt_token_count,
-                response_tokens = usage.candidates_token_count,
-                # Implicit caching is always enabled, so signal cache miss by reporting zero cached tokens if there were no cache reads.
-                cached_tokens = usage.cached_content_token_count or 0,
-                # Report zero thinking tokens when thinking is enabled and no thinking was done by the model.
-                thinking_tokens = usage.thoughts_token_count or 0 if thinking is None or thinking > 0 else usage.thoughts_token_count,
-                total_chars = self._length,
-            )
 
-    def _receive(self) -> str | ModelStats:
+    def _receive(self) -> str | None:
         try:
             return next(self._iterator)
         except StopIteration:
-            return self._stats
+            return None
 
 class _GeminiModel(Model):
     _client: genai.Client
@@ -81,16 +60,14 @@ class _GeminiModel(Model):
     _context_budget: int
     _thinking: int | None
     _temperature: float | None
-    _estimator: TokenLengthEstimator
 
     def __init__(self, name: str, *,
         client: genai.Client | None = None,
         auth: str | None = None,
         aliases: Iterable[str] = [],
-        context_budget: int = 25_000,
+        context_budget: int = 100_000,
         thinking: int | None = None,
         temperature: float | None = None,
-        estimator: TokenLengthEstimator = llobot.models.estimators.standard(),
     ):
         if client:
             self._client = client
@@ -104,7 +81,6 @@ class _GeminiModel(Model):
         self._context_budget = context_budget
         self._thinking = thinking
         self._temperature = temperature
-        self._estimator = estimator
 
     @property
     def name(self) -> str:
@@ -145,16 +121,11 @@ class _GeminiModel(Model):
             context_budget=int(options.get('context_budget', self._context_budget)),
             thinking=int(thinking) if thinking else None,
             temperature=float(temperature) if temperature is not None and temperature != '' else None,
-            estimator=self._estimator,
         )
 
     @property
     def context_budget(self) -> int:
         return self._context_budget
-
-    @property
-    def estimator(self) -> TokenLengthEstimator:
-        return self._estimator
 
     def _connect(self, prompt: ChatBranch) -> ModelStream:
         return _GeminiStream(

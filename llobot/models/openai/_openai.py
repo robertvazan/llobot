@@ -4,10 +4,7 @@ import requests
 from llobot.chats import ChatBranch
 from llobot.models import Model
 from llobot.models.streams import ModelStream
-from llobot.models.stats import ModelStats
-from llobot.models.estimators import TokenLengthEstimator
 import llobot.models.streams
-import llobot.models.estimators
 
 class _OpenAIStream(ModelStream):
     def __init__(self, endpoint: str, auth: str, model: str, options: dict, prompt: ChatBranch):
@@ -22,17 +19,9 @@ class _OpenAIStream(ModelStream):
         if self._http_response.encoding is None:
             self._http_response.encoding = 'utf-8'
         self._iterator = encoding.parse_stream(self._http_response.iter_lines(decode_unicode=True))
-        self._length = prompt.cost
 
-    def _receive(self) -> str | ModelStats:
-        event = next(self._iterator, None)
-        # Improperly terminated stream?
-        if event is None:
-            return ModelStats()
-        if isinstance(event, ModelStats):
-            return event | ModelStats(total_chars=self._length)
-        self._length += len(event)
-        return event
+    def _receive(self) -> str | None:
+        return next(self._iterator, None)
 
     def _close(self):
         self._http_response.close()
@@ -44,7 +33,6 @@ class _OpenAIModel(Model):
     _endpoint: str
     _auth: str
     _context_budget: int
-    _estimator: TokenLengthEstimator
     _temperature: float | None
 
     def __init__(self, name: str, *,
@@ -52,8 +40,7 @@ class _OpenAIModel(Model):
         endpoint: str | None = None,
         namespace: str = 'openai',
         aliases: list[str] = [],
-        context_budget: int = 25_000,
-        estimator: TokenLengthEstimator = llobot.models.estimators.standard(),
+        context_budget: int = 100_000,
         temperature: float | None = None,
     ):
         from llobot.models.openai import endpoints
@@ -63,7 +50,6 @@ class _OpenAIModel(Model):
         self._endpoint = endpoint or endpoints.proprietary()
         self._auth = auth
         self._context_budget = context_budget
-        self._estimator = estimator
         self._temperature = temperature
 
     @property
@@ -95,17 +81,12 @@ class _OpenAIModel(Model):
             namespace=self._namespace,
             aliases=self._aliases,
             context_budget=int(options.get('context_budget', self._context_budget)),
-            estimator=self._estimator,
             temperature=float(temperature) if temperature is not None and temperature != '' else None,
         )
 
     @property
     def context_budget(self) -> int:
         return self._context_budget
-
-    @property
-    def estimator(self):
-        return self._estimator
 
     def _connect(self, prompt: ChatBranch) -> ModelStream:
         return _OpenAIStream(self._endpoint, self._auth, self._name, self.options, prompt)
