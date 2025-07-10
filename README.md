@@ -24,7 +24,7 @@ Llobot also has some nice features:
 - **Scrapers**: Llobot can scrape documents for links and source code for dependencies to build knowledge graph, which is processed with PageRank to prioritize core files for context stuffing.
 - **Crammers**: Llobot's crammers fit the most important information in given token budget.
 - **Scorers**: Llobot can prioritize files in the knowledge base by position in knowledge graph (see scrapers above), file name patterns, selected subproject, and file size. It can also prioritize examples.
-- **Cache-friendly prompts**: Prompts are assembled in reproducible order from whole documents to minimize cache invalidations. Llobot can construct delta prompts that reuse already cached prompts.
+- **Cache-friendly prompts**: Prompts are assembled in reproducible order from whole documents to minimize cache invalidations.
 
 ## Setup
 
@@ -43,7 +43,6 @@ import llobot.models.openai
 import llobot.projects
 import llobot.knowledge.sources
 import llobot.roles.coders
-import llobot.roles.wrappers
 import llobot.roles.memory
 import llobot.models.roles
 import llobot.models.ollama.listeners
@@ -87,8 +86,7 @@ projects = [
 def define_bot(name, role):
     # This wraps the role in a virtual model.
     return llobot.models.roles.standard(
-        # Standard role functionality: cache-friendly prompts
-        role | llobot.roles.wrappers.standard(),
+        role,
         # This determines where the bot will store data
         # (archived chats and examples). We will use defaults.
         llobot.roles.memory.standard(name),

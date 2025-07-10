@@ -11,9 +11,6 @@ class Role:
     def __call__(self, request: 'RoleRequest') -> Context:
         return self.stuff(request)
 
-    def __or__(self, wrapper: 'RoleWrapper') -> Role:
-        return wrapper(self)
-
 def create(function: Callable[['RoleRequest'], Context]) -> Role:
     from llobot.roles.requests import RoleRequest
     class LambdaRole(Role):
