@@ -14,10 +14,10 @@ def create(*,
     crammer: ExampleCrammer = llobot.crammers.examples.standard(),
 ) -> Role:
     def stuff(request: RoleRequest) -> Context:
-        output = llobot.contexts.system(instructions)
-        examples = request.memory.recent_examples(request.project, request.cutoff)
-        output += crammer.cram(examples, request.budget - output.cost, request.context + output)
-        return output
+        system = llobot.contexts.system(instructions)
+        recent_examples = request.memory.recent_examples(request.project, request.cutoff)
+        examples = crammer.cram(recent_examples, request.budget - system.cost, request.context + system)
+        return system + examples
     return llobot.roles.create(stuff)
 
 __all__ = [

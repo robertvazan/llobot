@@ -18,7 +18,6 @@ import llobot.contexts
 import llobot.instructions
 import llobot.roles
 import llobot.roles.knowledge
-import llobot.roles.assistant
 
 @cache
 def description() -> str:
@@ -51,7 +50,6 @@ def create(*,
     if isinstance(relevance_scorer, KnowledgeSubset):
         relevance_scorer = llobot.scorers.knowledge.relevant(relevance_scorer)
     knowledge_role = llobot.roles.knowledge.create(relevance_scorer=relevance_scorer, crammer=knowledge_crammer)
-    example_role = llobot.roles.assistant.create(crammer=example_crammer)
     updates_role = llobot.roles.knowledge.updates(deletion_crammer=deletion_crammer, update_crammer=update_crammer)
     retrieval_role = llobot.roles.knowledge.retrieval(scraper=retrieval_scraper, crammer=retrieval_crammer, relevance_scorer=relevance_scorer)
     def stuff(request: RoleRequest) -> Context:
@@ -63,7 +61,8 @@ def create(*,
         retrievals = retrieval_role(request.replace(budget=retrieval_budget, context=request.context+system))
         remaining_budget -= retrievals.cost
         example_budget = min(remaining_budget, int(example_share * request.budget))
-        examples = example_role(request.replace(budget=example_budget, context=request.context+system))
+        recent_examples = request.memory.recent_examples(request.project, request.cutoff)
+        examples = example_crammer.cram(recent_examples, example_budget, request.context + system)
         remaining_budget -= examples.cost
         # Compute updates after examples with all remaining budget.
         updates = updates_role(request.replace(budget=remaining_budget, context=request.context+system+examples))
