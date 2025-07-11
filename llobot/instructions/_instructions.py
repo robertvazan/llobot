@@ -20,10 +20,26 @@ def combine(*sections: str) -> list[str]:
             result.append(section)
     return result
 
-def compile(role: str, *sections: str) -> str:
-    parts = ['# Instructions', role.strip()]
+def compile(role: str, *sections: str, title: str = 'Instructions') -> str:
+    parts = [f'# {title}', role]
     parts.extend(combine(*sections))
     return llobot.text.concat(*parts)
+
+class SystemPrompt:
+    title: str
+    role: str
+    sections: list[str]
+
+    def __init__(self, role: str, *sections: str, title: str = 'Instructions'):
+        self.title = title
+        self.role = role
+        self.sections = combine(*sections)
+
+    def compile(self) -> str:
+        return compile(self.role, *self.sections, title=self.title)
+
+def prepare(role: str, *sections: str, title: str = 'Instructions') -> SystemPrompt:
+    return SystemPrompt(role, *sections, title=title)
 
 @cache
 def blocks() -> list[str]:
@@ -65,6 +81,8 @@ __all__ = [
     'read',
     'combine',
     'compile',
+    'SystemPrompt',
+    'prepare',
     'blocks',
     'listings',
     'notes',

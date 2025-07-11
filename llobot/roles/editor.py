@@ -7,6 +7,7 @@ from llobot.crammers.knowledge import KnowledgeCrammer
 from llobot.crammers.deletions import DeletionCrammer
 from llobot.crammers.examples import ExampleCrammer
 from llobot.contexts import Context
+from llobot.instructions import SystemPrompt
 from llobot.roles import Role
 from llobot.roles.requests import RoleRequest
 import llobot.scrapers
@@ -20,20 +21,19 @@ import llobot.roles
 import llobot.roles.knowledge
 
 @cache
-def description() -> str:
-    return llobot.instructions.read('editor.md')
-
-@cache
-def instructions() -> str:
-    return llobot.instructions.compile(
-        description(),
+def system() -> SystemPrompt:
+    """
+    Returns the standard system prompt for the editor role.
+    """
+    return llobot.instructions.prepare(
+        llobot.instructions.read('editor.md'),
         *llobot.instructions.editing(),
         *llobot.instructions.answering(),
     )
 
 @lru_cache
 def create(*,
-    instructions: str = instructions(),
+    instructions: str = system().compile(),
     retrieval_scraper: Scraper = llobot.scrapers.retrieval(),
     relevance_scorer: KnowledgeScorer | KnowledgeSubset = llobot.scorers.knowledge.irrelevant(),
     knowledge_crammer: KnowledgeCrammer = llobot.crammers.knowledge.standard(),
@@ -47,6 +47,9 @@ def create(*,
     example_share: float = 0.5,
     retrieval_share: float = 1.0,
 ) -> Role:
+    """
+    Creates a new editor role.
+    """
     if isinstance(relevance_scorer, KnowledgeSubset):
         relevance_scorer = llobot.scorers.knowledge.relevant(relevance_scorer)
     knowledge_role = llobot.roles.knowledge.create(relevance_scorer=relevance_scorer, crammer=knowledge_crammer)
@@ -77,8 +80,7 @@ def create(*,
     return llobot.roles.create(stuff)
 
 __all__ = [
-    'description',
-    'instructions',
+    'system',
     'create',
 ]
 
