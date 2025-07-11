@@ -17,7 +17,6 @@ import llobot.crammers.examples
 import llobot.contexts
 import llobot.instructions
 import llobot.roles
-import llobot.roles.instructions
 import llobot.roles.knowledge
 import llobot.roles.examples
 
@@ -35,7 +34,7 @@ def instructions() -> str:
 
 @lru_cache
 def standard(*,
-    instructions: Role | str = instructions(),
+    instructions: str = instructions(),
     retrieval_scraper: Scraper = llobot.scrapers.retrieval(),
     relevance_scorer: KnowledgeScorer | KnowledgeSubset = llobot.scorers.knowledge.irrelevant(),
     knowledge_crammer: KnowledgeCrammer = llobot.crammers.knowledge.standard(),
@@ -51,14 +50,13 @@ def standard(*,
 ) -> Role:
     if isinstance(relevance_scorer, KnowledgeSubset):
         relevance_scorer = llobot.scorers.knowledge.relevant(relevance_scorer)
-    instructions = llobot.roles.instructions.coerce(instructions)
     knowledge_role = llobot.roles.knowledge.standard(relevance_scorer=relevance_scorer, crammer=knowledge_crammer)
     example_role = llobot.roles.examples.standard(crammer=example_crammer)
     updates_role = llobot.roles.knowledge.updates(deletion_crammer=deletion_crammer, update_crammer=update_crammer)
     retrieval_role = llobot.roles.knowledge.retrieval(scraper=retrieval_scraper, crammer=retrieval_crammer, relevance_scorer=relevance_scorer)
     def stuff(request: RoleRequest) -> Context:
         # Budget distribution priorities: instructions, retrievals, examples, updates, knowledge.
-        system = instructions(request)
+        system = llobot.contexts.system(instructions)
         remaining_budget = request.budget - system.cost
         # Stuff retrievals first, because they are the highest priority for the user.
         retrieval_budget = min(remaining_budget, int(retrieval_share * request.budget))

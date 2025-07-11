@@ -17,7 +17,7 @@ def instructions() -> str:
     )
 
 @lru_cache
-def standard(*, instructions: Role | str = instructions(), **kwargs) -> Role:
+def standard(*, instructions: str = instructions(), **kwargs) -> Role:
     return llobot.roles.editors.standard(instructions=instructions, **kwargs)
 
 __all__ = [
