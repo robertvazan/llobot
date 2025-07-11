@@ -42,7 +42,7 @@ import llobot.models.ollama
 import llobot.models.openai
 import llobot.projects
 import llobot.knowledge.sources
-import llobot.roles.coders
+import llobot.roles.coder
 import llobot.roles.memory
 import llobot.models.roles
 import llobot.models.ollama.listeners
@@ -98,7 +98,7 @@ def define_bot(name, role):
 
 # Lets use some standard roles that come with llobot.
 bots = ModelCatalog(
-    define_bot('coder', llobot.roles.coders.standard()),
+    define_bot('coder', llobot.roles.coder.create()),
 )
 
 # Backend Ollama listens on 11434, so we will listen on 11435 to avoid conflicts.

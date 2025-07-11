@@ -18,7 +18,7 @@ import llobot.contexts
 import llobot.instructions
 import llobot.roles
 import llobot.roles.knowledge
-import llobot.roles.examples
+import llobot.roles.assistant
 
 @cache
 def description() -> str:
@@ -33,7 +33,7 @@ def instructions() -> str:
     )
 
 @lru_cache
-def standard(*,
+def create(*,
     instructions: str = instructions(),
     retrieval_scraper: Scraper = llobot.scrapers.retrieval(),
     relevance_scorer: KnowledgeScorer | KnowledgeSubset = llobot.scorers.knowledge.irrelevant(),
@@ -50,8 +50,8 @@ def standard(*,
 ) -> Role:
     if isinstance(relevance_scorer, KnowledgeSubset):
         relevance_scorer = llobot.scorers.knowledge.relevant(relevance_scorer)
-    knowledge_role = llobot.roles.knowledge.standard(relevance_scorer=relevance_scorer, crammer=knowledge_crammer)
-    example_role = llobot.roles.examples.standard(crammer=example_crammer)
+    knowledge_role = llobot.roles.knowledge.create(relevance_scorer=relevance_scorer, crammer=knowledge_crammer)
+    example_role = llobot.roles.assistant.create(crammer=example_crammer)
     updates_role = llobot.roles.knowledge.updates(deletion_crammer=deletion_crammer, update_crammer=update_crammer)
     retrieval_role = llobot.roles.knowledge.retrieval(scraper=retrieval_scraper, crammer=retrieval_crammer, relevance_scorer=relevance_scorer)
     def stuff(request: RoleRequest) -> Context:
@@ -80,6 +80,6 @@ def standard(*,
 __all__ = [
     'description',
     'instructions',
-    'standard',
+    'create',
 ]
 

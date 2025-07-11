@@ -9,7 +9,7 @@ import llobot.contexts
 import llobot.roles
 
 @lru_cache
-def standard(*,
+def create(*,
     instructions: str = '',
     crammer: ExampleCrammer = llobot.crammers.examples.standard(),
 ) -> Role:
@@ -21,6 +21,6 @@ def standard(*,
     return llobot.roles.create(stuff)
 
 __all__ = [
-    'standard',
+    'create',
 ]
 

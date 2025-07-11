@@ -11,6 +11,7 @@ from llobot.contexts import Context
 from llobot.roles import Role
 from llobot.roles.requests import RoleRequest
 import llobot.text
+import llobot.scores.knowledge
 import llobot.scorers.knowledge
 import llobot.crammers.knowledge
 import llobot.crammers.deletions
@@ -18,7 +19,7 @@ import llobot.scrapers
 import llobot.roles
 
 @lru_cache
-def standard(*,
+def create(*,
     relevance_scorer: KnowledgeScorer = llobot.scorers.knowledge.irrelevant(),
     crammer: KnowledgeCrammer = llobot.crammers.knowledge.standard(),
 ) -> Role:
@@ -69,7 +70,7 @@ def updates(*,
     return llobot.roles.create(stuff)
 
 __all__ = [
-    'standard',
+    'create',
     'retrieval',
     'updates',
 ]
