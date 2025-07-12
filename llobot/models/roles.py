@@ -243,7 +243,7 @@ class _StandardRoleModel(Model):
         # This doesn't matter. Just propagate one from the primary model.
         return self.backend.context_budget
 
-    HEADER_RE = re.compile(r'(?:~([a-zA-Z0-9_/.-]+))?(?::([0-9-]+))?(?:@([a-zA-Z0-9:/._-]+))?(?:\?(\S+))?(?:!([a-z]+))?')
+    HEADER_RE = re.compile(r'(?:~([a-zA-Z0-9_/.-]+))?(?::([0-9-]+))?(?:@([a-zA-Z0-9:/._-]+))?(?:\?([^!\s]+))?(?:!([a-z]+))?')
     CUTOFF_RE = re.compile(r'`:([0-9-]+)`')
     COMMAND_RE = re.compile(r'!([a-z]+)')
 
