@@ -21,7 +21,6 @@ import llobot.crammers.examples
 import llobot.contexts
 import llobot.instructions
 import llobot.roles
-import llobot.text
 import llobot.links
 
 @cache
@@ -66,9 +65,7 @@ def create(*,
             relevance_scores *= llobot.scores.knowledge.prioritize(fresh_knowledge, request.project.subset)
 
         # Find retrieval links once
-        messages = (message.content for message in request.prompt if message.role == ChatRole.USER)
-        prompt_text = llobot.text.concat(*messages)
-        retrieved_links = llobot.links.resolve_best(retrieval_scraper.scrape_prompt(prompt_text), fresh_knowledge, relevance_scores)
+        retrieved_links = llobot.links.resolve_best(retrieval_scraper.scrape_prompt(request.prompt), fresh_knowledge, relevance_scores)
 
         # --- System ---
         system = llobot.contexts.system(instructions)

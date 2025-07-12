@@ -1,7 +1,7 @@
 from __future__ import annotations
 from functools import cache
 from pathlib import Path
-from llobot.chats import ChatMessage, ChatBranch
+from llobot.chats import ChatMessage, ChatBranch, ChatIntent
 from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.links import Link
@@ -19,7 +19,7 @@ class Scraper:
         if isinstance(prompt, ChatMessage):
             return self.scrape_prompt(prompt.content)
         if isinstance(prompt, ChatBranch):
-            return set().union(*[self.scrape_prompt(message.content) for message in prompt])
+            return set().union(*[self.scrape_prompt(message.content) for message in prompt if message.intent == ChatIntent.PROMPT])
         if isinstance(prompt, str):
             return self.scrape(Path('_.md'), prompt)
         raise TypeError
