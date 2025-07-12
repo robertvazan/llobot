@@ -76,31 +76,31 @@ def create(*,
 
         # --- Preliminary retrieval pass ---
         retrieval_budget = min(remaining_budget, int(retrieval_share * request.budget))
-        retrievals = retrieval_crammer.cram(fresh_knowledge, retrieval_budget, llobot.scores.knowledge.coerce(retrieved_links), request.context + system)
+        retrievals = retrieval_crammer.cram(fresh_knowledge, retrieval_budget, llobot.scores.knowledge.coerce(retrieved_links), system)
         # This is the only use we have for preliminary retrievals: to calculate remaining budget for other parts of the context
         remaining_budget -= retrievals.cost
 
         # --- Examples ---
         example_budget = min(remaining_budget, int(example_share * request.budget))
         recent_examples = request.memory.recent_examples(request.project, request.cutoff)
-        examples = example_crammer.cram(recent_examples, example_budget, request.context + system)
+        examples = example_crammer.cram(recent_examples, example_budget, system)
         remaining_budget -= examples.cost
 
         # --- Updates ---
-        context_knowledge = (request.context + system + examples).knowledge
+        context_knowledge = (system + examples).knowledge
         deletions_index = context_knowledge.keys() - fresh_knowledge.keys()
         updates = deletion_crammer.cram(deletions_index, remaining_budget)
-        updates += update_crammer.cram(fresh_knowledge, remaining_budget - updates.cost, llobot.scores.knowledge.coerce(context_knowledge.keys()), request.context + system + examples + updates)
+        updates += update_crammer.cram(fresh_knowledge, remaining_budget - updates.cost, llobot.scores.knowledge.coerce(context_knowledge.keys()), system + examples + updates)
 
         # --- Final retrieval pass ---
         remaining_budget = request.budget - system.cost - examples.cost - updates.cost
         retrieval_budget = min(remaining_budget, int(retrieval_share * request.budget))
-        retrievals = retrieval_crammer.cram(fresh_knowledge, retrieval_budget, llobot.scores.knowledge.coerce(retrieved_links), request.context + system + examples + updates)
+        retrievals = retrieval_crammer.cram(fresh_knowledge, retrieval_budget, llobot.scores.knowledge.coerce(retrieved_links), system + examples + updates)
         remaining_budget -= retrievals.cost
 
         # --- Knowledge ---
         knowledge_budget = min(remaining_budget, int(knowledge_share * request.budget))
-        knowledge = knowledge_crammer.cram(fresh_knowledge, knowledge_budget, relevance_scores, request.context + system + examples + updates + retrievals)
+        knowledge = knowledge_crammer.cram(fresh_knowledge, knowledge_budget, relevance_scores, system + examples + updates + retrievals)
 
         return system + knowledge + examples + updates + retrievals
     return llobot.roles.create(stuff)

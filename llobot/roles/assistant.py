@@ -16,7 +16,7 @@ def create(*,
     def stuff(request: RoleRequest) -> Context:
         system = llobot.contexts.system(instructions)
         recent_examples = request.memory.recent_examples(request.project, request.cutoff)
-        examples = crammer.cram(recent_examples, request.budget - system.cost, request.context + system)
+        examples = crammer.cram(recent_examples, request.budget - system.cost, system)
         return system + examples
     return llobot.roles.create(stuff)
 

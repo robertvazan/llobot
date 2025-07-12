@@ -12,7 +12,6 @@ class RoleRequest:
     _project: Project | None
     _cutoff: datetime
     _budget: int
-    _context: Context
 
     def __init__(self, *,
         memory: RoleMemory,
@@ -20,14 +19,12 @@ class RoleRequest:
         project: Project | None = None,
         cutoff: datetime,
         budget: int,
-        context: Context = llobot.contexts.empty(),
     ):
         self._memory = memory
         self._prompt = prompt
         self._project = project
         self._cutoff = cutoff
         self._budget = budget
-        self._context = context
 
     @property
     def memory(self) -> RoleMemory:
@@ -48,10 +45,6 @@ class RoleRequest:
     @property
     def budget(self) -> int:
         return self._budget
-
-    @property
-    def context(self) -> Context:
-        return self._context
 
     def replace(self, **kwargs) -> RoleRequest:
         return RoleRequest(**({key[1:]: value for key, value in vars(self).items()} | kwargs))
