@@ -50,6 +50,10 @@ class Project:
         return self._root
 
     @property
+    def is_subproject(self) -> bool:
+        return self._root is not self
+
+    @property
     def subprojects(self) -> list[Project]:
         return self._subprojects
 
@@ -81,7 +85,7 @@ class Project:
         return self.source.load_all()
 
     def refresh(self):
-        if self is not self.root:
+        if self.is_subproject:
             return self.root.refresh()
 
         fresh = self.fetch()

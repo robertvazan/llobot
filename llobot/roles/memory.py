@@ -1,10 +1,12 @@
 from __future__ import annotations
 import logging
 from datetime import datetime
+from pathlib import Path
 import llobot.time
 from llobot.chats import ChatBranch, ChatMetadata
 from llobot.chats.archives import ChatArchive
 from llobot.projects import Project
+from llobot.fs.zones import Zoning
 
 _logger = logging.getLogger(__name__)
 
@@ -35,7 +37,7 @@ class RoleMemory:
     def zone_names(self, project: Project | None) -> Iterable[str]:
         if project:
             yield self.zone_name(project)
-            if project.root != project:
+            if project.is_subproject:
                 yield self.zone_name(project.root)
         yield self.zone_name(None)
 
@@ -43,7 +45,7 @@ class RoleMemory:
         chat = chat.with_metadata(chat.metadata | ChatMetadata(
             role=self.name,
             project=project.root.name if project else None,
-            subproject=project.name if project and project.root != project else None,
+            subproject=project.name if project and project.is_subproject else None,
             time=llobot.time.now(),
         ))
         # Strip context messages before saving to reduce storage and avoid redundant information.

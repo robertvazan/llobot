@@ -62,7 +62,7 @@ def create(*,
 
         # Calculate relevance scores once
         relevance_scores = relevance_scorer(fresh_knowledge)
-        if request.project and request.project.root != request.project:
+        if request.project and request.project.is_subproject:
             relevance_scores *= llobot.scores.knowledge.prioritize(fresh_knowledge, request.project.subset)
 
         # Find retrieval links once

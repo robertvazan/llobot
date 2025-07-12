@@ -140,7 +140,7 @@ class _StandardRoleRequest:
                 - Name: `~{self.project.root.name}`
                 - Knowledge: {len(knowledge):,} documents, {knowledge.cost / 1024:,.0f} KB
             ''')
-            if self.project.root != self.project:
+            if self.project.is_subproject:
                 subproject_knowledge = knowledge & self.project.subset
                 info += dedent(f'''
                     Subproject:
@@ -194,7 +194,7 @@ class _StandardRoleRequest:
             info += '\nKnowledge in context:\n\n' + '\n'.join([f'- `{path}`' for path in context.knowledge.keys().sorted()]) + '\n'
         if self.project:
             # Pack it all into one Markdown code block. This is a workaround for inefficiency in Open WebUI.
-            if self.project.root != self.project:
+            if self.project.is_subproject:
                 info += f'\nKnowledge in `~{self.project.name}`:\n\n```\n' + '\n'.join([str(path) for path in (knowledge.keys() & self.project.subset).sorted()]) + '\n```\n'
             info += f'\nKnowledge in `~{self.project.root.name}`:\n\n```\n' + '\n'.join([str(path) for path in knowledge.keys().sorted()]) + '\n```\n'
         return llobot.models.streams.status(info)
