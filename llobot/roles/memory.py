@@ -36,9 +36,7 @@ class RoleMemory:
 
     def zone_names(self, project: Project | None) -> Iterable[str]:
         if project:
-            yield self.zone_name(project)
-            if project.is_subproject:
-                yield self.zone_name(project.root)
+            yield self.zone_name(project.root)
         yield self.zone_name(None)
 
     def _save(self, chat: ChatBranch, project: Project | None, archive: ChatArchive, log_prefix: str):
