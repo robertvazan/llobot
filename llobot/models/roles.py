@@ -8,7 +8,6 @@ from llobot.chats import ChatRole, ChatBranch, ChatBuilder, ChatMetadata
 from llobot.projects import Project
 from llobot.contexts import Context
 from llobot.roles import Role
-from llobot.roles.requests import RoleRequest
 from llobot.models import Model
 from llobot.models.catalogs import ModelCatalog
 from llobot.models.streams import ModelStream, ModelException
@@ -76,8 +75,13 @@ class _StandardRoleRequest:
 
     def stuff(self, prompt: ChatBranch | None = None) -> Context:
         prompt = prompt or self.prompt
-        request = RoleRequest(memory=self.memory, prompt=prompt, project=self.project, cutoff=self.cutoff, budget=self.budget)
-        return self.role.stuff(request)
+        return self.role.stuff(
+            memory=self.memory,
+            prompt=prompt,
+            project=self.project,
+            cutoff=self.cutoff,
+            budget=self.budget
+        )
 
     def assemble(self, prompt: ChatBranch | None = None) -> ChatBranch:
         return self.stuff(prompt).chat + (prompt or self.prompt)
