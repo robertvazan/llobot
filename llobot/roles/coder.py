@@ -1,8 +1,7 @@
 from __future__ import annotations
-from functools import cache, lru_cache
-from llobot.roles import Role
+from functools import cache
+from llobot.roles.editor import Editor
 from llobot.instructions import SystemPrompt
-import llobot.roles.editor
 import llobot.instructions
 
 @cache
@@ -16,18 +15,21 @@ def system() -> SystemPrompt:
         *llobot.instructions.answering(),
     )
 
-@lru_cache
-def create(*, instructions: str = system().compile(), **kwargs) -> Role:
+class Coder(Editor):
     """
-    Creates a new coder role.
+    A role specialized for software development tasks.
+    """
+    def __init__(self, *, instructions: str = system().compile(), **kwargs):
+        """
+        Creates a new coder role.
 
-    :param instructions: The system prompt to use. Standard coder prompt is used by default.
-    :param kwargs: Additional arguments for the underlying editor role.
-    """
-    return llobot.roles.editor.create(instructions=instructions, **kwargs)
+        :param instructions: The system prompt to use. Standard coder prompt is used by default.
+        :param kwargs: Additional arguments for the underlying editor role.
+        """
+        super().__init__(instructions=instructions, **kwargs)
 
 __all__ = [
     'system',
-    'create',
+    'Coder',
 ]
 

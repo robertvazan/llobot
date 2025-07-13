@@ -27,25 +27,7 @@ class Role:
     ) -> Context:
         return self.stuff(memory=memory, prompt=prompt, project=project, cutoff=cutoff, budget=budget)
 
-def create(function: Callable[[RoleMemory, ChatBranch, Project | None, datetime, int], Context]) -> Role:
-    class LambdaRole(Role):
-        def stuff(self, *,
-            memory: RoleMemory,
-            prompt: ChatBranch,
-            project: Project | None,
-            cutoff: datetime,
-            budget: int,
-        ) -> Context:
-            return function(memory=memory, prompt=prompt, project=project, cutoff=cutoff, budget=budget)
-    return LambdaRole()
-
-@cache
-def empty() -> Role:
-    return Role()
-
 __all__ = [
     'Role',
-    'create',
-    'empty',
 ]
 
