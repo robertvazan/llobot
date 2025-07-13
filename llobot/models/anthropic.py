@@ -155,7 +155,7 @@ class _AnthropicModel(Model):
     def context_budget(self) -> int:
         return self._context_budget
 
-    def _connect(self, prompt: ChatBranch) -> ModelStream:
+    def generate(self, prompt: ChatBranch) -> ModelStream:
         return _AnthropicStream(
             self._client,
             self._name,

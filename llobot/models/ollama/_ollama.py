@@ -87,7 +87,7 @@ class _OllamaModel(Model):
     def context_budget(self) -> int:
         return self._context_budget
 
-    def _connect(self, prompt: ChatBranch) -> ModelStream:
+    def generate(self, prompt: ChatBranch) -> ModelStream:
         options = self.options
         del options['context_budget']
         return _OllamaStream(self._endpoint, self._name, options, prompt)

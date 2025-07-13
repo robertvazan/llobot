@@ -88,7 +88,7 @@ class _OpenAIModel(Model):
     def context_budget(self) -> int:
         return self._context_budget
 
-    def _connect(self, prompt: ChatBranch) -> ModelStream:
+    def generate(self, prompt: ChatBranch) -> ModelStream:
         return _OpenAIStream(self._endpoint, self._auth, self._name, self.options, prompt)
 
 def proprietary(name: str, auth: str, **kwargs) -> Model:

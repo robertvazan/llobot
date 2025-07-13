@@ -41,16 +41,8 @@ class Model:
         raise NotImplementedError
 
     # Stream may be either returned from the function or thrown as ModelException.
-    def _connect(self, prompt: ChatBranch) -> 'ModelStream':
+    def generate(self, prompt: ChatBranch) -> 'ModelStream':
         raise NotImplementedError
-
-    def generate(self, prompt: ChatBranch, zone: str = '') -> 'ModelStream':
-        from llobot.models.streams import ModelException
-        import llobot.models.streams
-        try:
-            return self._connect(prompt)
-        except ModelException as ex:
-            return ex.stream
 
 def echo(*, context_budget: int = 100_000, aliases: Iterable[str] = []) -> Model:
     from llobot.models.streams import ModelStream
@@ -82,7 +74,7 @@ def echo(*, context_budget: int = 100_000, aliases: Iterable[str] = []) -> Model
         @property
         def context_budget(self) -> int:
             return self._context_budget
-        def _connect(self, prompt: ChatBranch) -> ModelStream:
+        def generate(self, prompt: ChatBranch) -> ModelStream:
             return llobot.models.streams.completed(prompt.monolithic())
     return EchoModel(context_budget)
 

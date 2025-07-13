@@ -63,10 +63,6 @@ class _StandardRoleRequest:
         return not self.given_cutoff and len(self.prompt) == 1
 
     @property
-    def zone(self) -> str:
-        return self.role.zone_name(self.project)
-
-    @property
     def budget(self) -> int:
         return self.model.context_budget
 
@@ -201,7 +197,7 @@ class _StandardRoleRequest:
 
     def handle_prompt(self) -> ModelStream:
         assembled = self.assemble()
-        output = self.model.generate(assembled, self.zone)
+        output = self.model.generate(assembled)
         save_filter = llobot.models.streams.notify(lambda stream: self.role.save_chat(self.add_metadata(self.prompt + ChatRole.ASSISTANT.message(stream.response())), self.project))
         inner = output | save_filter
         if self.automatic_cutoff:
@@ -376,7 +372,7 @@ class _StandardRoleModel(Model):
             model = model.configure(options)
         return _StandardRoleRequest(self, command, clean, project, cutoff, model)
 
-    def _connect(self, prompt: ChatBranch) -> ModelStream:
+    def generate(self, prompt: ChatBranch) -> ModelStream:
         try:
             return self.decode_request(prompt).handle()
         except ModelException as ex:
