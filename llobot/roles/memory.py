@@ -71,9 +71,6 @@ class RoleMemory:
             for chat in self.example_archive.recent(zone, cutoff):
                 yield chat.as_example().with_metadata(chat.metadata)
 
-    def has_example(self, project: Project | None, time: datetime) -> bool:
-        return any(self.example_archive.contains(zone, time) for zone in self.zone_names(project))
-
 def standard(name: str, *,
     chat_archive: ChatArchive | Zoning | Path | str = llobot.chats.archives.standard(llobot.fs.data()/'llobot/chats'),
     example_archive: ChatArchive | Zoning | Path | str = llobot.chats.archives.standard(llobot.fs.data()/'llobot/examples'),
