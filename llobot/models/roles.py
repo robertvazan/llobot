@@ -11,7 +11,6 @@ from llobot.roles import Role
 from llobot.models import Model
 from llobot.models.catalogs import ModelCatalog
 from llobot.models.streams import ModelStream, ModelException
-from llobot.roles.memory import RoleMemory
 import llobot.time
 import llobot.models.streams
 
@@ -25,7 +24,6 @@ class _StandardRoleCommand(Enum):
 class _StandardRoleRequest:
     owner: _StandardRoleModel
     role: Role
-    memory: RoleMemory
     command: _StandardRoleCommand | None
     # Clean user prompt before assembly into the full prompt.
     prompt: ChatBranch
@@ -40,7 +38,6 @@ class _StandardRoleRequest:
     def __init__(self, owner: _StandardRoleModel, command: _StandardRoleCommand | None, prompt: ChatBranch, project: Project | None, cutoff: datetime | None, model: Model):
         self.owner = owner
         self.role = owner.role
-        self.memory = owner.memory
         self.command = command
         self.prompt = prompt
         self.project = project
@@ -67,7 +64,7 @@ class _StandardRoleRequest:
 
     @property
     def zone(self) -> str:
-        return self.memory.zone_name(self.project)
+        return self.role.zone_name(self.project)
 
     @property
     def budget(self) -> int:
@@ -76,7 +73,6 @@ class _StandardRoleRequest:
     def stuff(self, prompt: ChatBranch | None = None) -> Context:
         prompt = prompt or self.prompt
         return self.role.stuff(
-            memory=self.memory,
             prompt=prompt,
             project=self.project,
             cutoff=self.cutoff,
@@ -99,7 +95,7 @@ class _StandardRoleRequest:
     def handle_ok(self) -> ModelStream:
         if len(self.prompt) < 3:
             return llobot.models.streams.error('Nothing to save.')
-        self.memory.save_example(self.add_metadata(self.prompt[:-1]), self.project)
+        self.role.save_example(self.add_metadata(self.prompt[:-1]), self.project)
         return llobot.models.streams.ok('Saved.')
 
     def handle_echo(self) -> ModelStream:
@@ -124,7 +120,7 @@ class _StandardRoleRequest:
         info = dedent(f'''\
             Configuration:
 
-            - Role: `{self.memory.name}`
+            - Role: `{self.role.name}`
             - Model: `@{self.model.name}`
             - Cutoff: `:{llobot.time.format(self.cutoff)}`
         ''')
@@ -206,11 +202,11 @@ class _StandardRoleRequest:
     def handle_prompt(self) -> ModelStream:
         assembled = self.assemble()
         output = self.model.generate(assembled, self.zone)
-        save_filter = llobot.models.streams.notify(lambda stream: self.memory.save_chat(self.add_metadata(self.prompt + ChatRole.ASSISTANT.message(stream.response())), self.project))
+        save_filter = llobot.models.streams.notify(lambda stream: self.role.save_chat(self.add_metadata(self.prompt + ChatRole.ASSISTANT.message(stream.response())), self.project))
         inner = output | save_filter
         if self.automatic_cutoff:
             inner += self.cutoff_footer()
-        return inner | llobot.models.streams.handler(callback=lambda: _logger.error(f'Exception in {self.model.name} model ({self.memory.name} role).', exc_info=True))
+        return inner | llobot.models.streams.handler(callback=lambda: _logger.error(f'Exception in {self.model.name} model ({self.role.name} role).', exc_info=True))
 
     def handle(self) -> ModelStream:
         if self.project and len(self.prompt) == 1 and not self.given_cutoff:
@@ -226,21 +222,19 @@ class _StandardRoleRequest:
 
 class _StandardRoleModel(Model):
     role: Role
-    memory: RoleMemory
     backend: Model
     alternatives: ModelCatalog
     projects: list[Project]
 
-    def __init__(self, role: Role, memory: RoleMemory, backend: Model, alternatives: ModelCatalog, projects: list[Project]):
+    def __init__(self, role: Role, backend: Model, alternatives: ModelCatalog, projects: list[Project]):
         self.role = role
-        self.memory = memory
         self.backend = backend
         self.alternatives = alternatives | ModelCatalog(backend)
         self.projects = projects
 
     @property
     def name(self) -> str:
-        return f'bot/{self.memory.name}'
+        return f'bot/{self.role.name}'
 
     @property
     def context_budget(self) -> int:

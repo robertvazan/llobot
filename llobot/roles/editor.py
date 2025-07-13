@@ -13,7 +13,6 @@ from llobot.contexts import Context
 from llobot.instructions import SystemPrompt
 from llobot.projects import Project
 from llobot.roles import Role
-from llobot.roles.memory import RoleMemory
 import llobot.scrapers
 import llobot.scorers.knowledge
 import llobot.scores.knowledge
@@ -48,7 +47,7 @@ class Editor(Role):
     _example_share: float
     _retrieval_share: float
 
-    def __init__(self, *,
+    def __init__(self, name: str, *,
         instructions: str = system().compile(),
         retrieval_scraper: Scraper = llobot.scrapers.retrieval(),
         relevance_scorer: KnowledgeScorer | KnowledgeSubset = llobot.scorers.knowledge.irrelevant(),
@@ -62,10 +61,12 @@ class Editor(Role):
         # Examples however consume space also indirectly by forcing stuffing of updates.
         example_share: float = 0.3,
         retrieval_share: float = 1.0,
+        **kwargs,
     ):
         """
         Creates a new editor role.
         """
+        super().__init__(name, **kwargs)
         self._instructions = instructions
         self._retrieval_scraper = retrieval_scraper
         if isinstance(relevance_scorer, KnowledgeSubset):
@@ -82,7 +83,6 @@ class Editor(Role):
         self._retrieval_share = retrieval_share
 
     def stuff(self, *,
-        memory: RoleMemory,
         prompt: ChatBranch,
         project: Project | None,
         cutoff: datetime,
@@ -110,7 +110,7 @@ class Editor(Role):
 
         # --- Examples ---
         example_budget = min(remaining_budget, int(self._example_share * budget))
-        recent_examples = memory.recent_examples(project, cutoff)
+        recent_examples = self.recent_examples(project, cutoff)
         examples = self._example_crammer.cram(recent_examples, example_budget, system)
         remaining_budget -= examples.cost
 
