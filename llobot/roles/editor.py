@@ -52,7 +52,7 @@ class Editor(Role):
         retrieval_crammer: KnowledgeCrammer = llobot.crammers.knowledge.retrieval(),
         knowledge_share: float = 1.0,
         # Share of the context dedicated to examples and associated knowledge updates.
-        example_share: float = 0.3,
+        example_share: float = 0.4,
         retrieval_share: float = 1.0,
         **kwargs,
     ):
