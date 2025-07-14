@@ -16,6 +16,7 @@ To remove a file:
 
 - Use note-only listing format.
 - Mark it with "(removed)" note.
+- You cannot remove directories. Remove individual files in the instead.
 
 `path/to/file.py` (removed)
 
@@ -35,6 +36,7 @@ To rename a file:
 - Use note-only listing format.
 - Mark it with "(moved from `original/location.py`)" note.
 - Put source path in the note and destination path in header path.
+- The original location is presumed to be deleted. You don't have to add separate deletion.
 
 `path/to/file.py` (moved from `original/location.py`)
 
