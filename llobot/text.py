@@ -1,11 +1,13 @@
 from __future__ import annotations
 import re
 
+def terminate(text: str) -> str:
+    """Adds a terminal newline to the text if it doesn't have one."""
+    return text if text.endswith('\n') else text + '\n'
+
 def join(separator: str, documents: Iterable[str]) -> str:
-    documents = [x.strip() for x in documents if x.strip()]
-    if not documents:
-        return ''
-    return separator.join([x + '\n' for x in documents]).strip()
+    documents = [terminate(x) for x in documents if x and x.strip()]
+    return separator.join(documents)
 
 def concat(*documents: str) -> str:
     return join('\n', documents)
@@ -20,11 +22,12 @@ def quote(lang: str, document: str, *, backtick_count: int = 3) -> str:
     while '`' * backtick_count in document:
         backtick_count += 1
     backticks = '`' * backtick_count
-    return f'{backticks}{lang}\n{document.strip()}\n{backticks}'
+    return f'{backticks}{lang}\n{terminate(document)}{backticks}'
 
 __all__ = [
+    'terminate',
     'join',
-    'concatenate',
+    'concat',
     'dashed_name',
     'quote',
 ]

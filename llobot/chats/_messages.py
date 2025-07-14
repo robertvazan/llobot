@@ -1,4 +1,5 @@
 from __future__ import annotations
+import llobot.text
 from ._roles import ChatRole
 from ._intents import ChatIntent
 
@@ -47,26 +48,30 @@ class ChatMessage:
 
     def __contains__(self, text: str) -> bool:
         return text in self.content
-    
+
     def branch(self) -> 'ChatBranch':
         from ._branches import ChatBranch
         return ChatBranch([self])
-    
+
     def with_intent(self, intent: ChatIntent) -> ChatMessage:
         return intent.message(self.content)
-    
+
     def as_example(self) -> ChatMessage:
         return self.with_intent(self.intent.as_example())
-    
+
     def is_example(self) -> bool:
         return self.intent.is_example()
 
     def monolithic(self) -> str:
         return f'**{self.intent}:**\n\n{self.content}'
-    
+
     def with_content(self, content: str) -> ChatMessage:
         return ChatMessage(self.intent, content)
 
     def with_postscript(self, postscript: str) -> ChatMessage:
-        return self.with_content((self.content.strip() + '\n\n' + postscript.strip()).strip())
+        if not postscript:
+            return self
+        if not self.content:
+            return self.with_content(postscript)
+        return self.with_content(llobot.text.terminate(self.content) + '\n' + postscript)
 

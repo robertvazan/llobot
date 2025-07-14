@@ -6,14 +6,12 @@ from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.rankings import KnowledgeRanking
 from llobot.knowledge.rankers import KnowledgeRanker
 from llobot.contexts import Context
-from llobot.trimmers import Trimmer
 from llobot.scores.knowledge import KnowledgeScores
 from llobot.scorers.knowledge import KnowledgeScorer
 from llobot.formatters.knowledge import KnowledgeFormatter
 import llobot.knowledge.subsets
 import llobot.knowledge.rankings
 import llobot.knowledge.rankers
-import llobot.trimmers
 import llobot.formatters.knowledge
 import llobot.scores.knowledge
 import llobot.scorers.knowledge
@@ -26,8 +24,6 @@ class KnowledgeCrammer:
 
 @lru_cache
 def priority(*,
-    # Trimmer is applied to all documents regardless of whether that's necessary to save space.
-    trimmer: Trimmer = llobot.trimmers.boilerplate(),
     scorer: KnowledgeScorer = llobot.scorers.knowledge.standard(),
     formatter: KnowledgeFormatter = llobot.formatters.knowledge.standard(),
     ranker: KnowledgeRanker = llobot.knowledge.rankers.standard(),
@@ -36,14 +32,12 @@ def priority(*,
         def cram(self, knowledge: Knowledge, budget: int, scores: KnowledgeScores | None = None, context: Context = llobot.contexts.empty()) -> Context:
             if budget <= 0 or not knowledge or (scores is not None and not scores):
                 return llobot.contexts.empty()
-            knowledge = knowledge.strip()
             ranking = ranker(knowledge)
             knowledge &= ranking
             scores = scorer.rescore(knowledge, scores) if scores is not None else scorer(knowledge)
             # Remove documents with zero score. Scorer can be thus used to exclude irrelevant documents.
             # To make that work though, rescoring must not distribute score around.
             knowledge &= scores
-            knowledge = knowledge.transform(trimmer.trim_fully)
             # Premultiply with document lengths. Both scores and lengths will get a denominator in the loop.
             scores *= llobot.scores.knowledge.length(knowledge)
             prior_knowledge = context.knowledge

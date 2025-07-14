@@ -20,7 +20,6 @@ Llobot also has some nice features:
 - **Modular instructions**: You can assemble your system prompt from reusable sections. Llobot includes some predefined sections.
 - **Knowledge management**: You can load, filter, transform, and time-travel plaintext knowledge bases and source code.
 - **Formatters**: Llobot builds clean prompts consisting of several chat turns using readable Markdown for easier auditing.
-- **Trimmers**: You can filter out boilerplate and less important content from files to save on tokens and to fit more content in the context window.
 - **Scrapers**: Llobot can scrape documents for links and source code for dependencies to build knowledge graph, which is processed with PageRank to prioritize core files for context stuffing.
 - **Crammers**: Llobot's crammers fit the most important information in given budget.
 - **Scorers**: Llobot can prioritize files in the knowledge base by position in knowledge graph (see scrapers above), file name patterns, selected subproject, and file size. It can also prioritize examples.
@@ -42,8 +41,7 @@ import llobot.models.ollama
 import llobot.models.openai
 import llobot.projects
 import llobot.knowledge.sources
-import llobot.roles.coder
-import llobot.roles.memory
+from llobot.roles.coder import Coder
 import llobot.models.roles
 import llobot.models.ollama.listeners
 
@@ -83,13 +81,10 @@ projects = [
 
 # Roles determine what goes in the context.
 # This function configures bare role to serve as a virtual model.
-def define_bot(name, role):
+def define_bot(role):
     # This wraps the role in a virtual model.
     return llobot.models.roles.standard(
         role,
-        # This determines where the bot will store data
-        # (archived chats and examples). We will use defaults.
-        llobot.roles.memory.standard(name),
         # Default backend model.
         backend_models['local'],
         # Alternative backend models.
@@ -98,7 +93,7 @@ def define_bot(name, role):
 
 # Lets use some standard roles that come with llobot.
 bots = ModelCatalog(
-    define_bot('coder', llobot.roles.coder.create()),
+    define_bot(Coder('coder')),
 )
 
 # Backend Ollama listens on 11434, so we will listen on 11435 to avoid conflicts.

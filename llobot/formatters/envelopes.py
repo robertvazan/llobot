@@ -7,6 +7,7 @@ from llobot.formatters.languages import LanguageGuesser
 import llobot.knowledge.subsets
 import llobot.knowledge.subsets.markdown
 import llobot.formatters.languages
+import llobot.text
 
 class EnvelopeFormatter:
     # May return None to indicate it cannot handle the file, which is useful for combining several formatters.
@@ -71,16 +72,9 @@ def header(*,
         def format(self, path: Path, content: str, note: str = '') -> str:
             note_suffix = f' ({note})' if note else ''
             lang = guesser(path, content)
-
-            # Determine backtick count
             backtick_count = 4 if lang in quad_backticks else 3
-            backticks = '`' * backtick_count
-            lines = content.splitlines()
-            while any(line.startswith(backticks) for line in lines):
-                backtick_count += 1
-                backticks = '`' * backtick_count
-
-            return f'`{path}`{note_suffix}:\n\n{backticks}{lang}\n{content.strip()}\n{backticks}'
+            quoted = llobot.text.quote(lang, content, backtick_count=backtick_count)
+            return f'`{path}`{note_suffix}:\n\n{quoted}'
 
         def find(self, message: str) -> list[str]:
             return [match.group(0) for match in detection_regex.finditer(message)]
@@ -100,7 +94,6 @@ def standard() -> EnvelopeFormatter:
 
 __all__ = [
     'EnvelopeFormatter',
-    'create',
     'header',
     'standard',
 ]

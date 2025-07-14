@@ -44,9 +44,6 @@ class Knowledge:
     def transform(self, operation: Callable[[Path, str], str]) -> Knowledge:
         return Knowledge({path: operation(path, content) for path, content in self})
 
-    def strip(self) -> Knowledge:
-        return self.transform(lambda path, content: content.strip())
-
     def __and__(self, subset: 'KnowledgeSubset' | str | Path | 'KnowledgeIndex' | 'KnowledgeRanking' | 'KnowledgeScores') -> Knowledge:
         import llobot.knowledge.subsets
         subset = llobot.knowledge.subsets.coerce(subset)

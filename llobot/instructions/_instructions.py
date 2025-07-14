@@ -58,12 +58,8 @@ def knowledge() -> list[str]:
     return combine(*listings(), read('knowledge.md'))
 
 @cache
-def trimming() -> list[str]:
-    return combine(*knowledge(), read('trimming.md'))
-
-@cache
 def edits() -> list[str]:
-    return combine(*knowledge(), *trimming(), *listings(), *notes(), read('edits.md'))
+    return combine(*knowledge(), *notes(), read('edits.md'))
 
 @cache
 def editing() -> list[str]:
@@ -75,7 +71,7 @@ def coding() -> list[str]:
 
 @cache
 def answering() -> list[str]:
-    return combine(*knowledge(), *trimming(), *notes(), read('answering.md'))
+    return combine(*knowledge(), *notes(), read('answering.md'))
 
 __all__ = [
     'read',
@@ -87,7 +83,6 @@ __all__ = [
     'listings',
     'notes',
     'knowledge',
-    'trimming',
     'edits',
     'editing',
     'coding',
