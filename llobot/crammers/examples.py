@@ -3,13 +3,11 @@ from functools import cache, lru_cache
 from llobot.chats import ChatBranch
 from llobot.contexts import Context
 from llobot.scorers.history import HistoryScorer
-from llobot.scorers.chats import ChatScorer
 from llobot.formatters.envelopes import EnvelopeFormatter
 import llobot.contexts
 import llobot.contexts.examples
 import llobot.scores.history
 import llobot.scorers.history
-import llobot.scorers.chats
 import llobot.formatters.envelopes
 
 class ExampleCrammer:
@@ -44,8 +42,6 @@ def greedy(parser: EnvelopeFormatter = llobot.formatters.envelopes.standard()) -
 @lru_cache
 def prioritized(
     history_scorer: HistoryScorer = llobot.scorers.history.standard(),
-    # Sorting by timestamp preserves logical dependencies between examples and thus supports in-context learning.
-    sort_key: ChatScorer | None = llobot.scorers.chats.timestamp(),
     # Overscan depth to prevent single large example from clogging the stream and leaving large unused budget.
     depth: int = 10,
     # Do not overscan when we reach reasonable fill rate.
@@ -75,18 +71,13 @@ def prioritized(
             selected_examples.append(example)
             seen_prompts.add(prompt_content)
             budget -= example.cost
-        # If the sort key scorer was not provided or the sort key is not available for some chats, default to ascending score order.
         selected_examples.reverse()
-        return llobot.contexts.examples.annotate(*(sorted(selected_examples, key=sort_key) if sort_key else selected_examples), parser=parser)
+        return llobot.contexts.examples.annotate(*selected_examples, parser=parser)
     return create(cram)
 
 @cache
 def standard() -> ExampleCrammer:
     return prioritized()
-
-@cache
-def shuffled() -> ExampleCrammer:
-    return prioritized(sort_key=llobot.scorers.chats.random())
 
 __all__ = [
     'ExampleCrammer',
@@ -94,6 +85,5 @@ __all__ = [
     'greedy',
     'prioritized',
     'standard',
-    'shuffled',
 ]
 

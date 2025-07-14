@@ -79,11 +79,6 @@ def response_share() -> ChatScorer:
 def random() -> ChatScorer:
     return create(lambda chat: crc32(chat.monolithic().encode('utf-8')) or 1)
 
-# Not all chats have time in their metadata, so this scorer has to return zero in those cases.
-@cache
-def timestamp() -> ChatScorer:
-    return create(lambda chat: chat.metadata.time.timestamp() if chat.metadata.time else 0)
-
 @cache
 def standard() -> ChatScorer:
     # Use square root of chat length to invest available budget evenly to both chat diversity and chat length (which minimizes per-chat overhead).
@@ -98,7 +93,6 @@ __all__ = [
     'response_length',
     'response_share',
     'random',
-    'timestamp',
     'standard',
 ]
 
