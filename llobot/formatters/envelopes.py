@@ -67,7 +67,7 @@ def header(*,
     quad_backticks: list[str] = ['markdown'],
 ) -> EnvelopeFormatter:
     detection_regex = re.compile(r'^`[^\n]+?`(?: \([^\n]*?\))?:\n\n?(?:```[^`\n]*\n.*?\n```|````[^`\n]*\n.*?\n````|`````[^`\n]*\n.*?\n`````)$', re.MULTILINE | re.DOTALL)
-    parsing_regex = re.compile(r'`([^\n]+?)`(?: \([^\n]*?\))?:\n\n?```+[^\n]*\n(.*)\n```+', re.MULTILINE | re.DOTALL)
+    parsing_regex = re.compile(r'`([^\n]+?)`(?: \([^\n]*?\))?:\n\n?```+[^\n]*\n(.*\n)```+', re.MULTILINE | re.DOTALL)
     class HeaderEnvelopeFormatter(EnvelopeFormatter):
         def format(self, path: Path, content: str, note: str = '') -> str:
             note_suffix = f' ({note})' if note else ''
