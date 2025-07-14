@@ -14,9 +14,10 @@ class _AnthropicStream(ModelStream):
         max_tokens: int,
         prompt: ChatBranch,
         cached: bool,
+        thinking: int | None,
     ):
         super().__init__()
-        self._iterator = self._iterate(client, model, max_tokens, prompt, cached)
+        self._iterator = self._iterate(client, model, max_tokens, prompt, cached, thinking)
 
     def _iterate(self,
         client: Anthropic,
@@ -24,6 +25,7 @@ class _AnthropicStream(ModelStream):
         max_tokens: int,
         prompt: ChatBranch,
         cached: bool,
+        thinking: int | None,
     ) -> Iterable[str]:
         messages = []
         for message in prompt:
@@ -45,6 +47,11 @@ class _AnthropicStream(ModelStream):
             'max_tokens': max_tokens,
             'messages': messages,
         }
+        if thinking is not None:
+            parameters['thinking'] = {
+                "type": "enabled",
+                "budget_tokens": thinking
+            }
         with client.messages.stream(**parameters) as stream:
             for chunk in stream.text_stream:
                 yield chunk
@@ -65,6 +72,7 @@ class _AnthropicModel(Model):
     _context_budget: int
     _max_tokens: int
     _cached: bool
+    _thinking: int | None
 
     def __init__(self, name: str, *,
         client: Anthropic | None = None,
@@ -73,6 +81,7 @@ class _AnthropicModel(Model):
         context_budget: int = 100_000,
         max_tokens: int = 8_000,
         cached: bool = True,
+        thinking: int | None = None,
     ):
         if client:
             self._client = client
@@ -86,6 +95,7 @@ class _AnthropicModel(Model):
         self._context_budget = context_budget
         self._max_tokens = max_tokens
         self._cached = cached
+        self._thinking = thinking
 
     @property
     def name(self) -> str:
@@ -102,20 +112,24 @@ class _AnthropicModel(Model):
             'context_budget': self._context_budget,
             'max_tokens': self._max_tokens,
         }
+        if self._thinking is not None:
+            options['thinking'] = self._thinking
         return options
 
     def validate_options(self, options: dict):
-        allowed = {'context_budget', 'max_tokens'}
+        allowed = {'context_budget', 'max_tokens', 'thinking'}
         for unrecognized in set(options) - allowed:
             raise ValueError(f"Unrecognized option: {unrecognized}")
 
     def configure(self, options: dict) -> Model:
+        thinking_opt = options.get('thinking', self._thinking)
         return _AnthropicModel(
             self._name,
             client=self._client,
             context_budget=int(options.get('context_budget', self._context_budget)),
             max_tokens=int(options.get('max_tokens', self._max_tokens)),
             cached=self._cached,
+            thinking=int(thinking_opt) if thinking_opt is not None else None,
         )
 
     @property
@@ -129,6 +143,7 @@ class _AnthropicModel(Model):
             self._max_tokens,
             prompt,
             self._cached,
+            self._thinking,
         )
 
 def create(name: str, **kwargs) -> Model:
