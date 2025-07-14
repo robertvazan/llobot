@@ -111,7 +111,7 @@ class Editor(Role):
         # --- Examples ---
         example_budget = min(remaining_budget, int(self._example_share * budget))
         recent_examples = self.recent_examples(project, cutoff)
-        examples = self._example_crammer.cram(recent_examples, example_budget, system)
+        examples = self._example_crammer.cram(recent_examples, example_budget)
         remaining_budget -= examples.cost
 
         # --- Updates ---

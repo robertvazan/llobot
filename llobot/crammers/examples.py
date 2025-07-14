@@ -13,28 +13,29 @@ import llobot.scorers.chats
 import llobot.formatters.envelopes
 
 class ExampleCrammer:
-    # Context parameter contains already assembled parts of the prompt, whether preceding or following crammer's output.
-    def cram(self, examples: Iterable[ChatBranch], budget: int, context: Context = llobot.contexts.empty()) -> Context:
+    def cram(self, examples: Iterable[ChatBranch], budget: int) -> Context:
         return llobot.contexts.empty()
 
-def create(function: Callable[[Iterable[ChatBranch], int, Context], Context]) -> ExampleCrammer:
+def create(function: Callable[[Iterable[ChatBranch], int], Context]) -> ExampleCrammer:
     class LambdaExampleCrammer(ExampleCrammer):
-        def cram(self, examples: Iterable[ChatBranch], budget: int, context: Context = llobot.contexts.empty()) -> Context:
-            return function(examples, budget, context)
+        def cram(self, examples: Iterable[ChatBranch], budget: int) -> Context:
+            return function(examples, budget)
     return LambdaExampleCrammer()
 
 @lru_cache
 def greedy(parser: EnvelopeFormatter = llobot.formatters.envelopes.standard()) -> ExampleCrammer:
-    def cram(examples: Iterable[ChatBranch], budget: int, context: Context = llobot.contexts.empty()) -> Context:
-        context_examples = context.examples
+    def cram(examples: Iterable[ChatBranch], budget: int) -> Context:
         selected_examples = []
+        seen_prompts = set()
         for example in examples:
+            prompt_content = example[0].content
             # If there are several examples with the same prompt, include only the latest one.
-            if any(other[0].content == example[0].content for other in context_examples + selected_examples):
+            if prompt_content in seen_prompts:
                 continue
             if example.cost > budget:
                 break
             selected_examples.append(example)
+            seen_prompts.add(prompt_content)
             budget -= example.cost
         selected_examples.reverse()
         return llobot.contexts.examples.annotate(*selected_examples, parser=parser)
@@ -51,17 +52,18 @@ def prioritized(
     fill: float = 0.8,
     parser: EnvelopeFormatter = llobot.formatters.envelopes.standard(),
 ) -> ExampleCrammer:
-    def cram(examples: Iterable[ChatBranch], budget: int, context: Context = llobot.contexts.empty()) -> Context:
+    def cram(examples: Iterable[ChatBranch], budget: int) -> Context:
         if budget <= 0:
             return llobot.contexts.empty()
-        context_examples = context.examples
         history_scores = history_scorer(examples)
         selected_examples = []
+        seen_prompts = set()
         skipped = 0
         max_waste = int(budget * (1 - fill))
         for example in history_scores.chats():
+            prompt_content = example[0].content
             # If there are several examples with the same prompt, include only the latest one.
-            if any(other[0].content == example[0].content for other in context_examples + selected_examples):
+            if prompt_content in seen_prompts:
                 continue
             # Soft budget limit hit.
             if example.cost > budget:
@@ -71,6 +73,7 @@ def prioritized(
                     break
                 continue
             selected_examples.append(example)
+            seen_prompts.add(prompt_content)
             budget -= example.cost
         # If the sort key scorer was not provided or the sort key is not available for some chats, default to ascending score order.
         selected_examples.reverse()
