@@ -15,17 +15,15 @@ class _GeminiStream(ModelStream):
         model: str,
         prompt: ChatBranch,
         thinking: int | None = None,
-        temperature: float | None = None,
     ):
         super().__init__()
-        self._iterator = self._iterate(client, model, prompt, thinking, temperature)
+        self._iterator = self._iterate(client, model, prompt, thinking)
 
     def _iterate(self,
         client: genai.Client,
         model: str,
         prompt: ChatBranch,
         thinking: int | None = None,
-        temperature: float | None = None,
     ) -> Iterable[str]:
         contents = []
         for message in prompt:
@@ -36,8 +34,6 @@ class _GeminiStream(ModelStream):
         config = types.GenerateContentConfig()
         if thinking is not None:
             config.thinking_config = types.ThinkingConfig(thinking_budget=thinking)
-        if temperature is not None:
-            config.temperature = temperature
         stream = client.models.generate_content_stream(
             model=model,
             contents=contents,
@@ -59,7 +55,6 @@ class _GeminiModel(Model):
     _aliases: list[str]
     _context_budget: int
     _thinking: int | None
-    _temperature: float | None
 
     def __init__(self, name: str, *,
         client: genai.Client | None = None,
@@ -67,7 +62,6 @@ class _GeminiModel(Model):
         aliases: Iterable[str] = [],
         context_budget: int = 100_000,
         thinking: int | None = None,
-        temperature: float | None = None,
     ):
         if client:
             self._client = client
@@ -80,7 +74,6 @@ class _GeminiModel(Model):
         self._aliases = list(aliases)
         self._context_budget = context_budget
         self._thinking = thinking
-        self._temperature = temperature
 
     @property
     def name(self) -> str:
@@ -98,29 +91,21 @@ class _GeminiModel(Model):
         }
         if self._thinking is not None:
             options['thinking'] = self._thinking
-        if self._temperature is not None:
-            options['temperature'] = self._temperature
         return options
 
     def validate_options(self, options: dict):
-        allowed = {'context_budget', 'thinking', 'temperature'}
+        allowed = {'context_budget', 'thinking'}
         for unrecognized in set(options) - allowed:
             raise ValueError(f"Unrecognized option: {unrecognized}")
-        if options.get('temperature'):
-            temperature = float(options['temperature'])
-            if not (0.0 <= temperature <= 2.0):
-                raise ValueError(f"Temperature must be between 0.0 and 2.0, got {temperature}")
 
     def configure(self, options: dict) -> Model:
         thinking = options.get('thinking', self._thinking)
-        temperature = options.get('temperature', self._temperature)
         return _GeminiModel(
             self._name,
             client=self._client,
             aliases=self._aliases,
             context_budget=int(options.get('context_budget', self._context_budget)),
             thinking=int(thinking) if thinking else None,
-            temperature=float(temperature) if temperature is not None and temperature != '' else None,
         )
 
     @property
@@ -133,7 +118,6 @@ class _GeminiModel(Model):
             self._name,
             prompt,
             self._thinking,
-            self._temperature,
         )
 
 def create(name: str, **kwargs) -> Model:

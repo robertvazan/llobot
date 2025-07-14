@@ -14,12 +14,9 @@ class _AnthropicStream(ModelStream):
         max_tokens: int,
         prompt: ChatBranch,
         cached: bool,
-        temperature: float | None,
-        top_k: int | None,
-        top_p: float | None,
     ):
         super().__init__()
-        self._iterator = self._iterate(client, model, max_tokens, prompt, cached, temperature, top_k, top_p)
+        self._iterator = self._iterate(client, model, max_tokens, prompt, cached)
 
     def _iterate(self,
         client: Anthropic,
@@ -27,9 +24,6 @@ class _AnthropicStream(ModelStream):
         max_tokens: int,
         prompt: ChatBranch,
         cached: bool,
-        temperature: float | None,
-        top_k: int | None,
-        top_p: float | None,
     ) -> Iterable[str]:
         messages = []
         for message in prompt:
@@ -51,12 +45,6 @@ class _AnthropicStream(ModelStream):
             'max_tokens': max_tokens,
             'messages': messages,
         }
-        if temperature is not None:
-            parameters['temperature'] = temperature
-        if top_k is not None:
-            parameters['top_k'] = top_k
-        if top_p is not None:
-            parameters['top_p'] = top_p
         with client.messages.stream(**parameters) as stream:
             for chunk in stream.text_stream:
                 yield chunk
@@ -77,9 +65,6 @@ class _AnthropicModel(Model):
     _context_budget: int
     _max_tokens: int
     _cached: bool
-    _temperature: float | None
-    _top_k: int | None
-    _top_p: float | None
 
     def __init__(self, name: str, *,
         client: Anthropic | None = None,
@@ -88,9 +73,6 @@ class _AnthropicModel(Model):
         context_budget: int = 100_000,
         max_tokens: int = 8_000,
         cached: bool = True,
-        temperature: float | None = None,
-        top_k: int | None = None,
-        top_p: float | None = None,
     ):
         if client:
             self._client = client
@@ -104,9 +86,6 @@ class _AnthropicModel(Model):
         self._context_budget = context_budget
         self._max_tokens = max_tokens
         self._cached = cached
-        self._temperature = temperature
-        self._top_k = top_k
-        self._top_p = top_p
 
     @property
     def name(self) -> str:
@@ -123,32 +102,20 @@ class _AnthropicModel(Model):
             'context_budget': self._context_budget,
             'max_tokens': self._max_tokens,
         }
-        if self._temperature is not None:
-            options['temperature'] = self._temperature
-        if self._top_k is not None:
-            options['top_k'] = self._top_k
-        if self._top_p is not None:
-            options['top_p'] = self._top_p
         return options
 
     def validate_options(self, options: dict):
-        allowed = {'context_budget', 'max_tokens', 'temperature', 'top_k', 'top_p'}
+        allowed = {'context_budget', 'max_tokens'}
         for unrecognized in set(options) - allowed:
             raise ValueError(f"Unrecognized option: {unrecognized}")
 
     def configure(self, options: dict) -> Model:
-        temperature = options.get('temperature', self._temperature)
-        top_k = options.get('top_k', self._top_k)
-        top_p = options.get('top_p', self._top_p)
         return _AnthropicModel(
             self._name,
             client=self._client,
             context_budget=int(options.get('context_budget', self._context_budget)),
             max_tokens=int(options.get('max_tokens', self._max_tokens)),
             cached=self._cached,
-            temperature=float(temperature) if temperature is not None and temperature != '' else None,
-            top_k=int(top_k) if top_k else None,
-            top_p=float(top_p) if top_p else None,
         )
 
     @property
@@ -162,9 +129,6 @@ class _AnthropicModel(Model):
             self._max_tokens,
             prompt,
             self._cached,
-            self._temperature,
-            self._top_k,
-            self._top_p
         )
 
 def create(name: str, **kwargs) -> Model:

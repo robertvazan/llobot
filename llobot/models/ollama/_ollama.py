@@ -29,14 +29,12 @@ class _OllamaModel(Model):
     _endpoint: str
     _num_ctx: int
     _context_budget: int
-    _top_k: int | None
 
     # Context size is a mandatory parameter, because Ollama has only 2K-token default, which is useless for real applications.
     def __init__(self, name: str, num_ctx: int, *,
         endpoint: str | None = None,
         aliases: Iterable[str] = [],
         context_budget: int | None = None,
-        top_k: int | None = None,
     ):
         from llobot.models.ollama import endpoints
         self._name = name.removeprefix('ollama/').removesuffix(':latest')
@@ -44,7 +42,6 @@ class _OllamaModel(Model):
         self._endpoint = endpoint or endpoints.localhost()
         self._num_ctx = num_ctx
         self._context_budget = context_budget or min(100_000, 4 * max(0, int(0.8 * (num_ctx - 5000))))
-        self._top_k = top_k
 
     @property
     def name(self) -> str:
@@ -63,24 +60,20 @@ class _OllamaModel(Model):
             'num_ctx': self._num_ctx,
             'context_budget': self._context_budget,
         }
-        if self._top_k is not None:
-            options['top_k'] = self._top_k
         return options
 
     def validate_options(self, options: dict):
-        allowed = {'num_ctx', 'context_budget', 'top_k'}
+        allowed = {'num_ctx', 'context_budget'}
         for unrecognized in set(options) - allowed:
             raise ValueError(f"Unrecognized option: {unrecognized}")
 
     def configure(self, options: dict) -> Model:
-        top_k = options.get('top_k', self._top_k)
         return _OllamaModel(
             self._name,
             int(options.get('num_ctx', self._num_ctx)),
             endpoint=self._endpoint,
             aliases=self._aliases,
             context_budget=int(options.get('context_budget', self._context_budget)),
-            top_k=int(top_k) if top_k else None,
         )
 
     @property

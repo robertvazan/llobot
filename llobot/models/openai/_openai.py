@@ -33,7 +33,6 @@ class _OpenAIModel(Model):
     _endpoint: str
     _auth: str
     _context_budget: int
-    _temperature: float | None
 
     def __init__(self, name: str, *,
         auth: str = '',
@@ -41,7 +40,6 @@ class _OpenAIModel(Model):
         namespace: str = 'openai',
         aliases: list[str] = [],
         context_budget: int = 100_000,
-        temperature: float | None = None,
     ):
         from llobot.models.openai import endpoints
         self._namespace = namespace
@@ -50,7 +48,6 @@ class _OpenAIModel(Model):
         self._endpoint = endpoint or endpoints.proprietary()
         self._auth = auth
         self._context_budget = context_budget
-        self._temperature = temperature
 
     @property
     def name(self) -> str:
@@ -64,24 +61,20 @@ class _OpenAIModel(Model):
     @property
     def options(self) -> dict:
         options = { 'context_budget': self._context_budget }
-        if self._temperature is not None:
-            options['temperature'] = self._temperature
         return options
 
     def validate_options(self, options: dict):
-        allowed = {'context_budget', 'temperature'}
+        allowed = {'context_budget'}
         for unrecognized in set(options) - allowed:
             raise ValueError(f"Unrecognized option: {unrecognized}")
 
     def configure(self, options: dict) -> Model:
-        temperature = options.get('temperature', self._temperature)
         return _OpenAIModel(self._name,
             auth=self._auth,
             endpoint=self._endpoint,
             namespace=self._namespace,
             aliases=self._aliases,
             context_budget=int(options.get('context_budget', self._context_budget)),
-            temperature=float(temperature) if temperature is not None and temperature != '' else None,
         )
 
     @property

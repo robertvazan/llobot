@@ -120,7 +120,7 @@ def encode_request(model: str, options: dict, prompt: ChatBranch) -> dict:
 
 def decode_request(data: dict) -> (str, dict, ChatBranch):
     model = data['model']
-    options = {key: value for key, value in data.items() if key in ('temperature')}
+    options = {}
     prompt = decode_chat(data['messages'])
     return model, options, prompt
 
