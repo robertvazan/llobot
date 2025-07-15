@@ -14,6 +14,9 @@ class ExampleCrammer:
     def cram(self, examples: Iterable[ChatBranch], budget: int) -> Context:
         return llobot.contexts.empty()
 
+    def __call__(self, examples: Iterable[ChatBranch], budget: int) -> Context:
+        return self.cram(examples, budget)
+
 def create(function: Callable[[Iterable[ChatBranch], int], Context]) -> ExampleCrammer:
     class LambdaExampleCrammer(ExampleCrammer):
         def cram(self, examples: Iterable[ChatBranch], budget: int) -> Context:
@@ -86,4 +89,3 @@ __all__ = [
     'prioritized',
     'standard',
 ]
-

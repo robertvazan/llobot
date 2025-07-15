@@ -29,10 +29,9 @@ class Assistant(Role):
     ) -> Context:
         system = llobot.contexts.system(self._instructions)
         recent_examples = self.recent_examples(project, cutoff)
-        examples = self._crammer.cram(recent_examples, budget - system.cost)
+        examples = self._crammer(recent_examples, budget - system.cost)
         return system + examples
 
 __all__ = [
     'Assistant',
 ]
-
