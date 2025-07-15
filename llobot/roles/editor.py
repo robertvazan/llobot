@@ -8,6 +8,7 @@ from llobot.scrapers import Scraper
 from llobot.scorers.knowledge import KnowledgeScorer
 from llobot.crammers.knowledge import KnowledgeCrammer
 from llobot.crammers.edits import EditCrammer
+from llobot.formatters.knowledge import KnowledgeFormatter
 from llobot.contexts import Context
 from llobot.instructions import SystemPrompt
 from llobot.projects import Project
@@ -17,9 +18,11 @@ import llobot.scorers.knowledge
 import llobot.scores.knowledge
 import llobot.crammers.knowledge
 import llobot.crammers.edits
+import llobot.formatters.knowledge
 import llobot.contexts
 import llobot.instructions
 import llobot.links
+import llobot.knowledge.rankings
 
 @cache
 def system() -> SystemPrompt:
@@ -38,10 +41,8 @@ class Editor(Role):
     _relevance_scorer: KnowledgeScorer
     _knowledge_crammer: KnowledgeCrammer
     _edit_crammer: EditCrammer
-    _retrieval_crammer: KnowledgeCrammer
-    _knowledge_share: float
+    _retrieval_formatter: KnowledgeFormatter
     _example_share: float
-    _retrieval_share: float
 
     def __init__(self, name: str, *,
         instructions: str = system().compile(),
@@ -49,11 +50,9 @@ class Editor(Role):
         relevance_scorer: KnowledgeScorer | KnowledgeSubset = llobot.scorers.knowledge.irrelevant(),
         knowledge_crammer: KnowledgeCrammer = llobot.crammers.knowledge.standard(),
         edit_crammer: EditCrammer = llobot.crammers.edits.standard(),
-        retrieval_crammer: KnowledgeCrammer = llobot.crammers.knowledge.retrieval(),
-        knowledge_share: float = 1.0,
+        retrieval_formatter: KnowledgeFormatter = llobot.formatters.knowledge.standard(),
         # Share of the context dedicated to examples and associated knowledge updates.
         example_share: float = 0.4,
-        retrieval_share: float = 1.0,
         **kwargs,
     ):
         """
@@ -68,10 +67,8 @@ class Editor(Role):
             self._relevance_scorer = relevance_scorer
         self._knowledge_crammer = knowledge_crammer
         self._edit_crammer = edit_crammer
-        self._retrieval_crammer = retrieval_crammer
-        self._knowledge_share = knowledge_share
+        self._retrieval_formatter = retrieval_formatter
         self._example_share = example_share
-        self._retrieval_share = retrieval_share
 
     def stuff(self, *,
         prompt: ChatBranch,
@@ -79,41 +76,29 @@ class Editor(Role):
         cutoff: datetime,
         budget: int,
     ) -> Context:
-        fresh_knowledge = project.root.knowledge(cutoff) if project else Knowledge()
+        knowledge = project.root.knowledge(cutoff) if project else Knowledge()
 
-        # Find retrieval links once
-        retrieved_links = llobot.links.resolve(self._retrieval_scraper.scrape_prompt(prompt), fresh_knowledge)
-
-        # --- System ---
         system = llobot.contexts.system(self._instructions)
-        remaining_budget = budget - system.cost
+        budget -= system.cost
 
-        # --- Preliminary retrieval pass ---
-        retrieval_budget = min(remaining_budget, int(self._retrieval_share * budget))
-        retrievals = self._retrieval_crammer.cram(fresh_knowledge, retrieval_budget, llobot.scores.knowledge.coerce(retrieved_links), system)
-        # This is the only use we have for preliminary retrievals: to calculate remaining budget for other parts of the context
-        remaining_budget -= retrievals.cost
-
-        # --- Examples with associated updates ---
-        edit_budget = min(remaining_budget, int(self._example_share * budget))
+        # Examples with associated updates
+        edit_budget = int(budget * self._example_share)
         recent_examples = self.recent_examples(project, cutoff)
-        edits = self._edit_crammer.cram(recent_examples, fresh_knowledge, edit_budget)
-        remaining_budget -= edits.cost
+        history = self._edit_crammer(recent_examples, knowledge, edit_budget)
 
-        # --- Final retrieval pass ---
-        remaining_budget = budget - system.cost - edits.cost
-        retrieval_budget = min(remaining_budget, int(self._retrieval_share * budget))
-        retrievals = self._retrieval_crammer.cram(fresh_knowledge, retrieval_budget, llobot.scores.knowledge.coerce(retrieved_links), system + edits)
-        remaining_budget -= retrievals.cost
-
-        # --- Knowledge ---
-        knowledge_budget = min(remaining_budget, int(self._knowledge_share * budget))
-        relevance_scores = self._relevance_scorer(fresh_knowledge)
+        # Knowledge
+        knowledge_budget = budget - edit_budget
+        relevance_scores = self._relevance_scorer(knowledge)
         if project and project.is_subproject:
-            relevance_scores *= llobot.scores.knowledge.prioritize(fresh_knowledge, project.subset)
-        knowledge = self._knowledge_crammer.cram(fresh_knowledge, knowledge_budget, relevance_scores, system + edits + retrievals)
+            relevance_scores *= llobot.scores.knowledge.prioritize(knowledge, project.subset)
+        core = self._knowledge_crammer(knowledge, knowledge_budget, relevance_scores, context=history)
 
-        return system + knowledge + edits + retrievals
+        # Retrievals
+        retrieved_links = llobot.links.resolve(self._retrieval_scraper.scrape_prompt(prompt), knowledge)
+        retrieved_knowledge = (knowledge & retrieved_links) - (core + history).knowledge.keys()
+        retrievals = self._retrieval_formatter(retrieved_knowledge, llobot.knowledge.rankings.lexicographical(retrieved_knowledge))
+
+        return system + core + history + retrievals
 
 __all__ = [
     'system',

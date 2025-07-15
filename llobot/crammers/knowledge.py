@@ -22,6 +22,9 @@ class KnowledgeCrammer:
     def cram(self, knowledge: Knowledge, budget: int, scores: KnowledgeScores | None = None, context: Context = llobot.contexts.empty()) -> Context:
         return llobot.contexts.empty()
 
+    def __call__(self, knowledge: Knowledge, budget: int, scores: KnowledgeScores | None = None, context: Context = llobot.contexts.empty()) -> Context:
+        return self.cram(knowledge, budget, scores, context)
+
 @lru_cache
 def priority(*,
     scorer: KnowledgeScorer = llobot.scorers.knowledge.standard(),
@@ -69,21 +72,8 @@ def priority(*,
 def standard() -> KnowledgeCrammer:
     return priority()
 
-@cache
-def retrieval() -> KnowledgeCrammer:
-    return priority(scorer=llobot.scorers.knowledge.constant())
-
-# Intended to be used for files that are already in the context but they have changed since.
-@cache
-def updates() -> KnowledgeCrammer:
-    # We would ideally want to score relevance, but that's currently not possible, because score parameter is used for filtering.
-    return priority(formatter=llobot.formatters.knowledge.updates(), scorer=llobot.scorers.knowledge.constant())
-
 __all__ = [
     'KnowledgeCrammer',
     'priority',
     'standard',
-    'retrieval',
-    'updates',
 ]
-
