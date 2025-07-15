@@ -36,14 +36,14 @@ def test_join():
 
 
 def test_concat():
-    # Basic concatenation
-    assert concat("hello", "world") == "hello\nworld\n"
+    # Basic concatenation (each document gets terminated, then joined with \n)
+    assert concat("hello", "world") == "hello\n\nworld\n"
 
     # Filters out empty and whitespace-only strings
-    assert concat("hello", "", "world") == "hello\nworld\n"
+    assert concat("hello", "", "world") == "hello\n\nworld\n"
 
     # Adds terminal newlines automatically
-    assert concat("hello\n", "world") == "hello\nworld\n"
+    assert concat("hello\n", "world") == "hello\n\nworld\n"
 
     # Handles empty input
     assert concat() == ""
