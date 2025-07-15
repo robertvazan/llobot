@@ -8,7 +8,7 @@ def suffix() -> KnowledgeSubset:
 
 @cache
 def tests() -> KnowledgeSubset:
-    return llobot.knowledge.subsets.glob('**/test_*.py', '**/*_test.py', '**/test/**', '**/tests/**')
+    return llobot.knowledge.subsets.glob('**/test_*.py', '**/*_test.py', '**/test/**/*.py', '**/tests/**/*.py')
 
 @cache
 def requirements() -> KnowledgeSubset:
