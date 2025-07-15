@@ -7,6 +7,10 @@ def suffix() -> KnowledgeSubset:
     return llobot.knowledge.subsets.suffix('.py')
 
 @cache
+def tests() -> KnowledgeSubset:
+    return llobot.knowledge.subsets.glob('**/test_*.py', '**/*_test.py', '**/test/**', '**/tests/**')
+
+@cache
 def requirements() -> KnowledgeSubset:
     return llobot.knowledge.subsets.filename('requirements.txt')
 
@@ -16,12 +20,12 @@ def whitelist() -> KnowledgeSubset:
 
 @cache
 def ancillary() -> KnowledgeSubset:
-    return requirements()
+    return requirements() | tests()
 
 __all__ = [
     'suffix',
+    'tests',
     'requirements',
     'whitelist',
     'ancillary',
 ]
-
