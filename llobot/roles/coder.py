@@ -12,6 +12,7 @@ def system() -> SystemPrompt:
     return llobot.instructions.prepare(
         llobot.instructions.read('coder.md'),
         *llobot.instructions.coding(),
+        *llobot.instructions.documentation(),
         *llobot.instructions.answering(),
     )
 

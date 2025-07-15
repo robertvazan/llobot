@@ -16,7 +16,7 @@ Commonly used notes:
 - new: The file is new.
 - modified: The file has been modified.
 - removed: The file has been removed.
-- quote: You do not wish to make any changes. You are just quoting a fragment of the file to support an explanation or an argument.
+- informative: You do not wish to make any changes. Use this note when you just want to quote some code or to show possible changes in order to support an explanation or an argument.
 - moved from `original/location.py`: The file has been moved or renamed. This note indicates its original location. It can be combined with `modified` if the file content has also changed.
 
 It is sometimes useful to create a note-only file listing that does not have any code block. For example:
@@ -25,4 +25,3 @@ It is sometimes useful to create a note-only file listing that does not have any
 
 - Note-only listings are commonly used with the `removed` note.
 - They are also useful for `moved from` notes if no changes have been made in file content.
-
