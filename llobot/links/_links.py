@@ -18,17 +18,6 @@ class Link:
     def resolve_indexed(self, knowledge: Knowledge, indexes: dict[type, object]) -> set[Path]:
         return self.resolve(knowledge)
 
-    def resolve_best(self, knowledge: Knowledge, scores: 'KnowledgeScores', indexes: dict[type, object] | None) -> set[Path]:
-        matches = self.resolve(knowledge, indexes) if indexes is not None else self.resolve(knowledge)
-        if not matches:
-            return matches
-        # Here we have to be careful, because some paths might have zero score.
-        # If all matched paths have zero score, then return everything.
-        scored = scores & KnowledgeIndex(matches)
-        if not scored:
-            return matches
-        return set(scored.clip_below(scored.highest()).keys())
-
 @dataclass(frozen=True)
 class _AbsolutePathLink(Link):
     path: Path
@@ -107,18 +96,10 @@ def resolve(links: Iterable[Link], knowledge: Knowledge) -> KnowledgeIndex:
         matches.update(link.resolve(knowledge))
     return KnowledgeIndex(matches)
 
-def resolve_best(links: Iterable[Link], knowledge: Knowledge, scores: 'KnowledgeScores', indexes: dict[type, object] | None = None) -> KnowledgeIndex:
-    matches = set()
-    for link in links:
-        matches.update(link.resolve_best(knowledge, scores, indexes))
-    return KnowledgeIndex(matches)
-
 __all__ = [
     'Link',
     'absolute',
     'abbreviated',
     'filename',
     'resolve',
-    'resolve_best',
 ]
-

@@ -81,13 +81,8 @@ class Editor(Role):
     ) -> Context:
         fresh_knowledge = project.root.knowledge(cutoff) if project else Knowledge()
 
-        # Calculate relevance scores once
-        relevance_scores = self._relevance_scorer(fresh_knowledge)
-        if project and project.is_subproject:
-            relevance_scores *= llobot.scores.knowledge.prioritize(fresh_knowledge, project.subset)
-
         # Find retrieval links once
-        retrieved_links = llobot.links.resolve_best(self._retrieval_scraper.scrape_prompt(prompt), fresh_knowledge, relevance_scores)
+        retrieved_links = llobot.links.resolve(self._retrieval_scraper.scrape_prompt(prompt), fresh_knowledge)
 
         # --- System ---
         system = llobot.contexts.system(self._instructions)
@@ -113,6 +108,9 @@ class Editor(Role):
 
         # --- Knowledge ---
         knowledge_budget = min(remaining_budget, int(self._knowledge_share * budget))
+        relevance_scores = self._relevance_scorer(fresh_knowledge)
+        if project and project.is_subproject:
+            relevance_scores *= llobot.scores.knowledge.prioritize(fresh_knowledge, project.subset)
         knowledge = self._knowledge_crammer.cram(fresh_knowledge, knowledge_budget, relevance_scores, system + edits + retrievals)
 
         return system + knowledge + edits + retrievals
@@ -121,4 +119,3 @@ __all__ = [
     'system',
     'Editor',
 ]
-
