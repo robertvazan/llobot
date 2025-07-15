@@ -41,7 +41,8 @@ class _OllamaModel(Model):
         self._aliases = list(aliases)
         self._endpoint = endpoint or endpoints.localhost()
         self._num_ctx = num_ctx
-        self._context_budget = context_budget or min(100_000, 4 * max(0, int(0.8 * (num_ctx - 5000))))
+        # Default context budget to half the num_ctx, assuming about 4 characters per token.
+        self._context_budget = context_budget or min(100_000, 2 * num_ctx)
 
     @property
     def name(self) -> str:
