@@ -4,48 +4,32 @@ from functools import cache, lru_cache
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.rankings import KnowledgeRanking
-from llobot.knowledge.rankers import KnowledgeRanker
 from llobot.contexts import Context
 from llobot.scores.knowledge import KnowledgeScores
-from llobot.scorers.knowledge import KnowledgeScorer
 from llobot.formatters.knowledge import KnowledgeFormatter
 import llobot.knowledge.subsets
 import llobot.knowledge.rankings
-import llobot.knowledge.rankers
 import llobot.formatters.knowledge
 import llobot.scores.knowledge
-import llobot.scorers.knowledge
 import llobot.contexts
 
 class KnowledgeCrammer:
-    # Context parameter contains already assembled parts of the prompt, whether preceding or following crammer's output.
-    def cram(self, knowledge: Knowledge, budget: int, scores: KnowledgeScores | None = None, context: Context = llobot.contexts.empty()) -> Context:
+    def cram(self, knowledge: Knowledge, budget: int, scores: KnowledgeScores, ranking: KnowledgeRanking) -> Context:
         return llobot.contexts.empty()
 
-    def __call__(self, knowledge: Knowledge, budget: int, scores: KnowledgeScores | None = None, context: Context = llobot.contexts.empty()) -> Context:
-        return self.cram(knowledge, budget, scores, context)
+    def __call__(self, knowledge: Knowledge, budget: int, scores: KnowledgeScores, ranking: KnowledgeRanking) -> Context:
+        return self.cram(knowledge, budget, scores, ranking)
 
 @lru_cache
 def priority(*,
-    scorer: KnowledgeScorer = llobot.scorers.knowledge.standard(),
     formatter: KnowledgeFormatter = llobot.formatters.knowledge.standard(),
-    ranker: KnowledgeRanker = llobot.knowledge.rankers.standard(),
 ) -> KnowledgeCrammer:
     class PriorityKnowledgeCrammer(KnowledgeCrammer):
-        def cram(self, knowledge: Knowledge, budget: int, scores: KnowledgeScores | None = None, context: Context = llobot.contexts.empty()) -> Context:
-            if budget <= 0 or not knowledge or (scores is not None and not scores):
-                return llobot.contexts.empty()
-            ranking = ranker(knowledge)
+        def cram(self, knowledge: Knowledge, budget: int, scores: KnowledgeScores, ranking: KnowledgeRanking) -> Context:
             knowledge &= ranking
-            scores = scorer.rescore(knowledge, scores) if scores is not None else scorer(knowledge)
-            # Remove documents with zero score. Scorer can be thus used to exclude irrelevant documents.
-            # To make that work though, rescoring must not distribute score around.
             knowledge &= scores
             # Premultiply with document lengths. Both scores and lengths will get a denominator in the loop.
             scores *= llobot.scores.knowledge.length(knowledge)
-            prior_knowledge = context.knowledge
-            # Remove documents that have exact copies in context.
-            knowledge -= llobot.knowledge.subsets.create(lambda path, content: path in prior_knowledge and prior_knowledge[path] == content)
             while True:
                 formatted = formatter(knowledge, ranking)
                 length = formatted.cost

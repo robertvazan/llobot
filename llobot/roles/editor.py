@@ -4,6 +4,7 @@ from datetime import datetime
 from llobot.chats import ChatBranch
 from llobot.knowledge import Knowledge
 from llobot.knowledge.subsets import KnowledgeSubset
+from llobot.knowledge.rankers import KnowledgeRanker
 from llobot.scrapers import Scraper
 from llobot.scorers.knowledge import KnowledgeScorer
 from llobot.crammers.knowledge import KnowledgeCrammer
@@ -23,6 +24,7 @@ import llobot.contexts
 import llobot.instructions
 import llobot.links
 import llobot.knowledge.rankings
+import llobot.knowledge.rankers
 
 @cache
 def system() -> SystemPrompt:
@@ -39,6 +41,8 @@ class Editor(Role):
     _instructions: str
     _retrieval_scraper: Scraper
     _relevance_scorer: KnowledgeScorer
+    _graph_scorer: KnowledgeScorer
+    _ranker: KnowledgeRanker
     _knowledge_crammer: KnowledgeCrammer
     _edit_crammer: EditCrammer
     _retrieval_formatter: KnowledgeFormatter
@@ -48,6 +52,8 @@ class Editor(Role):
         instructions: str = system().compile(),
         retrieval_scraper: Scraper = llobot.scrapers.retrieval(),
         relevance_scorer: KnowledgeScorer | KnowledgeSubset = llobot.scorers.knowledge.irrelevant(),
+        graph_scorer: KnowledgeScorer = llobot.scorers.knowledge.standard(),
+        ranker: KnowledgeRanker = llobot.knowledge.rankers.standard(),
         knowledge_crammer: KnowledgeCrammer = llobot.crammers.knowledge.standard(),
         edit_crammer: EditCrammer = llobot.crammers.edits.standard(),
         retrieval_formatter: KnowledgeFormatter = llobot.formatters.knowledge.standard(),
@@ -65,6 +71,8 @@ class Editor(Role):
             self._relevance_scorer = llobot.scorers.knowledge.relevant(relevance_scorer)
         else:
             self._relevance_scorer = relevance_scorer
+        self._graph_scorer = graph_scorer
+        self._ranker = ranker
         self._knowledge_crammer = knowledge_crammer
         self._edit_crammer = edit_crammer
         self._retrieval_formatter = retrieval_formatter
@@ -88,15 +96,18 @@ class Editor(Role):
 
         # Knowledge
         knowledge_budget = budget - edit_budget
-        relevance_scores = self._relevance_scorer(knowledge)
+        ranking = self._ranker(knowledge)
+        scores = self._relevance_scorer(knowledge)
         if project and project.is_subproject:
-            relevance_scores *= llobot.scores.knowledge.prioritize(knowledge, project.subset)
-        core = self._knowledge_crammer(knowledge, knowledge_budget, relevance_scores, context=history)
+            scores *= llobot.scores.knowledge.prioritize(knowledge, project.subset)
+        scores = self._graph_scorer.rescore(knowledge, scores)
+        scores -= history.knowledge.keys()
+        core = self._knowledge_crammer(knowledge, knowledge_budget, scores, ranking)
 
         # Retrievals
         retrieved_links = llobot.links.resolve(self._retrieval_scraper.scrape_prompt(prompt), knowledge)
         retrieved_knowledge = (knowledge & retrieved_links) - (core + history).knowledge.keys()
-        retrievals = self._retrieval_formatter(retrieved_knowledge, llobot.knowledge.rankings.lexicographical(retrieved_knowledge))
+        retrievals = self._retrieval_formatter(retrieved_knowledge, ranking)
 
         return system + core + history + retrievals
 
