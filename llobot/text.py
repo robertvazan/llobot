@@ -3,7 +3,7 @@ import re
 
 def terminate(text: str) -> str:
     """Adds a terminal newline to the text if it doesn't have one."""
-    return text if text.endswith('\n') else text + '\n'
+    return text if not text or text.endswith('\n') else text + '\n'
 
 def join(separator: str, documents: Iterable[str]) -> str:
     documents = [terminate(x) for x in documents if x and x.strip()]
@@ -12,7 +12,7 @@ def join(separator: str, documents: Iterable[str]) -> str:
 def concat(*documents: str) -> str:
     return join('\n', documents)
 
-_DASHED_NAME_RE = re.compile('[^a-zA-Z0-9]+')
+_DASHED_NAME_RE = re.compile('[^a-zA-Z0-9_]+')
 
 def dashed_name(name) -> str:
     return _DASHED_NAME_RE.sub(' ', name).strip().replace(' ', '-')
@@ -31,4 +31,3 @@ __all__ = [
     'dashed_name',
     'quote',
 ]
-
