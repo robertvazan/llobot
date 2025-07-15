@@ -66,7 +66,19 @@ def header(*,
     guesser: LanguageGuesser = llobot.formatters.languages.standard(),
     quad_backticks: list[str] = ['markdown'],
 ) -> EnvelopeFormatter:
-    detection_regex = re.compile(r'^`[^\n]+?`(?: \([^\n]*?\))?:\n\n?(?:```[^`\n]*\n.*?\n```|````[^`\n]*\n.*?\n````|`````[^`\n]*\n.*?\n`````)$', re.MULTILINE | re.DOTALL)
+    # We have to be careful how we detect code blocks, because we have to ignore nested code blocks.
+    # For this purpose, header is optional in the detection regex, so that the regex matches also bare code blocks.
+    # When we then search for code blocks in a message, bare code blocks will be matched and their nested code blocks skipped.
+    # Parsing regex will later filter out code blocks without header.
+    detection_regex = re.compile(
+        r'^(?:`[^\n]+?`(?: \([^\n]*?\))?:\n\n?)?'
+        r'(?:'
+        r'```[^`\n]*\n.*?\n```|'
+        r'````[^`\n]*\n.*?\n````|'
+        r'`````[^`\n]*\n.*?\n`````'
+        r')$',
+        re.MULTILINE | re.DOTALL
+    )
     parsing_regex = re.compile(r'`([^\n]+?)`(?: \([^\n]*?\))?:\n\n?```+[^\n]*\n(.*\n)```+', re.MULTILINE | re.DOTALL)
     class HeaderEnvelopeFormatter(EnvelopeFormatter):
         def format(self, path: Path, content: str, note: str = '') -> str:
@@ -97,4 +109,3 @@ __all__ = [
     'header',
     'standard',
 ]
-
