@@ -64,11 +64,6 @@ def directory(*directories: str) -> KnowledgeSubset:
     import llobot.knowledge.subsets.unions
     return llobot.knowledge.subsets.unions.directory(*directories)
 
-def _ancestors(path: Path) -> list[Path]:
-    while path != path.parent:
-        yield path
-        path = path.parent
-
 def glob(*patterns: str) -> KnowledgeSubset:
     if not patterns:
         return nothing()
@@ -76,21 +71,7 @@ def glob(*patterns: str) -> KnowledgeSubset:
         import llobot.knowledge.subsets.unions
         return llobot.knowledge.subsets.unions.union(*(glob(pattern) for pattern in patterns))
     pattern = patterns[0]
-    if '/**/' in pattern:
-        raise ValueError
-    elif pattern.startswith('**/') and not pattern.endswith('/**'):
-        pattern = pattern[3:]
-        return path(lambda path: path.match(pattern))
-    elif pattern.startswith('**/') and pattern.endswith('/**'):
-        pattern = pattern[3:-3]
-        return path(lambda path: any(ancestor.match(pattern) for ancestor in _ancestors(path)))
-    elif not pattern.startswith('**/') and pattern.endswith('/**'):
-        pattern = pattern[:-3]
-        length = len(Path(pattern).parts)
-        return path(lambda path: len(path.parts) >= length and Path(*path.parts[:length]).match(pattern))
-    else:
-        length = len(Path(pattern).parts)
-        return path(lambda path: len(path.parts) == length and path.match(pattern))
+    return path(lambda path: path.full_match(pattern))
 
 def coerce(material: KnowledgeSubset | str | Path | 'KnowledgeIndex' | 'KnowledgeRanking' | 'KnowledgeScores' | 'Knowledge') -> KnowledgeSubset:
     if isinstance(material, KnowledgeSubset):
@@ -181,4 +162,3 @@ __all__ = [
     'boilerplate',
     'ancillary',
 ]
-
