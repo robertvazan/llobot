@@ -58,4 +58,5 @@ class MyClass {
 Additionally:
 
 - You can include listings of several files in your response if the change is scattered across several files.
+- In responses to followup prompts, assume your prior edits became part of the knowledge base and formulate followup edits relative to them. Do not repeat prior edits.
 

@@ -9,3 +9,4 @@ If user's message contains instructions to add or modify code, follow instructio
   - If you modify some code, preserve associated comments and, if necessary, modify them to match code changes.
   - If you significantly rewrite or restructure some code, incorporate information from comments from the original code in the rewritten version wherever it is still applicable.
 - Reuse utility code that is already part of the project. Use it the same way it is used in other project files similar to the one you are editing.
+- Infer project conventions from existing code and follow them in your own edits in preference to these guidelines.
