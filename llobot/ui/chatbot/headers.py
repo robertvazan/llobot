@@ -1,7 +1,8 @@
 from __future__ import annotations
 from datetime import datetime
 import re
-from .commands import ChatbotCommand, decode as decode_command
+import llobot.ui.chatbot.commands
+from llobot.ui.chatbot.commands import ChatbotCommand
 import llobot.time
 import llobot.models.streams
 
@@ -26,19 +27,24 @@ class ChatbotHeader:
         self._options = options
 
     @property
-    def project(self) -> str | None: return self._project
+    def project(self) -> str | None:
+        return self._project
     
     @property
-    def cutoff(self) -> datetime | None: return self._cutoff
+    def cutoff(self) -> datetime | None:
+        return self._cutoff
     
     @property
-    def command(self) -> ChatbotCommand | None: return self._command
+    def command(self) -> ChatbotCommand | None:
+        return self._command
     
     @property
-    def model(self) -> str | None: return self._model
+    def model(self) -> str | None:
+        return self._model
     
     @property
-    def options(self) -> dict | None: return self._options
+    def options(self) -> dict | None:
+        return self._options
 
 HEADER_RE = re.compile(r'(?:~([a-zA-Z0-9_/.-]+))?(?::([0-9-]+))?(?:@([a-zA-Z0-9:/._-]+))?(?:\?([^!\s]+))?(?:!([a-z]+))?')
 
@@ -62,7 +68,7 @@ def parse_line(line: str) -> ChatbotHeader | None:
     cutoff = llobot.time.parse(m[2]) if m[2] else None
     model = m[3] if m[3] else None
     options = parse_options(m[4]) if m[4] else None
-    command = decode_command(m[5]) if m[5] else None
+    command = llobot.ui.chatbot.commands.decode(m[5]) if m[5] else None
     return ChatbotHeader(project=project, cutoff=cutoff, command=command, model=model, options=options)
 
 def parse(message: str) -> ChatbotHeader | None:
@@ -83,3 +89,11 @@ def strip(message: str) -> str:
     if lines and parse_line(lines[-1]):
         lines = lines[:-1]
     return '\n'.join(lines).strip()
+
+__all__ = [
+    'ChatbotHeader',
+    'parse_options',
+    'parse_line',
+    'parse',
+    'strip',
+]

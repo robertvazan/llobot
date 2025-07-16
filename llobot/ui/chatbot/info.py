@@ -3,7 +3,8 @@ from textwrap import dedent
 from llobot.projects import Project
 from llobot.models import Model
 from llobot.models.streams import ModelStream
-from .requests import ChatbotRequest, stuff, assemble
+import llobot.ui.chatbot.requests
+from llobot.ui.chatbot.requests import ChatbotRequest
 import llobot.time
 import llobot.models.streams
 
@@ -52,7 +53,7 @@ def handle_info(request: ChatbotRequest) -> ModelStream:
                 - Name: `~{request.project.name}`
                 - Knowledge: {len(subproject_knowledge):,} documents, {subproject_knowledge.cost / 1024:,.0f} KB
             ''')
-    context = stuff(request)
+    context = llobot.ui.chatbot.requests.stuff(request)
     if context:
         context_knowledge = sum(chunk.cost for chunk in context if chunk.knowledge or chunk.deletions)
         context_outdated = sum(chunk.cost for chunk in context if chunk.knowledge and chunk.knowledge != (context.knowledge & chunk.knowledge.keys()) or chunk.deletions)
@@ -69,7 +70,7 @@ def handle_info(request: ChatbotRequest) -> ModelStream:
               {context_examples_cost / context.cost:.0%} of context
             - Structure: {context.pretty_structure()}
         ''')
-    assembled = assemble(request)
+    assembled = llobot.ui.chatbot.requests.assemble(request)
     info += dedent(f'''
         Assembled prompt:
 
@@ -103,3 +104,7 @@ def handle_info(request: ChatbotRequest) -> ModelStream:
             info += f'\nKnowledge in `~{request.project.name}`:\n\n```\n' + '\n'.join([str(path) for path in (knowledge.keys() & request.project.subset).sorted()]) + '\n```\n'
         info += f'\nKnowledge in `~{request.project.root.name}`:\n\n```\n' + '\n'.join([str(path) for path in knowledge.keys().sorted()]) + '\n```\n'
     return llobot.models.streams.status(info)
+
+__all__ = [
+    'handle_info',
+]

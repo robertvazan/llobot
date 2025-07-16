@@ -3,9 +3,9 @@ import logging
 from llobot.chats import ChatBranch
 from llobot.models import Model
 from llobot.models.streams import ModelStream, ModelException
-from ._chatbot import Chatbot
-from .requests import parse as parse_request
-from .handlers import handle
+from llobot.ui.chatbot import Chatbot
+import llobot.ui.chatbot.requests
+import llobot.ui.chatbot.handlers
 import llobot.models.streams
 
 _logger = logging.getLogger(__name__)
@@ -27,10 +27,14 @@ class ChatbotModel(Model):
 
     def generate(self, prompt: ChatBranch) -> ModelStream:
         try:
-            request = parse_request(self._chatbot, prompt)
-            return handle(request)
+            request = llobot.ui.chatbot.requests.parse(self._chatbot, prompt)
+            return llobot.ui.chatbot.handlers.handle(request)
         except ModelException as ex:
             return ex.stream
         except Exception as ex:
             _logger.error(f'Exception in {self.name} model.', exc_info=True)
             return llobot.models.streams.exception(ex)
+
+__all__ = [
+    'ChatbotModel',
+]

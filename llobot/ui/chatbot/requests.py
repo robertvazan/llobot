@@ -4,9 +4,10 @@ from llobot.chats import ChatBranch, ChatMetadata
 from llobot.projects import Project
 from llobot.models import Model
 from llobot.contexts import Context
-from ._chatbot import Chatbot
-from .chats import parse as parse_chat
-from .commands import ChatbotCommand
+from llobot.ui.chatbot import Chatbot
+import llobot.ui.chatbot.chats
+import llobot.ui.chatbot.commands
+from llobot.ui.chatbot.commands import ChatbotCommand
 import llobot.time
 import llobot.models.streams
 
@@ -36,25 +37,32 @@ class ChatbotRequest:
         self._model = model
     
     @property
-    def chatbot(self) -> Chatbot: return self._chatbot
+    def chatbot(self) -> Chatbot:
+        return self._chatbot
     
     @property
-    def command(self) -> ChatbotCommand | None: return self._command
+    def command(self) -> ChatbotCommand | None:
+        return self._command
     
     @property
-    def prompt(self) -> ChatBranch: return self._prompt
+    def prompt(self) -> ChatBranch:
+        return self._prompt
     
     @property
-    def project(self) -> Project | None: return self._project
+    def project(self) -> Project | None:
+        return self._project
     
     @property
-    def cutoff(self) -> datetime: return self._cutoff
+    def cutoff(self) -> datetime:
+        return self._cutoff
     
     @property
-    def has_implicit_cutoff(self) -> bool: return self._has_implicit_cutoff
+    def has_implicit_cutoff(self) -> bool:
+        return self._has_implicit_cutoff
     
     @property
-    def model(self) -> Model: return self._model
+    def model(self) -> Model:
+        return self._model
 
 def _decode_project(chatbot: Chatbot, name: str) -> Project:
     for project in chatbot.projects:
@@ -64,7 +72,7 @@ def _decode_project(chatbot: Chatbot, name: str) -> Project:
     llobot.models.streams.fail(f'No such project: {name}')
 
 def parse(chatbot: Chatbot, prompt: ChatBranch) -> ChatbotRequest:
-    chat_info = parse_chat(prompt)
+    chat_info = llobot.ui.chatbot.chats.parse(prompt)
     header = chat_info.header
 
     project = _decode_project(chatbot, header.project) if header.project else None
@@ -104,3 +112,11 @@ def stuff(request: ChatbotRequest, prompt: ChatBranch | None = None) -> Context:
 
 def assemble(request: ChatbotRequest, prompt: ChatBranch | None = None) -> ChatBranch:
     return stuff(request, prompt).chat + (prompt or request.prompt)
+
+__all__ = [
+    'ChatbotRequest',
+    'parse',
+    'chat_metadata',
+    'stuff',
+    'assemble',
+]

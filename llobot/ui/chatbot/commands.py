@@ -37,3 +37,11 @@ def strip(message: str) -> str:
     if lines and parse_line(lines[-1]):
         lines = lines[:-1]
     return '\n'.join(lines).strip()
+
+__all__ = [
+    'ChatbotCommand',
+    'decode',
+    'parse_line',
+    'parse',
+    'strip',
+]

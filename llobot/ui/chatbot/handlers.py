@@ -2,9 +2,11 @@ from __future__ import annotations
 import logging
 from llobot.chats import ChatRole
 from llobot.models.streams import ModelStream
-from .requests import ChatbotRequest, chat_metadata, assemble
-from .commands import ChatbotCommand
-from .info import handle_info
+import llobot.ui.chatbot.requests
+from llobot.ui.chatbot.requests import ChatbotRequest
+import llobot.ui.chatbot.commands
+from llobot.ui.chatbot.commands import ChatbotCommand
+import llobot.ui.chatbot.info
 import llobot.time
 import llobot.models.streams
 
@@ -17,21 +19,21 @@ def handle_ok(request: ChatbotRequest) -> ModelStream:
     if len(request.prompt) < 3:
         return llobot.models.streams.error('Nothing to save.')
     
-    metadata_branch = request.prompt[:-1].with_metadata(chat_metadata(request))
+    metadata_branch = request.prompt[:-1].with_metadata(llobot.ui.chatbot.requests.chat_metadata(request))
     request.chatbot.role.save_example(metadata_branch, request.project)
     return llobot.models.streams.ok('Saved.')
 
 def handle_echo(request: ChatbotRequest) -> ModelStream:
     # We don't want any header or cutoff here, because output of echo might be pasted into other chat interfaces.
-    return llobot.models.streams.completed(assemble(request).monolithic())
+    return llobot.models.streams.completed(llobot.ui.chatbot.requests.assemble(request).monolithic())
 
 def handle_prompt(request: ChatbotRequest) -> ModelStream:
-    assembled = assemble(request)
+    assembled = llobot.ui.chatbot.requests.assemble(request)
     output = request.model.generate(assembled)
     
     def on_complete(stream: ModelStream):
         response = ChatRole.ASSISTANT.message(stream.response())
-        full_chat = (request.prompt + response).with_metadata(chat_metadata(request))
+        full_chat = (request.prompt + response).with_metadata(llobot.ui.chatbot.requests.chat_metadata(request))
         request.chatbot.role.save_chat(full_chat, request.project)
 
     save_filter = llobot.models.streams.notify(on_complete)
@@ -53,6 +55,13 @@ def handle(request: ChatbotRequest) -> ModelStream:
     elif request.command == ChatbotCommand.ECHO:
         return handle_echo(request)
     elif request.command == ChatbotCommand.INFO:
-        return handle_info(request)
+        return llobot.ui.chatbot.info.handle_info(request)
     else:
         return handle_prompt(request)
+
+__all__ = [
+    'handle_ok',
+    'handle_echo',
+    'handle_prompt',
+    'handle',
+]

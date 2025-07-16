@@ -22,3 +22,8 @@ def strip(message: str) -> str:
     # The rstrip() call here will modify the response if it contains extraneous newlines.
     # We don't care, because cache invalidation at the end of the current chat wouldn't do perceptible harm.
     return '\n'.join(lines[:-1]).rstrip()
+
+__all__ = [
+    'parse',
+    'strip',
+]
