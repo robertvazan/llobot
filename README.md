@@ -38,11 +38,12 @@ sys.path.insert(0, str(Path.home() / 'Sources' / 'llobot'))
 
 from llobot.models.catalogs import ModelCatalog
 import llobot.models.ollama
-import llobot.models.openai
+import llobot.models.gemini
+import llobot.models.anthropic
 import llobot.projects
 import llobot.knowledge.sources
 from llobot.roles.coder import Coder
-import llobot.models.roles
+import llobot.ui.chatbot
 import llobot.models.ollama.listeners
 
 # Backend models that respond to the assembled prompt
@@ -83,7 +84,7 @@ projects = [
 # This function configures bare role to serve as a virtual model.
 def define_bot(role):
     # This wraps the role in a virtual model.
-    return llobot.models.roles.standard(
+    return llobot.ui.chatbot.create(
         role,
         # Default backend model.
         backend_models['local'],
@@ -164,4 +165,3 @@ Here are some practical tips for using llobot:
 ## Status
 
 Experimental. Undocumented. Untested. Incomplete. Unstable APIs. Likely some bugs. But it works for me and I hope others might find it useful too.
-
