@@ -40,6 +40,8 @@ def priority(*,
                 # Hardcoding sqrt here is not good. We need to make this configurable in the future somehow.
                 # Second factor is the ratio of actual content to formatter output length. This discourages inclusion of tiny files.
                 costs = llobot.scores.knowledge.length(knowledge)
+                overhead = formatted.cost - costs.total()
+                costs += llobot.scores.knowledge.uniform(knowledge, overhead)
                 density = KnowledgeScores({path: scores[path] * (costs[path] ** -1.5) for path in knowledge.keys()})
                 density_ranking = list(llobot.knowledge.rankings.descending(density))
                 removed = []
