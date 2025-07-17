@@ -31,20 +31,13 @@ def handle_prompt(request: ChatbotRequest) -> ModelStream:
     assembled = llobot.ui.chatbot.requests.assemble(request)
     output = request.model.generate(assembled)
     
-    def on_complete(stream: ModelStream):
-        response = ChatRole.ASSISTANT.message(stream.response())
-        full_chat = (request.prompt + response).with_metadata(llobot.ui.chatbot.requests.chat_metadata(request))
-        request.chatbot.role.save_chat(full_chat, request.project)
-
-    save_filter = llobot.models.streams.notify(on_complete)
-    inner = output | save_filter
     if request.has_implicit_cutoff and len(request.prompt) == 1:
-        inner += _cutoff_footer(request)
+        output += _cutoff_footer(request)
     
     def on_error():
         _logger.error(f'Exception in {request.model.name} model ({request.chatbot.role.name} role).', exc_info=True)
 
-    return inner | llobot.models.streams.handler(callback=on_error)
+    return output | llobot.models.streams.handler(callback=on_error)
 
 def handle(request: ChatbotRequest) -> ModelStream:
     if request.project and len(request.prompt) == 1 and request.has_implicit_cutoff:

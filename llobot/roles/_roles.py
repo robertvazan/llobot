@@ -14,24 +14,17 @@ _logger = logging.getLogger(__name__)
 
 class Role:
     _name: str
-    _chat_archive: ChatArchive
     _example_archive: ChatArchive
 
     def __init__(self, name: str, *,
-        chat_archive: ChatArchive | Zoning | Path | str = llobot.chats.archives.standard(llobot.fs.data()/'llobot/chats'),
         example_archive: ChatArchive | Zoning | Path | str = llobot.chats.archives.standard(llobot.fs.data()/'llobot/examples'),
     ):
         self._name = name
-        self._chat_archive = llobot.chats.archives.coerce(chat_archive)
         self._example_archive = llobot.chats.archives.coerce(example_archive)
 
     @property
     def name(self) -> str:
         return self._name
-
-    @property
-    def chat_archive(self) -> ChatArchive:
-        return self._chat_archive
 
     @property
     def example_archive(self) -> ChatArchive:
@@ -48,7 +41,14 @@ class Role:
             yield self.zone_name(project.root)
         yield self.zone_name(None)
 
-    def _save(self, chat: ChatBranch, project: Project | None, archive: ChatArchive, log_prefix: str):
+    # Chat must already have metadata with model, options, and cutoff.
+    def save_example(self, chat: ChatBranch, project: Project | None):
+        # Replace the last example if it has the same prompt.
+        for zone in self.zone_names(project):
+            last = self.example_archive.last(zone)
+            if last and last[0].content == chat[0].content:
+                self.example_archive.remove(zone, last.metadata.time)
+
         chat = chat.with_metadata(chat.metadata | ChatMetadata(
             role=self.name,
             project=project.root.name if project else None,
@@ -59,21 +59,8 @@ class Role:
         # The context can be regenerated from the metadata.
         chat = chat.strip_context()
         zones = list(self.zone_names(project))
-        archive.scatter(zones, chat)
-        _logger.info(f"{log_prefix}: {', '.join(zones)}")
-
-    # Chat must already have metadata with model, options, and cutoff.
-    def save_chat(self, chat: ChatBranch, project: Project | None):
-        self._save(chat, project, self.chat_archive, "Archived chat")
-
-    # Chat must already have metadata with model, options, and cutoff.
-    def save_example(self, chat: ChatBranch, project: Project | None):
-        # Replace the last example if it has the same prompt.
-        for zone in self.zone_names(project):
-            last = self.example_archive.last(zone)
-            if last and last.as_example()[0].content == chat.as_example()[0].content:
-                self.example_archive.remove(zone, last.metadata.time)
-        self._save(chat, project, self.example_archive, "Archived example")
+        self.example_archive.scatter(zones, chat)
+        _logger.info(f"Archived example: {', '.join(zones)}")
 
     def recent_examples(self, project: Project | None, cutoff: datetime | None = None) -> Iterable[ChatBranch]:
         for zone in self.zone_names(project):
