@@ -69,7 +69,7 @@ def sqrt_length() -> ChatScorer:
 
 @cache
 def response_length() -> ChatScorer:
-    return create(lambda chat: sum([len(message.content) for message in chat if message.role == ChatRole.ASSISTANT]))
+    return create(lambda chat: sum([len(message.content) for message in chat if message.role == ChatRole.MODEL]))
 
 @cache
 def response_share() -> ChatScorer:

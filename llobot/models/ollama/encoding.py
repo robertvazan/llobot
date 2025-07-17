@@ -18,7 +18,7 @@ def format_name(model: str):
 def encode_role(role: ChatRole) -> str:
     if role == ChatRole.USER:
         return 'user'
-    if role == ChatRole.ASSISTANT:
+    if role == ChatRole.MODEL:
         return 'assistant'
     raise ValueError
 
@@ -70,7 +70,7 @@ def format_stream(model: str, stream: ModelStream) -> Iterator[str]:
         while token:
             chunk = token[:MAX_CHUNK_SIZE]
             token = token[MAX_CHUNK_SIZE:]
-            yield json.dumps(encode_content_event(model, ChatRole.ASSISTANT, chunk))
+            yield json.dumps(encode_content_event(model, ChatRole.MODEL, chunk))
     yield json.dumps(encode_done_event(model))
 
 def parse_stream(lines: Iterator[str]) -> Iterator[str]:

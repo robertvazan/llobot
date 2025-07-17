@@ -3,14 +3,14 @@ from enum import Enum
 
 class ChatRole(Enum):
     USER = 'User'
-    ASSISTANT = 'Assistant'
+    MODEL = 'Model'
     
     @property
     def intent(self) -> 'ChatIntent':
         from ._intents import ChatIntent
         if self == ChatRole.USER:
             return ChatIntent.PROMPT
-        if self == ChatRole.ASSISTANT:
+        if self == ChatRole.MODEL:
             return ChatIntent.RESPONSE
         raise ValueError
     

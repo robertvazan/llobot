@@ -13,7 +13,7 @@ class ChatIntent(Enum):
     EXAMPLE_RESPONSE = 'Example-Response'
     # This is the actual user prompt we recevied or one of the followup prompts.
     PROMPT = 'Prompt'
-    # This is assistant's response to user prompt, includes followup responses.
+    # This is model response to user prompt, includes followup responses.
     RESPONSE = 'Response'
     
     def __str__(self) -> str:
@@ -24,21 +24,21 @@ class ChatIntent(Enum):
         if self == self.SYSTEM:
             return ChatRole.USER
         if self == self.AFFIRMATION:
-            return ChatRole.ASSISTANT
+            return ChatRole.MODEL
         if self == self.EXAMPLE_PROMPT:
             return ChatRole.USER
         if self == self.EXAMPLE_RESPONSE:
-            return ChatRole.ASSISTANT
+            return ChatRole.MODEL
         if self == self.PROMPT:
             return ChatRole.USER
         if self == self.RESPONSE:
-            return ChatRole.ASSISTANT
+            return ChatRole.MODEL
         raise ValueError
 
     def as_example(self) -> ChatIntent:
         if self == self.role == ChatRole.USER:
             return self.EXAMPLE_PROMPT
-        if self == self.role == ChatRole.ASSISTANT:
+        if self == self.role == ChatRole.MODEL:
             return self.EXAMPLE_RESPONSE
         return self
 

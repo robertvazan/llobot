@@ -17,7 +17,7 @@ def format_name(model: str):
 def encode_role(role: ChatRole) -> str:
     if role == ChatRole.USER:
         return 'user'
-    if role == ChatRole.ASSISTANT:
+    if role == ChatRole.MODEL:
         return 'assistant'
     raise ValueError
 
@@ -95,7 +95,7 @@ def _format_event(data: dict) -> str:
     return f'data: {json.dumps(data)}'
 
 def format_stream(model: str, stream: ModelStream) -> Iterator[str]:
-    yield _format_event(encode_role_event(model, ChatRole.ASSISTANT))
+    yield _format_event(encode_role_event(model, ChatRole.MODEL))
     for token in stream:
         yield _format_event(encode_content_event(model, token))
     yield _format_event(encode_stop_event(model))
