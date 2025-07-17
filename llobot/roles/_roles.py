@@ -36,10 +36,12 @@ class Role:
     def zone_name(self, project: Project | None) -> str:
         return f'{project.name}-{self.name}' if project else self.name
 
-    def zone_names(self, project: Project | None) -> Iterable[str]:
+    def zone_names(self, project: Project | None) -> list[str]:
+        zones = []
         if project:
-            yield self.zone_name(project.root)
-        yield self.zone_name(None)
+            zones.append(self.zone_name(project.root))
+        zones.append(self.zone_name(None))
+        return zones
 
     # Chat must already have metadata with model, options, and cutoff.
     def save_example(self, chat: ChatBranch, project: Project | None):
@@ -55,7 +57,7 @@ class Role:
             subproject=project.name if project and project.is_subproject else None,
             time=llobot.time.now(),
         ))
-        zones = list(self.zone_names(project))
+        zones = self.zone_names(project)
         self.example_archive.scatter(zones, chat)
         _logger.info(f"Archived example: {', '.join(zones)}")
 
