@@ -1,7 +1,7 @@
 from __future__ import annotations
 from functools import cache
 from datetime import datetime
-from llobot.chats import ChatBranch
+from llobot.chats import ChatBranch, ChatBuilder
 from llobot.knowledge import Knowledge
 from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.knowledge.rankers import KnowledgeRanker
@@ -10,7 +10,7 @@ from llobot.scorers.knowledge import KnowledgeScorer
 from llobot.crammers.knowledge import KnowledgeCrammer
 from llobot.crammers.edits import EditCrammer
 from llobot.formatters.knowledge import KnowledgeFormatter
-from llobot.contexts import Context
+from llobot.formatters.instructions import InstructionFormatter
 from llobot.instructions import SystemPrompt
 from llobot.projects import Project
 from llobot.roles import Role
@@ -20,7 +20,7 @@ import llobot.scores.knowledge
 import llobot.crammers.knowledge
 import llobot.crammers.edits
 import llobot.formatters.knowledge
-import llobot.contexts
+import llobot.formatters.instructions
 import llobot.instructions
 import llobot.links
 import llobot.knowledge.rankings
@@ -46,6 +46,7 @@ class Editor(Role):
     _knowledge_crammer: KnowledgeCrammer
     _edit_crammer: EditCrammer
     _retrieval_formatter: KnowledgeFormatter
+    _instruction_formatter: InstructionFormatter
     _example_share: float
 
     def __init__(self, name: str, *,
@@ -57,6 +58,7 @@ class Editor(Role):
         knowledge_crammer: KnowledgeCrammer = llobot.crammers.knowledge.standard(),
         edit_crammer: EditCrammer = llobot.crammers.edits.standard(),
         retrieval_formatter: KnowledgeFormatter = llobot.formatters.knowledge.standard(),
+        instruction_formatter: InstructionFormatter = llobot.formatters.instructions.standard(),
         # Share of the context dedicated to examples and associated knowledge updates.
         example_share: float = 0.4,
         **kwargs,
@@ -76,6 +78,7 @@ class Editor(Role):
         self._knowledge_crammer = knowledge_crammer
         self._edit_crammer = edit_crammer
         self._retrieval_formatter = retrieval_formatter
+        self._instruction_formatter = instruction_formatter
         self._example_share = example_share
 
     def stuff(self, *,
@@ -83,33 +86,40 @@ class Editor(Role):
         project: Project | None,
         cutoff: datetime,
         budget: int,
-    ) -> Context:
+    ) -> ChatBranch:
         knowledge = project.root.knowledge(cutoff) if project else Knowledge()
 
-        system = llobot.contexts.system(self._instructions)
-        budget -= system.cost
+        # 1. System instructions
+        system_chat = self._instruction_formatter(self._instructions)
+        budget -= system_chat.cost
 
-        # Examples with associated updates
+        # 2. Examples with associated updates
         edit_budget = int(budget * self._example_share)
         recent_examples = self.recent_examples(project, cutoff)
-        history = self._edit_crammer(recent_examples, knowledge, edit_budget)
+        history_chat, history_paths = self._edit_crammer(recent_examples, knowledge, edit_budget)
 
-        # Knowledge
+        # 3. Knowledge
+        # Knowledge budget is fixed regardless of how many examples there are. Fixed budget improves caching.
         knowledge_budget = budget - edit_budget
         ranking = self._ranker(knowledge)
         scores = self._relevance_scorer(knowledge)
         if project and project.is_subproject:
             scores *= llobot.scores.knowledge.prioritize(knowledge, project.subset)
         scores = self._graph_scorer.rescore(knowledge, scores)
-        scores -= history.knowledge.keys()
-        core = self._knowledge_crammer(knowledge, knowledge_budget, scores, ranking)
+        scores -= history_paths
+        knowledge_chat, knowledge_paths = self._knowledge_crammer(knowledge, knowledge_budget, scores, ranking)
 
-        # Retrievals
+        # 4. Retrievals
         retrieved_links = llobot.links.resolve(self._retrieval_scraper.scrape_prompt(prompt), knowledge)
-        retrieved_knowledge = (knowledge & retrieved_links) - (core + history).knowledge.keys()
-        retrievals = self._retrieval_formatter(retrieved_knowledge, ranking)
+        retrieved_knowledge = (knowledge & retrieved_links) - (knowledge_paths | history_paths)
+        retrievals_chat = self._retrieval_formatter(retrieved_knowledge, ranking)
 
-        return system + core + history + retrievals
+        chat = ChatBuilder()
+        chat.add(system_chat)
+        chat.add(knowledge_chat)
+        chat.add(history_chat)
+        chat.add(retrievals_chat)
+        return chat.build()
 
 __all__ = [
     'system',

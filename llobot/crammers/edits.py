@@ -1,16 +1,13 @@
 from __future__ import annotations
 from collections import deque
 from functools import cache, lru_cache
-from llobot.chats import ChatBranch
+from llobot.chats import ChatBranch, ChatBuilder
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
-from llobot.contexts import Context
 from llobot.scorers.history import HistoryScorer
 from llobot.formatters.envelopes import EnvelopeFormatter
 from llobot.formatters.deletions import DeletionFormatter
 from llobot.formatters.knowledge import KnowledgeFormatter
-import llobot.contexts
-import llobot.contexts.examples
 import llobot.scores.history
 import llobot.scorers.history
 import llobot.formatters.envelopes
@@ -22,15 +19,15 @@ class EditCrammer:
     """
     Crammer that combines examples with updates of documents those examples touch.
     """
-    def cram(self, examples: Iterable[ChatBranch], knowledge: Knowledge, budget: int) -> Context:
-        return llobot.contexts.empty()
+    def cram(self, examples: Iterable[ChatBranch], knowledge: Knowledge, budget: int) -> tuple[ChatBranch, KnowledgeIndex]:
+        return ChatBranch(), KnowledgeIndex()
 
-    def __call__(self, examples: Iterable[ChatBranch], knowledge: Knowledge, budget: int) -> Context:
+    def __call__(self, examples: Iterable[ChatBranch], knowledge: Knowledge, budget: int) -> tuple[ChatBranch, KnowledgeIndex]:
         return self.cram(examples, knowledge, budget)
 
-def create(function: Callable[[Iterable[ChatBranch], Knowledge, int], Context]) -> EditCrammer:
+def create(function: Callable[[Iterable[ChatBranch], Knowledge, int], tuple[ChatBranch, KnowledgeIndex]]) -> EditCrammer:
     class LambdaEditCrammer(EditCrammer):
-        def cram(self, examples: Iterable[ChatBranch], knowledge: Knowledge, budget: int) -> Context:
+        def cram(self, examples: Iterable[ChatBranch], knowledge: Knowledge, budget: int) -> tuple[ChatBranch, KnowledgeIndex]:
             return function(examples, knowledge, budget)
     return LambdaEditCrammer()
 
@@ -53,12 +50,13 @@ def prioritized(
     unless those documents have been already added earlier or the documents as present
     in the example are identical to their fresh version.
     """
-    def cram(examples: Iterable[ChatBranch], knowledge: Knowledge, budget: int) -> Context:
+    def cram(examples: Iterable[ChatBranch], knowledge: Knowledge, budget: int) -> tuple[ChatBranch, KnowledgeIndex]:
         chunks = []
         seen_prompts = set()
         seen_paths = set()
         skipped = 0
         max_waste = int(budget * (1 - fill))
+        touched_paths = set()
 
         for example in history_scorer(examples).chats():
             # If there are several examples with the same prompt, include only the latest one.
@@ -68,37 +66,50 @@ def prioritized(
                 continue
             seen_prompts.add(example[0].content)
 
-            example_context = llobot.contexts.examples.annotate(example, parser=parser)
-            example_knowledge = example_context.knowledge
+            # Parse documents from example
+            example_documents = {}
+            for message in example:
+                for path, content in parser.parse_all(message.content):
+                    example_documents[path] = content
 
             deletion_buffer = set()
             update_buffer = {}
-            for path, content in example_knowledge:
+            for path, content in example_documents.items():
                 if path in seen_paths:
                     continue
                 if path not in knowledge:
                     deletion_buffer.add(path)
                 elif knowledge[path] != content:
                     update_buffer[path] = knowledge[path]
+
             deletions = KnowledgeIndex(deletion_buffer)
             updates = Knowledge(update_buffer)
 
-            deletion_context = deletion_formatter(deletions)
-            update_context = update_formatter(updates, llobot.knowledge.rankings.lexicographical(updates))
-            chunk = llobot.contexts.compose(example_context, deletion_context, update_context)
+            deletion_chat = deletion_formatter(deletions)
+            update_chat = update_formatter(updates, llobot.knowledge.rankings.lexicographical(updates))
 
-            if chunk.cost > budget:
+            chunk = ChatBuilder()
+            chunk.add(example)
+            chunk.add(deletion_chat)
+            chunk.add(update_chat)
+            chunk_chat = chunk.build()
+
+            if chunk_chat.cost > budget:
                 skipped += 1
                 if skipped > depth or budget < max_waste:
                     break
                 continue
 
-            chunks.append(chunk)
-            budget -= chunk.cost
-            seen_paths.update(example_knowledge.keys())
+            chunks.append(chunk_chat)
+            budget -= chunk_chat.cost
+            seen_paths.update(example_documents.keys())
+            touched_paths.update(example_documents.keys())
 
         chunks.reverse()
-        return llobot.contexts.compose(*chunks)
+        result = ChatBuilder()
+        for chunk in chunks:
+            result.add(chunk)
+        return result.build(), KnowledgeIndex(touched_paths)
 
     return create(cram)
 
@@ -112,4 +123,3 @@ __all__ = [
     'prioritized',
     'standard',
 ]
-

@@ -3,7 +3,6 @@ from datetime import datetime
 from llobot.chats import ChatBranch, ChatMetadata
 from llobot.projects import Project
 from llobot.models import Model
-from llobot.contexts import Context
 from llobot.ui.chatbot import Chatbot
 import llobot.ui.chatbot.chats
 import llobot.ui.chatbot.commands
@@ -101,7 +100,7 @@ def chat_metadata(request: ChatbotRequest) -> ChatMetadata:
         cutoff=request.cutoff
     )
 
-def stuff(request: ChatbotRequest, prompt: ChatBranch | None = None) -> Context:
+def stuff(request: ChatbotRequest, prompt: ChatBranch | None = None) -> ChatBranch:
     prompt = prompt or request.prompt
     return request.chatbot.role.stuff(
         prompt=prompt,
@@ -111,7 +110,7 @@ def stuff(request: ChatbotRequest, prompt: ChatBranch | None = None) -> Context:
     )
 
 def assemble(request: ChatbotRequest, prompt: ChatBranch | None = None) -> ChatBranch:
-    return stuff(request, prompt).chat + (prompt or request.prompt)
+    return stuff(request, prompt) + (prompt or request.prompt)
 
 __all__ = [
     'ChatbotRequest',

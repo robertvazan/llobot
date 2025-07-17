@@ -1,31 +1,28 @@
 from __future__ import annotations
 from functools import cache, lru_cache
-from llobot.chats import ChatBranch
-from llobot.contexts import Context
+from llobot.chats import ChatBranch, ChatBuilder
 from llobot.scorers.history import HistoryScorer
 from llobot.formatters.envelopes import EnvelopeFormatter
-import llobot.contexts
-import llobot.contexts.examples
 import llobot.scores.history
 import llobot.scorers.history
 import llobot.formatters.envelopes
 
 class ExampleCrammer:
-    def cram(self, examples: Iterable[ChatBranch], budget: int) -> Context:
-        return llobot.contexts.empty()
+    def cram(self, examples: Iterable[ChatBranch], budget: int) -> ChatBranch:
+        return ChatBranch()
 
-    def __call__(self, examples: Iterable[ChatBranch], budget: int) -> Context:
+    def __call__(self, examples: Iterable[ChatBranch], budget: int) -> ChatBranch:
         return self.cram(examples, budget)
 
-def create(function: Callable[[Iterable[ChatBranch], int], Context]) -> ExampleCrammer:
+def create(function: Callable[[Iterable[ChatBranch], int], ChatBranch]) -> ExampleCrammer:
     class LambdaExampleCrammer(ExampleCrammer):
-        def cram(self, examples: Iterable[ChatBranch], budget: int) -> Context:
+        def cram(self, examples: Iterable[ChatBranch], budget: int) -> ChatBranch:
             return function(examples, budget)
     return LambdaExampleCrammer()
 
 @lru_cache
 def greedy(parser: EnvelopeFormatter = llobot.formatters.envelopes.standard()) -> ExampleCrammer:
-    def cram(examples: Iterable[ChatBranch], budget: int) -> Context:
+    def cram(examples: Iterable[ChatBranch], budget: int) -> ChatBranch:
         selected_examples = []
         seen_prompts = set()
         for example in examples:
@@ -39,7 +36,10 @@ def greedy(parser: EnvelopeFormatter = llobot.formatters.envelopes.standard()) -
             seen_prompts.add(prompt_content)
             budget -= example.cost
         selected_examples.reverse()
-        return llobot.contexts.examples.annotate(*selected_examples, parser=parser)
+        chat = ChatBuilder()
+        for example in selected_examples:
+            chat.add(example)
+        return chat.build()
     return create(cram)
 
 @lru_cache
@@ -51,9 +51,9 @@ def prioritized(
     fill: float = 0.8,
     parser: EnvelopeFormatter = llobot.formatters.envelopes.standard(),
 ) -> ExampleCrammer:
-    def cram(examples: Iterable[ChatBranch], budget: int) -> Context:
+    def cram(examples: Iterable[ChatBranch], budget: int) -> ChatBranch:
         if budget <= 0:
-            return llobot.contexts.empty()
+            return ChatBranch()
         history_scores = history_scorer(examples)
         selected_examples = []
         seen_prompts = set()
@@ -75,7 +75,10 @@ def prioritized(
             seen_prompts.add(prompt_content)
             budget -= example.cost
         selected_examples.reverse()
-        return llobot.contexts.examples.annotate(*selected_examples, parser=parser)
+        chat = ChatBuilder()
+        for example in selected_examples:
+            chat.add(example)
+        return chat.build()
     return create(cram)
 
 @cache

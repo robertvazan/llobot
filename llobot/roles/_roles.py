@@ -3,12 +3,10 @@ import logging
 from datetime import datetime
 from pathlib import Path
 import llobot.time
-from llobot.chats import ChatBranch, ChatMetadata
+from llobot.chats import ChatBranch, ChatMetadata, ChatBuilder, ChatIntent
 from llobot.chats.archives import ChatArchive
 from llobot.projects import Project
 from llobot.fs.zones import Zoning
-from llobot.contexts import Context
-import llobot.contexts
 import llobot.fs
 import llobot.chats.archives
 
@@ -88,18 +86,17 @@ class Role:
         project: Project | None,
         cutoff: datetime,
         budget: int,
-    ) -> Context:
-        return llobot.contexts.empty()
+    ) -> ChatBranch:
+        return ChatBranch()
 
     def __call__(self, *,
         prompt: ChatBranch,
         project: Project | None,
         cutoff: datetime,
         budget: int,
-    ) -> Context:
+    ) -> ChatBranch:
         return self.stuff(prompt=prompt, project=project, cutoff=cutoff, budget=budget)
 
 __all__ = [
     'Role',
 ]
-

@@ -53,23 +53,7 @@ def handle_info(request: ChatbotRequest) -> ModelStream:
                 - Name: `~{request.project.name}`
                 - Knowledge: {len(subproject_knowledge):,} documents, {subproject_knowledge.cost / 1024:,.0f} KB
             ''')
-    context = llobot.ui.chatbot.requests.stuff(request)
-    if context:
-        context_knowledge = sum(chunk.cost for chunk in context if chunk.knowledge or chunk.deletions)
-        context_outdated = sum(chunk.cost for chunk in context if chunk.knowledge and chunk.knowledge != (context.knowledge & chunk.knowledge.keys()) or chunk.deletions)
-        context_examples_cost = sum(example.cost for example in context.examples)
-        info += dedent(f'''
-            Context:
-
-            - Size: {len(context):,} chunks, {context.pretty_cost}
-            - Knowledge: {len(context.knowledge):,} documents, {context.knowledge.cost / 1024:,.0f} KB, \
-              {context_knowledge / context.cost:.0%} of context, \
-              {context_outdated / context_knowledge if context_knowledge else 0:.0%} outdated, \
-              {1 - context.knowledge.cost / context.knowledge_cost.total() if context.knowledge_cost else 0:.0%} formatting overhead
-            - Examples: {len(context.examples):,} examples, {context_examples_cost / 1024:,.0f} KB, \
-              {context_examples_cost / context.cost:.0%} of context
-            - Structure: {context.pretty_structure()}
-        ''')
+    
     assembled = llobot.ui.chatbot.requests.assemble(request)
     info += dedent(f'''
         Assembled prompt:
@@ -95,8 +79,6 @@ def handle_info(request: ChatbotRequest) -> ModelStream:
     info += '\nModels:\n\n' + '\n'.join([f'- {_format_model(model)}' for model in chatbot.models]) + '\n'
     if chatbot.projects:
         info += '\nProjects:\n\n' + '\n'.join([_format_project(project) for project in chatbot.projects]) + '\n'
-    if context.knowledge:
-        info += '\nKnowledge in context:\n\n' + '\n'.join([f'- `{path}`' for path in context.knowledge.keys().sorted()]) + '\n'
     if request.project:
         knowledge = request.project.root.knowledge(request.cutoff)
         # Pack it all into one Markdown code block. This is a workaround for inefficiency in Open WebUI.

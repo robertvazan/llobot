@@ -1,43 +1,37 @@
 from __future__ import annotations
 from functools import cache, lru_cache
-from llobot.chats import ChatIntent, ChatBuilder
+from llobot.chats import ChatIntent, ChatBuilder, ChatBranch
 from llobot.knowledge import Knowledge
 from llobot.knowledge.rankings import KnowledgeRanking
-from llobot.contexts import Context
 from llobot.formatters.envelopes import EnvelopeFormatter
-import llobot.text
-import llobot.contexts
-import llobot.contexts.documents
 import llobot.formatters.envelopes
 
 class KnowledgeFormatter:
     # The knowledge we receive is likely trimmed. We cannot compute ranking from it ourselves, so we take it as a parameter.
-    def render(self, knowledge: Knowledge, ranking: KnowledgeRanking) -> Context:
-        return llobot.contexts.empty()
+    def render(self, knowledge: Knowledge, ranking: KnowledgeRanking) -> ChatBranch:
+        return ChatBranch()
 
-    def __call__(self, knowledge: Knowledge, ranking: KnowledgeRanking) -> Context:
+    def __call__(self, knowledge: Knowledge, ranking: KnowledgeRanking) -> ChatBranch:
         return self.render(knowledge, ranking)
 
-def create(function: Callable[[Knowledge, KnowledgeRanking], Context]) -> KnowledgeFormatter:
+def create(function: Callable[[Knowledge, KnowledgeRanking], ChatBranch]) -> KnowledgeFormatter:
     class LambdaKnowledgeFormatter(KnowledgeFormatter):
-        def render(self, knowledge: Knowledge, ranking: KnowledgeRanking) -> Context:
+        def render(self, knowledge: Knowledge, ranking: KnowledgeRanking) -> ChatBranch:
             return function(knowledge, ranking)
     return LambdaKnowledgeFormatter()
 
 @lru_cache
 def granular(envelope: EnvelopeFormatter = llobot.formatters.envelopes.standard(), affirmation: str = 'I see.', note: str = '') -> KnowledgeFormatter:
-    def render(knowledge: Knowledge, ranking: KnowledgeRanking) -> Context:
+    def render(knowledge: Knowledge, ranking: KnowledgeRanking) -> ChatBranch:
         knowledge &= ranking
-        parts = []
+        chat = ChatBuilder()
         for path in ranking:
             if path in knowledge:
-                chat = ChatBuilder()
                 chat.add(ChatIntent.SYSTEM)
                 chat.add(envelope(path, knowledge[path], note))
                 chat.add(ChatIntent.AFFIRMATION)
                 chat.add(affirmation)
-                parts.append(llobot.contexts.documents.annotate(chat.build(), path, knowledge[path]))
-        return llobot.contexts.compose(*parts)
+        return chat.build()
     return create(render)
 
 @cache
@@ -55,4 +49,3 @@ __all__ = [
     'standard',
     'updates',
 ]
-
