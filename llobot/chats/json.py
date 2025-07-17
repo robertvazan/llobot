@@ -13,7 +13,6 @@ def format_metadata(metadata: ChatMetadata) -> str:
     data = {
         'role': metadata.role,
         'project': metadata.project,
-        'subproject': metadata.subproject,
         'model': metadata.model,
         'options': metadata.options,
         'time': encode_time(metadata.time),
@@ -26,7 +25,6 @@ def parse_metadata(serialized: str) -> ChatMetadata:
     return ChatMetadata(
         role = data.get('role', data.get('bot')),
         project = data.get('project'),
-        subproject = data.get('subproject', data.get('scope')),
         model = data.get('model'),
         options = data.get('options'),
         time = decode_time(data.get('time')),
@@ -39,4 +37,3 @@ __all__ = [
     'format_metadata',
     'parse_metadata',
 ]
-

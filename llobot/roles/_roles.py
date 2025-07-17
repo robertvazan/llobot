@@ -54,7 +54,6 @@ class Role:
         chat = chat.with_metadata(chat.metadata | ChatMetadata(
             role=self.name,
             project=project.root.name if project else None,
-            subproject=project.name if project and project.is_subproject else None,
             time=llobot.time.now(),
         ))
         zones = self.zone_names(project)

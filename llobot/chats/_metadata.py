@@ -6,8 +6,6 @@ class ChatMetadata:
     _role: str | None
     # Project upon which the bot operated if any.
     _project: str | None
-    # Subproject within the project the bot operated on. This should be left empty if the bot operated on the whole project.
-    _subproject: str | None
     # Name of the backend model used to generate response. Roles have a default model, but it can change over time and user can override it.
     _model: str | None
     # Model options, usually defaults, but it's possible to override them for every chat.
@@ -21,7 +19,6 @@ class ChatMetadata:
     def __init__(self, *,
         role: str | None = None,
         project: str | None = None,
-        subproject: str | None = None,
         model: str | None = None,
         options: dict | None = None,
         time: datetime | None = None,
@@ -29,7 +26,6 @@ class ChatMetadata:
     ):
         self._role = role
         self._project = project
-        self._subproject = subproject
         self._model = model
         self._options = options
         self._time = time
@@ -42,10 +38,6 @@ class ChatMetadata:
     @property
     def project(self) -> str | None:
         return self._project
-
-    @property
-    def subproject(self) -> str | None:
-        return self._subproject
 
     @property
     def model(self) -> str | None:
@@ -67,16 +59,14 @@ class ChatMetadata:
         return str(vars(self))
 
     def __bool__(self) -> bool:
-        return bool(self.role or self.project or self.subproject or self.model or self.options is not None or self.time or self.cutoff)
+        return bool(self.role or self.project or self.model or self.options is not None or self.time or self.cutoff)
 
     def __or__(self, other: ChatMetadata) -> ChatMetadata:
         return ChatMetadata(
             role = other.role or self.role,
             project = other.project or self.project,
-            subproject = other.subproject or self.subproject,
             model = other.model or self.model,
             options = self.options | other.options if self.options and other.options else other.options or self.options,
             time = other.time or self.time,
             cutoff = other.cutoff or self.cutoff,
         )
-
