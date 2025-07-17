@@ -59,9 +59,6 @@ class ChatMessage:
     def as_example(self) -> ChatMessage:
         return self.with_intent(self.intent.as_example())
 
-    def is_example(self) -> bool:
-        return self.intent.is_example()
-
     def monolithic(self) -> str:
         return f'**{self.intent}:**\n\n{self.content}'
 

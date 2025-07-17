@@ -55,9 +55,6 @@ class Role:
             subproject=project.name if project and project.is_subproject else None,
             time=llobot.time.now(),
         ))
-        # Strip context messages before saving to reduce storage and avoid redundant information.
-        # The context can be regenerated from the metadata.
-        chat = chat.strip_context()
         zones = list(self.zone_names(project))
         self.example_archive.scatter(zones, chat)
         _logger.info(f"Archived example: {', '.join(zones)}")
@@ -65,7 +62,7 @@ class Role:
     def recent_examples(self, project: Project | None, cutoff: datetime | None = None) -> Iterable[ChatBranch]:
         for zone in self.zone_names(project):
             for chat in self.example_archive.recent(zone, cutoff):
-                yield chat.as_example().with_metadata(chat.metadata)
+                yield chat.as_example()
 
     # Returns the synthetic part of the prompt that is prepended to the user prompt.
     def stuff(self, *,

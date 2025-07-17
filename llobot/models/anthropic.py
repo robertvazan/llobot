@@ -33,7 +33,8 @@ class _AnthropicStream(ModelStream):
                 'role': 'user' if message.role == ChatRole.USER else 'assistant',
                 'content': message.content,
             })
-        cacheable = prompt.context_only()
+        # Skip the last message, which is the user's prompt, because it tends to be frequently edited.
+        cacheable = prompt[:-1]
         if cached and cacheable:
             breakpoints = [int(bp * cacheable.cost) for bp in (0.25, 0.5, 0.75, 1.0)]
             cumulative = 0
