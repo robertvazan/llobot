@@ -77,6 +77,10 @@ def documentation() -> list[str]:
 def answering() -> list[str]:
     return combine(*knowledge(), *notes(), read('answering.md'))
 
+@cache
+def reviews() -> list[str]:
+    return combine(*coding(), read('reviews.md'))
+
 __all__ = [
     'read',
     'combine',
@@ -92,5 +96,6 @@ __all__ = [
     'coding',
     'documentation',
     'answering',
+    'reviews',
 ]
 
