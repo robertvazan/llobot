@@ -60,7 +60,7 @@ class ChatMessage:
         return self.with_intent(self.intent.as_example())
 
     def monolithic(self) -> str:
-        return f'**{self.intent}:**\n\n{self.content}'
+        return llobot.text.concat(f'**{self.intent}:**', self.content)
 
     def with_content(self, content: str) -> ChatMessage:
         return ChatMessage(self.intent, content)
@@ -70,5 +70,4 @@ class ChatMessage:
             return self
         if not self.content:
             return self.with_content(postscript)
-        return self.with_content(llobot.text.terminate(self.content) + '\n' + postscript)
-
+        return self.with_content(llobot.text.concat(self.content, postscript))

@@ -17,39 +17,43 @@ def test_terminate():
 
 
 def test_join():
-    # Basic joining with separator
-    assert join("---\n", ["hello", "world"]) == "hello\n---\nworld\n"
+    # Basic joining with separator, last part is not terminated
+    assert join("---\n", ["hello", "world"]) == "hello\n---\nworld"
 
     # Filters out empty and whitespace-only strings
-    assert join("---\n", ["hello", "", "world"]) == "hello\n---\nworld\n"
-    assert join("---\n", ["hello", "  ", "world"]) == "hello\n---\nworld\n"
+    assert join("---\n", ["hello", "", "world"]) == "hello\n---\nworld"
+    assert join("---\n", ["hello", "  ", "world"]) == "hello\n---\nworld"
 
-    # Adds terminal newlines automatically
-    assert join("---\n", ["hello\n", "world"]) == "hello\n---\nworld\n"
+    # Last part with newline is preserved
+    assert join("---\n", ["hello", "world\n"]) == "hello\n---\nworld\n"
 
     # Handles empty input
     assert join("---\n", []) == ""
     assert join("---\n", [""]) == ""
 
-    # Single document
-    assert join("---\n", ["hello"]) == "hello\n"
+    # Single document is returned as-is
+    assert join("---\n", ["hello"]) == "hello"
 
 
 def test_concat():
-    # Basic concatenation (each document gets terminated, then joined with \n)
-    assert concat("hello", "world") == "hello\n\nworld\n"
+    # Basic concatenation with double newline
+    assert concat("hello", "world") == "hello\n\nworld"
 
     # Filters out empty and whitespace-only strings
-    assert concat("hello", "", "world") == "hello\n\nworld\n"
+    assert concat("hello", "", "world") == "hello\n\nworld"
+    assert concat("hello", "  ", "world") == "hello\n\nworld"
 
-    # Adds terminal newlines automatically
-    assert concat("hello\n", "world") == "hello\n\nworld\n"
+    # Whitespace is preserved
+    assert concat("  hello  ", "world") == "  hello  \n\nworld"
+
+    # Documents other than the last one are newline-terminated unless they already are
+    assert concat("hello\n", "world\n") == "hello\n\nworld\n"
 
     # Handles empty input
     assert concat() == ""
 
     # Single document
-    assert concat("hello") == "hello\n"
+    assert concat("hello") == "hello"
 
 
 def test_dashed_name():
