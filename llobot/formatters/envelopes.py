@@ -1,48 +1,68 @@
 from __future__ import annotations
-from functools import cache, lru_cache, cached_property
+from functools import cache, lru_cache
 from pathlib import Path
 import re
 from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.formatters.languages import LanguageGuesser
+from llobot.knowledge.deltas import DocumentDelta, KnowledgeDelta, KnowledgeDeltaBuilder
+from llobot.chats import ChatMessage, ChatBranch
 import llobot.knowledge.subsets
 import llobot.knowledge.subsets.markdown
 import llobot.formatters.languages
 import llobot.text
 
+# We have to be careful how we detect code blocks, because we have to ignore nested code blocks.
+# The regex matches either a full block with header and code or a note-only file listing without code block.
+# It will also match bare code blocks without header, which will be later filtered out during parsing.
+# By matching the entire block, finditer() will skip over nested blocks within the code.
+_FULL_BLOCK_PART = r'(?:`[^`\n]+`(?: \([^\n]*\))?:\n\n)?(?:```[^`\n]*\n.*^```|````[^`\n]*\n.*^````|`````[^`\n]*\n.*^`````)'
+_NOTE_ONLY_PART = r'`[^`\n]+` \([^\n]+\)'
+_DETECTION_REGEX = re.compile(f'^(?:(?:{_FULL_BLOCK_PART})|(?:{_NOTE_ONLY_PART}))$', re.MULTILINE | re.DOTALL)
+_PARSING_FULL_RE = re.compile(r'`([^`\n]+)`(?: \((.*)\))?:\n\n```[^`\n]*\n(.*)^```+', re.MULTILINE | re.DOTALL)
+_PARSING_NOTE_ONLY_RE = re.compile(r'`([^`\n]+)` \((.+)\)')
+
 class EnvelopeFormatter:
     # May return None to indicate it cannot handle the file, which is useful for combining several formatters.
-    def format(self, path: Path, content: str, note: str = '') -> str | None:
+    def format(self, delta: DocumentDelta) -> str | None:
         return None
 
-    def __call__(self, path: Path, content: str, note: str = '') -> str | None:
-        return self.format(path, content, note)
+    def __call__(self, delta: DocumentDelta) -> str | None:
+        return self.format(delta)
 
     def find(self, message: str) -> list[str]:
         return []
 
-    # Success is signaled with non-None path and non-empty content.
-    def parse(self, formatted: str) -> tuple[Path | None, str]:
-        return None, ''
+    def parse(self, formatted: str) -> DocumentDelta | None:
+        return None
 
-    def parse_all(self, message: str) -> list[tuple[Path, str]]:
-        results = []
+    def parse_message(self, message: str | ChatMessage) -> KnowledgeDelta:
+        if isinstance(message, ChatMessage):
+            message = message.content
+        
+        builder = KnowledgeDeltaBuilder()
         for match in self.find(message):
-            path, content = self.parse(match)
-            if path and content:
-                results.append((path, content))
-        return results
+            delta = self.parse(match)
+            if delta:
+                builder.add(delta)
+        return builder.build()
+
+    def parse_chat(self, chat: ChatBranch) -> KnowledgeDelta:
+        builder = KnowledgeDeltaBuilder()
+        for message in chat:
+            builder.add(self.parse_message(message.content))
+        return builder.build()
 
     def __or__(self, other: EnvelopeFormatter) -> EnvelopeFormatter:
         myself = self
         class OrEnvelopeFormatter(EnvelopeFormatter):
-            def format(self, path: Path, content: str, note: str = '') -> str | None:
-                return myself.format(path, content, note) or other.format(path, content, note)
+            def format(self, delta: DocumentDelta) -> str | None:
+                return myself.format(delta) or other.format(delta)
             def find(self, message: str) -> list[str]:
                 return myself.find(message) + other.find(message)
-            def parse(self, formatted: str) -> tuple[Path | None, str]:
-                path, content = myself.parse(formatted)
-                if content:
-                    return path, content
+            def parse(self, formatted: str) -> DocumentDelta | None:
+                delta = myself.parse(formatted)
+                if delta:
+                    return delta
                 return other.parse(formatted)
         return OrEnvelopeFormatter()
 
@@ -50,15 +70,15 @@ class EnvelopeFormatter:
         myself = self
         whitelist = llobot.knowledge.subsets.coerce(whitelist)
         class AndEnvelopeFormatter(EnvelopeFormatter):
-            def format(self, path: Path, content: str, note: str = '') -> str | None:
-                return myself.format(path, content, note) if whitelist(path, content) else None
+            def format(self, delta: DocumentDelta) -> str | None:
+                return myself.format(delta) if whitelist(delta.path) else None
             def find(self, message: str) -> list[str]:
                 return myself.find(message)
-            def parse(self, formatted: str) -> tuple[Path | None, str]:
-                path, content = myself.parse(formatted)
-                if path and not whitelist(path, content):
-                    return None, ''
-                return path, content
+            def parse(self, formatted: str) -> DocumentDelta | None:
+                delta = myself.parse(formatted)
+                if delta and not whitelist(delta.path, delta.content or ''):
+                    return None
+                return delta
         return AndEnvelopeFormatter()
 
 @lru_cache
@@ -66,38 +86,64 @@ def header(*,
     guesser: LanguageGuesser = llobot.formatters.languages.standard(),
     quad_backticks: list[str] = ['markdown'],
 ) -> EnvelopeFormatter:
-    # We have to be careful how we detect code blocks, because we have to ignore nested code blocks.
-    # For this purpose, header is optional in the detection regex, so that the regex matches also bare code blocks.
-    # When we then search for code blocks in a message, bare code blocks will be matched and their nested code blocks skipped.
-    # Parsing regex will later filter out code blocks without header.
-    detection_regex = re.compile(
-        r'^(?:`[^\n]+?`(?: \([^\n]*?\))?:\n\n?)?'
-        r'(?:'
-        r'```[^`\n]*\n.*?\n```|'
-        r'````[^`\n]*\n.*?\n````|'
-        r'`````[^`\n]*\n.*?\n`````'
-        r')$',
-        re.MULTILINE | re.DOTALL
-    )
-    parsing_regex = re.compile(r'`([^\n]+?)`(?: \([^\n]*?\))?:\n\n?```+[^\n]*\n(.*\n)```+', re.MULTILINE | re.DOTALL)
     class HeaderEnvelopeFormatter(EnvelopeFormatter):
-        def format(self, path: Path, content: str, note: str = '') -> str:
-            note_suffix = f' ({note})' if note else ''
-            lang = guesser(path, content)
+        def format(self, delta: DocumentDelta) -> str | None:
+            notes = []
+            if delta.new: notes.append('new')
+            if delta.modified: notes.append('modified')
+            if delta.removed: notes.append('removed')
+            if delta.moved_from: notes.append(f"moved from `{delta.moved_from}`")
+            note_str = ', '.join(notes)
+            note_suffix = f' ({note_str})' if note_str else ''
+
+            if delta.content is None:
+                return f'`{delta.path}`{note_suffix}'
+
+            lang = guesser(delta.path, delta.content)
             backtick_count = 4 if lang in quad_backticks else 3
-            quoted = llobot.text.quote(lang, content, backtick_count=backtick_count)
-            return f'`{path}`{note_suffix}:\n\n{quoted}'
+            quoted = llobot.text.quote(lang, delta.content, backtick_count=backtick_count)
+            return f'`{delta.path}`{note_suffix}:\n\n{quoted}'
 
         def find(self, message: str) -> list[str]:
-            return [match.group(0) for match in detection_regex.finditer(message)]
+            return [match.group(0) for match in _DETECTION_REGEX.finditer(message)]
 
-        def parse(self, formatted: str) -> tuple[Path | None, str]:
-            if not detection_regex.fullmatch(formatted):
-                return None, ''
-            match = parsing_regex.fullmatch(formatted)
-            if not match:
-                return None, ''
-            return Path(match.group(1)), match.group(2)
+        def parse(self, formatted: str) -> DocumentDelta | None:
+            full_match = _PARSING_FULL_RE.fullmatch(formatted.strip())
+            note_only_match = _PARSING_NOTE_ONLY_RE.fullmatch(formatted.strip())
+
+            if full_match:
+                path_str, note_str, content = full_match.groups()
+            elif note_only_match:
+                path_str, note_str = note_only_match.groups()
+                content = None
+            else:
+                return None
+
+            note_str = note_str or ''
+            path = Path(path_str)
+            notes = {n.strip() for n in note_str.split(',')} if note_str else set()
+
+            new = 'new' in notes
+            modified = 'modified' in notes
+            removed = 'removed' in notes
+            moved_from_note = next((n for n in notes if n.startswith('moved from')), None)
+            moved_from = None
+            if moved_from_note:
+                m = re.search(r'`([^`]+)`', moved_from_note)
+                if m:
+                    moved_from = Path(m.group(1))
+            
+            recognized_notes = {'new', 'modified', 'removed'}
+            if moved_from_note:
+                recognized_notes.add(moved_from_note)
+            if notes - recognized_notes:
+                 return None
+
+            try:
+                return DocumentDelta(path, content, new=new, modified=modified, removed=removed, moved_from=moved_from)
+            except ValueError:
+                return None
+
     return HeaderEnvelopeFormatter()
 
 @cache

@@ -2,10 +2,8 @@ from __future__ import annotations
 from functools import cache, lru_cache
 from llobot.chats import ChatBranch, ChatBuilder
 from llobot.scorers.history import HistoryScorer
-from llobot.formatters.envelopes import EnvelopeFormatter
 import llobot.scores.history
 import llobot.scorers.history
-import llobot.formatters.envelopes
 
 class ExampleCrammer:
     def cram(self, examples: Iterable[ChatBranch], budget: int) -> ChatBranch:
@@ -21,7 +19,7 @@ def create(function: Callable[[Iterable[ChatBranch], int], ChatBranch]) -> Examp
     return LambdaExampleCrammer()
 
 @lru_cache
-def greedy(parser: EnvelopeFormatter = llobot.formatters.envelopes.standard()) -> ExampleCrammer:
+def greedy() -> ExampleCrammer:
     def cram(examples: Iterable[ChatBranch], budget: int) -> ChatBranch:
         selected_examples = []
         seen_prompts = set()
@@ -49,7 +47,6 @@ def prioritized(
     depth: int = 10,
     # Do not overscan when we reach reasonable fill rate.
     fill: float = 0.8,
-    parser: EnvelopeFormatter = llobot.formatters.envelopes.standard(),
 ) -> ExampleCrammer:
     def cram(examples: Iterable[ChatBranch], budget: int) -> ChatBranch:
         if budget <= 0:

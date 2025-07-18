@@ -4,16 +4,16 @@ from functools import cache, lru_cache
 from llobot.chats import ChatBranch, ChatBuilder
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
+from llobot.knowledge.deltas import DocumentDelta, KnowledgeDeltaBuilder
 from llobot.scorers.history import HistoryScorer
 from llobot.formatters.envelopes import EnvelopeFormatter
-from llobot.formatters.deletions import DeletionFormatter
 from llobot.formatters.knowledge import KnowledgeFormatter
 import llobot.scores.history
 import llobot.scorers.history
 import llobot.formatters.envelopes
-import llobot.formatters.deletions
 import llobot.formatters.knowledge
 import llobot.knowledge.rankings
+import llobot.knowledge.deltas
 
 class EditCrammer:
     """
@@ -34,9 +34,8 @@ def create(function: Callable[[Iterable[ChatBranch], Knowledge, int], tuple[Chat
 @lru_cache
 def prioritized(
     history_scorer: HistoryScorer = llobot.scorers.history.standard(),
-    update_formatter: KnowledgeFormatter = llobot.formatters.knowledge.updates(),
-    deletion_formatter: DeletionFormatter = llobot.formatters.deletions.standard(),
-    parser: EnvelopeFormatter = llobot.formatters.envelopes.standard(),
+    envelopes: EnvelopeFormatter = llobot.formatters.envelopes.standard(),
+    knowledge_formatter: KnowledgeFormatter = llobot.formatters.knowledge.standard(),
     # Overscan depth to prevent single large example from clogging the stream and leaving large unused budget.
     depth: int = 10,
     # Do not overscan when we reach reasonable fill rate.
@@ -53,46 +52,39 @@ def prioritized(
     def cram(examples: Iterable[ChatBranch], knowledge: Knowledge, budget: int) -> tuple[ChatBranch, KnowledgeIndex]:
         chunks = []
         seen_prompts = set()
-        seen_paths = set()
+        updated_paths = set()
+        touched_paths = set()
         skipped = 0
         max_waste = int(budget * (1 - fill))
-        touched_paths = set()
 
         for example in history_scorer(examples).chats():
             # If there are several examples with the same prompt, include only the latest one.
-            if not example:
-                continue
-            if example[0].content in seen_prompts:
+            if not example or example[0].content in seen_prompts:
                 continue
             seen_prompts.add(example[0].content)
 
-            # Parse documents from example
-            example_documents = {}
-            for message in example:
-                for path, content in parser.parse_all(message.content):
-                    example_documents[path] = content
+            example_delta = envelopes.parse_chat(example)
+            example_full = example_delta.full
+            
+            update_builder = llobot.knowledge.deltas.KnowledgeDeltaBuilder()
+            
+            # Check for deletions
+            for path in example_delta.present:
+                if path not in knowledge and path not in updated_paths:
+                    update_builder.add(DocumentDelta(path, None, removed=True))
+                    updated_paths.add(path)
 
-            deletion_buffer = set()
-            update_buffer = {}
-            for path, content in example_documents.items():
-                if path in seen_paths:
-                    continue
-                if path not in knowledge:
-                    deletion_buffer.add(path)
-                elif knowledge[path] != content:
-                    update_buffer[path] = knowledge[path]
+            # Check for modifications
+            for path in example_delta.touched:
+                if path in knowledge and path not in updated_paths:
+                    if path not in example_full or example_full[path] != knowledge[path]:
+                         update_builder.add(DocumentDelta(path, knowledge[path], modified=True))
+                         updated_paths.add(path)
+            
+            update_delta = update_builder.build()
+            update_chat = knowledge_formatter.render(update_delta)
 
-            deletions = KnowledgeIndex(deletion_buffer)
-            updates = Knowledge(update_buffer)
-
-            deletion_chat = deletion_formatter(deletions)
-            update_chat = update_formatter(updates, llobot.knowledge.rankings.lexicographical(updates))
-
-            chunk = ChatBuilder()
-            chunk.add(example)
-            chunk.add(deletion_chat)
-            chunk.add(update_chat)
-            chunk_chat = chunk.build()
+            chunk_chat = example + update_chat
 
             if chunk_chat.cost > budget:
                 skipped += 1
@@ -102,8 +94,8 @@ def prioritized(
 
             chunks.append(chunk_chat)
             budget -= chunk_chat.cost
-            seen_paths.update(example_documents.keys())
-            touched_paths.update(example_documents.keys())
+            touched_paths.update(example_delta.touched)
+            touched_paths.update(update_delta.touched)
 
         chunks.reverse()
         result = ChatBuilder()

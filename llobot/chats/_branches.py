@@ -83,14 +83,3 @@ class ChatBranch:
             else:
                 break
         return shared.build()
-
-    def pretty_structure(self) -> str:
-        codes = {
-            ChatIntent.SYSTEM: 'S',
-            ChatIntent.EXAMPLE_PROMPT: 'E',
-            ChatIntent.PROMPT: 'P',
-            ChatIntent.RESPONSE: 'R',
-        }
-        s = ''.join(codes.get(message.intent, '') for message in self)
-        return ' '.join(s[i:i+10] for i in range(0, len(s), 10))
-

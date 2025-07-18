@@ -30,7 +30,7 @@ def priority(*,
             # Premultiply with document lengths. Both scores and lengths will get a denominator in the loop.
             scores *= llobot.scores.knowledge.length(knowledge)
             while True:
-                formatted = formatter(knowledge, ranking)
+                formatted = formatter.render_fresh(knowledge, ranking)
                 length = formatted.cost
                 if length <= budget:
                     return formatted, knowledge.keys()

@@ -3,6 +3,7 @@ from functools import cache
 from datetime import datetime
 from llobot.chats import ChatBranch, ChatBuilder
 from llobot.knowledge import Knowledge
+from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.knowledge.rankers import KnowledgeRanker
 from llobot.scrapers import Scraper
@@ -103,16 +104,21 @@ class Editor(Role):
         knowledge_budget = budget - edit_budget
         ranking = self._ranker(knowledge)
         scores = self._relevance_scorer(knowledge)
+        
+        blacklist = KnowledgeIndex(path for path, score in scores if score == 0.0)
+
         if project and project.is_subproject:
             scores *= llobot.scores.knowledge.prioritize(knowledge, project.subset)
         scores = self._graph_scorer.rescore(knowledge, scores)
         scores -= history_paths
+        scores -= blacklist
+        
         knowledge_chat, knowledge_paths = self._knowledge_crammer(knowledge, knowledge_budget, scores, ranking)
 
         # 4. Retrievals
         retrieved_links = llobot.links.resolve(self._retrieval_scraper.scrape_prompt(prompt), knowledge)
         retrieved_knowledge = (knowledge & retrieved_links) - (knowledge_paths | history_paths)
-        retrievals_chat = self._retrieval_formatter(retrieved_knowledge, ranking)
+        retrievals_chat = self._retrieval_formatter.render_fresh(retrieved_knowledge, ranking)
 
         chat = ChatBuilder()
         chat.add(system_chat)

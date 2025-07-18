@@ -2,50 +2,43 @@ from __future__ import annotations
 from functools import cache, lru_cache
 from llobot.chats import ChatIntent, ChatBuilder, ChatBranch
 from llobot.knowledge import Knowledge
+from llobot.knowledge.deltas import KnowledgeDelta
 from llobot.knowledge.rankings import KnowledgeRanking
 from llobot.formatters.envelopes import EnvelopeFormatter
 import llobot.formatters.envelopes
+import llobot.knowledge.rankings
+import llobot.knowledge.deltas
 
 class KnowledgeFormatter:
-    # The knowledge we receive is likely trimmed. We cannot compute ranking from it ourselves, so we take it as a parameter.
-    def render(self, knowledge: Knowledge, ranking: KnowledgeRanking) -> ChatBranch:
+    def render(self, delta: KnowledgeDelta) -> ChatBranch:
         return ChatBranch()
 
-    def __call__(self, knowledge: Knowledge, ranking: KnowledgeRanking) -> ChatBranch:
-        return self.render(knowledge, ranking)
-
-def create(function: Callable[[Knowledge, KnowledgeRanking], ChatBranch]) -> KnowledgeFormatter:
-    class LambdaKnowledgeFormatter(KnowledgeFormatter):
-        def render(self, knowledge: Knowledge, ranking: KnowledgeRanking) -> ChatBranch:
-            return function(knowledge, ranking)
-    return LambdaKnowledgeFormatter()
+    def __call__(self, delta: KnowledgeDelta) -> ChatBranch:
+        return self.render(delta)
+    
+    def render_fresh(self, knowledge: Knowledge, ranking: KnowledgeRanking | None = None) -> ChatBranch:
+        delta = llobot.knowledge.deltas.fresh(knowledge, ranking)
+        return self.render(delta)
 
 @lru_cache
-def granular(envelope: EnvelopeFormatter = llobot.formatters.envelopes.standard(), affirmation: str = 'I see.', note: str = '') -> KnowledgeFormatter:
-    def render(knowledge: Knowledge, ranking: KnowledgeRanking) -> ChatBranch:
-        knowledge &= ranking
-        chat = ChatBuilder()
-        for path in ranking:
-            if path in knowledge:
-                chat.add(ChatIntent.SYSTEM)
-                chat.add(envelope(path, knowledge[path], note))
-                chat.add(ChatIntent.AFFIRMATION)
-                chat.add(affirmation)
-        return chat.build()
-    return create(render)
+def granular(envelopes: EnvelopeFormatter = llobot.formatters.envelopes.standard(), affirmation: str = 'I see.') -> KnowledgeFormatter:
+    class GranularKnowledgeFormatter(KnowledgeFormatter):
+        def render(self, delta: KnowledgeDelta) -> ChatBranch:
+            chat = ChatBuilder()
+            for doc_delta in delta:
+                formatted_doc = envelopes(doc_delta)
+                if formatted_doc is not None:
+                    chat.add(ChatIntent.SYSTEM.message(formatted_doc))
+                    chat.add(ChatIntent.AFFIRMATION.message(affirmation))
+            return chat.build()
+
+    return GranularKnowledgeFormatter()
 
 @cache
 def standard() -> KnowledgeFormatter:
     return granular()
 
-@cache
-def updates() -> KnowledgeFormatter:
-    return granular(note='modified')
-
 __all__ = [
     'KnowledgeFormatter',
-    'create',
-    'granular',
     'standard',
-    'updates',
 ]
