@@ -36,9 +36,9 @@ class ChatIntent(Enum):
         raise ValueError
 
     def as_example(self) -> ChatIntent:
-        if self == self.role == ChatRole.USER:
+        if self.role == ChatRole.USER:
             return self.EXAMPLE_PROMPT
-        if self == self.role == ChatRole.MODEL:
+        if self.role == ChatRole.MODEL:
             return self.EXAMPLE_RESPONSE
         return self
 

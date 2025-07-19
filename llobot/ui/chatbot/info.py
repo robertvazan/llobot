@@ -55,18 +55,17 @@ def render_model_details(model: Model) -> str:
         - Name: `@{model.name}`
         - Options: `{model.options}`
         - Aliases: {', '.join([f'`@{alias}`' for alias in model.aliases]) if model.aliases else '-'}
-        - Context budget: {model.context_budget / 1024:,.0f} KB''')
+        - Context budget: {model.context_budget / 1000:,.0f} KB''')
 
-def _render_project_knowledge_summary(name: str, knowledge: Knowledge, subset: KnowledgeIndex | None = None) -> str:
-    project_knowledge = knowledge & subset if subset else knowledge
+def _render_project_knowledge_summary(name: str, knowledge: Knowledge) -> str:
     return dedent(f'''
         - Name: `~{name}`
-        - Knowledge: {len(project_knowledge):,} documents, {project_knowledge.cost / 1024:,.0f} KB''')
+        - Knowledge: {len(knowledge):,} documents, {knowledge.cost / 1000:,.0f} KB''')
 
 def render_project(project: Project, knowledge: Knowledge) -> str:
-    info = "Project:\n\n" + _render_project_knowledge_summary(project.root.name, knowledge)
+    info = "Project knowledge:\n\n" + _render_project_knowledge_summary(project.root.name, knowledge)
     if project.is_subproject:
-        info += "\n\nSubproject:\n\n" + _render_project_knowledge_summary(project.name, knowledge, project.subset)
+        info += "\n\nSubproject knowledge:\n\n" + _render_project_knowledge_summary(project.name, knowledge & project.subset)
     return info
 
 def render_assembled_prompt(assembled: ChatBranch) -> str:
@@ -104,13 +103,16 @@ def render_projects(projects: list[Project]) -> str:
 def render_context_knowledge(delta: KnowledgeDelta) -> str:
     if not delta:
         return ''
-    return 'Context knowledge:\n\n```\n' + '\n'.join([str(d.path) for d in delta]) + '\n```'
+    paths = delta.full.keys().sorted()
+    if not paths:
+        return ''
+    return 'Context knowledge:\n\n```\n' + '\n'.join([str(p) for p in paths]) + '\n```'
 
 def render_knowledge_listing(project: Project, knowledge: Knowledge) -> str:
     info = ''
     if project.is_subproject:
-        info += f'\nKnowledge in `~{project.name}`:\n\n```\n' + '\n'.join([str(path) for path in (knowledge.keys() & project.subset).sorted()]) + '\n```\n'
-    info += f'\nKnowledge in `~{project.root.name}`:\n\n```\n' + '\n'.join([str(path) for path in knowledge.keys().sorted()]) + '\n```'
+        info += f'\nSubproject knowledge:\n\n```\n' + '\n'.join([str(path) for path in (knowledge.keys() & project.subset).sorted()]) + '\n```\n'
+    info += f'\nProject knowledge:\n\n```\n' + '\n'.join([str(path) for path in knowledge.keys().sorted()]) + '\n```'
     return info.strip()
 
 def render_info(request: ChatbotRequest) -> str:
@@ -118,21 +120,21 @@ def render_info(request: ChatbotRequest) -> str:
     
     sections = [render_config(request), render_model_details(request.model)]
     
-    knowledge = request.project.root.knowledge(request.cutoff) if request.project else None
+    knowledge = request.project.root.knowledge(request.cutoff) if request.project else Knowledge()
     if request.project:
         sections.append(render_project(request.project, knowledge))
     
     assembled = llobot.ui.chatbot.requests.assemble(request)
     sections.append(render_assembled_prompt(assembled))
     
-    context_delta = llobot.formatters.envelopes.standard().parse_chat(assembled)
-    if context_delta:
-        sections.append(render_context_knowledge(context_delta))
-
     sections.append(render_help())
     sections.append(render_models(chatbot.models))
     if chatbot.projects:
         sections.append(render_projects(chatbot.projects))
+
+    context_delta = llobot.formatters.envelopes.standard().parse_chat(assembled)
+    if context_delta:
+        sections.append(render_context_knowledge(context_delta))
 
     if request.project:
         sections.append(render_knowledge_listing(request.project, knowledge))

@@ -29,7 +29,7 @@ class ChatBranch:
     @property
     def pretty_cost(self) -> str:
         cost = self.cost
-        kb = cost / 1024
+        kb = cost / 1000
         if kb < 10:
             return f"{kb:.1f} KB"
         return f"{kb:.0f} KB"

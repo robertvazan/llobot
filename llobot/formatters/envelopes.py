@@ -71,7 +71,7 @@ class EnvelopeFormatter:
         whitelist = llobot.knowledge.subsets.coerce(whitelist)
         class AndEnvelopeFormatter(EnvelopeFormatter):
             def format(self, delta: DocumentDelta) -> str | None:
-                return myself.format(delta) if whitelist(delta.path) else None
+                return myself.format(delta) if whitelist(delta.path, delta.content or '') else None
             def find(self, message: str) -> list[str]:
                 return myself.find(message)
             def parse(self, formatted: str) -> DocumentDelta | None:
