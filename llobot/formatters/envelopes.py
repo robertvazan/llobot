@@ -15,7 +15,7 @@ import llobot.text
 # The regex matches either a full block with header and code or a note-only file listing without code block.
 # It will also match bare code blocks without header, which will be later filtered out during parsing.
 # By matching the entire block, finditer() will skip over nested blocks within the code.
-_FULL_BLOCK_PART = r'(?:`[^`\n]+`(?: \([^\n]*\))?:\n\n)?(?:```[^`\n]*\n.*^```|````[^`\n]*\n.*^````|`````[^`\n]*\n.*^`````)'
+_FULL_BLOCK_PART = r'(?:`[^`\n]+`(?: \([^\n]*\))?:\n\n)?(?:```[^`\n]*\n.*?^```|````[^`\n]*\n.*?^````|`````[^`\n]*\n.*?^`````)'
 _NOTE_ONLY_PART = r'`[^`\n]+` \([^\n]+\)'
 _DETECTION_REGEX = re.compile(f'^(?:(?:{_FULL_BLOCK_PART})|(?:{_NOTE_ONLY_PART}))$', re.MULTILINE | re.DOTALL)
 _PARSING_FULL_RE = re.compile(r'`([^`\n]+)`(?: \((.*)\))?:\n\n```[^`\n]*\n(.*)^```+', re.MULTILINE | re.DOTALL)
