@@ -95,12 +95,7 @@ def directory(
         knowledge -= blacklist
     return knowledge
 
-def chats(chats: Iterable[ChatBranch]) -> Knowledge:
-    return Knowledge({llobot.fs.time.filename(chat.metadata.time): llobot.chats.markdown.format(chat) for chat in chats if chat.metadata.time})
-
 __all__ = [
     'Knowledge',
     'directory',
-    'chats',
 ]
-

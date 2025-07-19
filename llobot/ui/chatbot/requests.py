@@ -1,6 +1,6 @@
 from __future__ import annotations
 from datetime import datetime
-from llobot.chats import ChatBranch, ChatMetadata
+from llobot.chats import ChatBranch
 from llobot.projects import Project
 from llobot.models import Model
 from llobot.ui.chatbot import Chatbot
@@ -93,13 +93,6 @@ def parse(chatbot: Chatbot, prompt: ChatBranch) -> ChatbotRequest:
         model=model
     )
 
-def chat_metadata(request: ChatbotRequest) -> ChatMetadata:
-    return ChatMetadata(
-        model=request.model.name,
-        options=request.model.options,
-        cutoff=request.cutoff
-    )
-
 def stuff(request: ChatbotRequest, prompt: ChatBranch | None = None) -> ChatBranch:
     prompt = prompt or request.prompt
     return request.chatbot.role.stuff(
@@ -115,7 +108,6 @@ def assemble(request: ChatbotRequest, prompt: ChatBranch | None = None) -> ChatB
 __all__ = [
     'ChatbotRequest',
     'parse',
-    'chat_metadata',
     'stuff',
     'assemble',
 ]

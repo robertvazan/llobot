@@ -1,27 +1,17 @@
 from __future__ import annotations
 import llobot.text
-from ._metadata import ChatMetadata
 from ._intents import ChatIntent
 from ._messages import ChatMessage
 
 class ChatBranch:
     _messages: list[ChatMessage]
-    _metadata: ChatMetadata
 
-    def __init__(self, messages: list[ChatMessage] = [], metadata: ChatMetadata = ChatMetadata()):
+    def __init__(self, messages: list[ChatMessage] = []):
         self._messages = messages
-        self._metadata = metadata
 
     @property
     def messages(self) -> list[ChatMessage]:
         return self._messages.copy()
-
-    @property
-    def metadata(self) -> ChatMetadata:
-        return self._metadata
-
-    def with_metadata(self, metadata: ChatMetadata) -> ChatBranch:
-        return ChatBranch(self._messages, metadata)
 
     def __str__(self) -> str:
         return str(self._messages)
@@ -69,7 +59,7 @@ class ChatBranch:
         return builder
 
     def as_example(self) -> ChatBranch:
-        return ChatBranch([message.as_example() for message in self]).with_metadata(self.metadata)
+        return ChatBranch([message.as_example() for message in self])
 
     def monolithic(self) -> str:
         return llobot.text.concat(*(message.monolithic() for message in self))

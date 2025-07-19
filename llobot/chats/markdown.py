@@ -1,8 +1,7 @@
 import re
 from pathlib import Path
-from llobot.chats import ChatIntent, ChatMetadata, ChatBranch, ChatBuilder
+from llobot.chats import ChatIntent, ChatBranch, ChatBuilder
 import llobot.fs
-import llobot.chats.json
 
 SUFFIX = '.md'
 
@@ -40,8 +39,6 @@ _INTENT_RE = re.compile('> ([A-Z][-A-Za-z]*)')
 
 def format(chat: ChatBranch) -> str:
     lines = []
-    if chat.metadata:
-        lines.append(f'Metadata: `{llobot.chats.json.format_metadata(chat.metadata)}`')
     for message in chat:
         lines.append('')
         lines.append(f'> {format_intent(message.intent)}')
@@ -54,21 +51,19 @@ def format(chat: ChatBranch) -> str:
                 lines.append(line)
         if message.content.endswith('\n'):
             lines.append('')
+    # Remove leading blank line if present
+    if lines and not lines[0]:
+        lines.pop(0)
     return ''.join([l + '\n' for l in lines])
 
 def parse(formatted: str) -> ChatBranch:
-    metadata = ChatMetadata()
     builder = ChatBuilder()
     intent = None
     lines = None
+    first_message = True
     for line in formatted.splitlines():
-        if not metadata and not intent:
-            matched = re.fullmatch('Metadata: `(.*)`', line)
-            if matched:
-                metadata = llobot.chats.json.parse_metadata(matched.group(1))
-                continue
-        # Empty line after metadata.
-        if not intent and not line:
+        # Empty line before first message.
+        if first_message and not intent and not line:
             continue
         matched = _INTENT_RE.fullmatch(line)
         if matched:
@@ -83,15 +78,17 @@ def parse(formatted: str) -> ChatBranch:
                     builder.add(intent.message('\n'.join(lines[1:-1])))
                 intent = parse_intent(matched.group(1))
                 lines = []
+                first_message = False
         else:
             if not intent:
-                raise ValueError
+                # Tolerate content before first intent, for example old metadata format.
+                continue
             lines.append(line)
     if intent:
         if len(lines) < 1 or lines[0]:
             raise ValueError
         builder.add(intent.message('\n'.join(lines[1:])))
-    return builder.build().with_metadata(metadata)
+    return builder.build()
 
 def save(path: Path, chat: ChatBranch):
     llobot.fs.write_text(path, format(chat))
@@ -108,4 +105,3 @@ __all__ = [
     'save',
     'load',
 ]
-

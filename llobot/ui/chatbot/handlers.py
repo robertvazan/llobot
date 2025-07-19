@@ -19,8 +19,8 @@ def handle_ok(request: ChatbotRequest) -> ModelStream:
     if len(request.prompt) < 3:
         return llobot.models.streams.error('Nothing to save.')
     
-    metadata_branch = request.prompt[:-1].with_metadata(llobot.ui.chatbot.requests.chat_metadata(request))
-    request.chatbot.role.save_example(metadata_branch, request.project)
+    chat_to_save = request.prompt[:-1]
+    request.chatbot.role.save_example(chat_to_save, request.project)
     return llobot.models.streams.ok('Saved.')
 
 def handle_echo(request: ChatbotRequest) -> ModelStream:
