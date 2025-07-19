@@ -18,7 +18,7 @@ import llobot.text
 _FULL_BLOCK_PART = r'(?:`[^`\n]+`(?: \([^\n]*\))?:\n\n)?(?:```[^`\n]*\n.*?^```|````[^`\n]*\n.*?^````|`````[^`\n]*\n.*?^`````)'
 _NOTE_ONLY_PART = r'`[^`\n]+` \([^\n]+\)'
 _DETECTION_REGEX = re.compile(f'^(?:(?:{_FULL_BLOCK_PART})|(?:{_NOTE_ONLY_PART}))$', re.MULTILINE | re.DOTALL)
-_PARSING_FULL_RE = re.compile(r'`([^`\n]+)`(?: \((.*)\))?:\n\n```[^`\n]*\n(.*)^```+', re.MULTILINE | re.DOTALL)
+_PARSING_FULL_RE = re.compile(r'`([^`\n]+)`(?: \((.*)\))?:\n\n```+[^`\n]*\n(.*)^```+', re.MULTILINE | re.DOTALL)
 _PARSING_NOTE_ONLY_RE = re.compile(r'`([^`\n]+)` \((.+)\)')
 
 class EnvelopeFormatter:
