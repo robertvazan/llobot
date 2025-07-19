@@ -104,9 +104,7 @@ class Editor(Role):
         knowledge_budget = budget - edit_budget
         ranking = self._ranker(knowledge)
         scores = self._relevance_scorer(knowledge)
-        
-        blacklist = KnowledgeIndex(path for path, score in scores if score == 0.0)
-
+        blacklist = knowledge.keys() - scores.keys()
         if project and project.is_subproject:
             scores *= llobot.scores.knowledge.prioritize(knowledge, project.subset)
         scores = self._graph_scorer.rescore(knowledge, scores)
