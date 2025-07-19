@@ -5,7 +5,6 @@ from llobot.models import Model
 from llobot.models.catalogs import ModelCatalog
 from llobot.models.streams import ModelStream
 from llobot.knowledge import Knowledge
-from llobot.knowledge.deltas import KnowledgeDelta
 from llobot.chats import ChatBranch, ChatIntent
 import llobot.ui.chatbot.requests
 from llobot.ui.chatbot.requests import ChatbotRequest
@@ -14,7 +13,7 @@ import llobot.text
 import llobot.models.streams
 import llobot.formatters.envelopes
 
-def format_prompt_structure(chat: ChatBranch) -> str:
+def prompt_structure(chat: ChatBranch) -> str:
     envelopes = llobot.formatters.envelopes.standard()
     codes = {
         ChatIntent.SYSTEM: 'S',
@@ -30,26 +29,16 @@ def format_prompt_structure(chat: ChatBranch) -> str:
             s += codes.get(message.intent, '')
     return ' '.join(s[i:i+10] for i in range(0, len(s), 10))
 
-def render_config(request: ChatbotRequest) -> str:
-    chatbot = request.chatbot
+def config_section(request: ChatbotRequest) -> str:
     return dedent(f'''\
         Configuration:
 
-        - Role: `{chatbot.role.name}`
+        - Role: `{request.chatbot.role.name}`
         - Model: `@{request.model.name}`
         - Cutoff: `:{llobot.time.format(request.cutoff)}`''')
 
-def _render_model(model: Model) -> str:
-    aliases = list(model.aliases)
-    if aliases:
-        aliases = ', '.join([f'`@{alias}`' for alias in aliases])
-        aliases = f' ({aliases})'
-    else:
-        aliases = ''
-    return f'`@{model.name}`{aliases}'
-
-def render_model_details(model: Model) -> str:
-    return dedent(f'''
+def model_section(model: Model) -> str:
+    return dedent(f'''\
         Model:
 
         - Name: `@{model.name}`
@@ -57,26 +46,31 @@ def render_model_details(model: Model) -> str:
         - Aliases: {', '.join([f'`@{alias}`' for alias in model.aliases]) if model.aliases else '-'}
         - Context budget: {model.context_budget / 1000:,.0f} KB''')
 
-def _render_project_knowledge_summary(name: str, knowledge: Knowledge) -> str:
-    return dedent(f'''
+def _project_section(title: str, name: str, knowledge: Knowledge) -> str:
+    return dedent(f'''\
+        {title}:
+
         - Name: `~{name}`
         - Knowledge: {len(knowledge):,} documents, {knowledge.cost / 1000:,.0f} KB''')
 
-def render_project(project: Project, knowledge: Knowledge) -> str:
-    info = "Project knowledge:\n\n" + _render_project_knowledge_summary(project.root.name, knowledge)
-    if project.is_subproject:
-        info += "\n\nSubproject knowledge:\n\n" + _render_project_knowledge_summary(project.name, knowledge & project.subset)
-    return info
+def project_section(project: Project, knowledge: Knowledge) -> str:
+    return _project_section('Project', project.root.name, knowledge)
 
-def render_assembled_prompt(assembled: ChatBranch) -> str:
-    return dedent(f'''
+def subproject_section(project: Project, knowledge: Knowledge) -> str:
+    return _project_section('Subproject', project.name, knowledge & project.subset)
+
+def prompt_section(assembled: ChatBranch, knowledge: Knowledge) -> str:
+    section = dedent(f'''\
         Assembled prompt:
 
         - Size: {len(assembled):,} messages, {assembled.pretty_cost}
-        - Structure: {format_prompt_structure(assembled)}''')
+        - Structure: {prompt_structure(assembled)}''')
+    if knowledge:
+        section += f'\n- Knowledge: {len(knowledge):,} documents, {knowledge.cost / 1000:,.0f} KB'
+    return section
 
-def render_help() -> str:
-    return dedent('''
+def help_section() -> str:
+    return dedent('''\
         Header help:
 
         - Structure: `~project:cutoff@model?k1=v1&k2=v2!command`
@@ -91,53 +85,65 @@ def render_help() -> str:
         - `!info`: Show this message.
         - If no command is given, the prompt is submitted to the model.''')
 
-def _format_project_listing(project: Project) -> str:
+def _format_model(model: Model) -> str:
+    aliases = list(model.aliases)
+    if aliases:
+        aliases = ', '.join([f'`@{alias}`' for alias in aliases])
+        aliases = f' ({aliases})'
+    else:
+        aliases = ''
+    return f'`@{model.name}`{aliases}'
+
+def model_list_section(models: ModelCatalog) -> str:
+    return 'Models:\n\n' + '\n'.join([f'- {_format_model(model)}' for model in models])
+
+def _format_project_with_subprojects(project: Project) -> str:
     return f'- `~{project.name}`' + ''.join([f'\n  - `~{subproject.name}`\n' for subproject in project.subprojects])
 
-def render_models(models: ModelCatalog) -> str:
-    return 'Models:\n\n' + '\n'.join([f'- {_render_model(model)}' for model in models])
+def project_list_section(projects: list[Project]) -> str:
+    return 'Projects:\n\n' + '\n'.join([_format_project_with_subprojects(project) for project in projects])
 
-def render_projects(projects: list[Project]) -> str:
-    return 'Projects:\n\n' + '\n'.join([_format_project_listing(project) for project in projects])
-
-def render_context_knowledge(delta: KnowledgeDelta) -> str:
-    if not delta:
-        return ''
-    paths = delta.full.keys().sorted()
+def _knowledge_section(title: str, knowledge: Knowledge) -> str:
+    paths = knowledge.keys().sorted()
     if not paths:
         return ''
-    return 'Context knowledge:\n\n```\n' + '\n'.join([str(p) for p in paths]) + '\n```'
+    return f'{title}:\n\n```\n' + '\n'.join([str(p) for p in paths]) + '\n```'
 
-def render_knowledge_listing(project: Project, knowledge: Knowledge) -> str:
-    info = ''
-    if project.is_subproject:
-        info += f'\nSubproject knowledge:\n\n```\n' + '\n'.join([str(path) for path in (knowledge.keys() & project.subset).sorted()]) + '\n```\n'
-    info += f'\nProject knowledge:\n\n```\n' + '\n'.join([str(path) for path in knowledge.keys().sorted()]) + '\n```'
-    return info.strip()
+def context_knowledge_section(knowledge: Knowledge) -> str:
+    return _knowledge_section('Context knowledge', knowledge)
+
+def project_knowledge_section(knowledge: Knowledge) -> str:
+    return _knowledge_section('Project knowledge', knowledge)
+
+def subproject_knowledge_section(project: Project, knowledge: Knowledge) -> str:
+    return _knowledge_section('Subproject knowledge', knowledge & project.subset)
 
 def render_info(request: ChatbotRequest) -> str:
     chatbot = request.chatbot
     
-    sections = [render_config(request), render_model_details(request.model)]
+    sections = [config_section(request), model_section(request.model)]
     
     knowledge = request.project.root.knowledge(request.cutoff) if request.project else Knowledge()
     if request.project:
-        sections.append(render_project(request.project, knowledge))
+        sections.append(project_section(request.project, knowledge))
+        if request.project.is_subproject:
+            sections.append(subproject_section(request.project, knowledge))
     
     assembled = llobot.ui.chatbot.requests.assemble(request)
-    sections.append(render_assembled_prompt(assembled))
+    context_knowledge = llobot.formatters.envelopes.standard().parse_chat(assembled).full
+    sections.append(prompt_section(assembled, context_knowledge))
     
-    sections.append(render_help())
-    sections.append(render_models(chatbot.models))
+    sections.append(help_section())
+    sections.append(model_list_section(chatbot.models))
     if chatbot.projects:
-        sections.append(render_projects(chatbot.projects))
+        sections.append(project_list_section(chatbot.projects))
 
-    context_delta = llobot.formatters.envelopes.standard().parse_chat(assembled)
-    if context_delta:
-        sections.append(render_context_knowledge(context_delta))
-
+    if context_knowledge:
+        sections.append(context_knowledge_section(context_knowledge))
     if request.project:
-        sections.append(render_knowledge_listing(request.project, knowledge))
+        if request.project.is_subproject:
+            sections.append(subproject_knowledge_section(request.project, knowledge))
+        sections.append(project_knowledge_section(knowledge))
         
     return llobot.text.concat(*sections)
 
@@ -145,16 +151,18 @@ def handle_info(request: ChatbotRequest) -> ModelStream:
     return llobot.models.streams.status(render_info(request))
 
 __all__ = [
-    'format_prompt_structure',
-    'render_config',
-    'render_model_details',
-    'render_project',
-    'render_assembled_prompt',
-    'render_help',
-    'render_models',
-    'render_projects',
-    'render_context_knowledge',
-    'render_knowledge_listing',
+    'prompt_structure',
+    'config_section',
+    'model_section',
+    'project_section',
+    'subproject_section',
+    'prompt_section',
+    'help_section',
+    'model_list_section',
+    'project_list_section',
+    'context_knowledge_section',
+    'project_knowledge_section',
+    'subproject_knowledge_section',
     'render_info',
     'handle_info',
 ]
