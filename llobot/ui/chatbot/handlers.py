@@ -16,11 +16,11 @@ def _cutoff_footer(request: ChatbotRequest) -> ModelStream:
     return llobot.models.streams.completed(f'`:{llobot.time.format(request.cutoff)}`')
 
 def handle_ok(request: ChatbotRequest) -> ModelStream:
-    if len(request.prompt) < 3:
-        return llobot.models.streams.error('Nothing to save.')
-    
+    # Strip the last message that contains the !ok command
     chat_to_save = request.prompt[:-1]
-    request.chatbot.role.save_example(chat_to_save, request.project)
+    if len(chat_to_save) < 2:
+        return llobot.models.streams.error('Nothing to save. An example must contain at least a prompt and a response.')
+    request.chatbot.role.handle_ok(chat_to_save, request.project, request.cutoff)
     return llobot.models.streams.ok('Saved.')
 
 def handle_echo(request: ChatbotRequest) -> ModelStream:

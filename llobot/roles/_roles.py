@@ -55,6 +55,9 @@ class Role:
         self.example_archive.scatter(zones, time, chat)
         _logger.info(f"Archived example: {', '.join(zones)}")
 
+    def handle_ok(self, chat: ChatBranch, project: Project | None, cutoff: datetime):
+        self.save_example(chat, project)
+
     def recent_examples(self, project: Project | None, cutoff: datetime | None = None) -> Iterable[ChatBranch]:
         for zone in self.zone_names(project):
             for time, chat in self.example_archive.recent(zone, cutoff):
@@ -68,14 +71,6 @@ class Role:
         budget: int,
     ) -> ChatBranch:
         return ChatBranch()
-
-    def __call__(self, *,
-        prompt: ChatBranch,
-        project: Project | None,
-        cutoff: datetime,
-        budget: int,
-    ) -> ChatBranch:
-        return self.stuff(prompt=prompt, project=project, cutoff=cutoff, budget=budget)
 
 __all__ = [
     'Role',

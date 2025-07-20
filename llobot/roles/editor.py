@@ -1,7 +1,7 @@
 from __future__ import annotations
 from functools import cache
 from datetime import datetime
-from llobot.chats import ChatBranch, ChatBuilder
+from llobot.chats import ChatBranch, ChatBuilder, ChatIntent
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.subsets import KnowledgeSubset
@@ -10,6 +10,7 @@ from llobot.scrapers import Scraper
 from llobot.scorers.knowledge import KnowledgeScorer
 from llobot.crammers.knowledge import KnowledgeCrammer
 from llobot.crammers.edits import EditCrammer
+from llobot.formatters.envelopes import EnvelopeFormatter
 from llobot.formatters.knowledge import KnowledgeFormatter
 from llobot.formatters.instructions import InstructionFormatter
 from llobot.instructions import SystemPrompt
@@ -22,10 +23,12 @@ import llobot.crammers.knowledge
 import llobot.crammers.edits
 import llobot.formatters.knowledge
 import llobot.formatters.instructions
+import llobot.formatters.envelopes
 import llobot.instructions
 import llobot.links
 import llobot.knowledge.rankings
 import llobot.knowledge.rankers
+import llobot.knowledge.deltas
 
 @cache
 def system() -> SystemPrompt:
@@ -46,6 +49,7 @@ class Editor(Role):
     _ranker: KnowledgeRanker
     _knowledge_crammer: KnowledgeCrammer
     _edit_crammer: EditCrammer
+    _envelopes: EnvelopeFormatter
     _retrieval_formatter: KnowledgeFormatter
     _instruction_formatter: InstructionFormatter
     _example_share: float
@@ -58,6 +62,7 @@ class Editor(Role):
         ranker: KnowledgeRanker = llobot.knowledge.rankers.standard(),
         knowledge_crammer: KnowledgeCrammer = llobot.crammers.knowledge.standard(),
         edit_crammer: EditCrammer = llobot.crammers.edits.standard(),
+        envelopes: EnvelopeFormatter = llobot.formatters.envelopes.standard(),
         retrieval_formatter: KnowledgeFormatter = llobot.formatters.knowledge.standard(),
         instruction_formatter: InstructionFormatter = llobot.formatters.instructions.standard(),
         # Share of the context dedicated to examples and associated knowledge updates.
@@ -78,6 +83,7 @@ class Editor(Role):
         self._ranker = ranker
         self._knowledge_crammer = knowledge_crammer
         self._edit_crammer = edit_crammer
+        self._envelopes = envelopes
         self._retrieval_formatter = retrieval_formatter
         self._instruction_formatter = instruction_formatter
         self._example_share = example_share
@@ -124,6 +130,28 @@ class Editor(Role):
         chat.add(history_chat)
         chat.add(retrievals_chat)
         return chat.build()
+
+    def handle_ok(self, chat: ChatBranch, project: Project | None, cutoff: datetime):
+        if not project:
+            super().handle_ok(chat, project, cutoff)
+            return
+
+        edit_delta = self._envelopes.parse_chat(chat[1:])
+        if not edit_delta:
+            super().handle_ok(chat, project, cutoff)
+            return
+
+        project.root.refresh()
+        initial_knowledge = project.root.knowledge(cutoff)
+        current_knowledge = project.root.knowledge()
+        delta = llobot.knowledge.deltas.between(initial_knowledge, current_knowledge, move_hints=edit_delta.moves)
+
+        compressed_delta = llobot.knowledge.deltas.diff_compress(initial_knowledge, delta)
+        response_content = self._envelopes.format_all(compressed_delta)
+        synthetic_response = ChatIntent.RESPONSE.message(response_content)
+        example_chat = chat[0].branch() + synthetic_response
+
+        self.save_example(example_chat, project)
 
 __all__ = [
     'system',

@@ -12,14 +12,15 @@ import llobot.formatters.languages
 import llobot.text
 
 # We have to be careful how we detect code blocks, because we have to ignore nested code blocks.
-# The regex matches either a full block with header and code or a note-only file listing without code block.
+# The regex matches either a full block with header and code or a flag-only file listing without code block.
 # It will also match bare code blocks without header, which will be later filtered out during parsing.
 # By matching the entire block, finditer() will skip over nested blocks within the code.
 _FULL_BLOCK_PART = r'(?:`[^`\n]+`(?: \([^\n]*\))?:\n\n)?(?:```[^`\n]*\n.*?^```|````[^`\n]*\n.*?^````|`````[^`\n]*\n.*?^`````)'
-_NOTE_ONLY_PART = r'`[^`\n]+` \([^\n]+\)'
-_DETECTION_REGEX = re.compile(f'^(?:(?:{_FULL_BLOCK_PART})|(?:{_NOTE_ONLY_PART}))$', re.MULTILINE | re.DOTALL)
-_PARSING_FULL_RE = re.compile(r'`([^`\n]+)`(?: \((.*)\))?:\n\n```+[^`\n]*\n(.*)^```+', re.MULTILINE | re.DOTALL)
-_PARSING_NOTE_ONLY_RE = re.compile(r'`([^`\n]+)` \((.+)\)')
+_FLAG_ONLY_PART = r'`[^`\n]+` \([^\n]+\)'
+_DETECTION_REGEX = re.compile(f'^(?:(?:{_FULL_BLOCK_PART})|(?:{_FLAG_ONLY_PART}))$', re.MULTILINE | re.DOTALL)
+_PARSING_FULL_RE = re.compile(r'`([^`\n]+)`(?: \(([^\n]*)\))?:\n\n```+[^`\n]*\n(.*)^```+', re.MULTILINE | re.DOTALL)
+_PARSING_FLAG_ONLY_RE = re.compile(r'`([^`\n]+)` \((.+)\)')
+_MOVED_FROM_RE = re.compile(r"moved from `([^`]+)`")
 
 class EnvelopeFormatter:
     # May return None to indicate it cannot handle the file, which is useful for combining several formatters.
@@ -28,6 +29,9 @@ class EnvelopeFormatter:
 
     def __call__(self, delta: DocumentDelta) -> str | None:
         return self.format(delta)
+
+    def format_all(self, delta: KnowledgeDelta) -> str:
+        return llobot.text.concat(*(self.format(d) for d in delta))
 
     def find(self, message: str) -> list[str]:
         return []
@@ -88,61 +92,60 @@ def header(*,
 ) -> EnvelopeFormatter:
     class HeaderEnvelopeFormatter(EnvelopeFormatter):
         def format(self, delta: DocumentDelta) -> str | None:
-            notes = []
-            if delta.new: notes.append('new')
-            if delta.modified: notes.append('modified')
-            if delta.removed: notes.append('removed')
-            if delta.moved_from: notes.append(f"moved from `{delta.moved_from}`")
-            note_str = ', '.join(notes)
-            note_suffix = f' ({note_str})' if note_str else ''
+            flags = []
+            if delta.new: flags.append('new')
+            if delta.modified: flags.append('modified')
+            if delta.diff: flags.append('diff')
+            if delta.removed: flags.append('removed')
+            if delta.moved_from: flags.append(f"moved from `{delta.moved_from}`")
+            flag_str = ', '.join(flags)
+            flag_suffix = f' ({flag_str})' if flag_str else ''
 
             if delta.content is None:
-                return f'`{delta.path}`{note_suffix}'
+                return f'`{delta.path}`{flag_suffix}'
 
-            lang = guesser(delta.path, delta.content)
+            lang = 'diff' if delta.diff else guesser(delta.path, delta.content)
             backtick_count = 4 if lang in quad_backticks else 3
             quoted = llobot.text.quote(lang, delta.content, backtick_count=backtick_count)
-            return f'`{delta.path}`{note_suffix}:\n\n{quoted}'
+            return f'`{delta.path}`{flag_suffix}:\n\n{quoted}'
 
         def find(self, message: str) -> list[str]:
             return [match.group(0) for match in _DETECTION_REGEX.finditer(message)]
 
         def parse(self, formatted: str) -> DocumentDelta | None:
             full_match = _PARSING_FULL_RE.fullmatch(formatted.strip())
-            note_only_match = _PARSING_NOTE_ONLY_RE.fullmatch(formatted.strip())
+            flag_only_match = _PARSING_FLAG_ONLY_RE.fullmatch(formatted.strip())
 
             if full_match:
-                path_str, note_str, content = full_match.groups()
-            elif note_only_match:
-                path_str, note_str = note_only_match.groups()
+                path_str, flag_str, content = full_match.groups()
+            elif flag_only_match:
+                path_str, flag_str = flag_only_match.groups()
                 content = None
             else:
                 return None
 
-            note_str = note_str or ''
+            flag_str = flag_str or ''
             path = Path(path_str)
-            notes = {n.strip() for n in note_str.split(',')} if note_str else set()
+            flags = {n.strip() for n in flag_str.split(',')} if flag_str else set()
 
-            new = 'new' in notes
-            modified = 'modified' in notes
-            removed = 'removed' in notes
-            moved_from_note = next((n for n in notes if n.startswith('moved from')), None)
+            new = 'new' in flags
+            modified = 'modified' in flags
+            removed = 'removed' in flags
+            diff = 'diff' in flags
+            moved_from_flag = next((n for n in flags if n.startswith('moved from')), None)
             moved_from = None
-            if moved_from_note:
-                m = re.search(r'`([^`]+)`', moved_from_note)
+            if moved_from_flag:
+                m = _MOVED_FROM_RE.fullmatch(moved_from_flag)
                 if m:
                     moved_from = Path(m.group(1))
             
-            recognized_notes = {'new', 'modified', 'removed'}
-            if moved_from_note:
-                recognized_notes.add(moved_from_note)
-            if notes - recognized_notes:
-                 return None
+            recognized_flags = {'new', 'modified', 'removed', 'diff'}
+            if moved_from_flag:
+                recognized_flags.add(moved_from_flag)
+            
+            invalid = bool(flags - recognized_flags)
 
-            try:
-                return DocumentDelta(path, content, new=new, modified=modified, removed=removed, moved_from=moved_from)
-            except ValueError:
-                return None
+            return DocumentDelta(path, content, new=new, modified=modified, removed=removed, diff=diff, moved_from=moved_from, invalid=invalid)
 
     return HeaderEnvelopeFormatter()
 

@@ -5,7 +5,7 @@ def terminate(text: str) -> str:
     """Adds a terminal newline to the text if it doesn't have one."""
     return text if not text or text.endswith('\n') else text + '\n'
 
-def join(separator: str, documents: Iterable[str]) -> str:
+def join(separator: str, documents: Iterable[str | None]) -> str:
     """
     Joins a collection of documents with a separator.
 
@@ -21,7 +21,7 @@ def join(separator: str, documents: Iterable[str]) -> str:
     terminated_front = [terminate(d) for d in docs[:-1]]
     return separator.join(terminated_front + [docs[-1]])
 
-def concat(*documents: str) -> str:
+def concat(*documents: str | None) -> str:
     """
     Concatenates several documents into a single one, separated by double newlines.
 
@@ -37,7 +37,7 @@ def dashed_name(name) -> str:
 
 # Language can be an empty string. Code block without language will be produced in that case.
 def quote(lang: str, document: str, *, backtick_count: int = 3) -> str:
-    while '`' * backtick_count in document:
+    while '\n' + '`' * backtick_count in document or document.startswith('`' * backtick_count):
         backtick_count += 1
     backticks = '`' * backtick_count
     return f'{backticks}{lang}\n{terminate(document)}{backticks}'
