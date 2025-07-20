@@ -5,6 +5,7 @@ Keep code diffs clean:
 - Avoid very long lines that would require horizontal scrolling or wrapping.
 - Avoid multi-line statements if possible. Break them up into a sequence of one-line statements.
 - Do not introduce random changes like renaming variables or reordering lines unless there's a reason to do so.
+- However, when the task is to clean up or refactor the code, favor clean final code over clean diffs.
 
 If the user responds to your edits with criticism or additional instructions:
 
