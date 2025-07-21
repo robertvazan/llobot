@@ -1,5 +1,5 @@
 import pytest
-from llobot.text import terminate, join, concat, dashed_name, quote
+from llobot.text import terminate, normalize, join, concat, dashed_name, quote
 
 
 def test_terminate():
@@ -14,6 +14,35 @@ def test_terminate():
 
     # Handles multiple newlines at end
     assert terminate("hello\n\n") == "hello\n\n"
+
+
+def test_normalize():
+    # Basic normalization
+    assert normalize("hello\nworld") == "hello\nworld\n"
+
+    # Removes trailing whitespace on lines
+    assert normalize("hello   \nworld  ") == "hello\nworld\n"
+
+    # Removes empty lines at beginning and end
+    assert normalize("\n\nhello\nworld\n\n") == "hello\nworld\n"
+
+    # Handles mixed whitespace
+    assert normalize("  \nhello\n  \nworld\n  ") == "hello\n\nworld\n"
+
+    # Handles empty string
+    assert normalize("") == ""
+
+    # Handles only whitespace
+    assert normalize("   \n  \n  ") == ""
+
+    # Preserves internal empty lines
+    assert normalize("hello\n\nworld") == "hello\n\nworld\n"
+
+    # Already normalized document
+    assert normalize("hello\nworld\n") == "hello\nworld\n"
+
+    # Single line
+    assert normalize("hello") == "hello\n"
 
 
 def test_join():

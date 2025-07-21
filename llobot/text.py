@@ -5,6 +5,30 @@ def terminate(text: str) -> str:
     """Adds a terminal newline to the text if it doesn't have one."""
     return text if not text or text.endswith('\n') else text + '\n'
 
+def normalize(document: str) -> str:
+    """
+    Normalizes a document by:
+    - Removing trailing whitespace on all lines
+    - Removing empty lines at the beginning and end
+    - Ensuring the document is newline-terminated
+    """
+    # Remove trailing whitespace on all lines
+    lines = [line.rstrip() for line in document.splitlines()]
+
+    # Remove empty lines at the beginning
+    while lines and not lines[0]:
+        lines.pop(0)
+
+    # Remove empty lines at the end
+    while lines and not lines[-1]:
+        lines.pop()
+
+    # Join lines and ensure newline termination
+    if not lines:
+        return ""
+
+    return '\n'.join(lines) + '\n'
+
 def join(separator: str, documents: Iterable[str | None]) -> str:
     """
     Joins a collection of documents with a separator.
@@ -44,6 +68,7 @@ def quote(lang: str, document: str, *, backtick_count: int = 3) -> str:
 
 __all__ = [
     'terminate',
+    'normalize',
     'join',
     'concat',
     'dashed_name',

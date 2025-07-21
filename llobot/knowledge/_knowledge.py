@@ -84,11 +84,11 @@ def directory(
     # Special-case concrete whitelist, so that we don't recurse into potentially large directories unnecessarily.
     if isinstance(whitelist, (Path, KnowledgeIndex, KnowledgeRanking)):
         whitelist = llobot.knowledge.indexes.coerce(whitelist)
-        knowledge = Knowledge({path: llobot.fs.read_text(directory/path) for path in whitelist if (directory/path).is_file() and not blacklist(path)})
+        knowledge = Knowledge({path: llobot.fs.read_document(directory/path) for path in whitelist if (directory/path).is_file() and not blacklist(path)})
     else:
         whitelist = llobot.knowledge.subsets.coerce(whitelist or llobot.knowledge.subsets.everything())
         index = llobot.knowledge.indexes.directory(directory, whitelist, blacklist)
-        knowledge = Knowledge({path: llobot.fs.read_text(directory/path) for path in index})
+        knowledge = Knowledge({path: llobot.fs.read_document(directory/path) for path in index})
         if whitelist.content_sensitive:
             knowledge &= whitelist
     if blacklist.content_sensitive:

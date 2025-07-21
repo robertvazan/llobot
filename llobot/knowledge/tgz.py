@@ -2,6 +2,7 @@ from pathlib import Path
 import io
 import tarfile
 from llobot.knowledge import Knowledge
+import llobot.text
 import llobot.fs
 
 SUFFIX = '.tar.gz'
@@ -22,7 +23,7 @@ def deserialize(buffer: bytes) -> Knowledge:
         for member in tar.getmembers():
             if not member.isfile():
                 continue
-            content = tar.extractfile(member).read().decode('utf-8')
+            content = llobot.text.normalize(tar.extractfile(member).read().decode('utf-8'))
             knowledge[Path(member.name)] = content
     return Knowledge(knowledge)
 

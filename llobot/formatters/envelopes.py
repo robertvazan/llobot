@@ -150,6 +150,10 @@ def header(*,
             
             invalid = bool(flags - recognized_flags)
 
+            # Normalize content if present
+            if content is not None:
+                content = llobot.text.normalize(content)
+
             return DocumentDelta(path, content, new=new, modified=modified, removed=removed, diff=diff, moved_from=moved_from, invalid=invalid)
 
     return HeaderEnvelopeFormatter()

@@ -8,7 +8,8 @@ def read(filename: str, *, package: str | None = None) -> str:
     if package is None:
         frame = inspect.currentframe().f_back
         package = frame.f_globals['__name__']
-    return (resources.files(package) / filename).read_text().strip()
+    content = (resources.files(package) / filename).read_text()
+    return llobot.text.normalize(content).strip()
 
 def combine(*sections: str) -> list[str]:
     seen = set()

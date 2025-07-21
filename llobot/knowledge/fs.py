@@ -11,7 +11,7 @@ def save(directory: Path, knowledge: Knowledge):
 def load(directory: Path) -> Knowledge:
     # Use faster, simpler rglob to load unfiltered knowledge from archive.
     index = KnowledgeIndex(path.relative_to(directory) for path in directory.rglob('*') if path.is_file())
-    return Knowledge({path: llobot.fs.read_text(directory/path) for path in index})
+    return Knowledge({path: llobot.fs.read_document(directory/path) for path in index})
 
 __all__ = [
     'save',
