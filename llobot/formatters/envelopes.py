@@ -125,8 +125,13 @@ def header(*,
                 return None
 
             flag_str = flag_str or ''
-            path = Path(path_str)
             flags = {n.strip() for n in flag_str.split(',')} if flag_str else set()
+
+            # Skip informative listings without attempting to parse anything else.
+            if 'informative' in flags:
+                return None
+
+            path = Path(path_str)
 
             new = 'new' in flags
             modified = 'modified' in flags
