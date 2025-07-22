@@ -65,22 +65,20 @@ def prioritized(
 
             example_delta = envelopes.parse_chat(example)
             example_full = example_delta.full
-            
+
             update_builder = llobot.knowledge.deltas.KnowledgeDeltaBuilder()
-            
+
             # Check for deletions
             for path in example_delta.present:
                 if path not in knowledge and path not in updated_paths:
                     update_builder.add(DocumentDelta(path, None, removed=True))
-                    updated_paths.add(path)
 
             # Check for modifications
             for path in example_delta.touched:
                 if path in knowledge and path not in updated_paths:
                     if path not in example_full or example_full[path] != knowledge[path]:
                          update_builder.add(DocumentDelta(path, knowledge[path], modified=True))
-                         updated_paths.add(path)
-            
+
             update_delta = update_builder.build()
             update_chat = knowledge_formatter.render(update_delta)
 
@@ -94,6 +92,7 @@ def prioritized(
 
             chunks.append(chunk_chat)
             budget -= chunk_chat.cost
+            updated_paths.update(update_delta.touched)
             touched_paths.update(example_delta.touched)
             touched_paths.update(update_delta.touched)
 
