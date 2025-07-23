@@ -15,7 +15,7 @@ class ChatbotRequest:
     _command: ChatbotCommand | None
     _prompt: ChatBranch
     _project: Project | None
-    _cutoff: datetime
+    _cutoff: datetime | None
     _has_implicit_cutoff: bool
     _model: Model
 
@@ -32,33 +32,37 @@ class ChatbotRequest:
         self._prompt = prompt
         self._project = project
         self._has_implicit_cutoff = cutoff is None
-        self._cutoff = cutoff or llobot.time.now()
+        self._cutoff = cutoff
         self._model = model
-    
+
     @property
     def chatbot(self) -> Chatbot:
         return self._chatbot
-    
+
     @property
     def command(self) -> ChatbotCommand | None:
         return self._command
-    
+
     @property
     def prompt(self) -> ChatBranch:
         return self._prompt
-    
+
     @property
     def project(self) -> Project | None:
         return self._project
-    
+
     @property
     def cutoff(self) -> datetime:
+        # Initialize cutoff to current time at the last possible moment,
+        # so that the cutoff is not earlier than timestamp of just refreshed knowledge.
+        if self._cutoff is None:
+            self._cutoff = llobot.time.now()
         return self._cutoff
-    
+
     @property
     def has_implicit_cutoff(self) -> bool:
         return self._has_implicit_cutoff
-    
+
     @property
     def model(self) -> Model:
         return self._model
@@ -76,11 +80,11 @@ def parse(chatbot: Chatbot, prompt: ChatBranch) -> ChatbotRequest:
 
     project = _decode_project(chatbot, header.project) if header.project else None
     model = chatbot.models[header.model] if header.model else chatbot.model
-    
+
     if header.options:
         model.validate_options(header.options)
         model = model.configure(header.options)
-    
+
     cutoff = header.cutoff or chat_info.cutoff
     command = header.command or chat_info.command
 
