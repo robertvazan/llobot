@@ -5,12 +5,12 @@ from llobot.chats import ChatBranch
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.rankings import KnowledgeRanking
-from llobot.scores.knowledge import KnowledgeScores
+from llobot.knowledge.scores import KnowledgeScores
 from llobot.formatters.knowledge import KnowledgeFormatter
 import llobot.knowledge.subsets
 import llobot.knowledge.rankings
 import llobot.formatters.knowledge
-import llobot.scores.knowledge
+import llobot.knowledge.scores
 
 class KnowledgeCrammer:
     def cram(self, knowledge: Knowledge, budget: int, scores: KnowledgeScores, ranking: KnowledgeRanking) -> tuple[ChatBranch, KnowledgeIndex]:
@@ -28,7 +28,7 @@ def priority(*,
             knowledge &= ranking
             knowledge &= scores
             # Premultiply with document lengths. Both scores and lengths will get a denominator in the loop.
-            scores *= llobot.scores.knowledge.length(knowledge)
+            scores *= llobot.knowledge.scores.length(knowledge)
             while True:
                 formatted = formatter.render_fresh(knowledge, ranking)
                 length = formatted.cost
@@ -39,9 +39,9 @@ def priority(*,
                 # First factor is value density. Square root spreads available budget between document diversity and document length.
                 # Hardcoding sqrt here is not good. We need to make this configurable in the future somehow.
                 # Second factor is the ratio of actual content to formatter output length. This discourages inclusion of tiny files.
-                costs = llobot.scores.knowledge.length(knowledge)
+                costs = llobot.knowledge.scores.length(knowledge)
                 overhead = formatted.cost - costs.total()
-                costs += llobot.scores.knowledge.uniform(knowledge, overhead)
+                costs += llobot.knowledge.scores.uniform(knowledge, overhead)
                 density = KnowledgeScores({path: scores[path] * (costs[path] ** -1.5) for path in knowledge.keys()})
                 density_ranking = list(llobot.knowledge.rankings.descending(density))
                 removed = []

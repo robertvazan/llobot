@@ -7,7 +7,7 @@ from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.knowledge.rankers import KnowledgeRanker
 from llobot.scrapers import Scraper
-from llobot.scorers.knowledge import KnowledgeScorer
+from llobot.knowledge.scorers import KnowledgeScorer
 from llobot.crammers.knowledge import KnowledgeCrammer
 from llobot.crammers.edits import EditCrammer
 from llobot.formatters.envelopes import EnvelopeFormatter
@@ -17,8 +17,8 @@ from llobot.instructions import SystemPrompt
 from llobot.projects import Project
 from llobot.roles import Role
 import llobot.scrapers
-import llobot.scorers.knowledge
-import llobot.scores.knowledge
+import llobot.knowledge.scorers
+import llobot.knowledge.scores
 import llobot.crammers.knowledge
 import llobot.crammers.edits
 import llobot.formatters.knowledge
@@ -57,8 +57,8 @@ class Editor(Role):
     def __init__(self, name: str, *,
         instructions: str = system().compile(),
         retrieval_scraper: Scraper = llobot.scrapers.retrieval(),
-        relevance_scorer: KnowledgeScorer | KnowledgeSubset = llobot.scorers.knowledge.irrelevant(),
-        graph_scorer: KnowledgeScorer = llobot.scorers.knowledge.standard(),
+        relevance_scorer: KnowledgeScorer | KnowledgeSubset = llobot.knowledge.scorers.irrelevant(),
+        graph_scorer: KnowledgeScorer = llobot.knowledge.scorers.standard(),
         ranker: KnowledgeRanker = llobot.knowledge.rankers.standard(),
         knowledge_crammer: KnowledgeCrammer = llobot.crammers.knowledge.standard(),
         edit_crammer: EditCrammer = llobot.crammers.edits.standard(),
@@ -76,7 +76,7 @@ class Editor(Role):
         self._instructions = instructions
         self._retrieval_scraper = retrieval_scraper
         if isinstance(relevance_scorer, KnowledgeSubset):
-            self._relevance_scorer = llobot.scorers.knowledge.relevant(relevance_scorer)
+            self._relevance_scorer = llobot.knowledge.scorers.relevant(relevance_scorer)
         else:
             self._relevance_scorer = relevance_scorer
         self._graph_scorer = graph_scorer
@@ -112,11 +112,11 @@ class Editor(Role):
         scores = self._relevance_scorer(knowledge)
         blacklist = knowledge.keys() - scores.keys()
         if project and project.is_subproject:
-            scores *= llobot.scores.knowledge.prioritize(knowledge, project.subset)
+            scores *= llobot.knowledge.scores.prioritize(knowledge, project.subset)
         scores = self._graph_scorer.rescore(knowledge, scores)
         scores -= history_paths
         scores -= blacklist
-        
+
         knowledge_chat, knowledge_paths = self._knowledge_crammer(knowledge, knowledge_budget, scores, ranking)
 
         # 4. Retrievals

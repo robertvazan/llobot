@@ -61,7 +61,7 @@ def coerce(what: KnowledgeIndex | 'Knowledge' | 'KnowledgeRanking' | 'KnowledgeS
     from llobot.knowledge.rankings import KnowledgeRanking
     if isinstance(what, KnowledgeRanking):
         return KnowledgeIndex(what)
-    from llobot.scores.knowledge import KnowledgeScores
+    from llobot.knowledge.scores import KnowledgeScores
     if isinstance(what, KnowledgeScores):
         return what.keys()
     raise TypeError
@@ -100,4 +100,3 @@ __all__ = [
     'coerce',
     'directory',
 ]
-

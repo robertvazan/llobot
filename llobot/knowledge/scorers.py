@@ -4,12 +4,12 @@ from pathlib import Path
 from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.scrapers import Scraper
-from llobot.scores.knowledge import KnowledgeScores
+from llobot.knowledge.scores import KnowledgeScores
 import llobot.knowledge.graphs
 import llobot.knowledge.rankings
 import llobot.knowledge.subsets
 import llobot.scrapers
-import llobot.scores.knowledge
+import llobot.knowledge.scores
 
 # Returned scores represent relative worth of every document.
 # Relationship between score and document worth should be linear, so that document with double value has double score.
@@ -86,7 +86,7 @@ def create(function: Callable[[Knowledge], KnowledgeScores]) -> KnowledgeScorer:
 def rescorer(function: Callable[[Knowledge, KnowledgeScores], KnowledgeScores]) -> KnowledgeScorer:
     class LambdaKnowledgeRescorer(KnowledgeScorer):
         def score(self, knowledge: Knowledge) -> KnowledgeScores:
-            return function(knowledge, llobot.scores.knowledge.constant(knowledge))
+            return function(knowledge, llobot.knowledge.scores.constant(knowledge))
         def rescore(self, knowledge: Knowledge, initial: KnowledgeScores) -> KnowledgeScores:
             return function(knowledge, initial)
     return LambdaKnowledgeRescorer()
@@ -95,35 +95,35 @@ def coerce(material: KnowledgeScorer | KnowledgeSubset | str | Path | KnowledgeI
     if isinstance(material, KnowledgeScorer):
         return material
     subset = llobot.knowledge.subsets.coerce(material)
-    return create(lambda knowledge: llobot.scores.knowledge.constant(knowledge.keys() & subset))
+    return create(lambda knowledge: llobot.knowledge.scores.constant(knowledge.keys() & subset))
 
 @cache
 def constant(score: float = 1) -> KnowledgeScorer:
-    return create(lambda knowledge: llobot.scores.knowledge.constant(knowledge, score))
+    return create(lambda knowledge: llobot.knowledge.scores.constant(knowledge, score))
 
 @cache
 def uniform(budget: float = 1) -> KnowledgeScorer:
-    return create(lambda knowledge: llobot.scores.knowledge.uniform(knowledge, budget))
+    return create(lambda knowledge: llobot.knowledge.scores.uniform(knowledge, budget))
 
 @cache
 def length() -> KnowledgeScorer:
-    return create(lambda knowledge: llobot.scores.knowledge.length(knowledge))
+    return create(lambda knowledge: llobot.knowledge.scores.length(knowledge))
 
 @cache
 def sqrt_length() -> KnowledgeScorer:
-    return create(lambda knowledge: llobot.scores.knowledge.sqrt_length(knowledge))
+    return create(lambda knowledge: llobot.knowledge.scores.sqrt_length(knowledge))
 
 @lru_cache
 def hub(scraper: Scraper = llobot.scrapers.standard()) -> KnowledgeScorer:
-    return create(lambda knowledge: llobot.scores.knowledge.hub(llobot.knowledge.graphs.crawl(knowledge, scraper)))
+    return create(lambda knowledge: llobot.knowledge.scores.hub(llobot.knowledge.graphs.crawl(knowledge, scraper)))
 
 @lru_cache
 def pagerank(scraper: Scraper = llobot.scrapers.standard(), **kwargs) -> KnowledgeScorer:
-    return rescorer(lambda knowledge, initial: llobot.scores.knowledge.pagerank(llobot.knowledge.graphs.crawl(knowledge, scraper), knowledge.keys(), initial, **kwargs))
+    return rescorer(lambda knowledge, initial: llobot.knowledge.scores.pagerank(llobot.knowledge.graphs.crawl(knowledge, scraper), knowledge.keys(), initial, **kwargs))
 
 @lru_cache
 def reverse_pagerank(scraper: Scraper = llobot.scrapers.standard(), **kwargs) -> KnowledgeScorer:
-    return create(lambda knowledge: llobot.scores.knowledge.reverse_pagerank(llobot.knowledge.graphs.crawl(knowledge, scraper), knowledge.keys(), **kwargs))
+    return create(lambda knowledge: llobot.knowledge.scores.reverse_pagerank(llobot.knowledge.graphs.crawl(knowledge, scraper), knowledge.keys(), **kwargs))
 
 def _relevance(
     condition: KnowledgeSubset,

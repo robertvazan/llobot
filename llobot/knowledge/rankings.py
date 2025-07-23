@@ -56,8 +56,8 @@ def descending(scores: 'KnowledgeScores') -> KnowledgeRanking:
     return ascending(-scores)
 
 def shuffle(paths: KnowledgeIndex | KnowledgeRanking | 'Knowledge' | 'KnowledgeScores') -> KnowledgeRanking:
-    import llobot.scores.knowledge
-    return descending(llobot.scores.knowledge.random(paths))
+    import llobot.knowledge.scores
+    return descending(llobot.knowledge.scores.random(paths))
 
 __all__ = [
     'KnowledgeRanking',
@@ -67,4 +67,3 @@ __all__ = [
     'descending',
     'shuffle',
 ]
-
