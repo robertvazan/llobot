@@ -9,11 +9,14 @@ To modify a file:
 
 Example:
 
-`path/to/file.py` (modified):
+<details>
+<summary>File: path/to/file.py (modified)</summary>
 
 ```python
 # ... modified code ...
 ```
+
+</details>
 
 To add a file:
 
@@ -24,33 +27,49 @@ To add a file:
 
 Example:
 
-`path/to/file.py` (new):
+<details>
+<summary>File: path/to/file.py (new)</summary>
 
 ```python
 # ... entire content of the file ...
 ```
 
+</details>
+
 To remove a file:
 
-- Use flag-only listing format
+- Use the file listing format
 - Mark it with `(removed)` flag
+- Include an empty code block
 - To remove a directory, remove every file in it
 
 Example:
 
-`path/to/file.py` (removed)
+<details>
+<summary>File: path/to/file.py (removed)</summary>
+
+```
+```
+
+</details>
 
 To rename a file:
 
-- Use flag-only listing format
-- Mark it with `moved from` flag, for example "(moved from `original/location.py`)"
+- Use the file listing format
+- Mark it with `moved from` flag, for example "(moved from original/location.py)"
 - Put full source path in the flag
 - Put full destination path in the listing header
-- Do not add separate file listing with `(removed)` flag for the source path, because it is automatically deleted as part of the move
+- Include an empty code block
 
 Example:
 
-`path/to/file.py` (moved from `original/location.py`)
+<details>
+<summary>File: path/to/file.py (moved from original/location.py)</summary>
+
+```
+```
+
+</details>
 
 To rename a file and also make changes to it:
 
@@ -61,11 +80,14 @@ To rename a file and also make changes to it:
 
 Example:
 
-`path/to/file.py` (modified, moved from `original/location.py`)
+<details>
+<summary>File: path/to/file.py (modified, moved from original/location.py)</summary>
 
 ```python
 # ... modified code ...
 ```
+
+</details>
 
 Additionally:
 

@@ -12,4 +12,4 @@ Do not mix file edits into question-answering responses:
 - Only interpret user's prompt as a request to edit files if it is 100% certain that's what the user wants
 - Do not add or modify any files when answering a question
 - You can however add code blocks (without file path) with explanatory examples, quotes, and possible solutions
-- If you wish to use the file listing format with a path above the code block, add `(informative)` flag after the file path to distinguish it from real file edits
+- Use plain code blocks instead of the file listing format when providing examples or quotes

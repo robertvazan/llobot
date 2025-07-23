@@ -11,16 +11,19 @@ import llobot.knowledge.subsets.markdown
 import llobot.formatters.languages
 import llobot.text
 
-# We have to be careful how we detect code blocks, because we have to ignore nested code blocks.
-# The regex matches either a full block with header and code or a flag-only file listing without code block.
-# It will also match bare code blocks without header, which will be later filtered out during parsing.
-# By matching the entire block, finditer() will skip over nested blocks within the code.
-_FULL_BLOCK_PART = r'(?:`[^`\n]+`(?: \([^\n]*\))?:\n\n)?(?:```[^`\n]*\n.*?^```|````[^`\n]*\n.*?^````|`````[^`\n]*\n.*?^`````)'
-_FLAG_ONLY_PART = r'`[^`\n]+` \([^\n]+\)'
-_DETECTION_REGEX = re.compile(f'^(?:(?:{_FULL_BLOCK_PART})|(?:{_FLAG_ONLY_PART}))$', re.MULTILINE | re.DOTALL)
-_PARSING_FULL_RE = re.compile(r'`([^`\n]+)`(?: \(([^\n]*)\))?:\n\n```+[^`\n]*\n(.*)^```+', re.MULTILINE | re.DOTALL)
-_PARSING_FLAG_ONLY_RE = re.compile(r'`([^`\n]+)` \((.+)\)')
-_MOVED_FROM_RE = re.compile(r"moved from `([^`]+)`")
+# Build regex for multi-backtick code blocks (3-10 backticks)
+_CODE_BLOCK_PATTERN = '|'.join(rf'{"`" * i}[^`\n]*\n.*?^{"`" * i}' for i in range(3, 11))
+
+# Regex for complete details block with file listing
+_DETAILS_PATTERN = rf'<details>\n<summary>[^\n]+</summary>\n\n(?:{_CODE_BLOCK_PATTERN})\n\n</details>'
+
+# Combined detection regex: details blocks or bare code blocks (to skip the latter)
+_DETECTION_REGEX = re.compile(f'^(?:(?:{_DETAILS_PATTERN})|(?:{_CODE_BLOCK_PATTERN}))$', re.MULTILINE | re.DOTALL)
+
+# Parsing regex for details blocks
+_PARSING_RE = re.compile(rf'<details>\n<summary>File: ([^\n]+?)(?: \(([^\n)]*)\))?</summary>\n\n```+[^\n]*\n(.*)^```+\n\n</details>', re.MULTILINE | re.DOTALL)
+
+_MOVED_FROM_RE = re.compile(r"moved from (.+)")
 
 class EnvelopeFormatter:
     # May return None to indicate it cannot handle the file, which is useful for combining several formatters.
@@ -42,7 +45,7 @@ class EnvelopeFormatter:
     def parse_message(self, message: str | ChatMessage) -> KnowledgeDelta:
         if isinstance(message, ChatMessage):
             message = message.content
-        
+
         builder = KnowledgeDeltaBuilder()
         for match in self.find(message):
             delta = self.parse(match)
@@ -97,41 +100,31 @@ def header(*,
             if delta.modified: flags.append('modified')
             if delta.diff: flags.append('diff')
             if delta.removed: flags.append('removed')
-            if delta.moved_from: flags.append(f"moved from `{delta.moved_from}`")
+            if delta.moved_from: flags.append(f"moved from {delta.moved_from}")
             flag_str = ', '.join(flags)
             flag_suffix = f' ({flag_str})' if flag_str else ''
 
-            if delta.content is None:
-                return f'`{delta.path}`{flag_suffix}'
-
-            lang = 'diff' if delta.diff else guesser(delta.path, delta.content)
+            # Always include content, even if empty
+            content = delta.content or ''
+            lang = 'diff' if delta.diff else guesser(delta.path, content)
             backtick_count = 4 if lang in quad_backticks else 3
-            quoted = llobot.text.quote(lang, delta.content, backtick_count=backtick_count)
-            return f'`{delta.path}`{flag_suffix}:\n\n{quoted}'
+            quoted = llobot.text.quote(lang, content, backtick_count=backtick_count)
+            
+            return f'<details>\n<summary>File: {delta.path}{flag_suffix}</summary>\n\n{quoted}\n\n</details>'
 
         def find(self, message: str) -> list[str]:
             return [match.group(0) for match in _DETECTION_REGEX.finditer(message)]
 
         def parse(self, formatted: str) -> DocumentDelta | None:
-            full_match = _PARSING_FULL_RE.fullmatch(formatted.strip())
-            flag_only_match = _PARSING_FLAG_ONLY_RE.fullmatch(formatted.strip())
-
-            if full_match:
-                path_str, flag_str, content = full_match.groups()
-            elif flag_only_match:
-                path_str, flag_str = flag_only_match.groups()
-                content = None
-            else:
+            match = _PARSING_RE.fullmatch(formatted.strip())
+            if not match:
                 return None
 
+            path_str, flag_str, content = match.groups()
+            path = Path(path_str.strip())
+            
             flag_str = flag_str or ''
             flags = {n.strip() for n in flag_str.split(',')} if flag_str else set()
-
-            # Skip informative listings without attempting to parse anything else.
-            if 'informative' in flags:
-                return None
-
-            path = Path(path_str)
 
             new = 'new' in flags
             modified = 'modified' in flags
@@ -142,17 +135,19 @@ def header(*,
             if moved_from_flag:
                 m = _MOVED_FROM_RE.fullmatch(moved_from_flag)
                 if m:
-                    moved_from = Path(m.group(1))
-            
+                    moved_from = Path(m.group(1).strip())
+
             recognized_flags = {'new', 'modified', 'removed', 'diff'}
             if moved_from_flag:
                 recognized_flags.add(moved_from_flag)
-            
+
             invalid = bool(flags - recognized_flags)
 
-            # Normalize content if present
-            if content is not None:
-                content = llobot.text.normalize(content)
+            # Empty content should be ignored in exactly two cases: (1) removed or (2) moved from without modified
+            if content == '' and (removed or (moved_from and not modified)):
+                content = None
+            else:
+                content = llobot.text.normalize(content) if content else None
 
             return DocumentDelta(path, content, new=new, modified=modified, removed=removed, diff=diff, moved_from=moved_from, invalid=invalid)
 
