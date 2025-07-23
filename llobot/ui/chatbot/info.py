@@ -107,7 +107,8 @@ def _knowledge_section(title: str, knowledge: Knowledge) -> str:
     paths = knowledge.keys().sorted()
     if not paths:
         return ''
-    return f'{title}:\n\n```\n' + '\n'.join([str(p) for p in paths]) + '\n```'
+    file_list = '\n'.join([str(p) for p in paths])
+    return llobot.text.details(title, '', file_list)
 
 def context_knowledge_section(knowledge: Knowledge) -> str:
     return _knowledge_section('Context knowledge', knowledge)
@@ -120,19 +121,19 @@ def subproject_knowledge_section(project: Project, knowledge: Knowledge) -> str:
 
 def render_info(request: ChatbotRequest) -> str:
     chatbot = request.chatbot
-    
+
     sections = [config_section(request), model_section(request.model)]
-    
+
     knowledge = request.project.root.knowledge(request.cutoff) if request.project else Knowledge()
     if request.project:
         sections.append(project_section(request.project, knowledge))
         if request.project.is_subproject:
             sections.append(subproject_section(request.project, knowledge))
-    
+
     assembled = llobot.ui.chatbot.requests.assemble(request)
     context_knowledge = llobot.formatters.envelopes.standard().parse_chat(assembled).full
     sections.append(prompt_section(assembled, context_knowledge))
-    
+
     sections.append(help_section())
     sections.append(model_list_section(chatbot.models))
     if chatbot.projects:
@@ -144,7 +145,7 @@ def render_info(request: ChatbotRequest) -> str:
         if request.project.is_subproject:
             sections.append(subproject_knowledge_section(request.project, knowledge))
         sections.append(project_knowledge_section(knowledge))
-        
+
     return llobot.text.concat(*sections)
 
 def handle_info(request: ChatbotRequest) -> ModelStream:

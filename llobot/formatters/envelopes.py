@@ -89,11 +89,11 @@ class EnvelopeFormatter:
         return AndEnvelopeFormatter()
 
 @lru_cache
-def header(*,
+def details(*,
     guesser: LanguageGuesser = llobot.formatters.languages.standard(),
     quad_backticks: list[str] = ['markdown'],
 ) -> EnvelopeFormatter:
-    class HeaderEnvelopeFormatter(EnvelopeFormatter):
+    class DetailsEnvelopeFormatter(EnvelopeFormatter):
         def format(self, delta: DocumentDelta) -> str | None:
             flags = []
             if delta.new: flags.append('new')
@@ -104,13 +104,14 @@ def header(*,
             flag_str = ', '.join(flags)
             flag_suffix = f' ({flag_str})' if flag_str else ''
 
+            summary = f'File: {delta.path}{flag_suffix}'
+
             # Always include content, even if empty
             content = delta.content or ''
             lang = 'diff' if delta.diff else guesser(delta.path, content)
             backtick_count = 4 if lang in quad_backticks else 3
-            quoted = llobot.text.quote(lang, content, backtick_count=backtick_count)
             
-            return f'<details>\n<summary>File: {delta.path}{flag_suffix}</summary>\n\n{quoted}\n\n</details>'
+            return llobot.text.details(summary, lang, content, backtick_count=backtick_count)
 
         def find(self, message: str) -> list[str]:
             return [match.group(0) for match in _DETECTION_REGEX.finditer(message)]
@@ -122,7 +123,7 @@ def header(*,
 
             path_str, flag_str, content = match.groups()
             path = Path(path_str.strip())
-            
+
             flag_str = flag_str or ''
             flags = {n.strip() for n in flag_str.split(',')} if flag_str else set()
 
@@ -151,14 +152,14 @@ def header(*,
 
             return DocumentDelta(path, content, new=new, modified=modified, removed=removed, diff=diff, moved_from=moved_from, invalid=invalid)
 
-    return HeaderEnvelopeFormatter()
+    return DetailsEnvelopeFormatter()
 
 @cache
 def standard() -> EnvelopeFormatter:
-    return header()
+    return details()
 
 __all__ = [
     'EnvelopeFormatter',
-    'header',
+    'details',
     'standard',
 ]

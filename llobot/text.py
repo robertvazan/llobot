@@ -66,6 +66,16 @@ def quote(lang: str, document: str, *, backtick_count: int = 3) -> str:
     backticks = '`' * backtick_count
     return f'{backticks}{lang}\n{terminate(document)}{backticks}'
 
+def details(summary: str, lang: str, document: str, *, backtick_count: int = 3) -> str:
+    """
+    Wraps a document in HTML details/summary tags with a code block inside.
+
+    The document is quoted using the specified language and then wrapped in
+    details/summary tags for collapsible display.
+    """
+    quoted = quote(lang, document, backtick_count=backtick_count)
+    return f'<details>\n<summary>{summary}</summary>\n\n{quoted}\n\n</details>'
+
 __all__ = [
     'terminate',
     'normalize',
@@ -73,4 +83,5 @@ __all__ = [
     'concat',
     'dashed_name',
     'quote',
+    'details',
 ]

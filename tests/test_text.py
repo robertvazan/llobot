@@ -1,5 +1,5 @@
 import pytest
-from llobot.text import terminate, normalize, join, concat, dashed_name, quote
+from llobot.text import terminate, normalize, join, concat, dashed_name, quote, details
 
 
 def test_terminate():
@@ -118,9 +118,27 @@ def test_quote():
     # Automatically adjusts backtick count when document contains backticks
     assert quote("markdown", "Here is some `code`") == "```markdown\nHere is some `code`\n```"
     assert quote("markdown", "```\ncode block\n```") == "````markdown\n```\ncode block\n```\n````"
+    assert quote("markdown", "````\ncode block\n````") == "`````markdown\n````\ncode block\n````\n`````"
+
+    # Handles document starting with backticks
+    assert quote("markdown", "```python\ncode\n```") == "````markdown\n```python\ncode\n```\n````"
 
     # Handles empty document
     assert quote("python", "") == "```python\n```"
 
     # Custom backtick count
     assert quote("python", "print('hello')", backtick_count=4) == "````python\nprint('hello')\n````"
+
+
+def test_details():
+    # Basic details formatting
+    expected = "<details>\n<summary>Test Summary</summary>\n\n```python\nprint('hello')\n```\n\n</details>"
+    assert details("Test Summary", "python", "print('hello')") == expected
+
+    # Complex summary with special characters
+    expected = "<details>\n<summary>File: path/to/file.py (new)</summary>\n\n```python\nprint('hello')\n```\n\n</details>"
+    assert details("File: path/to/file.py (new)", "python", "print('hello')") == expected
+
+    # Custom backtick count is passed through to quote()
+    expected = "<details>\n<summary>Test Summary</summary>\n\n````python\nprint('hello')\n````\n\n</details>"
+    assert details("Test Summary", "python", "print('hello')", backtick_count=4) == expected
