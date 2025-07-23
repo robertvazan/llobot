@@ -93,17 +93,18 @@ class ModelException(Exception):
     def __init__(self, stream: ModelStream):
         self.stream = stream
 
-def completed(response: str) -> ModelStream:
+def completed(response: str, *, chunk_size: int = 5000) -> ModelStream:
     class CompletedStream(ModelStream):
-        _consumed: bool
+        _position: int
         def __init__(self):
             super().__init__()
-            self._consumed = False
+            self._position = 0
         def _receive(self) -> str | None:
-            if self._consumed:
+            if self._position >= len(response):
                 return None
-            self._consumed = True
-            return response
+            chunk = response[self._position:self._position + chunk_size]
+            self._position += len(chunk)
+            return chunk
     return CompletedStream()
 
 def status(response: str, **kwargs) -> ModelStream:
@@ -210,4 +211,3 @@ __all__ = [
     'handler',
     'chat',
 ]
-
