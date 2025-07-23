@@ -81,7 +81,8 @@ class _AnthropicModel(Model):
         aliases: Iterable[str] = [],
         context_budget: int = 100_000,
         max_tokens: int = 8_000,
-        cached: bool = True,
+        # No caching by default. It costs extra and not everyone takes advantage of it.
+        cached: bool = False,
         thinking: int | None = None,
     ):
         if client:
