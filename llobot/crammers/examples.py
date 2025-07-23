@@ -1,9 +1,6 @@
 from __future__ import annotations
 from functools import cache, lru_cache
 from llobot.chats import ChatBranch, ChatBuilder
-from llobot.scorers.history import HistoryScorer
-import llobot.scores.history
-import llobot.scorers.history
 
 class ExampleCrammer:
     def cram(self, examples: Iterable[ChatBranch], budget: int) -> ChatBranch:
@@ -19,30 +16,7 @@ def create(function: Callable[[Iterable[ChatBranch], int], ChatBranch]) -> Examp
     return LambdaExampleCrammer()
 
 @lru_cache
-def greedy() -> ExampleCrammer:
-    def cram(examples: Iterable[ChatBranch], budget: int) -> ChatBranch:
-        selected_examples = []
-        seen_prompts = set()
-        for example in examples:
-            prompt_content = example[0].content
-            # If there are several examples with the same prompt, include only the latest one.
-            if prompt_content in seen_prompts:
-                continue
-            if example.cost > budget:
-                break
-            selected_examples.append(example)
-            seen_prompts.add(prompt_content)
-            budget -= example.cost
-        selected_examples.reverse()
-        chat = ChatBuilder()
-        for example in selected_examples:
-            chat.add(example)
-        return chat.build()
-    return create(cram)
-
-@lru_cache
-def prioritized(
-    history_scorer: HistoryScorer = llobot.scorers.history.standard(),
+def greedy(
     # Overscan depth to prevent single large example from clogging the stream and leaving large unused budget.
     depth: int = 10,
     # Do not overscan when we reach reasonable fill rate.
@@ -51,12 +25,11 @@ def prioritized(
     def cram(examples: Iterable[ChatBranch], budget: int) -> ChatBranch:
         if budget <= 0:
             return ChatBranch()
-        history_scores = history_scorer(examples)
         selected_examples = []
         seen_prompts = set()
         skipped = 0
         max_waste = int(budget * (1 - fill))
-        for example in history_scores.chats():
+        for example in examples:
             prompt_content = example[0].content
             # If there are several examples with the same prompt, include only the latest one.
             if prompt_content in seen_prompts:
@@ -80,12 +53,11 @@ def prioritized(
 
 @cache
 def standard() -> ExampleCrammer:
-    return prioritized()
+    return greedy()
 
 __all__ = [
     'ExampleCrammer',
     'create',
     'greedy',
-    'prioritized',
     'standard',
 ]

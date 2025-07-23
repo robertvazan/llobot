@@ -7,11 +7,9 @@ from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.rankings import KnowledgeRanking
 from llobot.knowledge.graphs import KnowledgeGraph
-from llobot.scores.decays import DecayScores
 import llobot.knowledge.indexes
 import llobot.knowledge.subsets
 import llobot.knowledge.rankings
-import llobot.scores.decays
 
 class KnowledgeScores:
     _scores: dict[Path, float]
@@ -126,20 +124,11 @@ def length(knowledge: Knowledge) -> KnowledgeScores:
 def sqrt_length(knowledge: Knowledge) -> KnowledgeScores:
     return KnowledgeScores({path: math.sqrt(len(content)) for path, content in knowledge})
 
-def _shuffling_hash(path: str | Path) -> int:
-    return adler32(str(path).encode('utf-8'))
-
 # This uses only path, not content, so that content changes do not cause cache-killing reorderings.
 def random(paths: KnowledgeIndex | KnowledgeRanking | Knowledge | KnowledgeScores) -> KnowledgeScores:
     paths = llobot.knowledge.indexes.coerce(paths)
     # Here we have to be careful to avoid zero scores, so that the resulting score object has all the paths.
     return KnowledgeScores({path: crc32(str(path).encode('utf-8')) or 1 for path in paths})
-
-def decay(paths: KnowledgeRanking, scores: DecayScores = llobot.scores.decays.standard()) -> KnowledgeScores:
-    return KnowledgeScores({path: score for path, score in zip(paths, scores)})
-
-def shuffle(paths: KnowledgeIndex | KnowledgeRanking | Knowledge | KnowledgeScores, scores: DecayScores = llobot.scores.decays.standard()) -> KnowledgeScores:
-    return decay(llobot.knowledge.rankings.shuffle(paths), scores)
 
 def hub(graph: KnowledgeGraph) -> KnowledgeScores:
     return KnowledgeScores({path: len(targets) for path, targets in graph.symmetrical()})
@@ -214,11 +203,8 @@ __all__ = [
     'length',
     'sqrt_length',
     'random',
-    'decay',
-    'shuffle',
     'hub',
     'pagerank',
     'reverse_pagerank',
     'prioritize',
 ]
-

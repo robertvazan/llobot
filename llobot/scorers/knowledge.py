@@ -5,13 +5,11 @@ from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.scrapers import Scraper
 from llobot.scores.knowledge import KnowledgeScores
-from llobot.scores.decays import DecayScores
 import llobot.knowledge.graphs
 import llobot.knowledge.rankings
 import llobot.knowledge.subsets
 import llobot.scrapers
 import llobot.scores.knowledge
-import llobot.scores.decays
 
 # Returned scores represent relative worth of every document.
 # Relationship between score and document worth should be linear, so that document with double value has double score.
@@ -116,10 +114,6 @@ def sqrt_length() -> KnowledgeScorer:
     return create(lambda knowledge: llobot.scores.knowledge.sqrt_length(knowledge))
 
 @lru_cache
-def shuffle(scores: DecayScores = llobot.scores.decays.standard()) -> KnowledgeScorer:
-    return create(lambda knowledge: llobot.scores.knowledge.shuffle(knowledge, scores))
-
-@lru_cache
 def hub(scraper: Scraper = llobot.scrapers.standard()) -> KnowledgeScorer:
     return create(lambda knowledge: llobot.scores.knowledge.hub(llobot.knowledge.graphs.crawl(knowledge, scraper)))
 
@@ -179,7 +173,6 @@ __all__ = [
     'uniform',
     'length',
     'sqrt_length',
-    'shuffle',
     'hub',
     'pagerank',
     'reverse_pagerank',
@@ -187,4 +180,3 @@ __all__ = [
     'irrelevant',
     'standard',
 ]
-

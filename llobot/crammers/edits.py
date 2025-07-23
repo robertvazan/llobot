@@ -5,11 +5,8 @@ from llobot.chats import ChatBranch, ChatBuilder
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.deltas import DocumentDelta, KnowledgeDeltaBuilder
-from llobot.scorers.history import HistoryScorer
 from llobot.formatters.envelopes import EnvelopeFormatter
 from llobot.formatters.knowledge import KnowledgeFormatter
-import llobot.scores.history
-import llobot.scorers.history
 import llobot.formatters.envelopes
 import llobot.formatters.knowledge
 import llobot.knowledge.rankings
@@ -32,8 +29,7 @@ def create(function: Callable[[Iterable[ChatBranch], Knowledge, int], tuple[Chat
     return LambdaEditCrammer()
 
 @lru_cache
-def prioritized(
-    history_scorer: HistoryScorer = llobot.scorers.history.standard(),
+def greedy(
     envelopes: EnvelopeFormatter = llobot.formatters.envelopes.standard(),
     knowledge_formatter: KnowledgeFormatter = llobot.formatters.knowledge.standard(),
     # Overscan depth to prevent single large example from clogging the stream and leaving large unused budget.
@@ -42,7 +38,7 @@ def prioritized(
     fill: float = 0.8,
 ) -> EditCrammer:
     """
-    Creates an edit crammer that prioritizes examples and includes document updates.
+    Creates an edit crammer that processes examples and includes document updates.
 
     The crammer builds the result from the end to the beginning, one example at a time.
     For each example, it appends fresh versions of documents the example has touched
@@ -57,7 +53,7 @@ def prioritized(
         skipped = 0
         max_waste = int(budget * (1 - fill))
 
-        for example in history_scorer(examples).chats():
+        for example in examples:
             # If there are several examples with the same prompt, include only the latest one.
             if not example or example[0].content in seen_prompts:
                 continue
@@ -106,11 +102,11 @@ def prioritized(
 
 @cache
 def standard() -> EditCrammer:
-    return prioritized()
+    return greedy()
 
 __all__ = [
     'EditCrammer',
     'create',
-    'prioritized',
+    'greedy',
     'standard',
 ]
