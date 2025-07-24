@@ -12,6 +12,7 @@ import llobot.time
 import llobot.text
 import llobot.models.streams
 import llobot.formatters.envelopes
+import llobot.formatters.trees
 
 def prompt_structure(chat: ChatBranch) -> str:
     envelopes = llobot.formatters.envelopes.standard()
@@ -103,21 +104,17 @@ def _format_project_with_subprojects(project: Project) -> str:
 def project_list_section(projects: list[Project]) -> str:
     return 'Projects:\n\n' + '\n'.join([_format_project_with_subprojects(project) for project in projects])
 
-def _knowledge_section(title: str, knowledge: Knowledge) -> str:
-    paths = knowledge.keys().sorted()
-    if not paths:
-        return ''
-    file_list = '\n'.join([str(p) for p in paths])
-    return llobot.text.details(title, '', file_list)
-
 def context_knowledge_section(knowledge: Knowledge) -> str:
-    return _knowledge_section('Context knowledge', knowledge)
+    formatter = llobot.formatters.trees.standard('Context knowledge')
+    return formatter.render_sorted(knowledge)
 
 def project_knowledge_section(knowledge: Knowledge) -> str:
-    return _knowledge_section('Project knowledge', knowledge)
+    formatter = llobot.formatters.trees.standard('Project knowledge')
+    return formatter.render_sorted(knowledge)
 
 def subproject_knowledge_section(project: Project, knowledge: Knowledge) -> str:
-    return _knowledge_section('Subproject knowledge', knowledge & project.subset)
+    formatter = llobot.formatters.trees.standard('Subproject knowledge')
+    return formatter.render_sorted(knowledge & project.subset)
 
 def render_info(request: ChatbotRequest) -> str:
     chatbot = request.chatbot
