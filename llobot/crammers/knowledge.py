@@ -20,10 +20,10 @@ class KnowledgeCrammer:
         return self.cram(knowledge, budget, scores, ranking)
 
 @lru_cache
-def priority(*,
+def prioritized(*,
     formatter: KnowledgeFormatter = llobot.formatters.knowledge.standard(),
 ) -> KnowledgeCrammer:
-    class PriorityKnowledgeCrammer(KnowledgeCrammer):
+    class PrioritizedKnowledgeCrammer(KnowledgeCrammer):
         def cram(self, knowledge: Knowledge, budget: int, scores: KnowledgeScores, ranking: KnowledgeRanking) -> tuple[ChatBranch, KnowledgeIndex]:
             knowledge &= ranking
             knowledge &= scores
@@ -51,14 +51,14 @@ def priority(*,
                     length -= costs[path]
                     removed.append(path)
                 knowledge -= KnowledgeIndex(removed)
-    return PriorityKnowledgeCrammer()
+    return PrioritizedKnowledgeCrammer()
 
 @cache
 def standard() -> KnowledgeCrammer:
-    return priority()
+    return prioritized()
 
 __all__ = [
     'KnowledgeCrammer',
-    'priority',
+    'prioritized',
     'standard',
 ]

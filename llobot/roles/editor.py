@@ -96,19 +96,16 @@ class Editor(Role):
     ) -> ChatBranch:
         knowledge = project.root.knowledge(cutoff) if project else Knowledge()
 
-        # 1. System instructions
+        # System instructions
         system_chat = self._instruction_formatter(self._instructions)
         budget -= system_chat.cost
 
-        # 2. Examples with associated updates
-        edit_budget = int(budget * self._example_share)
+        # Examples with associated updates
+        history_budget = int(budget * self._example_share)
         recent_examples = self.recent_examples(project, cutoff)
-        history_chat, history_paths = self._edit_crammer(recent_examples, knowledge, edit_budget)
+        history_chat, history_paths = self._edit_crammer(recent_examples, knowledge, history_budget)
 
-        # 3. Knowledge
-        # Knowledge budget is fixed regardless of how many examples there are. Fixed budget improves caching.
-        knowledge_budget = budget - edit_budget
-        ranking = self._ranker(knowledge)
+        # Knowledge scores
         scores = self._relevance_scorer(knowledge)
         blacklist = knowledge.keys() - scores.keys()
         if project and project.is_subproject:
@@ -117,9 +114,12 @@ class Editor(Role):
         scores -= history_paths
         scores -= blacklist
 
+        # Knowledge
+        knowledge_budget = budget - history_budget
+        ranking = self._ranker(knowledge)
         knowledge_chat, knowledge_paths = self._knowledge_crammer(knowledge, knowledge_budget, scores, ranking)
 
-        # 4. Retrievals
+        # Retrievals
         retrieved_links = llobot.links.resolve(self._retrieval_scraper.scrape_prompt(prompt), knowledge)
         retrieved_knowledge = (knowledge & retrieved_links) - (knowledge_paths | history_paths)
         retrievals_chat = self._retrieval_formatter.render_fresh(retrieved_knowledge, ranking)
