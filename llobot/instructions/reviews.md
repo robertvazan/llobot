@@ -4,6 +4,7 @@ Keep diffs clean to streamline code reviews:
 
 - Perform only one simple action on every line
 - Break multi-line statements into a sequence of one-line statements
+- In documentation, break lines at logical boundaries (sentences, clauses) when the text does not fit on one line
 - Write well-structured code that is simple and obviously correct
 - In inherently complex code, add explanatory comments and full documentation
 - When making a small edit, keep line order and variable names the same if possible to minimize diff noise
