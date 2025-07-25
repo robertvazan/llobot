@@ -115,7 +115,7 @@ class Editor(Role):
         scores -= blacklist
 
         # Knowledge
-        knowledge_budget = budget - history_budget
+        knowledge_budget = budget - history_chat.cost
         ranking = self._ranker(knowledge)
         knowledge_chat, knowledge_paths = self._knowledge_crammer(knowledge, knowledge_budget, scores, ranking)
 

@@ -34,8 +34,8 @@ def greedy(
     knowledge_formatter: KnowledgeFormatter = llobot.formatters.knowledge.standard(),
     # Overscan depth to prevent single large example from clogging the stream and leaving large unused budget.
     depth: int = 10,
-    # Do not overscan when we reach reasonable fill rate.
-    fill: float = 0.8,
+    # Do not keep looking for old examples when we reach reasonable fill rate.
+    fill: float = 0.5,
 ) -> EditCrammer:
     """
     Creates an edit crammer that processes examples and includes document updates.

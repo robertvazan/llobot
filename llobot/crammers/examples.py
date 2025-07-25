@@ -20,7 +20,7 @@ def greedy(
     # Overscan depth to prevent single large example from clogging the stream and leaving large unused budget.
     depth: int = 10,
     # Do not overscan when we reach reasonable fill rate.
-    fill: float = 0.8,
+    fill: float = 0.5,
 ) -> ExampleCrammer:
     def cram(examples: Iterable[ChatBranch], budget: int) -> ChatBranch:
         if budget <= 0:
