@@ -91,7 +91,7 @@ class KnowledgeScores:
 
     def __and__(self, subset: KnowledgeSubset | str | KnowledgeIndex | KnowledgeRanking | Knowledge) -> KnowledgeScores:
         subset = llobot.knowledge.subsets.coerce(subset)
-        return KnowledgeScores({path: score for path, score in self if subset(path)})
+        return KnowledgeScores({path: score for path, score in self if path in subset})
 
     def __or__(self, other: KnowledgeScores) -> KnowledgeScores:
         return KnowledgeScores(self._scores | other._scores)

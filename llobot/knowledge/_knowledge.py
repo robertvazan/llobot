@@ -54,7 +54,7 @@ class Knowledge:
     def __and__(self, subset: 'KnowledgeSubset' | str | Path | 'KnowledgeIndex' | 'KnowledgeRanking' | 'KnowledgeScores') -> Knowledge:
         import llobot.knowledge.subsets
         subset = llobot.knowledge.subsets.coerce(subset)
-        return Knowledge({path: content for path, content in self if subset(path, content)})
+        return Knowledge({path: content for path, content in self if path in subset})
 
     def __or__(self, addition: Knowledge) -> Knowledge:
         return Knowledge(self._documents | addition._documents)
@@ -91,15 +91,11 @@ def directory(
     # Special-case concrete whitelist, so that we don't recurse into potentially large directories unnecessarily.
     if isinstance(whitelist, (Path, KnowledgeIndex, KnowledgeRanking)):
         whitelist = llobot.knowledge.indexes.coerce(whitelist)
-        knowledge = Knowledge({path: llobot.fs.read_document(directory/path) for path in whitelist if (directory/path).is_file() and not blacklist(path)})
+        knowledge = Knowledge({path: llobot.fs.read_document(directory/path) for path in whitelist if (directory/path).is_file() and path not in blacklist})
     else:
         whitelist = llobot.knowledge.subsets.coerce(whitelist or llobot.knowledge.subsets.everything())
         index = llobot.knowledge.indexes.directory(directory, whitelist, blacklist)
         knowledge = Knowledge({path: llobot.fs.read_document(directory/path) for path in index})
-        if whitelist.content_sensitive:
-            knowledge &= whitelist
-    if blacklist.content_sensitive:
-        knowledge -= blacklist
     return knowledge
 
 __all__ = [

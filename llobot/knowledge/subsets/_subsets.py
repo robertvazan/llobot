@@ -3,45 +3,35 @@ from functools import cache, lru_cache
 from pathlib import Path
 
 class KnowledgeSubset:
-    @property
-    def content_sensitive(self) -> bool:
-        return True
-
-    def accepts(self, path: Path, content: str = '') -> bool:
+    def contains(self, path: Path) -> bool:
         raise NotImplementedError
 
-    def __call__(self, path: Path, content: str = '') -> bool:
-        return self.accepts(path, content)
+    def __contains__(self, path: Path) -> bool:
+        return self.contains(path)
 
     def __or__(self, other: KnowledgeSubset) -> KnowledgeSubset:
         from llobot.knowledge.subsets.unions import UnionKnowledgeSubset
         if isinstance(other, UnionKnowledgeSubset):
             return other | self
-        return create(lambda path, content: self(path, content) or other(path, content), self.content_sensitive or other.content_sensitive)
+        return create(lambda path: path in self or path in other)
 
     def __and__(self, other: KnowledgeSubset) -> KnowledgeSubset:
-        return create(lambda path, content: self(path, content) and other(path, content), self.content_sensitive or other.content_sensitive)
+        return create(lambda path: path in self and path in other)
 
     def __sub__(self, other: KnowledgeSubset) -> KnowledgeSubset:
-        return create(lambda path, content: self(path, content) and not other(path, content), self.content_sensitive or other.content_sensitive)
+        return create(lambda path: path in self and not path in other)
 
     def __invert__(self) -> KnowledgeSubset:
-        return create(lambda path, content: not self(path, content), self.content_sensitive)
+        return create(lambda path: not (path in self))
 
-def create(predicate: Callable[[Path, str], bool], content_sensitive: bool = True) -> KnowledgeSubset:
+def create(predicate: Callable[[Path], bool]) -> KnowledgeSubset:
     class LambdaSubset(KnowledgeSubset):
-        @property
-        def content_sensitive(self) -> bool:
-            return content_sensitive
-        def accepts(self, path: Path, content: str = '') -> bool:
-            return predicate(path, content)
+        def contains(self, path: Path) -> bool:
+            return predicate(path)
     return LambdaSubset()
 
-def path(predicate: Callable[[Path], bool]) -> KnowledgeSubset:
-    return create(lambda path, content: predicate(path), False)
-
 def solo(solo_path: Path) -> KnowledgeSubset:
-    return path(lambda other_path: solo_path == other_path)
+    return create(lambda other_path: solo_path == other_path)
 
 @cache
 def nothing() -> KnowledgeSubset:
@@ -50,7 +40,7 @@ def nothing() -> KnowledgeSubset:
 
 @cache
 def everything() -> KnowledgeSubset:
-    return path(lambda path: True)
+    return create(lambda path: True)
 
 def suffix(*suffixes: str) -> KnowledgeSubset:
     import llobot.knowledge.subsets.unions
@@ -71,7 +61,7 @@ def glob(*patterns: str) -> KnowledgeSubset:
         import llobot.knowledge.subsets.unions
         return llobot.knowledge.subsets.unions.union(*(glob(pattern) for pattern in patterns))
     pattern = patterns[0]
-    return path(lambda path: path.full_match(pattern))
+    return create(lambda path: path.full_match(pattern))
 
 def coerce(material: KnowledgeSubset | str | Path | 'KnowledgeIndex' | 'KnowledgeRanking' | 'KnowledgeScores' | 'Knowledge') -> KnowledgeSubset:
     if isinstance(material, KnowledgeSubset):
@@ -82,21 +72,21 @@ def coerce(material: KnowledgeSubset | str | Path | 'KnowledgeIndex' | 'Knowledg
         return solo(material)
     import llobot.knowledge.indexes
     index = llobot.knowledge.indexes.coerce(material)
-    return path(lambda path: path in index)
+    return create(lambda path: path in index)
 
 # We will LRU-cache the cache() function itself, so that multiple requests to cache single subset do not create multiple memory-hungry caches.
 @lru_cache
 def cached(uncached: KnowledgeSubset) -> KnowledgeSubset:
-    if uncached.content_sensitive or uncached == everything() or uncached == nothing():
+    if uncached == everything() or uncached == nothing():
         return uncached
     memory = {}
-    def accepts(path: Path) -> bool:
+    def contains(path: Path) -> bool:
         accepted = memory.get(path, None)
         if accepted is None:
             # We will cache the result forever. There aren't going to be that many different paths.
-            memory[path] = accepted = uncached(path)
+            memory[path] = accepted = path in uncached
         return accepted
-    return path(accepts)
+    return create(contains)
 
 @cache
 def whitelist() -> KnowledgeSubset:
@@ -147,7 +137,6 @@ def ancillary() -> KnowledgeSubset:
 __all__ = [
     'KnowledgeSubset',
     'create',
-    'path',
     'solo',
     'nothing',
     'everything',

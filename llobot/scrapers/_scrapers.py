@@ -26,7 +26,7 @@ class Scraper:
 
     def __and__(self, whitelist: KnowledgeSubset | str | KnowledgeIndex) -> Scraper:
         whitelist = llobot.knowledge.subsets.coerce(whitelist)
-        return create(lambda path, content: self(path, content) if whitelist(path, content) else set())
+        return create(lambda path, content: self(path, content) if path in whitelist else set())
 
     def __or__(self, other: Scraper) -> Scraper:
         return create(lambda path, content: self(path, content) | other(path, content))
@@ -69,4 +69,3 @@ __all__ = [
     'standard',
     'retrieval',
 ]
-

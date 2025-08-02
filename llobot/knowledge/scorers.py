@@ -136,13 +136,13 @@ def _relevance(
     if blacklist:
         blacklist = llobot.knowledge.subsets.cached(blacklist)
         return create(lambda knowledge: KnowledgeScores({
-            path: (match_score if condition(path, content) else non_match_score)
-            for path, content in knowledge if not blacklist(path, content)
+            path: (match_score if path in condition else non_match_score)
+            for path in knowledge.keys() if path not in blacklist
         }))
     else:
         return create(lambda knowledge: KnowledgeScores({
-            path: (match_score if condition(path, content) else non_match_score)
-            for path, content in knowledge
+            path: (match_score if path in condition else non_match_score)
+            for path in knowledge.keys()
         }))
 
 # Positive relevance scorer.

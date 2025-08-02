@@ -44,7 +44,8 @@ class KnowledgeIndex:
         return self.sorted().reversed()
 
     def __and__(self, whitelist: KnowledgeSubset | str | KnowledgeIndex) -> KnowledgeIndex:
-        return KnowledgeIndex(filter(llobot.knowledge.subsets.coerce(whitelist), self))
+        whitelist = llobot.knowledge.subsets.coerce(whitelist)
+        return KnowledgeIndex(path for path in self if path in whitelist)
 
     def __or__(self, addition: Path | KnowledgeIndex) -> KnowledgeIndex:
         if isinstance(addition, Path):
@@ -81,11 +82,11 @@ def coerce(what: KnowledgeIndex | 'Knowledge' | 'KnowledgeRanking' | 'KnowledgeS
 def _walk(root: Path, directory: Path, whitelist: KnowledgeSubset, blacklist: KnowledgeSubset) -> Iterable[Path]:
     for path in directory.iterdir():
         relative = path.relative_to(root)
-        if blacklist(relative):
+        if relative in blacklist:
             continue
         if path.is_dir():
             yield from _walk(root, path, whitelist, blacklist)
-        elif whitelist(relative):
+        elif relative in whitelist:
             yield relative
 
 # Blacklist is separate, because it is applied to whole directories in addition to files whereas whitelist is applied only to individual files.
@@ -102,7 +103,7 @@ def directory(
     # Special-case concrete whitelist, so that we don't recurse into potentially large directories unnecessarily.
     if isinstance(whitelist, (Path, KnowledgeIndex, KnowledgeRanking)):
         whitelist = coerce(whitelist)
-        return KnowledgeIndex([path for path in whitelist if (root/path).is_file() and not blacklist(path)])
+        return KnowledgeIndex([path for path in whitelist if (root/path).is_file() and path not in blacklist])
     whitelist = llobot.knowledge.subsets.cached(llobot.knowledge.subsets.coerce(whitelist or llobot.knowledge.subsets.everything()))
     # Carefully walk the tree recursively, so that we can blacklist entire directories.
     return KnowledgeIndex(_walk(root, root, whitelist, blacklist))

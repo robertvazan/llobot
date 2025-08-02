@@ -7,24 +7,18 @@ class UnionKnowledgeSubset(KnowledgeSubset):
     _filenames: set[str]
     _directories: set[str]
     _children: list[KnowledgeSubset]
-    _content_sensitive: bool
 
     def __init__(self, suffixes: set[str] = set(), filenames: set[str] = set(), directories: set[str] = set(), children: Iterable[KnowledgeSubset] = tuple()):
         self._suffixes = suffixes
         self._filenames = filenames
         self._directories = directories
         self._children = tuple(children)
-        self._content_sensitive = any(child.content_sensitive for child in children)
 
-    @property
-    def content_sensitive(self) -> bool:
-        return self._content_sensitive
-
-    def accepts(self, path: Path, content: str = '') -> bool:
+    def contains(self, path: Path) -> bool:
         return (path.suffix in self._suffixes or
                 path.name in self._filenames or
                 self._directories and any(part in self._directories for part in path.parts) or
-                any(subset(path, content) for subset in self._children))
+                any(path in subset for subset in self._children))
 
     def __or__(self, other: KnowledgeSubset) -> KnowledgeSubset:
         if isinstance(other, UnionKnowledgeSubset):
@@ -60,4 +54,3 @@ __all__ = [
     'directory',
     'union',
 ]
-
