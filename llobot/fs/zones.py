@@ -1,4 +1,5 @@
 from __future__ import annotations
+from functools import cache
 from pathlib import Path
 
 class Zoning:
@@ -14,10 +15,12 @@ def create(resolve: Callable[[str], Path]) -> Zoning:
             return resolve(zone)
     return LambdaZoning()
 
+@cache
 def prefix(prefix: Path | str) -> Zoning:
     prefix = Path(prefix).expanduser()
     return create(lambda zone: prefix / zone)
 
+@cache
 def wildcard(pattern: Path | str) -> Zoning:
     pattern = Path(pattern).expanduser()
     if '*' not in str(pattern):
@@ -39,4 +42,3 @@ __all__ = [
     'wildcard',
     'coerce',
 ]
-
