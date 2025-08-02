@@ -7,9 +7,11 @@ import llobot.knowledge.indexes
 
 class KnowledgeRanking:
     _paths: list[Path]
+    _hash: int | None
 
     def __init__(self, paths: Iterable[Path | str] = []):
         self._paths = [Path(path) for path in paths]
+        self._hash = None
 
     def __str__(self) -> str:
         return str(self._paths)
@@ -19,6 +21,16 @@ class KnowledgeRanking:
 
     def __bool__(self) -> bool:
         return bool(self._paths)
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, KnowledgeRanking):
+            return NotImplemented
+        return self._paths == other._paths
+
+    def __hash__(self) -> int:
+        if self._hash is None:
+            self._hash = hash(tuple(self._paths))
+        return self._hash
 
     def __contains__(self, path: Path | str) -> bool:
         return Path(path) in self._paths

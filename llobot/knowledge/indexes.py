@@ -5,9 +5,11 @@ import llobot.knowledge.subsets
 
 class KnowledgeIndex:
     _paths: set[Path]
+    _hash: int | None
 
     def __init__(self, paths: Iterable[Path | str] = set()):
         self._paths = set(Path(path) for path in paths)
+        self._hash = None
 
     def __str__(self) -> str:
         return str(self.sorted())
@@ -17,6 +19,16 @@ class KnowledgeIndex:
 
     def __bool__(self) -> bool:
         return bool(self._paths)
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, KnowledgeIndex):
+            return NotImplemented
+        return self._paths == other._paths
+
+    def __hash__(self) -> int:
+        if self._hash is None:
+            self._hash = hash(frozenset(self._paths))
+        return self._hash
 
     def __contains__(self, path: Path | str) -> bool:
         return Path(path) in self._paths

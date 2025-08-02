@@ -7,9 +7,11 @@ from llobot.scrapers import Scraper
 
 class KnowledgeGraph:
     _graph: dict[Path, KnowledgeIndex]
+    _hash: int | None
 
     def __init__(self, graph: dict[Path, KnowledgeIndex]):
         self._graph = graph
+        self._hash = None
 
     def __str__(self) -> str:
         return str(self._graph)
@@ -22,6 +24,16 @@ class KnowledgeGraph:
 
     def __bool__(self) -> bool:
         return bool(self._graph)
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, KnowledgeGraph):
+            return NotImplemented
+        return self._graph == other._graph
+
+    def __hash__(self) -> int:
+        if self._hash is None:
+            self._hash = hash(frozenset(self._graph.items()))
+        return self._hash
 
     def __contains__(self, source: Path) -> bool:
         return source in self._graph
@@ -64,4 +76,3 @@ __all__ = [
     'KnowledgeGraph',
     'crawl',
 ]
-

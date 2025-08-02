@@ -6,9 +6,11 @@ import llobot.chats.markdown
 
 class Knowledge:
     documents: dict[Path, str]
+    _hash: int | None
 
     def __init__(self, documents: dict[Path, str] = {}):
         self.documents = {path: content for path, content in documents.items() if len(content) > 0}
+        self._hash = None
 
     def __str__(self) -> str:
         return str(self.keys())
@@ -31,6 +33,11 @@ class Knowledge:
         if not isinstance(other, Knowledge):
             return NotImplemented
         return self.documents == other.documents
+
+    def __hash__(self) -> int:
+        if self._hash is None:
+            self._hash = hash(frozenset(self.documents.items()))
+        return self._hash
 
     def __contains__(self, path: Path | str) -> bool:
         return Path(path) in self.documents

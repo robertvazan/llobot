@@ -13,9 +13,11 @@ import llobot.knowledge.rankings
 
 class KnowledgeScores:
     _scores: dict[Path, float]
+    _hash: int | None
 
     def __init__(self, scores: dict[Path, float] = {}):
         self._scores = {path: float(score) for path, score in scores.items() if math.isfinite(score) and score != 0}
+        self._hash = None
 
     def __str__(self) -> str:
         return str(self._scores)
@@ -28,6 +30,16 @@ class KnowledgeScores:
 
     def __bool__(self) -> bool:
         return bool(self._scores)
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, KnowledgeScores):
+            return NotImplemented
+        return self._scores == other._scores
+
+    def __hash__(self) -> int:
+        if self._hash is None:
+            self._hash = hash(frozenset(self._scores.items()))
+        return self._hash
 
     def __contains__(self, path: Path | str) -> bool:
         return Path(path) in self._scores

@@ -5,9 +5,11 @@ from ._messages import ChatMessage
 
 class ChatBranch:
     _messages: list[ChatMessage]
+    _hash: int | None
 
     def __init__(self, messages: list[ChatMessage] = []):
         self._messages = messages
+        self._hash = None
 
     @property
     def messages(self) -> list[ChatMessage]:
@@ -21,6 +23,16 @@ class ChatBranch:
 
     def __len__(self) -> int:
         return len(self._messages)
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, ChatBranch):
+            return NotImplemented
+        return self._messages == other._messages
+
+    def __hash__(self) -> int:
+        if self._hash is None:
+            self._hash = hash(tuple(self._messages))
+        return self._hash
 
     @property
     def cost(self) -> int:

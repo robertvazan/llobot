@@ -9,6 +9,7 @@ MESSAGE_OVERHEAD: int = 10
 class ChatMessage:
     _intent: ChatIntent
     _content: str
+    _hash: int | None
 
     def __init__(self, kind: ChatRole | ChatIntent, content: str):
         if isinstance(kind, ChatRole):
@@ -18,6 +19,7 @@ class ChatMessage:
         else:
             raise TypeError
         self._content = content
+        self._hash = None
 
     @property
     def role(self) -> ChatRole:
@@ -44,7 +46,9 @@ class ChatMessage:
         return self.intent == other.intent and self.content == other.content
 
     def __hash__(self) -> int:
-        return hash((self.intent, self.content))
+        if self._hash is None:
+            self._hash = hash((self.intent, self.content))
+        return self._hash
 
     def __contains__(self, text: str) -> bool:
         return text in self.content
