@@ -267,7 +267,7 @@ def between(before: Knowledge, after: Knowledge, *, move_hints: dict[Path, Path]
 def diff_compress(before: Knowledge, delta: KnowledgeDelta, *, threshold: float = 0.8) -> KnowledgeDelta:
     builder = KnowledgeDeltaBuilder()
     # At every step, this contains full file content for all paths where that is possible.
-    full = dict(before.documents)
+    full = dict(before)
 
     for document in delta:
         # Read old document before we change anything

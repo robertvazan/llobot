@@ -5,11 +5,11 @@ import llobot.fs
 import llobot.chats.markdown
 
 class Knowledge:
-    documents: dict[Path, str]
+    _documents: dict[Path, str]
     _hash: int | None
 
     def __init__(self, documents: dict[Path, str] = {}):
-        self.documents = {path: content for path, content in documents.items() if len(content) > 0}
+        self._documents = {path: content for path, content in documents.items() if len(content) > 0}
         self._hash = None
 
     def __str__(self) -> str:
@@ -17,36 +17,36 @@ class Knowledge:
 
     def keys(self) -> 'KnowledgeIndex':
         from llobot.knowledge.indexes import KnowledgeIndex
-        return KnowledgeIndex(self.documents.keys())
+        return KnowledgeIndex(self._documents.keys())
 
     def __len__(self) -> int:
-        return len(self.documents)
+        return len(self._documents)
 
     @property
     def cost(self) -> int:
-        return sum(len(content) for content in self.documents.values())
+        return sum(len(content) for content in self._documents.values())
 
     def __bool__(self) -> bool:
-        return bool(self.documents)
+        return bool(self._documents)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Knowledge):
             return NotImplemented
-        return self.documents == other.documents
+        return self._documents == other._documents
 
     def __hash__(self) -> int:
         if self._hash is None:
-            self._hash = hash(frozenset(self.documents.items()))
+            self._hash = hash(frozenset(self._documents.items()))
         return self._hash
 
     def __contains__(self, path: Path | str) -> bool:
-        return Path(path) in self.documents
+        return Path(path) in self._documents
 
     def __getitem__(self, path: Path) -> str:
-        return self.documents.get(path, '')
+        return self._documents.get(path, '')
 
     def __iter__(self) -> Iterator[(Path, str)]:
-        return iter(self.documents.items())
+        return iter(self._documents.items())
 
     def transform(self, operation: Callable[[Path, str], str]) -> Knowledge:
         return Knowledge({path: operation(path, content) for path, content in self})
@@ -57,7 +57,7 @@ class Knowledge:
         return Knowledge({path: content for path, content in self if subset(path, content)})
 
     def __or__(self, addition: Knowledge) -> Knowledge:
-        return Knowledge(self.documents | addition.documents)
+        return Knowledge(self._documents | addition._documents)
 
     def __sub__(self, subset: 'KnowledgeSubset' | str | Path | 'KnowledgeIndex' | Path | 'KnowledgeRanking' | 'KnowledgeScores') -> Knowledge:
         import llobot.knowledge.subsets
