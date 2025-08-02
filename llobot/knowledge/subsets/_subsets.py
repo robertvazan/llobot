@@ -1,5 +1,5 @@
 from __future__ import annotations
-from functools import cache, lru_cache
+from functools import cache
 from pathlib import Path
 
 class KnowledgeSubset:
@@ -7,22 +7,30 @@ class KnowledgeSubset:
         raise NotImplementedError
 
     def __contains__(self, path: Path) -> bool:
-        return self.contains(path)
+        try:
+            memory = self._memory
+        except AttributeError:
+            memory = self._memory = {}
+        accepted = memory.get(path, None)
+        if accepted is None:
+            # We will cache the result forever. There aren't going to be that many different paths.
+            memory[path] = accepted = self.contains(path)
+        return accepted
 
     def __or__(self, other: KnowledgeSubset) -> KnowledgeSubset:
         from llobot.knowledge.subsets.unions import UnionKnowledgeSubset
         if isinstance(other, UnionKnowledgeSubset):
             return other | self
-        return create(lambda path: path in self or path in other)
+        return create(lambda path: self.contains(path) or other.contains(path))
 
     def __and__(self, other: KnowledgeSubset) -> KnowledgeSubset:
-        return create(lambda path: path in self and path in other)
+        return create(lambda path: self.contains(path) and other.contains(path))
 
     def __sub__(self, other: KnowledgeSubset) -> KnowledgeSubset:
-        return create(lambda path: path in self and not path in other)
+        return create(lambda path: self.contains(path) and not other.contains(path))
 
     def __invert__(self) -> KnowledgeSubset:
-        return create(lambda path: not (path in self))
+        return create(lambda path: not self.contains(path))
 
 def create(predicate: Callable[[Path], bool]) -> KnowledgeSubset:
     class LambdaSubset(KnowledgeSubset):
@@ -73,20 +81,6 @@ def coerce(material: KnowledgeSubset | str | Path | 'KnowledgeIndex' | 'Knowledg
     import llobot.knowledge.indexes
     index = llobot.knowledge.indexes.coerce(material)
     return create(lambda path: path in index)
-
-# We will LRU-cache the cache() function itself, so that multiple requests to cache single subset do not create multiple memory-hungry caches.
-@lru_cache
-def cached(uncached: KnowledgeSubset) -> KnowledgeSubset:
-    if uncached == everything() or uncached == nothing():
-        return uncached
-    memory = {}
-    def contains(path: Path) -> bool:
-        accepted = memory.get(path, None)
-        if accepted is None:
-            # We will cache the result forever. There aren't going to be that many different paths.
-            memory[path] = accepted = path in uncached
-        return accepted
-    return create(contains)
 
 @cache
 def whitelist() -> KnowledgeSubset:
@@ -145,7 +139,6 @@ __all__ = [
     'directory',
     'glob',
     'coerce',
-    'cached',
     'whitelist',
     'blacklist',
     'boilerplate',

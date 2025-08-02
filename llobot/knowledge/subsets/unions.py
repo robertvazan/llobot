@@ -18,7 +18,7 @@ class UnionKnowledgeSubset(KnowledgeSubset):
         return (path.suffix in self._suffixes or
                 path.name in self._filenames or
                 self._directories and any(part in self._directories for part in path.parts) or
-                any(path in subset for subset in self._children))
+                any(subset.contains(path) for subset in self._children))
 
     def __or__(self, other: KnowledgeSubset) -> KnowledgeSubset:
         if isinstance(other, UnionKnowledgeSubset):
