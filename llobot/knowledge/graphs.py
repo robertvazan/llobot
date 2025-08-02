@@ -1,5 +1,6 @@
 from __future__ import annotations
 from collections import defaultdict
+from functools import lru_cache
 from pathlib import Path
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge import Knowledge
@@ -62,6 +63,7 @@ class KnowledgeGraph:
     def symmetrical(self) -> KnowledgeGraph:
         return self | self.reverse()
 
+@lru_cache(maxsize=2)
 def crawl(knowledge: Knowledge, scraper: Scraper) -> KnowledgeGraph:
     graph = defaultdict(set)
     indexes = {}

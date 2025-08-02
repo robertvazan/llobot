@@ -1,5 +1,6 @@
 from __future__ import annotations
 import math
+from functools import lru_cache
 from pathlib import Path
 from zlib import crc32
 from llobot.knowledge import Knowledge
@@ -145,6 +146,7 @@ def random(paths: KnowledgeIndex | KnowledgeRanking | Knowledge | KnowledgeScore
 def hub(graph: KnowledgeGraph) -> KnowledgeScores:
     return KnowledgeScores({path: len(targets) for path, targets in graph.symmetrical()})
 
+@lru_cache(maxsize=2)
 def pagerank(
     graph: KnowledgeGraph,
     nodes: KnowledgeIndex = KnowledgeIndex(),
