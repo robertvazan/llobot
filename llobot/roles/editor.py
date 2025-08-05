@@ -6,6 +6,7 @@ from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.knowledge.rankers import KnowledgeRanker
+from llobot.knowledge.retrievals import RetrievalScraper
 from llobot.scrapers import Scraper
 from llobot.knowledge.scorers import KnowledgeScorer
 from llobot.crammers.knowledge import KnowledgeCrammer
@@ -17,6 +18,7 @@ from llobot.instructions import SystemPrompt
 from llobot.projects import Project
 from llobot.roles import Role
 import llobot.scrapers
+import llobot.knowledge.retrievals
 import llobot.knowledge.scorers
 import llobot.knowledge.scores
 import llobot.crammers.knowledge
@@ -25,7 +27,6 @@ import llobot.formatters.knowledge
 import llobot.formatters.instructions
 import llobot.formatters.envelopes
 import llobot.instructions
-import llobot.links
 import llobot.knowledge.rankings
 import llobot.knowledge.rankers
 import llobot.knowledge.deltas
@@ -43,7 +44,7 @@ def system() -> SystemPrompt:
 
 class Editor(Role):
     _instructions: str
-    _retrieval_scraper: Scraper
+    _retrieval_scraper: RetrievalScraper
     _relevance_scorer: KnowledgeScorer
     _graph_scorer: KnowledgeScorer
     _ranker: KnowledgeRanker
@@ -56,7 +57,7 @@ class Editor(Role):
 
     def __init__(self, name: str, *,
         instructions: str = system().compile(),
-        retrieval_scraper: Scraper = llobot.scrapers.retrieval(),
+        retrieval_scraper: RetrievalScraper = llobot.knowledge.retrievals.standard(),
         relevance_scorer: KnowledgeScorer | KnowledgeSubset = llobot.knowledge.scorers.irrelevant(),
         graph_scorer: KnowledgeScorer = llobot.knowledge.scorers.standard(),
         ranker: KnowledgeRanker = llobot.knowledge.rankers.standard(),
@@ -120,8 +121,8 @@ class Editor(Role):
         knowledge_chat, knowledge_paths = self._knowledge_crammer(knowledge, knowledge_budget, scores, ranking)
 
         # Retrievals
-        retrieved_links = llobot.links.resolve(self._retrieval_scraper.scrape_prompt(prompt), knowledge)
-        retrieved_knowledge = (knowledge & retrieved_links) - (knowledge_paths | history_paths)
+        retrieved_paths = self._retrieval_scraper(prompt, knowledge.keys())
+        retrieved_knowledge = (knowledge & retrieved_paths) - (knowledge_paths | history_paths)
         retrievals_chat = self._retrieval_formatter.render_fresh(retrieved_knowledge, ranking)
 
         chat = ChatBuilder()

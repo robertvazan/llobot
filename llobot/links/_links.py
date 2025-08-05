@@ -90,16 +90,9 @@ class _FilenameLink(Link):
 def filename(name: str) -> Link:
     return _FilenameLink(name)
 
-def resolve(links: Iterable[Link], knowledge: Knowledge) -> KnowledgeIndex:
-    matches = set()
-    for link in links:
-        matches.update(link.resolve(knowledge))
-    return KnowledgeIndex(matches)
-
 __all__ = [
     'Link',
     'absolute',
     'abbreviated',
     'filename',
-    'resolve',
 ]
