@@ -11,12 +11,12 @@ class RetrievalScraper:
 
     def __call__(self, prompt: str | ChatMessage | ChatBranch, index: KnowledgeIndex) -> KnowledgeIndex:
         if isinstance(prompt, ChatMessage):
-            return self.scrape_all(prompt.content, index)
+            return self.scrape(prompt.content, index)
         if isinstance(prompt, ChatBranch):
             found = KnowledgeIndex()
             for message in prompt:
                 if message.intent == ChatIntent.PROMPT:
-                    found |= self.scrape_all(message.content, index)
+                    found |= self(message.content, index)
             return found
         if isinstance(prompt, str):
             return self.scrape(prompt, index)
