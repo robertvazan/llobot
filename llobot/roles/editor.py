@@ -7,7 +7,6 @@ from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.knowledge.rankers import KnowledgeRanker
 from llobot.knowledge.retrievals import RetrievalScraper
-from llobot.scrapers import Scraper
 from llobot.knowledge.scorers import KnowledgeScorer
 from llobot.crammers.knowledge import KnowledgeCrammer
 from llobot.crammers.edits import EditCrammer
@@ -17,7 +16,6 @@ from llobot.formatters.instructions import InstructionFormatter
 from llobot.instructions import SystemPrompt
 from llobot.projects import Project
 from llobot.roles import Role
-import llobot.scrapers
 import llobot.knowledge.retrievals
 import llobot.knowledge.scorers
 import llobot.knowledge.scores

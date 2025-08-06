@@ -1,44 +1,34 @@
 from __future__ import annotations
 from functools import cache
+from collections import defaultdict
 from pathlib import Path
-from llobot.knowledge.subsets import KnowledgeSubset
+from llobot.knowledge import Knowledge
+from llobot.knowledge.graphs import KnowledgeGraph
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.links import Link
-import llobot.knowledge.subsets
 
-class Scraper:
-    # Path may be a fallback '_.md' when scraping message content or other unnamed content.
-    def scrape(self, path: Path, content: str) -> set[Link]:
-        return set()
+class GraphScraper:
+    def scrape(self, knowledge: Knowledge) -> KnowledgeGraph:
+        return KnowledgeGraph()
 
-    def __call__(self, path: Path, content: str) -> set[Link]:
-        return self.scrape(path, content)
+    def __call__(self, knowledge: Knowledge) -> KnowledgeGraph:
+        return self.scrape(knowledge)
 
-    def __and__(self, whitelist: KnowledgeSubset | str | KnowledgeIndex) -> Scraper:
-        whitelist = llobot.knowledge.subsets.coerce(whitelist)
-        return create(lambda path, content: self(path, content) if path in whitelist else set())
-
-    def __or__(self, other: Scraper) -> Scraper:
-        return create(lambda path, content: self(path, content) | other(path, content))
+    def __or__(self, other: GraphScraper) -> GraphScraper:
+        return create(lambda knowledge: self(knowledge) | other(knowledge))
 
 @cache
-def none() -> Scraper:
-    return Scraper()
+def none() -> GraphScraper:
+    return GraphScraper()
 
-def create(scrape: Callable[[Path, str], Iterable[Link]]) -> Scraper:
-    class LambdaScraper(Scraper):
-        def scrape(self, path: Path, content: str) -> set[Link]:
-            return set(scrape(path, content))
-    return LambdaScraper()
-
-def path(scrape: Callable[[Path], Iterable[Link]]) -> Scraper:
-    return create(lambda path, content: scrape(path))
-
-def content(scrape: Callable[[str], Iterable[Link]]) -> Scraper:
-    return create(lambda path, content: scrape(content))
+def create(scrape: Callable[[Knowledge], KnowledgeGraph]) -> GraphScraper:
+    class LambdaGraphScraper(GraphScraper):
+        def scrape(self, knowledge: Knowledge) -> KnowledgeGraph:
+            return scrape(knowledge)
+    return LambdaGraphScraper()
 
 @cache
-def standard() -> Scraper:
+def standard() -> GraphScraper:
     from llobot.scrapers import python, java, rust
     return (
         python.standard()
@@ -46,10 +36,8 @@ def standard() -> Scraper:
         | rust.standard())
 
 __all__ = [
-    'Scraper',
+    'GraphScraper',
     'none',
     'create',
-    'path',
-    'content',
     'standard',
 ]

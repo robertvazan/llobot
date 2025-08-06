@@ -1,16 +1,13 @@
 from __future__ import annotations
 from collections import defaultdict
-from functools import lru_cache
 from pathlib import Path
 from llobot.knowledge.indexes import KnowledgeIndex
-from llobot.knowledge import Knowledge
-from llobot.scrapers import Scraper
 
 class KnowledgeGraph:
     _graph: dict[Path, KnowledgeIndex]
     _hash: int | None
 
-    def __init__(self, graph: dict[Path, KnowledgeIndex]):
+    def __init__(self, graph: dict[Path, KnowledgeIndex] = {}):
         self._graph = graph
         self._hash = None
 
@@ -63,18 +60,6 @@ class KnowledgeGraph:
     def symmetrical(self) -> KnowledgeGraph:
         return self | self.reverse()
 
-@lru_cache(maxsize=2)
-def crawl(knowledge: Knowledge, scraper: Scraper) -> KnowledgeGraph:
-    graph = defaultdict(set)
-    indexes = {}
-    for source, content in knowledge:
-        for link in scraper(source, content):
-            for target in link.resolve_indexed(knowledge, indexes):
-                if target != source:
-                    graph[source].add(target)
-    return KnowledgeGraph({path: KnowledgeIndex(targets) for path, targets in graph.items()})
-
 __all__ = [
     'KnowledgeGraph',
-    'crawl',
 ]

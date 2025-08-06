@@ -3,10 +3,8 @@ from functools import cache, lru_cache
 from pathlib import Path
 from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.knowledge.indexes import KnowledgeIndex
-from llobot.scrapers import Scraper
+from llobot.scrapers import GraphScraper
 from llobot.knowledge.scores import KnowledgeScores
-import llobot.knowledge.graphs
-import llobot.knowledge.rankings
 import llobot.knowledge.subsets
 import llobot.scrapers
 import llobot.knowledge.scores
@@ -114,16 +112,16 @@ def sqrt_length() -> KnowledgeScorer:
     return create(lambda knowledge: llobot.knowledge.scores.sqrt_length(knowledge))
 
 @lru_cache
-def hub(scraper: Scraper = llobot.scrapers.standard()) -> KnowledgeScorer:
-    return create(lambda knowledge: llobot.knowledge.scores.hub(llobot.knowledge.graphs.crawl(knowledge, scraper)))
+def hub(scraper: GraphScraper = llobot.scrapers.standard()) -> KnowledgeScorer:
+    return create(lambda knowledge: llobot.knowledge.scores.hub(scraper(knowledge)))
 
 @lru_cache
-def pagerank(scraper: Scraper = llobot.scrapers.standard(), **kwargs) -> KnowledgeScorer:
-    return rescorer(lambda knowledge, initial: llobot.knowledge.scores.pagerank(llobot.knowledge.graphs.crawl(knowledge, scraper), knowledge.keys(), initial, **kwargs))
+def pagerank(scraper: GraphScraper = llobot.scrapers.standard(), **kwargs) -> KnowledgeScorer:
+    return rescorer(lambda knowledge, initial: llobot.knowledge.scores.pagerank(scraper(knowledge), knowledge.keys(), initial, **kwargs))
 
 @lru_cache
-def reverse_pagerank(scraper: Scraper = llobot.scrapers.standard(), **kwargs) -> KnowledgeScorer:
-    return create(lambda knowledge: llobot.knowledge.scores.reverse_pagerank(llobot.knowledge.graphs.crawl(knowledge, scraper), knowledge.keys(), **kwargs))
+def reverse_pagerank(scraper: GraphScraper = llobot.scrapers.standard(), **kwargs) -> KnowledgeScorer:
+    return create(lambda knowledge: llobot.knowledge.scores.reverse_pagerank(scraper(knowledge), knowledge.keys(), **kwargs))
 
 def _relevance(
     condition: KnowledgeSubset,
