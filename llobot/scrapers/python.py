@@ -31,7 +31,8 @@ def from_imports() -> GraphScraper:
         indexes = {}
         for path, content in knowledge:
             if path.suffix == '.py':
-                for module in pattern.findall(content):
+                modules = set(pattern.findall(content))
+                for module in modules:
                     link = llobot.links.python.from_from(module, path=path)
                     if link:
                         for target in link.resolve_indexed(knowledge, indexes):

@@ -22,7 +22,8 @@ def pascal_case() -> GraphScraper:
                 content = comment_re.sub(' ', content)
                 content = text_block_re.sub(' ', content)
                 content = string_re.sub(' ', content)
-                for name in pattern.findall(content):
+                names = set(pattern.findall(content))
+                for name in names:
                     # Require at least one lowercase letter to avoid matching enums and constants.
                     if not name.isupper():
                         link = llobot.links.java.type_name(name)
