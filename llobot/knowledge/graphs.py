@@ -42,24 +42,42 @@ class KnowledgeGraph:
     def __iter__(self) -> Iterator[(Path, KnowledgeIndex)]:
         return iter(self._graph.items())
 
-    def __or__(self, other: KnowledgeGraph) -> KnowledgeGraph:
-        combined = defaultdict(KnowledgeIndex)
-        for source, targets in self:
-            combined[source] |= targets
-        for source, targets in other:
-            combined[source] |= targets
-        return KnowledgeGraph(dict(combined))
-
-    def reverse(self) -> KnowledgeGraph:
-        backlinks = defaultdict(set)
+    def links(self) -> Iterator[(Path, Path)]:
         for source, targets in self:
             for target in targets:
-                backlinks[target].add(source)
-        return KnowledgeGraph({target: KnowledgeIndex(sources) for target, sources in backlinks.items()})
+                yield source, target
+
+    def __or__(self, other: KnowledgeGraph) -> KnowledgeGraph:
+        builder = KnowledgeGraphBuilder()
+        for source, target in self.links():
+            builder.add(source, target)
+        for source, target in other.links():
+            builder.add(source, target)
+        return builder.build()
+
+    def reverse(self) -> KnowledgeGraph:
+        builder = KnowledgeGraphBuilder()
+        for source, target in self.links():
+            builder.add(target, source)
+        return builder.build()
 
     def symmetrical(self) -> KnowledgeGraph:
         return self | self.reverse()
 
+class KnowledgeGraphBuilder:
+    _graph: defaultdict[Path, set[Path]]
+
+    def __init__(self):
+        self._graph = defaultdict(set)
+
+    def add(self, source: Path, target: Path):
+        if source != target:
+            self._graph[source].add(target)
+
+    def build(self) -> KnowledgeGraph:
+        return KnowledgeGraph({path: KnowledgeIndex(targets) for path, targets in self._graph.items()})
+
 __all__ = [
     'KnowledgeGraph',
+    'KnowledgeGraphBuilder',
 ]

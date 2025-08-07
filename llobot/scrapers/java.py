@@ -1,11 +1,9 @@
 from __future__ import annotations
 from functools import cache
-from collections import defaultdict
 import re
 from pathlib import Path
 from llobot.knowledge import Knowledge
-from llobot.knowledge.graphs import KnowledgeGraph
-from llobot.knowledge.indexes import KnowledgeIndex
+from llobot.knowledge.graphs import KnowledgeGraph, KnowledgeGraphBuilder
 from llobot.scrapers import GraphScraper
 import llobot.scrapers
 import llobot.links.java
@@ -17,22 +15,20 @@ def pascal_case() -> GraphScraper:
     string_re = re.compile(r'"(?:[^"\\]|\\.)*"')
     pattern = re.compile(r'\b[A-Z][A-Za-z0-9]*\b')
     def scrape(knowledge: Knowledge) -> KnowledgeGraph:
-        graph = defaultdict(set)
+        builder = KnowledgeGraphBuilder()
         indexes = {}
         for path, content in knowledge:
-            if path.suffix != '.java':
-                continue
-            content = comment_re.sub(' ', content)
-            content = text_block_re.sub(' ', content)
-            content = string_re.sub(' ', content)
-            for name in pattern.findall(content):
-                # Require at least one lowercase letter to avoid matching enums and constants.
-                if not name.isupper():
-                    link = llobot.links.java.type_name(name)
-                    for target in link.resolve_indexed(knowledge, indexes):
-                        if target != path:
-                            graph[path].add(target)
-        return KnowledgeGraph({path: KnowledgeIndex(targets) for path, targets in graph.items()})
+            if path.suffix == '.java':
+                content = comment_re.sub(' ', content)
+                content = text_block_re.sub(' ', content)
+                content = string_re.sub(' ', content)
+                for name in pattern.findall(content):
+                    # Require at least one lowercase letter to avoid matching enums and constants.
+                    if not name.isupper():
+                        link = llobot.links.java.type_name(name)
+                        for target in link.resolve_indexed(knowledge, indexes):
+                            builder.add(path, target)
+        return builder.build()
     return llobot.scrapers.create(scrape)
 
 @cache
