@@ -46,38 +46,45 @@ class ScrapingIndex:
                     self._tails[tail] = set()
                 self._tails[tail].add(path)
 
-    def lookup(self, source: Path, abbreviated: Path) -> Path | None:
+    def lookup(self, source: Path, *abbreviated: Path) -> Path | None:
         """
-        Resolves an abbreviated path to a full target path.
+        Resolves abbreviated paths to a full target path.
 
         Args:
             source: The source path for disambiguation
-            abbreviated: The abbreviated path to resolve
+            *abbreviated: The abbreviated paths to resolve (merged candidates)
 
         Returns:
             The resolved full path, or None if resolution fails or is ambiguous
         """
-        # Reject paths with no segments
-        if not abbreviated.parts:
+        if not abbreviated:
             return None
 
-        # Determine which lookup table to use and get candidates
-        if len(abbreviated.parts) == 1:
-            # Just a filename, use _names (no filtering needed)
-            targets = list(self._names.get(abbreviated.name, set()))
-        else:
-            # Multi-part path, use _tails with last two segments
-            tail = Path(*abbreviated.parts[-2:]) if len(abbreviated.parts) >= 2 else abbreviated
-            candidates = self._tails.get(tail, set())
+        targets = []
 
-            # Filter candidates to ensure right side matches abbreviated path exactly
-            targets = []
-            for candidate in candidates:
-                candidate_parts = candidate.parts
-                abbreviated_parts = abbreviated.parts
-                if len(candidate_parts) >= len(abbreviated_parts):
-                    if candidate_parts[-len(abbreviated_parts):] == abbreviated_parts:
-                        targets.append(candidate)
+        for abbrev in abbreviated:
+            # Reject paths with no segments
+            if not abbrev.parts:
+                continue
+
+            # Determine which lookup table to use and get candidates
+            if len(abbrev.parts) == 1:
+                # Just a filename, use _names (no filtering needed)
+                targets.extend(list(self._names.get(abbrev.name, set())))
+            else:
+                # Multi-part path, use _tails with last two segments
+                tail = Path(*abbrev.parts[-2:]) if len(abbrev.parts) >= 2 else abbrev
+                candidates = self._tails.get(tail, set())
+
+                # Filter candidates to ensure right side matches abbreviated path exactly
+                for candidate in candidates:
+                    candidate_parts = candidate.parts
+                    abbreviated_parts = abbrev.parts
+                    if len(candidate_parts) >= len(abbreviated_parts):
+                        if candidate_parts[-len(abbreviated_parts):] == abbreviated_parts:
+                            targets.append(candidate)
+
+        targets = list(set(targets))
 
         if not targets:
             return None
