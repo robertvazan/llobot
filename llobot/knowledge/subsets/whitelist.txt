@@ -1,0 +1,42 @@
+# Git
+.gitignore
+.gitattributes
+.mailmap
+.gitmodules
+
+# Text files
+*.md
+*.xml
+*.txt
+
+# Configuration files
+*.toml
+*.yml
+*.properties
+
+# Source code
+*.py
+*.java
+*.rs
+*.sh
+*.c
+*.h
+*.cpp
+*.hpp
+*.hh
+*.hxx
+*.cxx
+*.cc
+
+# Repository documentation files without extensions
+README
+COPYRIGHT
+CONTRIBUTORS
+AUTHORS
+ACKNOWLEDGMENTS
+LICENSE
+CODE_OF_CONDUCT
+CHANGELOG
+SUPPORT
+SECURITY
+CONTRIBUTING

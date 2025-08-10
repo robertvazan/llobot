@@ -7,7 +7,6 @@ from llobot.formatters.languages import LanguageGuesser
 from llobot.knowledge.deltas import DocumentDelta, KnowledgeDelta, KnowledgeDeltaBuilder
 from llobot.chats import ChatMessage, ChatBranch
 import llobot.knowledge.subsets
-import llobot.knowledge.subsets.markdown
 import llobot.formatters.languages
 import llobot.text
 

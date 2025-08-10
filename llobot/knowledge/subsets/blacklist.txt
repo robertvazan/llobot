@@ -1,0 +1,10 @@
+# Version control
+.git/**
+
+# Build directories
+target/** # Rust/Java builds
+
+# IDE directories
+.vscode/**
+.settings/**
+.metadata/**

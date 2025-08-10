@@ -1,0 +1,23 @@
+# Java ancillary files
+package-info.java
+module-info.java
+*Test.java
+*Tests.java
+src/test/**
+src/*/resources/**
+pom.xml
+*.properties
+
+# Python ancillary files
+requirements.txt
+test_*.py
+*_test.py
+test/**/*.py
+tests/**/*.py
+
+# Rust ancillary files
+Cargo.toml
+tests/**
+
+# Configuration files
+*.toml
