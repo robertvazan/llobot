@@ -20,23 +20,109 @@ def create(function: Callable[[Path, str], str]) -> LanguageGuesser:
     return LambdaGuesser()
 
 EXTENSIONS = {
+    # Documentation and markup
     '.md': 'markdown',
+    '.rst': 'rst',
     '.xml': 'xml',
+    '.tex': 'latex',
+
+    # Configuration files
     '.toml': 'toml',
-    '.py': 'python',
-    '.java': 'java',
-    '.rs': 'rust',
+    '.yml': 'yaml',
+    '.yaml': 'yaml',
+    '.json': 'json',
+    '.ini': 'ini',
+    '.properties': 'properties',
+
+    # Systems languages
     '.c': 'c',
     '.h': 'c',
     '.cpp': 'cpp',
     '.hpp': 'cpp',
+    '.cc': 'cpp',
+    '.cxx': 'cpp',
     '.hh': 'cpp',
     '.hxx': 'cpp',
-    '.cxx': 'cpp',
-    '.cc': 'cpp',
-    '.mak': 'make',
+    '.rs': 'rust',
+    '.go': 'go',
+    '.zig': 'zig',
+    '.nim': 'nim',
+
+    # Application languages
+    '.py': 'python',
+    '.java': 'java',
+    '.cs': 'csharp',
+    '.kt': 'kotlin',
+    '.scala': 'scala',
+    '.js': 'javascript',
+    '.ts': 'typescript',
+    '.jsx': 'jsx',
+    '.tsx': 'tsx',
+    '.rb': 'ruby',
+    '.php': 'php',
+    '.swift': 'swift',
+    '.pl': 'perl',
+    '.lua': 'lua',
+    '.dart': 'dart',
+    '.jl': 'julia',
+    '.r': 'r',
+    '.R': 'r',
+    '.groovy': 'groovy',
+
+    # Functional languages
+    '.hs': 'haskell',
+    '.ml': 'ocaml',
+    '.fs': 'fsharp',
+    '.clj': 'clojure',
+    '.cljs': 'clojure',
+    '.elm': 'elm',
+    '.ex': 'elixir',
+    '.exs': 'elixir',
+    '.erl': 'erlang',
+    '.hrl': 'erlang',
+
+    # Scientific/Legacy languages
+    '.f': 'fortran',
+    '.f90': 'fortran',
+    '.f95': 'fortran',
+    '.f03': 'fortran',
+    '.f08': 'fortran',
+    '.ada': 'ada',
+    '.adb': 'ada',
+    '.ads': 'ada',
+    '.pas': 'pascal',
+
+    # Web technologies
+    '.html': 'html',
+    '.htm': 'html',
+    '.css': 'css',
+    '.scss': 'scss',
+    '.sass': 'sass',
+    '.less': 'less',
+    '.vue': 'vue',
+    '.svelte': 'svelte',
+
+    # Scripts
+    '.sh': 'bash',
+    '.bash': 'bash',
+    '.zsh': 'zsh',
+    '.fish': 'fish',
+    '.bat': 'batch',
+    '.cmd': 'batch',
+    '.ps1': 'powershell',
+
+    # Data and query languages
+    '.sql': 'sql',
+    '.graphql': 'graphql',
+    '.gql': 'graphql',
+
+    # Build files
+    '.mk': 'makefile',
+    '.mak': 'makefile',
+    '.gradle': 'gradle',
+    '.cmake': 'cmake',
+    '.sbt': 'scala',
     '.docker': 'dockerfile',
-    '.properties': 'properties',
 }
 
 @cache
@@ -45,7 +131,11 @@ def extension(extensions: dict[str, str] | None = None) -> LanguageGuesser:
     return create(lambda path, content: extensions.get(path.suffix, ''))
 
 FILENAMES = {
-    'Makefile': 'make',
+    'Makefile': 'makefile',
+    'makefile': 'makefile',
+    'CMakeLists.txt': 'cmake',
+    'BUILD': 'python',
+    'WORKSPACE': 'python',
     'Dockerfile': 'dockerfile',
     'Containerfile': 'dockerfile',
 }
@@ -63,9 +153,8 @@ __all__ = [
     'LanguageGuesser',
     'create',
     'EXTENSIONS',
-    'extensions',
+    'extension',
     'FILENAMES',
     'filename',
     'standard',
 ]
-
