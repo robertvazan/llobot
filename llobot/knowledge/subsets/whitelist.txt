@@ -4,29 +4,132 @@
 .mailmap
 .gitmodules
 
-# Text files
-*.md
-*.xml
-*.txt
+# Content and documentation
+*.md # Markdown
+*.rst # reStructuredText
+*.txt # Plain text
+*.adoc # AsciiDoc
+*.tex # LaTeX
+*.xml # XML
 
 # Configuration files
-*.toml
-*.yml
-*.properties
+*.toml # Rust, Python
+*.yml # YAML
+*.yaml # YAML
+*.json # JSON
+*.ini # INI format
+*.conf # Configuration
+*.cfg # Configuration
+*.properties # Java
 
-# Source code
-*.py
-*.java
-*.rs
-*.sh
-*.c
-*.h
-*.cpp
-*.hpp
-*.hh
-*.hxx
-*.cxx
-*.cc
+# Source code - Systems languages
+*.c # C
+*.h # C headers
+*.cpp # C++
+*.hpp # C++ headers
+*.cc # C++
+*.cxx # C++
+*.hh # C++ headers
+*.hxx # C++ headers
+*.rs # Rust
+*.go # Go
+*.zig # Zig
+*.v # V
+*.nim # Nim
+*.asm # Assembly
+*.s # Assembly
+
+# Source code - Application languages
+*.py # Python
+*.java # Java
+*.cs # C#
+*.vb # Visual Basic .NET
+*.kt # Kotlin
+*.scala # Scala
+*.js # JavaScript
+*.ts # TypeScript
+*.jsx # React JavaScript
+*.tsx # React TypeScript
+*.rb # Ruby
+*.php # PHP
+*.swift # Swift
+*.m # Objective-C
+*.pl # Perl
+*.lua # Lua
+*.dart # Dart
+*.jl # Julia
+*.r # R
+*.R # R
+*.groovy # Groovy
+*.gvy # Groovy
+*.gd # GDScript
+*.bas # Visual Basic, VBA
+*.vba # VBA
+
+# Source code - Functional languages
+*.hs # Haskell
+*.ml # OCaml
+*.fs # F#
+*.clj # Clojure
+*.cljs # ClojureScript
+*.elm # Elm
+*.ex # Elixir
+*.exs # Elixir
+*.erl # Erlang
+*.hrl # Erlang headers
+*.lisp # Lisp
+*.lsp # Lisp
+*.cl # Common Lisp
+
+# Source code - Scientific/Legacy languages
+*.f # Fortran
+*.f90 # Fortran 90
+*.f95 # Fortran 95
+*.f03 # Fortran 2003
+*.f08 # Fortran 2008
+*.ada # Ada
+*.adb # Ada body
+*.ads # Ada specification
+*.pas # Delphi/Pascal
+*.dpr # Delphi
+
+# Web technologies
+*.html # HTML
+*.htm # HTML
+*.css # CSS
+*.scss # Sass
+*.sass # Sass
+*.less # Less
+*.vue # Vue.js
+*.svelte # Svelte
+
+# Scripts
+*.sh # Shell
+*.bash # Bash
+*.zsh # Zsh
+*.fish # Fish shell
+*.bat # Windows batch
+*.cmd # Windows command
+*.ps1 # PowerShell
+
+# Data and query languages
+*.sql # SQL
+*.csv # CSV
+*.tsv # TSV
+*.graphql # GraphQL
+*.gql # GraphQL
+
+# Build files
+*.mk # Makefile
+Makefile # Make
+makefile # Make
+*.gradle # Gradle
+*.cmake # CMake
+CMakeLists.txt # CMake
+*.sbt # SBT
+*.bazel # Bazel
+BUILD # Bazel
+WORKSPACE # Bazel
 
 # Repository documentation files without extensions
 README

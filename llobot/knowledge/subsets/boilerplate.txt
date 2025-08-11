@@ -35,6 +35,8 @@ SUPPORT.txt
 SECURITY
 SECURITY.md
 SECURITY.txt
+
+# Intended for humans and likely confusing for LLMs
 CONTRIBUTING
 CONTRIBUTING.md
 CONTRIBUTING.txt

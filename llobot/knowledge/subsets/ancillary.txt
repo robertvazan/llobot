@@ -1,23 +1,41 @@
-# Java ancillary files
-package-info.java
-module-info.java
-*Test.java
-*Tests.java
-src/test/**
-src/*/resources/**
-pom.xml
-*.properties
+# Test directories and files
+test/** # General test directories
+tests/** # General test directories
+spec/** # Specification/test directories
+__tests__/** # JavaScript test directories
+*Test.java # Java test classes
+*Tests.java # Java test classes
+test_*.py # Python test files
+*_test.py # Python test files
+*_test.go # Go test files
+*_spec.rb # Ruby spec files
+*.test.* # General test files
+fixtures/** # Test fixtures
 
-# Python ancillary files
-requirements.txt
-test_*.py
-*_test.py
-test/**/*.py
-tests/**/*.py
+# Resource and asset directories
+resources/** # Java, general resources
+assets/** # Web assets, general assets
+static/** # Static files
+public/** # Public assets
 
-# Rust ancillary files
-Cargo.toml
-tests/**
-
-# Configuration files
-*.toml
+# Configuration and build files
+*.properties # Java properties
+requirements.txt # Python dependencies
+Cargo.toml # Rust manifest
+pom.xml # Maven
+build.gradle # Gradle
+package.json # Node.js
+composer.json # PHP Composer
+Gemfile # Ruby
+mix.exs # Elixir
+setup.py # Python
+pyproject.toml # Python
+tox.ini # Python testing
+.eslintrc* # ESLint config
+.prettierrc* # Prettier config
+jest.config.* # Jest config
+webpack.config.* # Webpack config
+rollup.config.* # Rollup config
+vite.config.* # Vite config
+tsconfig.json # TypeScript config
+.babelrc* # Babel config

@@ -1,10 +1,61 @@
 # Version control
-.git/**
+.git/** # Git
+.svn/** # Subversion
+.hg/** # Mercurial
 
-# Build directories
-target/** # Rust/Java builds
+# Build directories - Java/JVM
+target/** # Maven
+build/** # Gradle
+out/** # IntelliJ IDEA
+.gradle/** # Gradle cache
 
-# IDE directories
-.vscode/**
-.settings/**
-.metadata/**
+# Build directories - JavaScript/Node
+node_modules/** # npm/yarn
+dist/** # Build output
+.next/** # Next.js
+.nuxt/** # Nuxt.js
+
+# Build directories - Python
+__pycache__/** # Python bytecode
+.pytest_cache/** # pytest
+build/** # setuptools
+dist/** # setuptools
+*.egg-info/** # setuptools
+
+# Build directories - Rust
+target/** # Cargo
+
+# Build directories - Go
+bin/** # Go binaries
+pkg/** # Go packages
+
+# Build directories - C/C++
+build/** # CMake
+obj/** # Object files
+bin/** # Binaries
+
+# Build directories - .NET
+bin/** # .NET binaries
+obj/** # .NET object files
+
+# IDE directories - JetBrains
+.idea/** # IntelliJ IDEA, PyCharm, WebStorm
+
+# IDE directories - Eclipse
+.settings/** # Eclipse settings
+.metadata/** # Eclipse metadata
+.classpath # Eclipse classpath
+.project # Eclipse project
+
+# IDE directories - Visual Studio Code
+.vscode/** # VS Code
+
+# IDE directories - Visual Studio
+.vs/** # Visual Studio
+
+# Cache and temporary directories
+.cache/** # General cache
+.tmp/** # Temporary files
+.temp/** # Temporary files
+tmp/** # Temporary files
+temp/** # Temporary files
