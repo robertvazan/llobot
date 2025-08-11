@@ -131,6 +131,11 @@ CMakeLists.txt # CMake
 BUILD # Bazel
 WORKSPACE # Bazel
 
+# Container files
+*.docker # Docker
+Dockerfile # Docker
+Containerfile # Docker
+
 # Repository documentation files without extensions
 README
 COPYRIGHT
