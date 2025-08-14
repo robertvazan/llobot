@@ -9,7 +9,7 @@ class Knowledge:
     _hash: int | None
 
     def __init__(self, documents: dict[Path, str] = {}):
-        self._documents = {path: content for path, content in documents.items() if len(content) > 0}
+        self._documents = dict(documents)
         self._hash = None
 
     def __str__(self) -> str:

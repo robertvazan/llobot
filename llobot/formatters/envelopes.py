@@ -147,7 +147,7 @@ def details(*,
             if content == '' and (removed or (moved_from and not modified)):
                 content = None
             else:
-                content = llobot.text.normalize(content) if content else None
+                content = llobot.text.normalize(content)
 
             return DocumentDelta(path, content, new=new, modified=modified, removed=removed, diff=diff, moved_from=moved_from, invalid=invalid)
 
