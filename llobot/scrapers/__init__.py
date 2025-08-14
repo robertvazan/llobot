@@ -34,16 +34,13 @@ def create(scrape: Callable[[Knowledge], KnowledgeGraph]) -> GraphScraper:
 @lru_cache
 def overviews(overviews_subset: KnowledgeSubset | None = None) -> GraphScraper:
     """
-    Creates a scraper that links files to overview files in their directories.
-
-    Links every non-overview file in every directory to every overview file in the same directory.
-    Also links overview files in child directories to overview files in parent directories.
+    Creates a scraper that links regular files to overview files in their directories and ancestor directories.
 
     Args:
         overviews_subset: Subset defining overview files. Defaults to predefined overview subset.
 
     Returns:
-        A GraphScraper that creates overview-based links.
+        A GraphScraper that creates links to overview files.
     """
     if overviews_subset is None:
         overviews_subset = llobot.knowledge.subsets.overviews()
@@ -55,20 +52,14 @@ def overviews(overviews_subset: KnowledgeSubset | None = None) -> GraphScraper:
         # For each tree node (directory)
         for subtree in tree.all_trees:
 
-            # For each overview file in it
+            # Find overview files
             for overview_file in subtree.file_paths:
                 if overview_file in overviews_subset:
 
-                    # Link regular files to overview files in the same directory
-                    for regular_file in subtree.file_paths:
+                    # Link regular files to the overview file
+                    for regular_file in subtree.all_paths:
                         if regular_file not in overviews_subset:
                             builder.add(regular_file, overview_file)
-
-                    # Link overview files in subdirectories to parent overview files
-                    for child in tree.subtrees:
-                        for child_overview in child.file_paths:
-                            if child_overview in overviews_subset:
-                                builder.add(child_overview, overview_file)
 
         return builder.build()
 
