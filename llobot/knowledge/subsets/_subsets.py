@@ -84,19 +84,19 @@ def glob(*patterns: str) -> KnowledgeSubset:
     """Create subset matching glob patterns with optimized handling."""
     if not patterns:
         return nothing()
-    
+
     suffixes = []
     filenames = []
     directories = []
     relatives = []
     absolutes = []
-    
+
     for pattern in patterns:
         is_absolute = pattern.startswith('/')
-        
+
         if is_absolute:
             pattern = pattern[1:]  # Strip leading /
-        
+
         # Check for suffix pattern (*.ext where ext has no dots)
         suffix_match = _SUFFIX_PATTERN.match(pattern)
         if suffix_match:
@@ -115,9 +115,9 @@ def glob(*patterns: str) -> KnowledgeSubset:
             if not is_absolute:
                 pattern = '**/' + pattern
             absolutes.append(pattern)
-    
+
     subsets = []
-    
+
     if suffixes:
         subsets.append(suffix(*suffixes))
     if filenames:
@@ -128,7 +128,7 @@ def glob(*patterns: str) -> KnowledgeSubset:
         subsets.append(relative(pattern))
     for pattern in absolutes:
         subsets.append(absolute(pattern))
-    
+
     # Chain unions
     if not subsets:
         return nothing()
@@ -183,12 +183,16 @@ def blacklist() -> KnowledgeSubset:
 def boilerplate() -> KnowledgeSubset:
     return load('boilerplate.txt')
 
+@cache
+def overviews() -> KnowledgeSubset:
+    return load('overviews.txt')
+
 # Ancillary files accompany core files. They are always secondary in some way.
 # They are included in the context, but their default weight is much lower.
 # This also matches boilerplate files, so that it's a superset of boilerplate.
 @cache
 def ancillary() -> KnowledgeSubset:
-    return boilerplate() | load('ancillary.txt')
+    return (boilerplate() | load('ancillary.txt')) - overviews()
 
 __all__ = [
     'KnowledgeSubset',
@@ -208,5 +212,6 @@ __all__ = [
     'whitelist',
     'blacklist',
     'boilerplate',
+    'overviews',
     'ancillary',
 ]

@@ -3,8 +3,10 @@ from pathlib import Path
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.rankings import KnowledgeRanking
+from llobot.knowledge.subsets import KnowledgeSubset
 import llobot.knowledge.indexes
 import llobot.knowledge.rankings
+import llobot.knowledge.subsets
 
 class KnowledgeTree:
     """
@@ -137,6 +139,10 @@ class KnowledgeTree:
             result.extend(tree.file_paths)
         return result
 
+    @property
+    def ranking(self) -> KnowledgeRanking:
+        return KnowledgeRanking(self.all_paths)
+
 class KnowledgeTreeBuilder:
     """
     A builder for constructing KnowledgeTree instances by adding file paths incrementally.
@@ -223,18 +229,51 @@ def ranked(ranking: KnowledgeRanking) -> KnowledgeTree:
         builder.add(path)
     return builder.build()
 
-def lexicographical(material: KnowledgeIndex | Knowledge) -> KnowledgeTree:
+def lexicographical(index: KnowledgeIndex | KnowledgeRanking | Knowledge) -> KnowledgeTree:
     """
     Creates a knowledge tree from an index or index precursor, sorted lexicographically.
 
     Args:
-        material: Knowledge index or index precursor to convert to a tree.
+        index: Knowledge index or its precursor to convert to a tree.
 
     Returns:
         A knowledge tree with paths sorted lexicographically.
     """
-    ranking = llobot.knowledge.rankings.lexicographical(material)
+    ranking = llobot.knowledge.rankings.lexicographical(index)
     return ranked(ranking)
+
+def overviews_first(
+    index: KnowledgeIndex | KnowledgeRanking | Knowledge,
+    overviews: KnowledgeSubset | None = None
+) -> KnowledgeTree:
+    """
+    Creates a knowledge tree with overview files listed first in each directory.
+
+    Args:
+        index: Knowledge index or its precursor to convert to a tree.
+        overviews: Subset defining overview files. Defaults to predefined overview subset.
+
+    Returns:
+        A knowledge tree with overview files prioritized in each directory.
+    """
+    if overviews is None:
+        overviews = llobot.knowledge.subsets.overviews()
+
+    # Start with lexicographical ordering
+    lexicographical = llobot.knowledge.rankings.lexicographical(index)
+
+    # Separate overview files from regular files
+    builder = KnowledgeTreeBuilder()
+    for path in lexicographical:
+        if path in overviews:
+            builder.add(path)
+    for path in lexicographical:
+        if path not in overviews:
+            builder.add(path)
+    return builder.build()
+
+def standard(index: KnowledgeIndex | KnowledgeRanking | Knowledge) -> KnowledgeTree:
+    return overviews_first(index)
 
 def coerce(material: KnowledgeTree | KnowledgeRanking | KnowledgeIndex | Knowledge) -> KnowledgeTree:
     """
@@ -251,12 +290,14 @@ def coerce(material: KnowledgeTree | KnowledgeRanking | KnowledgeIndex | Knowled
     if isinstance(material, KnowledgeRanking):
         return ranked(material)
     # KnowledgeIndex or Knowledge
-    return lexicographical(material)
+    return standard(material)
 
 __all__ = [
     'KnowledgeTree',
     'KnowledgeTreeBuilder',
     'ranked',
     'lexicographical',
+    'overviews_first',
+    'standard',
     'coerce',
 ]

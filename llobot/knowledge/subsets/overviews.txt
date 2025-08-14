@@ -1,0 +1,30 @@
+# General documentation files
+README
+README.md
+README.txt
+README.rst
+INDEX
+INDEX.md
+INDEX.txt
+
+# Language-specific overview files
+package-info.java # Java package documentation
+module-info.java # Java module documentation
+__init__.py # Python package initialization
+mod.rs # Rust module definition
+lib.rs # Rust library root
+main.rs # Rust binary root
+index.js # JavaScript/Node.js entry point
+index.ts # TypeScript entry point
+index.jsx # React JavaScript entry point
+index.tsx # React TypeScript entry point
+main.go # Go main package
+doc.go # Go package documentation
+init.lua # Lua initialization
+__init__.lua # Lua package initialization
+index.php # PHP entry point
+default.aspx # ASP.NET default page
+default.htm # HTML default page
+default.html # HTML default page
+index.htm # HTML index page
+index.html # HTML index page

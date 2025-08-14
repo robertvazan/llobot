@@ -59,6 +59,26 @@ def lexicographical(index: KnowledgeIndex | KnowledgeRanking | 'Knowledge') -> K
     index = llobot.knowledge.indexes.coerce(index)
     return KnowledgeRanking(sorted(index))
 
+def overviews_first(
+    index: KnowledgeIndex | KnowledgeRanking | 'Knowledge',
+    overviews: KnowledgeSubset | None = None
+) -> KnowledgeRanking:
+    """
+    Creates a knowledge ranking with overview files listed first in each directory.
+    The files are otherwise sorted lexicographically.
+
+    Args:
+        index: Knowledge index or its precursor to convert to a ranking.
+        overviews: Subset defining overview files. Defaults to predefined overview subset.
+
+    Returns:
+        A knowledge ranking with overview files prioritized.
+    """
+    # Use local import to avoid cycles
+    import llobot.knowledge.trees
+    tree = llobot.knowledge.trees.overviews_first(index, overviews)
+    return tree.ranking
+
 def ascending(scores: 'KnowledgeScores') -> KnowledgeRanking:
     # Sort items with equal score lexicographically.
     paths = lexicographical(scores)
@@ -71,11 +91,16 @@ def shuffle(paths: KnowledgeIndex | KnowledgeRanking | 'Knowledge' | 'KnowledgeS
     import llobot.knowledge.scores
     return descending(llobot.knowledge.scores.random(paths))
 
+def standard(index: KnowledgeIndex | KnowledgeRanking | 'Knowledge') -> KnowledgeRanking:
+    return overviews_first(index)
+
 __all__ = [
     'KnowledgeRanking',
     'coerce',
     'lexicographical',
+    'overviews_first',
     'ascending',
     'descending',
     'shuffle',
+    'standard',
 ]

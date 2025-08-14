@@ -234,7 +234,7 @@ class KnowledgeDeltaBuilder:
 
 def fresh(knowledge: Knowledge, ranking: KnowledgeRanking | None = None) -> KnowledgeDelta:
     if ranking is None:
-        ranking = llobot.knowledge.rankings.lexicographical(knowledge)
+        ranking = llobot.knowledge.rankings.standard(knowledge)
     return KnowledgeDelta([DocumentDelta(path, knowledge[path]) for path in ranking if path in knowledge])
 
 def between(before: Knowledge, after: Knowledge, *, move_hints: dict[Path, Path] = {}) -> KnowledgeDelta:

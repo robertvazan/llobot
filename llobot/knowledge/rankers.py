@@ -21,6 +21,10 @@ def create(function: Callable[[Knowledge], KnowledgeRanking]) -> KnowledgeRanker
 def lexicographical() -> KnowledgeRanker:
     return create(lambda knowledge: llobot.knowledge.rankings.lexicographical(knowledge))
 
+@cache
+def overviews_first(overviews: KnowledgeSubset | None = None) -> KnowledgeRanker:
+    return create(lambda knowledge: llobot.knowledge.rankings.overviews_first(knowledge, overviews))
+
 @lru_cache
 def ascending(scorer: 'KnowledgeScorer') -> KnowledgeRanker:
     return create(lambda knowledge: llobot.knowledge.rankings.ascending(scorer(knowledge)))
@@ -35,15 +39,15 @@ def shuffle() -> KnowledgeRanker:
 
 @cache
 def standard() -> KnowledgeRanker:
-    return lexicographical()
+    return overviews_first()
 
 __all__ = [
     'KnowledgeRanker',
     'create',
     'lexicographical',
+    'overviews_first',
     'ascending',
     'descending',
     'shuffle',
     'standard',
 ]
-
