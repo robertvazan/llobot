@@ -7,6 +7,55 @@ INDEX
 INDEX.md
 INDEX.txt
 
+# Developer instruction files
+CONTRIBUTING
+CONTRIBUTING.md
+CONTRIBUTING.txt
+INSTALL
+INSTALL.md
+INSTALL.txt
+INSTALLATION
+INSTALLATION.md
+INSTALLATION.txt
+SETUP
+SETUP.md
+SETUP.txt
+BUILD
+BUILD.md
+BUILD.txt
+DEVELOPMENT
+DEVELOPMENT.md
+DEVELOPMENT.txt
+DEVELOPERS
+DEVELOPERS.md
+DEVELOPERS.txt
+HACKING
+HACKING.md
+HACKING.txt
+TESTING
+TESTING.md
+TESTING.txt
+DEPLOYMENT
+DEPLOYMENT.md
+DEPLOYMENT.txt
+RELEASE
+RELEASE.md
+RELEASE.txt
+MAINTENANCE
+MAINTENANCE.md
+MAINTENANCE.txt
+
+# LLM instruction files
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+CODEX.md
+INSTRUCTIONS.md
+PROMPT.md
+.prompt.md
+AI.md
+AI_INSTRUCTIONS.md
+
 # Language-specific overview files
 package-info.java # Java package documentation
 module-info.java # Java module documentation
