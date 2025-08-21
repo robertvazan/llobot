@@ -34,13 +34,13 @@ def create(scrape: Callable[[Knowledge], KnowledgeGraph]) -> GraphScraper:
 @lru_cache
 def overviews(overviews_subset: KnowledgeSubset | None = None) -> GraphScraper:
     """
-    Creates a scraper that links regular files to overview files in their directories and ancestor directories.
+    Creates a scraper that links files to the nearest overview files.
 
     Args:
         overviews_subset: Subset defining overview files. Defaults to predefined overview subset.
 
     Returns:
-        A GraphScraper that creates links to overview files.
+        A GraphScraper that creates links to nearest overview files.
     """
     if overviews_subset is None:
         overviews_subset = llobot.knowledge.subsets.overviews()
@@ -48,18 +48,25 @@ def overviews(overviews_subset: KnowledgeSubset | None = None) -> GraphScraper:
     def scrape_overviews(knowledge: Knowledge) -> KnowledgeGraph:
         builder = KnowledgeGraphBuilder()
         tree = llobot.knowledge.trees.lexicographical(knowledge)
+        seen = set()
 
-        # For each tree node (directory)
-        for subtree in tree.all_trees:
+        # Process subtrees in reverse order (deepest first) in order to link only to the nearest overviews
+        for subtree in reversed(tree.all_trees):
+            # Link to all overview files in the directory
+            targets = [o for o in subtree.file_paths if o in overviews_subset]
 
-            # Find overview files
-            for overview_file in subtree.file_paths:
-                if overview_file in overviews_subset:
+            # Mark the files as seen only if they are linked to something
+            if targets:
+                regular_sources = [r for r in subtree.all_paths if r not in overviews_subset]
+                overview_sources = [o for c in subtree.subtrees for o in c.all_paths if o in overviews_subset]
+                sources = regular_sources + overview_sources
 
-                    # Link regular files to the overview file
-                    for regular_file in subtree.all_paths:
-                        if regular_file not in overviews_subset:
-                            builder.add(regular_file, overview_file)
+                for source in sources:
+                    if source not in seen:
+                        for target in targets:
+                            builder.add(source, target)
+
+                seen.update(sources)
 
         return builder.build()
 
