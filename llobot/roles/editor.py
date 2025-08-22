@@ -12,7 +12,7 @@ from llobot.crammers.knowledge import KnowledgeCrammer
 from llobot.crammers.edits import EditCrammer
 from llobot.formatters.envelopes import EnvelopeFormatter
 from llobot.formatters.knowledge import KnowledgeFormatter
-from llobot.formatters.instructions import InstructionFormatter
+from llobot.formatters.prompts import PromptFormatter
 from llobot.prompts import SystemPrompt
 from llobot.projects import Project
 from llobot.roles import Role
@@ -22,7 +22,7 @@ import llobot.knowledge.scores
 import llobot.crammers.knowledge
 import llobot.crammers.edits
 import llobot.formatters.knowledge
-import llobot.formatters.instructions
+import llobot.formatters.prompts
 import llobot.formatters.envelopes
 import llobot.prompts
 import llobot.knowledge.rankings
@@ -41,7 +41,7 @@ def system() -> SystemPrompt:
     )
 
 class Editor(Role):
-    _instructions: str
+    _prompt: str
     _retrieval_scraper: RetrievalScraper
     _relevance_scorer: KnowledgeScorer
     _graph_scorer: KnowledgeScorer
@@ -50,11 +50,11 @@ class Editor(Role):
     _edit_crammer: EditCrammer
     _envelopes: EnvelopeFormatter
     _retrieval_formatter: KnowledgeFormatter
-    _instruction_formatter: InstructionFormatter
+    _prompt_formatter: PromptFormatter
     _example_share: float
 
     def __init__(self, name: str, *,
-        instructions: str = system().compile(),
+        prompt: str = system().compile(),
         retrieval_scraper: RetrievalScraper = llobot.knowledge.retrievals.standard(),
         relevance_scorer: KnowledgeScorer | KnowledgeSubset = llobot.knowledge.scorers.irrelevant(),
         graph_scorer: KnowledgeScorer = llobot.knowledge.scorers.standard(),
@@ -63,7 +63,7 @@ class Editor(Role):
         edit_crammer: EditCrammer = llobot.crammers.edits.standard(),
         envelopes: EnvelopeFormatter = llobot.formatters.envelopes.standard(),
         retrieval_formatter: KnowledgeFormatter = llobot.formatters.knowledge.standard(),
-        instruction_formatter: InstructionFormatter = llobot.formatters.instructions.standard(),
+        prompt_formatter: PromptFormatter = llobot.formatters.prompts.standard(),
         # Share of the context dedicated to examples and associated knowledge updates.
         example_share: float = 0.4,
         **kwargs,
@@ -72,7 +72,7 @@ class Editor(Role):
         Creates a new editor role.
         """
         super().__init__(name, **kwargs)
-        self._instructions = instructions
+        self._prompt = prompt
         self._retrieval_scraper = retrieval_scraper
         if isinstance(relevance_scorer, KnowledgeSubset):
             self._relevance_scorer = llobot.knowledge.scorers.relevant(relevance_scorer)
@@ -84,7 +84,7 @@ class Editor(Role):
         self._edit_crammer = edit_crammer
         self._envelopes = envelopes
         self._retrieval_formatter = retrieval_formatter
-        self._instruction_formatter = instruction_formatter
+        self._prompt_formatter = prompt_formatter
         self._example_share = example_share
 
     def stuff(self, *,
@@ -95,8 +95,8 @@ class Editor(Role):
     ) -> ChatBranch:
         knowledge = project.root.knowledge(cutoff) if project else Knowledge()
 
-        # System instructions
-        system_chat = self._instruction_formatter(self._instructions)
+        # System prompt
+        system_chat = self._prompt_formatter(self._prompt)
         budget -= system_chat.cost
 
         # Examples with associated updates

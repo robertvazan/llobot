@@ -1,28 +1,28 @@
 from __future__ import annotations
 from datetime import datetime
 from llobot.crammers.examples import ExampleCrammer
-from llobot.formatters.instructions import InstructionFormatter
+from llobot.formatters.prompts import PromptFormatter
 from llobot.roles import Role
 from llobot.chats import ChatBranch, ChatBuilder
 from llobot.projects import Project
 import llobot.crammers.examples
-import llobot.formatters.instructions
+import llobot.formatters.prompts
 
 class Assistant(Role):
-    _instructions: str
+    _prompt: str
     _crammer: ExampleCrammer
-    _instruction_formatter: InstructionFormatter
+    _prompt_formatter: PromptFormatter
 
     def __init__(self, name: str, *,
-        instructions: str = '',
+        prompt: str = '',
         crammer: ExampleCrammer = llobot.crammers.examples.standard(),
-        instruction_formatter: InstructionFormatter = llobot.formatters.instructions.standard(),
+        prompt_formatter: PromptFormatter = llobot.formatters.prompts.standard(),
         **kwargs,
     ):
         super().__init__(name, **kwargs)
-        self._instructions = instructions
+        self._prompt = prompt
         self._crammer = crammer
-        self._instruction_formatter = instruction_formatter
+        self._prompt_formatter = prompt_formatter
 
     def stuff(self, *,
         prompt: ChatBranch,
@@ -31,15 +31,15 @@ class Assistant(Role):
         budget: int,
     ) -> ChatBranch:
         chat = ChatBuilder()
-        
-        system_chat = self._instruction_formatter(self._instructions)
+
+        system_chat = self._prompt_formatter(self._prompt)
         chat.add(system_chat)
         budget -= system_chat.cost
 
         recent_examples = self.recent_examples(project, cutoff)
         examples = self._crammer(recent_examples, budget)
         chat.add(examples)
-        
+
         return chat.build()
 
 __all__ = [

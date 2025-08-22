@@ -20,14 +20,14 @@ class Coder(Editor):
     """
     A role specialized for software development tasks.
     """
-    def __init__(self, name: str, *, instructions: str = system().compile(), **kwargs):
+    def __init__(self, name: str, *, prompt: str = system().compile(), **kwargs):
         """
         Creates a new coder role.
 
-        :param instructions: The system prompt to use. Standard coder prompt is used by default.
+        :param prompt: The system prompt to use. Standard coder prompt is used by default.
         :param kwargs: Additional arguments for the underlying editor role.
         """
-        super().__init__(name, instructions=instructions, **kwargs)
+        super().__init__(name, prompt=prompt, **kwargs)
 
 __all__ = [
     'system',
