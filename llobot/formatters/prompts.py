@@ -1,13 +1,14 @@
 from __future__ import annotations
 from functools import cache, lru_cache
 from llobot.chats import ChatIntent, ChatBuilder, ChatBranch
+from llobot.prompts import Prompt
 
 class PromptFormatter:
     def render(self, prompt: str) -> ChatBranch:
         return ChatBranch()
 
-    def __call__(self, prompt: str) -> ChatBranch:
-        return self.render(prompt)
+    def __call__(self, prompt: str | Prompt) -> ChatBranch:
+        return self.render(str(prompt))
 
 def create(function: Callable[[str], ChatBranch]) -> PromptFormatter:
     class LambdaPromptFormatter(PromptFormatter):

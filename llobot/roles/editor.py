@@ -13,7 +13,7 @@ from llobot.crammers.edits import EditCrammer
 from llobot.formatters.envelopes import EnvelopeFormatter
 from llobot.formatters.knowledge import KnowledgeFormatter
 from llobot.formatters.prompts import PromptFormatter
-from llobot.prompts import SystemPrompt
+from llobot.prompts import SystemPrompt, Prompt
 from llobot.projects import Project
 from llobot.roles import Role
 import llobot.knowledge.retrievals
@@ -34,10 +34,10 @@ def system() -> SystemPrompt:
     """
     Returns the standard system prompt for the editor role.
     """
-    return llobot.prompts.prepare(
+    return SystemPrompt(
         llobot.prompts.read('editor.md'),
-        *llobot.prompts.editing(),
-        *llobot.prompts.answering(),
+        llobot.prompts.editing(),
+        llobot.prompts.answering(),
     )
 
 class Editor(Role):
@@ -54,7 +54,7 @@ class Editor(Role):
     _example_share: float
 
     def __init__(self, name: str, *,
-        prompt: str = system().compile(),
+        prompt: str | Prompt = system(),
         retrieval_scraper: RetrievalScraper = llobot.knowledge.retrievals.standard(),
         relevance_scorer: KnowledgeScorer | KnowledgeSubset = llobot.knowledge.scorers.irrelevant(),
         graph_scorer: KnowledgeScorer = llobot.knowledge.scorers.standard(),
@@ -72,7 +72,7 @@ class Editor(Role):
         Creates a new editor role.
         """
         super().__init__(name, **kwargs)
-        self._prompt = prompt
+        self._prompt = str(prompt)
         self._retrieval_scraper = retrieval_scraper
         if isinstance(relevance_scorer, KnowledgeSubset):
             self._relevance_scorer = llobot.knowledge.scorers.relevant(relevance_scorer)

@@ -2,6 +2,7 @@ from __future__ import annotations
 from datetime import datetime
 from llobot.crammers.examples import ExampleCrammer
 from llobot.formatters.prompts import PromptFormatter
+from llobot.prompts import Prompt
 from llobot.roles import Role
 from llobot.chats import ChatBranch, ChatBuilder
 from llobot.projects import Project
@@ -14,13 +15,13 @@ class Assistant(Role):
     _prompt_formatter: PromptFormatter
 
     def __init__(self, name: str, *,
-        prompt: str = '',
+        prompt: str | Prompt = '',
         crammer: ExampleCrammer = llobot.crammers.examples.standard(),
         prompt_formatter: PromptFormatter = llobot.formatters.prompts.standard(),
         **kwargs,
     ):
         super().__init__(name, **kwargs)
-        self._prompt = prompt
+        self._prompt = str(prompt)
         self._crammer = crammer
         self._prompt_formatter = prompt_formatter
 

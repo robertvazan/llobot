@@ -1,7 +1,7 @@
 from __future__ import annotations
 from functools import cache
 from llobot.roles.editor import Editor
-from llobot.prompts import SystemPrompt
+from llobot.prompts import SystemPrompt, Prompt
 import llobot.prompts
 
 @cache
@@ -9,18 +9,18 @@ def system() -> SystemPrompt:
     """
     Returns the standard system prompt for the coder role.
     """
-    return llobot.prompts.prepare(
+    return SystemPrompt(
         llobot.prompts.read('coder.md'),
-        *llobot.prompts.coding(),
-        *llobot.prompts.documentation(),
-        *llobot.prompts.answering(),
+        llobot.prompts.coding(),
+        llobot.prompts.documentation(),
+        llobot.prompts.answering(),
     )
 
 class Coder(Editor):
     """
     A role specialized for software development tasks.
     """
-    def __init__(self, name: str, *, prompt: str = system().compile(), **kwargs):
+    def __init__(self, name: str, *, prompt: str | Prompt = system(), **kwargs):
         """
         Creates a new coder role.
 

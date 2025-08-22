@@ -11,75 +11,148 @@ def read(filename: str, *, package: str | None = None) -> str:
     content = (resources.files(package) / filename).read_text()
     return llobot.text.normalize(content).strip()
 
-def combine(*sections: str) -> list[str]:
-    seen = set()
-    result = []
-    for section in sections:
-        section = section.strip()
-        if section and section not in seen:
-            seen.add(section)
-            result.append(section)
-    return result
+class Prompt:
+    """Base class for all prompt types."""
 
-def compile(role: str, *sections: str, title: str = 'Instructions') -> str:
-    parts = [f'# {title}', role]
-    parts.extend(combine(*sections))
-    return llobot.text.concat(*parts)
+    def flatten(self) -> PromptFragment:
+        """Converts the prompt to a flat list of sections."""
+        return PromptFragment()
 
-class SystemPrompt:
-    title: str
-    role: str
-    sections: list[str]
+    def __str__(self) -> str:
+        """Converts the prompt to a string."""
+        return str(self.flatten())
 
-    def __init__(self, role: str, *sections: str, title: str = 'Instructions'):
-        self.title = title
-        self.role = role
-        self.sections = combine(*sections)
+class PromptFragment(Prompt):
+    """Represents a flat list of prompt sections."""
 
-    def compile(self) -> str:
-        return compile(self.role, *self.sections, title=self.title)
+    _sections: tuple[str, ...]
 
-def prepare(role: str, *sections: str, title: str = 'Instructions') -> SystemPrompt:
-    return SystemPrompt(role, *sections, title=title)
+    def __init__(self, *sections: str | Prompt):
+        # Flatten and deduplicate sections
+        seen = set()
+        result = []
+        for section in sections:
+            if isinstance(section, Prompt):
+                fragment = section.flatten()
+                for s in fragment._sections:
+                    s = s.strip()
+                    if s and s not in seen:
+                        seen.add(s)
+                        result.append(s)
+            else:
+                section = section.strip()
+                if section and section not in seen:
+                    seen.add(section)
+                    result.append(section)
+        self._sections = tuple(result)
+
+    @property
+    def sections(self) -> tuple[str, ...]:
+        """Returns the sections tuple."""
+        return self._sections
+
+    def flatten(self) -> PromptFragment:
+        """Returns self since this is already flattened."""
+        return self
+
+    def __str__(self) -> str:
+        """Converts sections to a single string."""
+        return llobot.text.concat(*self._sections)
+
+class PromptSection(Prompt):
+    """Represents a prompt section with its prerequisite sections."""
+
+    _section: str
+    _prerequisites: tuple[str, ...]
+
+    def __init__(self, section: str, *prerequisites: str | Prompt):
+        self._section = section.strip()
+        fragment = PromptFragment(*prerequisites)
+        self._prerequisites = fragment._sections
+
+    @property
+    def section(self) -> str:
+        """Returns the main section content."""
+        return self._section
+
+    @property
+    def prerequisites(self) -> tuple[str, ...]:
+        """Returns the prerequisite sections."""
+        return self._prerequisites
+
+    def flatten(self) -> PromptFragment:
+        """Returns prerequisites followed by the main section."""
+        return PromptFragment(*self._prerequisites, self._section)
+
+class SystemPrompt(Prompt):
+    """Represents a complete system prompt with role definition and sections."""
+
+    _role: str
+    _sections: tuple[str, ...]
+
+    def __init__(self, role: str | SystemPrompt, *sections: str | Prompt):
+        if isinstance(role, SystemPrompt):
+            # Base prompt: adopt its role and prepend its sections
+            self._role = role._role
+            fragment = PromptFragment(*role._sections, *sections)
+            self._sections = fragment._sections
+        else:
+            self._role = role.strip()
+            fragment = PromptFragment(*sections)
+            self._sections = fragment._sections
+
+    @property
+    def role(self) -> str:
+        """Returns the role definition."""
+        return self._role
+
+    @property
+    def sections(self) -> tuple[str, ...]:
+        """Returns the sections."""
+        return self._sections
+
+    def flatten(self) -> PromptFragment:
+        """Returns role followed by sections."""
+        return PromptFragment(self._role, *self._sections)
 
 @cache
-def blocks() -> list[str]:
-    return combine(read('blocks.md'))
+def blocks() -> PromptSection:
+    return PromptSection(read('blocks.md'))
 
 @cache
-def listings() -> list[str]:
-    return combine(*blocks(), read('listings.md'))
+def listings() -> PromptSection:
+    return PromptSection(read('listings.md'), blocks())
 
 @cache
-def knowledge() -> list[str]:
-    return combine(*listings(), read('knowledge.md'))
+def knowledge() -> PromptSection:
+    return PromptSection(read('knowledge.md'), listings())
 
 @cache
-def deltas() -> list[str]:
-    return combine(*knowledge(), read('deltas.md'))
+def deltas() -> PromptSection:
+    return PromptSection(read('deltas.md'), knowledge())
 
 @cache
-def editing() -> list[str]:
-    return combine(*deltas(), read('editing.md'))
+def editing() -> PromptSection:
+    return PromptSection(read('editing.md'), deltas())
 
 @cache
-def coding() -> list[str]:
-    return combine(*editing(), read('coding.md'))
+def coding() -> PromptSection:
+    return PromptSection(read('coding.md'), editing())
 
 @cache
-def documentation() -> list[str]:
-    return combine(*coding(), read('documentation.md'))
+def documentation() -> PromptSection:
+    return PromptSection(read('documentation.md'), coding())
 
 @cache
-def answering() -> list[str]:
-    return combine(*knowledge(), read('answering.md'))
+def answering() -> PromptSection:
+    return PromptSection(read('answering.md'), knowledge())
 
 __all__ = [
     'read',
-    'combine',
-    'compile',
+    'Prompt',
+    'PromptFragment',
+    'PromptSection',
     'SystemPrompt',
-    'prepare',
     'blocks',
     'listings',
     'knowledge',
