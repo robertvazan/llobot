@@ -1,5 +1,8 @@
 ## File edits
 
+- For changes spanning multiple files, provide listings for all affected files
+- Formulate followup edits relative to your previously performed edits
+
 ### Modifying a file
 
 - Output a file listing with `(modified)` flag to modify a file (see example below)
@@ -52,6 +55,8 @@ Example of removing a file:
 
 - Output a file listing with `moved from ...` flag to rename a file (see example below)
 - Specify source path in `moved from` flag and destination path in the header
+- Always use the full original path in the `moved from` flag
+- The `moved from` flag implies removal of the source path, so do not add a separate `(removed)` listing
 - Use an empty code block for a pure rename
 
 Example of renaming a file:
@@ -80,8 +85,3 @@ Example of renaming and modifying a file:
 ```
 
 </details>
-
-### Common rules for file edits
-
-- For changes spanning multiple files, provide listings for all affected files
-- Formulate followup edits relative to your previously performed edits

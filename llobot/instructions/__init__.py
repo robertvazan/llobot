@@ -51,16 +51,12 @@ def listings() -> list[str]:
     return combine(*blocks(), read('listings.md'))
 
 @cache
-def flags() -> list[str]:
-    return combine(*listings(), read('flags.md'))
-
-@cache
 def knowledge() -> list[str]:
     return combine(*listings(), read('knowledge.md'))
 
 @cache
 def edits() -> list[str]:
-    return combine(*knowledge(), *flags(), read('edits.md'))
+    return combine(*knowledge(), read('edits.md'))
 
 @cache
 def diffs() -> list[str]:
@@ -80,7 +76,7 @@ def documentation() -> list[str]:
 
 @cache
 def answering() -> list[str]:
-    return combine(*knowledge(), *flags(), read('answering.md'))
+    return combine(*knowledge(), read('answering.md'))
 
 @cache
 def reviews() -> list[str]:
@@ -94,7 +90,6 @@ __all__ = [
     'prepare',
     'blocks',
     'listings',
-    'flags',
     'knowledge',
     'edits',
     'diffs',
