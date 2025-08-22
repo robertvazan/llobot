@@ -13,7 +13,7 @@ from llobot.crammers.edits import EditCrammer
 from llobot.formatters.envelopes import EnvelopeFormatter
 from llobot.formatters.knowledge import KnowledgeFormatter
 from llobot.formatters.instructions import InstructionFormatter
-from llobot.instructions import SystemPrompt
+from llobot.prompts import SystemPrompt
 from llobot.projects import Project
 from llobot.roles import Role
 import llobot.knowledge.retrievals
@@ -24,7 +24,7 @@ import llobot.crammers.edits
 import llobot.formatters.knowledge
 import llobot.formatters.instructions
 import llobot.formatters.envelopes
-import llobot.instructions
+import llobot.prompts
 import llobot.knowledge.rankings
 import llobot.knowledge.rankers
 import llobot.knowledge.deltas
@@ -34,10 +34,10 @@ def system() -> SystemPrompt:
     """
     Returns the standard system prompt for the editor role.
     """
-    return llobot.instructions.prepare(
-        llobot.instructions.read('editor.md'),
-        *llobot.instructions.editing(),
-        *llobot.instructions.answering(),
+    return llobot.prompts.prepare(
+        llobot.prompts.read('editor.md'),
+        *llobot.prompts.editing(),
+        *llobot.prompts.answering(),
     )
 
 class Editor(Role):
