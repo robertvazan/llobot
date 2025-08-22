@@ -14,7 +14,6 @@ def system() -> SystemPrompt:
         *llobot.instructions.coding(),
         *llobot.instructions.documentation(),
         *llobot.instructions.answering(),
-        *llobot.instructions.reviews(),
     )
 
 class Coder(Editor):

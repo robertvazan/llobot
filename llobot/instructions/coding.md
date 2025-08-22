@@ -17,3 +17,11 @@
 - When writing complex logic, consider several approaches and pick the best one
 - Think through complex logic to ensure correctness
 - Write well-structured and documented code that is obviously correct
+
+### Supporting reviews with clean diffs
+
+- Perform only one simple action on every line
+- Break multi-line statements into a sequence of one-line statements
+- In documentation, break long lines at logical boundaries
+- Write well-structured code that is simple and obviously correct
+- Add explanatory comments for complex code
