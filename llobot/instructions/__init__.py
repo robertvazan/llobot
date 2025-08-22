@@ -55,12 +55,12 @@ def knowledge() -> list[str]:
     return combine(*listings(), read('knowledge.md'))
 
 @cache
-def edits() -> list[str]:
-    return combine(*knowledge(), read('edits.md'))
+def deltas() -> list[str]:
+    return combine(*knowledge(), read('deltas.md'))
 
 @cache
 def diffs() -> list[str]:
-    return combine(*edits(), read('diffs.md'))
+    return combine(*deltas(), read('diffs.md'))
 
 @cache
 def editing() -> list[str]:
@@ -87,7 +87,7 @@ __all__ = [
     'blocks',
     'listings',
     'knowledge',
-    'edits',
+    'deltas',
     'diffs',
     'editing',
     'coding',
