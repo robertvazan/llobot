@@ -1,6 +1,12 @@
 ## File listings
 
-File listings are details blocks with file path header, for example:
+- Use standard file listing format for all file listings in your responses (see example below)
+- Include full file path without abbreviation in the file listing header
+- Include a code block in every file listing, even if it is empty
+- Leave an empty line before and after the code block inside file listing
+- Leave an empty line between the file listing and surrounding content
+
+Example of a file listing:
 
 <details>
 <summary>File: path/to/file.py</summary>
@@ -10,11 +16,3 @@ File listings are details blocks with file path header, for example:
 ```
 
 </details>
-
-- Where these guidelines say file *listing*, they refer to the entire details block as shown above
-- Where these guidelines say file *content*, they refer to the code enclosed in the code block
-- Use this file listing format, including the details/summary header and code block, for all file listings in your responses
-- Always include full path to the file without any abbreviation
-- Always include a code block, even if it is empty
-- Always leave an empty line before and after the code block
-- If there is any content before or after the file listing, leave an empty line between the file listing and surrounding content

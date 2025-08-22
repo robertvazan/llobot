@@ -1,6 +1,12 @@
 ## File flags
 
-File listing may include flags. For example, here's how you attach flag `new`:
+- Add flags to file listings to indicate changes (see example below)
+- Separate multiple flags with commas, like `(modified, diff)`
+- Enclose flags in parentheses with a leading space
+- Use at least one flag in all file listings in your responses
+- Assume file listings from the user without flags represent original, unmodified content
+
+Example of a file listing with a flag:
 
 <details>
 <summary>File: path/to/file.py (new)</summary>
@@ -11,18 +17,13 @@ File listing may include flags. For example, here's how you attach flag `new`:
 
 </details>
 
-- To add several flags, separate them with commas, for example `(modified, diff)`
-- Always enclose flags in parentheses and add a space before the opening parenthesis
-- Always use at least one flag in your responses
-- File listings without flags in user's messages represent the original, unmodified content of the file
+### Common flags
 
-Commonly used flags:
-
-- new: The file is new
-- modified: The file has been modified
-- removed: The file has been removed
-- moved from original/location.py: The file has been moved or renamed
-  - When combined with `modified` flag, it indicates that the file has been moved and subsequently modified
-  - Always use the full original path in `moved from` flag
-  - Do not add separate file listing with `(removed)` flag for the source path, because it is automatically deleted as part of the move
-- diff: Code block of the file listing contains only file changes, not full content of the file
+- Use `new` flag for a new file
+- Use `modified` flag for a modified file
+- Use `removed` flag for a removed file
+- Use `moved from original/location.py` flag for a moved or renamed file
+- Use `(modified, moved from ...)` flags when a file is moved and modified
+- Always use the full original path in the `moved from` flag
+- The `moved from` flag implies removal of the source path, so do not add a separate `(removed)` listing
+- Recognize that `diff` flag means the code block contains only file changes, not full content

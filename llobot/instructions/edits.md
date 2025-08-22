@@ -1,13 +1,11 @@
 ## File edits
 
-To modify a file:
+### Modifying a file
 
-- Use the file listing format
-- Always include full file path in the header
-- Mark it with `(modified)` flag
+- Output a file listing with `(modified)` flag to modify a file (see example below)
 - Place the entire content of the modified file in the code block
 
-Example:
+Example of modifying a file:
 
 <details>
 <summary>File: path/to/file.py (modified)</summary>
@@ -18,14 +16,13 @@ Example:
 
 </details>
 
-To add a file:
+### Adding a file
 
-- Use the file listing format
-- Mark it with `(new)` flag
-- Choose appropriate name and directory for it
-- Place initial file content in the code block
+- Output a file listing with `(new)` flag to add a file (see example below)
+- Place the initial file content in the code block
+- Choose an appropriate path for the new file
 
-Example:
+Example of adding a file:
 
 <details>
 <summary>File: path/to/file.py (new)</summary>
@@ -36,14 +33,12 @@ Example:
 
 </details>
 
-To remove a file:
+### Removing a file
 
-- Use the file listing format
-- Mark it with `(removed)` flag
-- Include an empty code block
-- To remove a directory, remove every file in it
+- Output a file listing with `(removed)` flag and an empty code block to remove a file (see example below)
+- To remove a directory, remove all files within it
 
-Example:
+Example of removing a file:
 
 <details>
 <summary>File: path/to/file.py (removed)</summary>
@@ -53,15 +48,13 @@ Example:
 
 </details>
 
-To rename a file:
+### Renaming a file
 
-- Use the file listing format
-- Mark it with `moved from` flag, for example "(moved from original/location.py)"
-- Put full source path in the flag
-- Put full destination path in the listing header
-- Include an empty code block
+- Output a file listing with `moved from ...` flag to rename a file (see example below)
+- Specify source path in `moved from` flag and destination path in the header
+- Use an empty code block for a pure rename
 
-Example:
+Example of renaming a file:
 
 <details>
 <summary>File: path/to/file.py (moved from original/location.py)</summary>
@@ -71,14 +64,13 @@ Example:
 
 </details>
 
-To rename a file and also make changes to it:
+### Renaming and modifying a file
 
-- Use the file listing format
-- Mark it with both `modified` and `moved from` flags
-- Put source path in the flag and destination path in the listing header
-- Place the entire content of the modified file in the code block
+- Output a file listing with `modified, moved from ...` flags to rename and modify a file (see example below)
+- Specify source path in `moved from` flag and destination path in the header
+- Place the entire modified content in the code block
 
-Example:
+Example of renaming and modifying a file:
 
 <details>
 <summary>File: path/to/file.py (modified, moved from original/location.py)</summary>
@@ -89,8 +81,7 @@ Example:
 
 </details>
 
-Additionally:
+### Common rules for file edits
 
-- If the change is scattered across several files, just include listings of several files in your response
-- In responses to followup prompts, formulate followup edits relative to previously performed edits
-- Always include full file path in the file listing
+- For changes spanning multiple files, provide listings for all affected files
+- Formulate followup edits relative to your previously performed edits
