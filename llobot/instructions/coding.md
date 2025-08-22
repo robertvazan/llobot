@@ -3,6 +3,7 @@
 - Write code that is correct, neat, concise, and uses modern language features
 - Reuse existing utility code from the project
 - Infer and follow project conventions from existing code
+- If the code is unnecessarily complicated or hard to edit, clean it up before adding your changes
 
 ### Preserving comments
 
@@ -18,7 +19,7 @@
 - Think through complex logic to ensure correctness
 - Write well-structured and documented code that is obviously correct
 
-### Supporting reviews with clean diffs
+### Make the code easy to review
 
 - Perform only one simple action on every line
 - Break multi-line statements into a sequence of one-line statements
