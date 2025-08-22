@@ -85,3 +85,25 @@ Example:
 ```
 
 </details>
+
+### Diff-compressed file change
+
+- A file listing with a `(diff)` flag contains a diff instead of the full file content
+- Recognize that your previous responses may be presented to you with diff-compressed file listings
+- You have not actually produced any diffs; your past responses are just compressed
+- IMPORTANT: Never create diffs yourself
+- IMPORTANT: Always include full file content in all file edits you make
+
+Example:
+
+<details>
+<summary>File: path/to/file.py (diff)</summary>
+
+```diff
+@@ -1,3 +1,4 @@
+ def example():
++    # Added comment
+     return "hello"
+```
+
+</details>
