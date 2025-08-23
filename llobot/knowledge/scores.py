@@ -143,6 +143,77 @@ def random(paths: KnowledgeIndex | KnowledgeRanking | Knowledge | KnowledgeScore
     # Here we have to be careful to avoid zero scores, so that the resulting score object has all the paths.
     return KnowledgeScores({path: crc32(str(path).encode('utf-8')) or 1 for path in paths})
 
+def directory_max(scores: KnowledgeScores, *, recursive: bool = True) -> KnowledgeScores:
+    """
+    Assigns each directory the highest score among contained files.
+
+    Args:
+        scores: File scores to aggregate by directory.
+        recursive: If True, includes files from subdirectories in scoring.
+
+    Returns:
+        Directory scores with maximum file score per directory.
+    """
+    directory_scores = {}
+
+    for path, score in scores:
+        if recursive:
+            # Include all parent directories except root
+            directories = [p for p in path.parents if p != Path('.')]
+        else:
+            # Include only immediate parent if it's not root
+            parent = path.parent
+            directories = [parent] if parent != Path('.') else []
+
+        for directory in directories:
+            current_max = directory_scores.get(directory, float('-inf'))
+            directory_scores[directory] = max(current_max, score)
+
+    # Clean up any -inf values (shouldn't happen with valid input)
+    directory_scores = {d: s for d, s in directory_scores.items() if s > float('-inf')}
+
+    return KnowledgeScores(directory_scores)
+
+def directory_sum(scores: KnowledgeScores, *, recursive: bool = True) -> KnowledgeScores:
+    """
+    Assigns each directory the sum of scores of contained files.
+
+    Args:
+        scores: File scores to aggregate by directory.
+        recursive: If True, includes files from subdirectories in scoring.
+
+    Returns:
+        Directory scores with sum of file scores per directory.
+    """
+    directory_scores = {}
+
+    for path, score in scores:
+        if recursive:
+            # Include all parent directories except root
+            directories = [p for p in path.parents if p != Path('.')]
+        else:
+            # Include only immediate parent if it's not root
+            parent = path.parent
+            directories = [parent] if parent != Path('.') else []
+
+        for directory in directories:
+            directory_scores[directory] = directory_scores.get(directory, 0) + score
+
+    return KnowledgeScores(directory_scores)
+
+def directory_count(keys: KnowledgeIndex | KnowledgeRanking | Knowledge | KnowledgeScores, *, recursive: bool = True) -> KnowledgeScores:
+    """
+    Assigns each directory the count of contained files.
+
+    Args:
+        keys: Files to count by directory.
+        recursive: If True, includes files from subdirectories in counting.
+
+    Returns:
+        Directory scores with file count per directory.
+    """
+    return directory_sum(constant(keys), recursive=recursive)
+
 def hub(graph: KnowledgeGraph) -> KnowledgeScores:
     return KnowledgeScores({path: len(targets) for path, targets in graph.symmetrical()})
 
@@ -217,6 +288,9 @@ __all__ = [
     'length',
     'sqrt_length',
     'random',
+    'directory_max',
+    'directory_sum',
+    'directory_count',
     'hub',
     'pagerank',
     'reverse_pagerank',
