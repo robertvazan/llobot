@@ -102,23 +102,19 @@ def grouped(title: str) -> TreeFormatter:
     def render_grouped(tree: KnowledgeTree) -> str:
         sections = []
         for subtree in tree.all_trees:
-            if not subtree.files:
-                continue
-
             lines = []
 
             # Add header unless this is root with base path '.'
             if subtree.base != Path('.'):
                 lines.append(f'In {subtree.base}:')
-                lines.append('')
 
             # Add files
             for filename in subtree.files:
-                lines.append(filename)
+                lines.append(f'- {filename}')
 
             # Add subdirectories
             for directory in subtree.directories:
-                lines.append(f'{directory}/')
+                lines.append(f'- {directory}/')
 
             sections.append('\n'.join(lines))
 
