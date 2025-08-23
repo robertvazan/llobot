@@ -1,5 +1,6 @@
 from __future__ import annotations
-from functools import cache, lru_cache
+from functools import cache
+import re
 from llobot.chats import ChatIntent, ChatBuilder, ChatBranch
 from llobot.prompts import Prompt
 
@@ -16,21 +17,52 @@ def create(function: Callable[[str], ChatBranch]) -> PromptFormatter:
             return function(prompt)
     return LambdaPromptFormatter()
 
-@lru_cache
-def standard(affirmation: str = 'Okay.') -> PromptFormatter:
+@cache
+def plain(affirmation: str = 'Okay.') -> PromptFormatter:
     def render(prompt: str) -> ChatBranch:
         if not prompt:
             return ChatBranch()
         chat = ChatBuilder()
-        chat.add(ChatIntent.SYSTEM)
-        chat.add(prompt)
-        chat.add(ChatIntent.AFFIRMATION)
-        chat.add(affirmation)
+        chat.add(ChatIntent.SYSTEM.message(prompt))
+        chat.add(ChatIntent.AFFIRMATION.message(affirmation))
         return chat.build()
     return create(render)
+
+@cache
+def reminder(
+    pattern: str = r'^- IMPORTANT:\s*(.+)$',
+    header: str = 'Reminder:',
+    affirmation: str = 'Okay.'
+) -> PromptFormatter:
+    def render(prompt: str) -> ChatBranch:
+        matches = re.findall(pattern, prompt, re.MULTILINE)
+        if not matches:
+            return ChatBranch()
+
+        lines = []
+        if header:
+            lines.append(header)
+            lines.append('')
+
+        for match in matches:
+            lines.append(f'- {match}')
+
+        content = '\n'.join(lines)
+        chat = ChatBuilder()
+        chat.add(ChatIntent.SYSTEM.message(content))
+        chat.add(ChatIntent.AFFIRMATION.message(affirmation))
+        return chat.build()
+
+    return create(render)
+
+@cache
+def standard() -> PromptFormatter:
+    return plain()
 
 __all__ = [
     'PromptFormatter',
     'create',
+    'plain',
+    'reminder',
     'standard',
 ]

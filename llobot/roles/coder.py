@@ -11,9 +11,9 @@ def system() -> SystemPrompt:
     """
     return SystemPrompt(
         llobot.prompts.read('coder.md'),
+        llobot.prompts.answering(),
         llobot.prompts.coding(),
         llobot.prompts.documentation(),
-        llobot.prompts.answering(),
     )
 
 class Coder(Editor):

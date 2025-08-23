@@ -9,4 +9,4 @@
 - Match the style of existing project files
 - Do not leave trailing whitespace or blank (whitespace-only) lines
 - If the user provides feedback on your edits, implement it in a followup response
-- Formulate followup edits relative to your previously performed edits
+- IMPORTANT: Formulate followup edits relative to your previously performed edits

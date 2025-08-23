@@ -13,17 +13,20 @@ class Assistant(Role):
     _prompt: str
     _crammer: ExampleCrammer
     _prompt_formatter: PromptFormatter
+    _reminder_formatter: PromptFormatter
 
     def __init__(self, name: str, *,
         prompt: str | Prompt = '',
         crammer: ExampleCrammer = llobot.crammers.examples.standard(),
         prompt_formatter: PromptFormatter = llobot.formatters.prompts.standard(),
+        reminder_formatter: PromptFormatter = llobot.formatters.prompts.reminder(),
         **kwargs,
     ):
         super().__init__(name, **kwargs)
         self._prompt = str(prompt)
         self._crammer = crammer
         self._prompt_formatter = prompt_formatter
+        self._reminder_formatter = reminder_formatter
 
     def stuff(self, *,
         prompt: ChatBranch,
@@ -37,9 +40,15 @@ class Assistant(Role):
         chat.add(system_chat)
         budget -= system_chat.cost
 
+        reminder_chat = self._reminder_formatter(self._prompt)
+        budget -= reminder_chat.cost
+
         recent_examples = self.recent_examples(project, cutoff)
         examples = self._crammer(recent_examples, budget)
         chat.add(examples)
+
+        # Add reminder at the end
+        chat.add(reminder_chat)
 
         return chat.build()
 

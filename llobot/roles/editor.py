@@ -51,6 +51,7 @@ class Editor(Role):
     _envelopes: EnvelopeFormatter
     _retrieval_formatter: KnowledgeFormatter
     _prompt_formatter: PromptFormatter
+    _reminder_formatter: PromptFormatter
     _example_share: float
 
     def __init__(self, name: str, *,
@@ -64,6 +65,7 @@ class Editor(Role):
         envelopes: EnvelopeFormatter = llobot.formatters.envelopes.standard(),
         retrieval_formatter: KnowledgeFormatter = llobot.formatters.knowledge.standard(),
         prompt_formatter: PromptFormatter = llobot.formatters.prompts.standard(),
+        reminder_formatter: PromptFormatter = llobot.formatters.prompts.reminder(),
         # Share of the context dedicated to examples and associated knowledge updates.
         example_share: float = 0.4,
         **kwargs,
@@ -85,6 +87,7 @@ class Editor(Role):
         self._envelopes = envelopes
         self._retrieval_formatter = retrieval_formatter
         self._prompt_formatter = prompt_formatter
+        self._reminder_formatter = reminder_formatter
         self._example_share = example_share
 
     def stuff(self, *,
@@ -98,6 +101,10 @@ class Editor(Role):
         # System prompt
         system_chat = self._prompt_formatter(self._prompt)
         budget -= system_chat.cost
+
+        # Reminder
+        reminder_chat = self._reminder_formatter(self._prompt)
+        budget -= reminder_chat.cost
 
         # Examples with associated updates
         history_budget = int(budget * self._example_share)
@@ -128,6 +135,8 @@ class Editor(Role):
         chat.add(knowledge_chat)
         chat.add(history_chat)
         chat.add(retrievals_chat)
+        chat.add(reminder_chat)
+
         return chat.build()
 
     def handle_ok(self, chat: ChatBranch, project: Project | None, cutoff: datetime):
