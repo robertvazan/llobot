@@ -10,6 +10,7 @@ from llobot.knowledge.retrievals import RetrievalScraper
 from llobot.knowledge.scorers import KnowledgeScorer
 from llobot.crammers.knowledge import KnowledgeCrammer
 from llobot.crammers.edits import EditCrammer
+from llobot.crammers.indexes import IndexCrammer
 from llobot.formatters.envelopes import EnvelopeFormatter
 from llobot.formatters.knowledge import KnowledgeFormatter
 from llobot.formatters.prompts import PromptFormatter
@@ -21,6 +22,7 @@ import llobot.knowledge.scorers
 import llobot.knowledge.scores
 import llobot.crammers.knowledge
 import llobot.crammers.edits
+import llobot.crammers.indexes
 import llobot.formatters.knowledge
 import llobot.formatters.prompts
 import llobot.formatters.envelopes
@@ -48,6 +50,7 @@ class Editor(Role):
     _ranker: KnowledgeRanker
     _knowledge_crammer: KnowledgeCrammer
     _edit_crammer: EditCrammer
+    _index_crammer: IndexCrammer
     _envelopes: EnvelopeFormatter
     _retrieval_formatter: KnowledgeFormatter
     _prompt_formatter: PromptFormatter
@@ -62,6 +65,7 @@ class Editor(Role):
         ranker: KnowledgeRanker = llobot.knowledge.rankers.standard(),
         knowledge_crammer: KnowledgeCrammer = llobot.crammers.knowledge.standard(),
         edit_crammer: EditCrammer = llobot.crammers.edits.standard(),
+        index_crammer: IndexCrammer = llobot.crammers.indexes.standard(),
         envelopes: EnvelopeFormatter = llobot.formatters.envelopes.standard(),
         retrieval_formatter: KnowledgeFormatter = llobot.formatters.knowledge.standard(),
         prompt_formatter: PromptFormatter = llobot.formatters.prompts.standard(),
@@ -84,6 +88,7 @@ class Editor(Role):
         self._ranker = ranker
         self._knowledge_crammer = knowledge_crammer
         self._edit_crammer = edit_crammer
+        self._index_crammer = index_crammer
         self._envelopes = envelopes
         self._retrieval_formatter = retrieval_formatter
         self._prompt_formatter = prompt_formatter
@@ -120,8 +125,14 @@ class Editor(Role):
         scores -= history_paths
         scores -= blacklist
 
+        # Index
+        index_budget = budget - history_chat.cost
+        # Add background scores so nothing is omitted from index
+        index_scores = scores | llobot.knowledge.scores.uniform(knowledge.keys(), 0.001)
+        index_chat = self._index_crammer(index_scores, index_budget)
+
         # Knowledge
-        knowledge_budget = budget - history_chat.cost
+        knowledge_budget = index_budget - index_chat.cost
         ranking = self._ranker(knowledge)
         knowledge_chat, knowledge_paths = self._knowledge_crammer(knowledge, knowledge_budget, scores, ranking)
 
@@ -132,6 +143,7 @@ class Editor(Role):
 
         chat = ChatBuilder()
         chat.add(system_chat)
+        chat.add(index_chat)
         chat.add(knowledge_chat)
         chat.add(history_chat)
         chat.add(retrievals_chat)
