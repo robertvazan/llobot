@@ -3,31 +3,31 @@ from llobot.knowledge import Knowledge
 from llobot.knowledge.deltas import DocumentDelta, KnowledgeDelta
 
 def test_init():
-    deltas = [DocumentDelta(Path('file.txt'), 'content', new=True)]
+    deltas = [DocumentDelta(Path('file.txt'), 'content')]
     delta = KnowledgeDelta(deltas)
-    expected = KnowledgeDelta([DocumentDelta(Path('file.txt'), 'content', new=True)])
+    expected = KnowledgeDelta([DocumentDelta(Path('file.txt'), 'content')])
     assert delta == expected
 
 def test_bool():
     empty_delta = KnowledgeDelta()
     assert not empty_delta
 
-    delta = KnowledgeDelta([DocumentDelta(Path('file.txt'), 'content', new=True)])
+    delta = KnowledgeDelta([DocumentDelta(Path('file.txt'), 'content')])
     assert bool(delta)
 
 def test_len():
     assert len(KnowledgeDelta()) == 0
 
     deltas = [
-        DocumentDelta(Path('file1.txt'), 'content1', new=True),
-        DocumentDelta(Path('file2.txt'), 'content2', modified=True),
+        DocumentDelta(Path('file1.txt'), 'content1'),
+        DocumentDelta(Path('file2.txt'), 'content2'),
     ]
     assert len(KnowledgeDelta(deltas)) == 2
 
 def test_iter():
     deltas = [
-        DocumentDelta(Path('file1.txt'), 'content1', new=True),
-        DocumentDelta(Path('file2.txt'), 'content2', modified=True),
+        DocumentDelta(Path('file1.txt'), 'content1'),
+        DocumentDelta(Path('file2.txt'), 'content2'),
     ]
     delta = KnowledgeDelta(deltas)
 
@@ -35,8 +35,8 @@ def test_iter():
 
 def test_getitem_int():
     deltas = [
-        DocumentDelta(Path('file1.txt'), 'content1', new=True),
-        DocumentDelta(Path('file2.txt'), 'content2', modified=True),
+        DocumentDelta(Path('file1.txt'), 'content1'),
+        DocumentDelta(Path('file2.txt'), 'content2'),
     ]
     delta = KnowledgeDelta(deltas)
 
@@ -45,9 +45,9 @@ def test_getitem_int():
 
 def test_getitem_slice():
     deltas = [
-        DocumentDelta(Path('file1.txt'), 'content1', new=True),
-        DocumentDelta(Path('file2.txt'), 'content2', modified=True),
-        DocumentDelta(Path('file3.txt'), 'content3', removed=True),
+        DocumentDelta(Path('file1.txt'), 'content1'),
+        DocumentDelta(Path('file2.txt'), 'content2'),
+        DocumentDelta(Path('file3.txt'), None, removed=True),
     ]
     delta = KnowledgeDelta(deltas)
 
@@ -56,9 +56,9 @@ def test_getitem_slice():
     assert sliced == expected
 
 def test_equality():
-    deltas1 = [DocumentDelta(Path('file1.txt'), 'content1', new=True)]
-    deltas2 = [DocumentDelta(Path('file1.txt'), 'content1', new=True)]
-    deltas3 = [DocumentDelta(Path('file2.txt'), 'content2', modified=True)]
+    deltas1 = [DocumentDelta(Path('file1.txt'), 'content1')]
+    deltas2 = [DocumentDelta(Path('file1.txt'), 'content1')]
+    deltas3 = [DocumentDelta(Path('file2.txt'), 'content2')]
 
     delta1 = KnowledgeDelta(deltas1)
     delta2 = KnowledgeDelta(deltas2)
@@ -70,8 +70,8 @@ def test_equality():
 
 def test_str():
     deltas = [
-        DocumentDelta(Path('file1.txt'), 'content1', new=True),
-        DocumentDelta(Path('file2.txt'), 'content2', modified=True),
+        DocumentDelta(Path('file1.txt'), 'content1'),
+        DocumentDelta(Path('file2.txt'), 'content2'),
     ]
     delta = KnowledgeDelta(deltas)
 
@@ -82,20 +82,20 @@ def test_str():
     assert 'file2.txt' in result
 
 def test_add():
-    delta1 = KnowledgeDelta([DocumentDelta(Path('file1.txt'), 'content1', new=True)])
-    delta2 = KnowledgeDelta([DocumentDelta(Path('file2.txt'), 'content2', modified=True)])
+    delta1 = KnowledgeDelta([DocumentDelta(Path('file1.txt'), 'content1')])
+    delta2 = KnowledgeDelta([DocumentDelta(Path('file2.txt'), 'content2')])
 
     combined = delta1 + delta2
     expected = KnowledgeDelta([
-        DocumentDelta(Path('file1.txt'), 'content1', new=True),
-        DocumentDelta(Path('file2.txt'), 'content2', modified=True)
+        DocumentDelta(Path('file1.txt'), 'content1'),
+        DocumentDelta(Path('file2.txt'), 'content2')
     ])
     assert combined == expected
 
 def test_touched():
     deltas = [
-        DocumentDelta(Path('new.txt'), 'content', new=True),
-        DocumentDelta(Path('modified.txt'), 'content', modified=True),
+        DocumentDelta(Path('new.txt'), 'content'),
+        DocumentDelta(Path('modified.txt'), 'content'),
         DocumentDelta(Path('removed.txt'), None, removed=True),
         DocumentDelta(Path('moved.txt'), None, moved_from=Path('old.txt')),
     ]
@@ -110,8 +110,8 @@ def test_touched():
 
 def test_present():
     deltas = [
-        DocumentDelta(Path('new.txt'), 'content', new=True),
-        DocumentDelta(Path('modified.txt'), 'content', modified=True),
+        DocumentDelta(Path('new.txt'), 'content'),
+        DocumentDelta(Path('modified.txt'), 'content'),
         DocumentDelta(Path('removed.txt'), None, removed=True),
         DocumentDelta(Path('moved.txt'), None, moved_from=Path('old.txt')),
     ]
@@ -123,8 +123,8 @@ def test_present():
 
 def test_removed():
     deltas = [
-        DocumentDelta(Path('new.txt'), 'content', new=True),
-        DocumentDelta(Path('modified.txt'), 'content', modified=True),
+        DocumentDelta(Path('new.txt'), 'content'),
+        DocumentDelta(Path('modified.txt'), 'content'),
         DocumentDelta(Path('removed.txt'), None, removed=True),
         DocumentDelta(Path('moved.txt'), None, moved_from=Path('old.txt')),
     ]
@@ -136,11 +136,11 @@ def test_removed():
 
 def test_full():
     deltas = [
-        DocumentDelta(Path('new.txt'), 'new content', new=True),
-        DocumentDelta(Path('modified.txt'), 'modified content', modified=True),
+        DocumentDelta(Path('new.txt'), 'new content'),
+        DocumentDelta(Path('modified.txt'), 'modified content'),
         DocumentDelta(Path('removed.txt'), None, removed=True),
         DocumentDelta(Path('moved.txt'), None, moved_from=Path('old.txt')),
-        DocumentDelta(Path('diff.txt'), 'diff content', modified=True, diff=True),
+        DocumentDelta(Path('diff.txt'), 'diff content', diff=True),
     ]
     delta = KnowledgeDelta(deltas)
 
@@ -154,14 +154,13 @@ def test_full():
 def test_moves():
     deltas = [
         DocumentDelta(Path('moved1.txt'), None, moved_from=Path('old1.txt')),
-        DocumentDelta(Path('moved2.txt'), 'content', modified=True, moved_from=Path('old2.txt')),
+        DocumentDelta(Path('moved2.txt'), 'content'),  # This would be after a separate move delta
     ]
     delta = KnowledgeDelta(deltas)
 
     moves = delta.moves
     expected = {
-        Path('moved1.txt'): Path('old1.txt'),
-        Path('moved2.txt'): Path('old2.txt')
+        Path('moved1.txt'): Path('old1.txt')
     }
     assert moves == expected
 

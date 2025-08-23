@@ -62,7 +62,7 @@ def greedy(
             example_delta = envelopes.parse_chat(example)
             example_full = example_delta.full
 
-            update_builder = llobot.knowledge.deltas.KnowledgeDeltaBuilder()
+            update_builder = KnowledgeDeltaBuilder()
 
             # Check for deletions
             for path in example_delta.present:
@@ -73,7 +73,7 @@ def greedy(
             for path in example_delta.touched:
                 if path in knowledge and path not in updated_paths:
                     if path not in example_full or example_full[path] != knowledge[path]:
-                         update_builder.add(DocumentDelta(path, knowledge[path], modified=True))
+                         update_builder.add(DocumentDelta(path, knowledge[path]))
 
             update_delta = update_builder.build()
             update_chat = knowledge_formatter.render(update_delta)

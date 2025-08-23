@@ -8,7 +8,7 @@ Classes
 -------
 
 DocumentDelta
-    Individual file change representation with flags for new/modified/removed/moved
+    Individual file change representation with flags for removed/diff/moved_from
 KnowledgeDelta
     Collections of document changes with derived properties
 KnowledgeDeltaBuilder
@@ -24,8 +24,9 @@ between()
 diff_compress()
     Compress deltas using unified diff format when beneficial
 
-The delta system supports move detection, validity checking, and various
-derived properties like touched/present/removed path sets.
+The delta system supports move detection and various derived properties like
+touched/present/removed path sets. All DocumentDeltas are valid by construction,
+with invalid parameter combinations raising exceptions.
 
 Developer Notes
 ---------------
@@ -33,7 +34,7 @@ Developer Notes
 The implementation is split across private submodules:
 
 _documents
-    DocumentDelta class with validity checking and change flags
+    DocumentDelta class with validation and change flags
 _knowledge
     KnowledgeDelta class with collection operations and derived properties
 _builder
@@ -61,15 +62,17 @@ def between(before: Knowledge, after: Knowledge, *, move_hints: dict[Path, Path]
     moved = set()
 
     for path in (after_paths - before_paths).sorted():
-        if path in move_hints and move_hints[path] in before_paths:
+        if path in move_hints and move_hints[path] in before_paths and move_hints[path] not in moved:
             source = move_hints[path]
             if before[source] == after[path]:
                 builder.add(DocumentDelta(path, None, moved_from=source))
             else:
-                builder.add(DocumentDelta(path, after[path], modified=True, moved_from=source))
+                # For move with modification, create two separate deltas
+                builder.add(DocumentDelta(path, None, moved_from=source))
+                builder.add(DocumentDelta(path, after[path]))
             moved.add(source)
         else:
-            builder.add(DocumentDelta(path, after[path], new=True))
+            builder.add(DocumentDelta(path, after[path]))
 
     for path in (before_paths - after_paths).sorted():
         if path not in moved:
@@ -77,7 +80,7 @@ def between(before: Knowledge, after: Knowledge, *, move_hints: dict[Path, Path]
 
     for path in (before_paths & after_paths).sorted():
         if before[path] != after[path]:
-            builder.add(DocumentDelta(path, after[path], modified=True))
+            builder.add(DocumentDelta(path, after[path]))
 
     return builder.build()
 
@@ -93,7 +96,7 @@ def diff_compress(before: Knowledge, delta: KnowledgeDelta, *, threshold: float 
 
         # Attempt compression, but do not alter the original document variable
         compressed = document
-        if document.valid and document.modified and not document.diff and old_content is not None:
+        if document.content is not None and not document.diff and old_content is not None:
             new_content = document.content
             if old_content == new_content:
                 compressed = None
@@ -105,13 +108,13 @@ def diff_compress(before: Knowledge, delta: KnowledgeDelta, *, threshold: float 
                 diff_lines = diff_lines[2:] # Skip ---/+++ headers
                 diff_content = "".join(diff_lines)
                 if len(diff_content) < threshold * len(new_content):
-                    compressed = DocumentDelta(path, diff_content, modified=True, diff=True, moved_from=document.moved_from)
+                    compressed = DocumentDelta(path, diff_content, diff=True)
         if compressed:
             builder.add(compressed)
 
-        # Update the current knowledge using logic similar to 'full' property of KnowledgeDelta
-        if not document.valid or document.diff:
-            # Conservatively remove content for files when we cannot be sure about it.
+        # Update the current knowledge
+        if document.diff:
+            # Remove content for diff files since we cannot be sure about it
             full.pop(document.path, None)
             if document.moved:
                 full.pop(document.moved_from, None)

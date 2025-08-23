@@ -49,17 +49,13 @@ class KnowledgeDelta:
     @property
     def present(self) -> KnowledgeIndex:
         """
-        Returns an index of documents that are known to be present after applying this delta.
+        Returns an index of documents that are present after applying this delta.
         """
         paths = set()
         for delta in self:
-            # Move sources are processed even for invalid document deltas,
-            # because removal is conservative considering the objective of this property.
             if delta.moved:
                 paths.discard(delta.moved_from)
-            # If a document delta is invalid, we cannot be sure what really happened.
-            # Since this property requires certainty, we treat invalid deltas as removals.
-            if delta.removed or not delta.valid:
+            if delta.removed:
                 paths.discard(delta.path)
             else:
                 paths.add(delta.path)
@@ -68,38 +64,29 @@ class KnowledgeDelta:
     @property
     def removed(self) -> KnowledgeIndex:
         """
-        Returns an index of documents that are known to be removed after applying this delta.
+        Returns an index of documents that are removed after applying this delta.
         """
         paths = set()
         for delta in self:
-            if delta.valid:
-                if delta.moved:
-                    paths.add(delta.moved_from)
-                if delta.removed:
-                    paths.add(delta.path)
-                else:
-                    paths.discard(delta.path)
+            if delta.moved:
+                paths.add(delta.moved_from)
+            if delta.removed:
+                paths.add(delta.path)
             else:
-                # If the document delta is invalid, we cannot be sure what happened.
-                # Since this property requires certainty, we conservatively assume the files might still exist.
                 paths.discard(delta.path)
-                if delta.moved:
-                    paths.discard(delta.moved_from)
         return KnowledgeIndex(paths)
 
     @property
     def full(self) -> Knowledge:
         """
         Returns the full content of all documents whose state is fully known after the delta.
-        Deltas that are invalid, represent a diff, or are removals do not contribute content.
+        Deltas that represent diffs or are removals do not contribute content.
         """
         docs = {}
         for delta in self:
-            if not delta.valid or delta.diff:
-                # Conservatively remove content for files when we cannot be sure about it.
+            if delta.diff:
+                # Remove content for diff deltas since we cannot be sure about full content
                 docs.pop(delta.path, None)
-                if delta.moved:
-                    docs.pop(delta.moved_from, None)
                 continue
             if delta.moved:
                 if delta.moved_from in docs:

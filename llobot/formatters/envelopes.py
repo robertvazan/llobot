@@ -1,3 +1,33 @@
+"""
+Envelope formatters for knowledge deltas.
+
+This module provides formatters that can serialize DocumentDelta objects into
+readable text formats and parse them back. The primary formatter uses HTML
+details blocks for file listings and simple one-line formats for operations
+like removals and moves.
+
+Classes
+-------
+
+EnvelopeFormatter
+    Abstract base for envelope formatters with format/parse capabilities
+
+Functions
+---------
+
+details()
+    Creates formatter using HTML details blocks and one-line operations
+standard()
+    Default envelope formatter instance
+
+The envelope system supports:
+- File listings with complete content in details blocks
+- One-line removals in format: Removed: `path/to/file.py`
+- One-line moves in format: Moved: `old/path.py` => `new/path.py`
+- Diff-compressed listings for space efficiency
+- Language detection for syntax highlighting
+- Combining multiple formatters with | and & operators
+"""
 from __future__ import annotations
 from functools import cache, lru_cache
 from pathlib import Path
@@ -11,23 +41,59 @@ import llobot.formatters.languages
 import llobot.text
 
 class EnvelopeFormatter:
-    # May return None to indicate it cannot handle the file, which is useful for combining several formatters.
+    """
+    Base class for envelope formatters that handle DocumentDelta serialization.
+
+    Envelope formatters can convert DocumentDelta objects to formatted strings
+    and parse formatted text back into DocumentDelta objects. They support
+    combining via | (union) and & (filtering) operators.
+    """
+
     def format(self, delta: DocumentDelta) -> str | None:
+        """
+        Format a DocumentDelta into a string representation.
+
+        Args:
+            delta: The document delta to format
+
+        Returns:
+            Formatted string or None if this formatter cannot handle the delta
+        """
         return None
 
     def __call__(self, delta: DocumentDelta) -> str | None:
         return self.format(delta)
 
     def format_all(self, delta: KnowledgeDelta) -> str:
+        """Format all deltas in a KnowledgeDelta, concatenating results."""
         return llobot.text.concat(*(self.format(d) for d in delta))
 
     def find(self, message: str) -> list[str]:
+        """
+        Find all formatted delta strings in a message.
+
+        Args:
+            message: Text to search for formatted deltas
+
+        Returns:
+            List of formatted delta strings found in the message
+        """
         return []
 
     def parse(self, formatted: str) -> DocumentDelta | None:
+        """
+        Parse a formatted string back into a DocumentDelta.
+
+        Args:
+            formatted: The formatted string to parse
+
+        Returns:
+            DocumentDelta object or None if parsing fails
+        """
         return None
 
     def parse_message(self, message: str | ChatMessage) -> KnowledgeDelta:
+        """Parse all deltas found in a chat message."""
         if isinstance(message, ChatMessage):
             message = message.content
 
@@ -39,12 +105,14 @@ class EnvelopeFormatter:
         return builder.build()
 
     def parse_chat(self, chat: ChatBranch) -> KnowledgeDelta:
+        """Parse all deltas found in a chat branch."""
         builder = KnowledgeDeltaBuilder()
         for message in chat:
             builder.add(self.parse_message(message.content))
         return builder.build()
 
     def __or__(self, other: EnvelopeFormatter) -> EnvelopeFormatter:
+        """Combine formatters with union semantics (try first, then second)."""
         myself = self
         class OrEnvelopeFormatter(EnvelopeFormatter):
             def format(self, delta: DocumentDelta) -> str | None:
@@ -59,6 +127,7 @@ class EnvelopeFormatter:
         return OrEnvelopeFormatter()
 
     def __and__(self, whitelist: KnowledgeSubset | str) -> EnvelopeFormatter:
+        """Filter formatter to only handle paths in the whitelist."""
         myself = self
         whitelist = llobot.knowledge.subsets.coerce(whitelist)
         class AndEnvelopeFormatter(EnvelopeFormatter):
@@ -79,82 +148,104 @@ _CODE_BLOCK_PATTERN = '|'.join(rf'{"`" * i}[^`\n]*\n.*?^{"`" * i}' for i in rang
 # Regex for complete details block with file listing
 _DETAILS_PATTERN = rf'<details>\n<summary>[^\n]+</summary>\n\n(?:{_CODE_BLOCK_PATTERN})\n\n</details>'
 
-# Combined detection regex: details blocks or bare code blocks (to skip the latter)
-_DETECTION_REGEX = re.compile(f'^(?:(?:{_DETAILS_PATTERN})|(?:{_CODE_BLOCK_PATTERN}))$', re.MULTILINE | re.DOTALL)
+# Regex for one-line operations (must be on their own line)
+_REMOVED_PATTERN = r'^Removed: `([^`]+)`$'
+_MOVED_PATTERN = r'^Moved: `([^`]+)` => `([^`]+)`$'
 
-# Parsing regex for details blocks
-_PARSING_RE = re.compile(rf'<details>\n<summary>File: ([^\n]+?)(?: \(([^\n)]*)\))?</summary>\n\n```+[^\n]*\n(.*)^```+\n\n</details>', re.MULTILINE | re.DOTALL)
+# Combined detection regex: details blocks, bare code blocks (to skip), or one-line operations
+_DETECTION_REGEX = re.compile(
+    f'^(?:(?:{_DETAILS_PATTERN})|(?:{_CODE_BLOCK_PATTERN})|(?:{_REMOVED_PATTERN})|(?:{_MOVED_PATTERN}))$',
+    re.MULTILINE | re.DOTALL
+)
 
-_MOVED_FROM_RE = re.compile(r"moved from (.+)")
+# Unified parsing regex for details blocks (handles both File: and Diff: summaries)
+_DETAILS_PARSING_RE = re.compile(rf'<details>\n<summary>(File|Diff): ([^\n]+?)</summary>\n\n```+[^\n]*\n(.*)^```+\n\n</details>', re.MULTILINE | re.DOTALL)
+
+# Parsing regexes for one-line operations
+_REMOVED_RE = re.compile(_REMOVED_PATTERN, re.MULTILINE)
+_MOVED_RE = re.compile(_MOVED_PATTERN, re.MULTILINE)
 
 @lru_cache
 def details(*,
     guesser: LanguageGuesser = llobot.formatters.languages.standard(),
-    quad_backticks: list[str] = ['markdown'],
+    quad_backticks: tuple[str, ...] = ('markdown',),
 ) -> EnvelopeFormatter:
+    """
+    Create an envelope formatter using HTML details blocks and one-line operations.
+
+    This formatter handles:
+    - File listings: <details><summary>File: path</summary>```content```</details>
+    - Diff listings: <details><summary>Diff: path</summary>```diff```</details>
+    - Removals: Removed: `path/to/file.py`
+    - Moves: Moved: `old/path.py` => `new/path.py`
+
+    Args:
+        guesser: Language guesser for syntax highlighting
+        quad_backticks: Languages requiring 4+ backticks (e.g., when content has markdown)
+
+    Returns:
+        EnvelopeFormatter instance
+    """
     class DetailsEnvelopeFormatter(EnvelopeFormatter):
         def format(self, delta: DocumentDelta) -> str | None:
-            flags = []
-            if delta.new: flags.append('new')
-            if delta.modified: flags.append('modified')
-            if delta.diff: flags.append('diff')
-            if delta.removed: flags.append('removed')
-            if delta.moved_from: flags.append(f"moved from {delta.moved_from}")
-            flag_str = ', '.join(flags)
-            flag_suffix = f' ({flag_str})' if flag_str else ''
+            # Handle removals
+            if delta.removed:
+                return f"Removed: `{delta.path}`"
 
-            summary = f'File: {delta.path}{flag_suffix}'
+            # Handle pure moves (no content)
+            if delta.moved:
+                return f"Moved: `{delta.moved_from}` => `{delta.path}`"
 
-            # Always include content, even if empty
-            content = delta.content or ''
-            lang = 'diff' if delta.diff else guesser(delta.path, content)
+            # Handle file listings with content (regular files or diffs)
+            content = delta.content
+            if delta.diff:
+                summary = f'Diff: {delta.path}'
+                lang = 'diff'
+            else:
+                summary = f'File: {delta.path}'
+                lang = guesser(delta.path, content)
+
             backtick_count = 4 if lang in quad_backticks else 3
-
             return llobot.text.details(summary, lang, content, backtick_count=backtick_count)
 
         def find(self, message: str) -> list[str]:
             return [match.group(0) for match in _DETECTION_REGEX.finditer(message)]
 
         def parse(self, formatted: str) -> DocumentDelta | None:
-            match = _PARSING_RE.fullmatch(formatted.strip())
-            if not match:
-                return None
+            formatted = formatted.strip()
 
-            path_str, flag_str, content = match.groups()
-            path = Path(path_str.strip())
+            # Try parsing removal
+            removed_match = _REMOVED_RE.fullmatch(formatted)
+            if removed_match:
+                path = Path(removed_match.group(1))
+                return DocumentDelta(path, None, removed=True)
 
-            flag_str = flag_str or ''
-            flags = {n.strip() for n in flag_str.split(',')} if flag_str else set()
+            # Try parsing move
+            moved_match = _MOVED_RE.fullmatch(formatted)
+            if moved_match:
+                source_path = Path(moved_match.group(1))
+                dest_path = Path(moved_match.group(2))
+                return DocumentDelta(dest_path, None, moved_from=source_path)
 
-            new = 'new' in flags
-            modified = 'modified' in flags
-            removed = 'removed' in flags
-            diff = 'diff' in flags
-            moved_from_flag = next((n for n in flags if n.startswith('moved from')), None)
-            moved_from = None
-            if moved_from_flag:
-                m = _MOVED_FROM_RE.fullmatch(moved_from_flag)
-                if m:
-                    moved_from = Path(m.group(1).strip())
-
-            recognized_flags = {'new', 'modified', 'removed', 'diff'}
-            if moved_from_flag:
-                recognized_flags.add(moved_from_flag)
-
-            invalid = bool(flags - recognized_flags)
-
-            # Empty content should be ignored in exactly two cases: (1) removed or (2) moved from without modified
-            if content == '' and (removed or (moved_from and not modified)):
-                content = None
-            else:
+            # Try parsing details block (File: or Diff:)
+            details_match = _DETAILS_PARSING_RE.fullmatch(formatted)
+            if details_match:
+                block_type, path_str, content = details_match.groups()
+                path = Path(path_str.strip())
                 content = llobot.text.normalize(content)
 
-            return DocumentDelta(path, content, new=new, modified=modified, removed=removed, diff=diff, moved_from=moved_from, invalid=invalid)
+                if block_type == 'Diff':
+                    return DocumentDelta(path, content, diff=True)
+                else:  # File:
+                    return DocumentDelta(path, content)
+
+            return None
 
     return DetailsEnvelopeFormatter()
 
 @cache
 def standard() -> EnvelopeFormatter:
+    """Get the standard envelope formatter instance."""
     return details()
 
 __all__ = [

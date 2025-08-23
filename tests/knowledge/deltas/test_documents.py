@@ -1,28 +1,20 @@
+import pytest
 from pathlib import Path
 from llobot.knowledge.deltas import DocumentDelta
 
 def test_init():
-    delta = DocumentDelta(Path('file.txt'), 'content', new=True)
-    expected = DocumentDelta(Path('file.txt'), 'content', new=True)
-    assert delta == expected
+    delta = DocumentDelta(Path('file.txt'), 'content')
+
+    assert delta.path == Path('file.txt')
+    assert delta.content == 'content'
+    assert not delta.removed
+    assert not delta.diff
+    assert not delta.moved
+    assert delta.moved_from is None
 
 def test_path():
     delta = DocumentDelta(Path('test/file.txt'), 'content')
     assert delta.path == Path('test/file.txt')
-
-def test_new():
-    delta_new = DocumentDelta(Path('file.txt'), 'content', new=True)
-    assert delta_new.new
-
-    delta_not_new = DocumentDelta(Path('file.txt'), 'content')
-    assert not delta_not_new.new
-
-def test_modified():
-    delta_modified = DocumentDelta(Path('file.txt'), 'content', modified=True)
-    assert delta_modified.modified
-
-    delta_not_modified = DocumentDelta(Path('file.txt'), 'content')
-    assert not delta_not_modified.modified
 
 def test_removed():
     delta_removed = DocumentDelta(Path('file.txt'), None, removed=True)
@@ -32,7 +24,7 @@ def test_removed():
     assert not delta_not_removed.removed
 
 def test_diff():
-    delta_diff = DocumentDelta(Path('file.txt'), 'diff content', modified=True, diff=True)
+    delta_diff = DocumentDelta(Path('file.txt'), 'diff content', diff=True)
     assert delta_diff.diff
 
     delta_not_diff = DocumentDelta(Path('file.txt'), 'content')
@@ -61,48 +53,63 @@ def test_content():
     assert delta_without_content.content is None
 
 def test_valid_combinations():
-    # Valid: content with no flags
-    assert DocumentDelta(Path('file.txt'), 'content').valid
+    # Valid: regular file with content
+    DocumentDelta(Path('file.txt'), 'content')
 
-    # Valid: new file
-    assert DocumentDelta(Path('file.txt'), 'content', new=True).valid
-
-    # Valid: modified file
-    assert DocumentDelta(Path('file.txt'), 'content', modified=True).valid
+    # Valid: diff file
+    DocumentDelta(Path('file.txt'), 'diff content', diff=True)
 
     # Valid: removed file (no content)
-    assert DocumentDelta(Path('file.txt'), None, removed=True).valid
+    DocumentDelta(Path('file.txt'), None, removed=True)
 
     # Valid: moved file (no content)
-    assert DocumentDelta(Path('new.txt'), None, moved_from=Path('old.txt')).valid
-
-    # Valid: modified + moved
-    assert DocumentDelta(Path('new.txt'), 'content', modified=True, moved_from=Path('old.txt')).valid
-
-    # Valid: modified + diff
-    assert DocumentDelta(Path('file.txt'), 'diff content', modified=True, diff=True).valid
+    DocumentDelta(Path('new.txt'), None, moved_from=Path('old.txt'))
 
 def test_invalid_combinations():
     # Invalid: removed with content
-    assert not DocumentDelta(Path('file.txt'), 'content', removed=True).valid
+    with pytest.raises(ValueError, match="Removed files cannot have content"):
+        DocumentDelta(Path('file.txt'), 'content', removed=True)
+
+    # Invalid: moved with content
+    with pytest.raises(ValueError, match="Moved files cannot have content"):
+        DocumentDelta(Path('new.txt'), 'content', moved_from=Path('old.txt'))
+
+    # Invalid: regular file without content
+    with pytest.raises(ValueError, match="Regular files must have content"):
+        DocumentDelta(Path('file.txt'), None)
+
+    # Invalid: diff without content
+    with pytest.raises(ValueError, match="Diff files must have content"):
+        DocumentDelta(Path('file.txt'), None, diff=True)
+
+    # Invalid: removed with diff flag
+    with pytest.raises(ValueError, match="Removed files cannot have other flags"):
+        DocumentDelta(Path('file.txt'), None, removed=True, diff=True)
+
+    # Invalid: moved with diff flag
+    with pytest.raises(ValueError, match="Moved files cannot have diff flag"):
+        DocumentDelta(Path('file.txt'), None, moved_from=Path('old.txt'), diff=True)
 
 def test_equality():
-    delta1 = DocumentDelta(Path('file.txt'), 'content', new=True)
-    delta2 = DocumentDelta(Path('file.txt'), 'content', new=True)
-    delta3 = DocumentDelta(Path('file.txt'), 'content', modified=True)
+    delta1 = DocumentDelta(Path('file.txt'), 'content')
+    delta2 = DocumentDelta(Path('file.txt'), 'content')
+    delta3 = DocumentDelta(Path('file.txt'), 'other content')
 
     assert delta1 == delta2
     assert delta1 != delta3
     assert delta1 != "not a delta"
 
 def test_str():
-    delta = DocumentDelta(Path('file.txt'), 'content', new=True)
+    delta = DocumentDelta(Path('file.txt'), 'content')
     result = str(delta)
-    assert 'file.txt' in result
-    assert 'new' in result
+    assert result == 'file.txt'
 
-    delta_complex = DocumentDelta(Path('file.txt'), 'content', modified=True, moved_from=Path('old.txt'))
-    result = str(delta_complex)
+    delta_with_flags = DocumentDelta(Path('file.txt'), 'content', diff=True)
+    result = str(delta_with_flags)
     assert 'file.txt' in result
-    assert 'modified' in result
+    assert 'diff' in result
+
+    delta_complex = DocumentDelta(Path('new.txt'), None, moved_from=Path('old.txt'))
+    result = str(delta_complex)
+    assert 'new.txt' in result
     assert 'moved from old.txt' in result

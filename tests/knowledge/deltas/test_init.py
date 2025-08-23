@@ -26,7 +26,7 @@ def test_between_with_addition():
     delta = between(before, after)
 
     expected = KnowledgeDelta([
-        DocumentDelta(Path('new_file.txt'), 'new content', new=True)
+        DocumentDelta(Path('new_file.txt'), 'new content')
     ])
     assert delta == expected
 
@@ -37,7 +37,7 @@ def test_between_with_modification():
     delta = between(before, after)
 
     expected = KnowledgeDelta([
-        DocumentDelta(Path('file.txt'), 'new content', modified=True)
+        DocumentDelta(Path('file.txt'), 'new content')
     ])
     assert delta == expected
 
@@ -64,6 +64,40 @@ def test_between_with_move_hints():
     ])
     assert delta == expected
 
+def test_between_with_move_and_modification():
+    before = Knowledge({Path('old.txt'): 'old content'})
+    after = Knowledge({Path('new.txt'): 'new content'})
+    move_hints = {Path('new.txt'): Path('old.txt')}
+
+    delta = between(before, after, move_hints=move_hints)
+
+    expected = KnowledgeDelta([
+        DocumentDelta(Path('new.txt'), None, moved_from=Path('old.txt')),
+        DocumentDelta(Path('new.txt'), 'new content')
+    ])
+    assert delta == expected
+
+def test_between_with_multiple_move_hints():
+    # Test that once a source is used for a move, it won't be used again
+    before = Knowledge({Path('old.txt'): 'content'})
+    after = Knowledge({
+        Path('new1.txt'): 'content',
+        Path('new2.txt'): 'content',
+    })
+    move_hints = {
+        Path('new1.txt'): Path('old.txt'),
+        Path('new2.txt'): Path('old.txt'),  # This should be ignored
+    }
+
+    delta = between(before, after, move_hints=move_hints)
+
+    # Only the first hint should be used for the move
+    expected = KnowledgeDelta([
+        DocumentDelta(Path('new1.txt'), None, moved_from=Path('old.txt')),
+        DocumentDelta(Path('new2.txt'), 'content')  # Regular addition
+    ])
+    assert delta == expected
+
 def test_diff_compress():
     # Use much longer content to ensure compression happens
     long_content = '\n'.join([f'line {i}' for i in range(20)])
@@ -73,7 +107,7 @@ def test_diff_compress():
 
     # Create delta with small change (only one line changed out of 20)
     delta = KnowledgeDelta([
-        DocumentDelta(Path('file.txt'), modified_content, modified=True)
+        DocumentDelta(Path('file.txt'), modified_content)
     ])
 
     compressed = diff_compress(before, delta, threshold=0.9)
@@ -88,7 +122,7 @@ def test_diff_compress_no_change():
 
     # Create delta with no actual change
     delta = KnowledgeDelta([
-        DocumentDelta(Path('file.txt'), 'content', modified=True)
+        DocumentDelta(Path('file.txt'), 'content')
     ])
 
     compressed = diff_compress(before, delta)
@@ -101,13 +135,13 @@ def test_diff_compress_threshold():
 
     # Create delta with large change that won't compress well
     delta = KnowledgeDelta([
-        DocumentDelta(Path('file.txt'), 'completely different and much longer content', modified=True)
+        DocumentDelta(Path('file.txt'), 'completely different and much longer content')
     ])
 
     compressed = diff_compress(before, delta, threshold=0.1)  # Very low threshold
 
     # Should not be compressed due to threshold
     expected = KnowledgeDelta([
-        DocumentDelta(Path('file.txt'), 'completely different and much longer content', modified=True)
+        DocumentDelta(Path('file.txt'), 'completely different and much longer content')
     ])
     assert compressed == expected

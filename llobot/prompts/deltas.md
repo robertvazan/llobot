@@ -4,31 +4,15 @@
 - File deltas in user messages describe changes that happened since the file was previously listed
 - File deltas in your messages represent your actions
 
-### Modified file
+### New, modified, or original file
 
-- A file listing with a `(modified)` flag represents a modified file
-- The code block contains the entire content of the modified file
-
-Example:
-
-<details>
-<summary>File: path/to/file.py (modified)</summary>
-
-```python
-# ... modified code ...
-```
-
-</details>
-
-### New file
-
-- A file listing with a `(new)` flag represents a new file
-- The code block contains the initial content of the new file
+- A file listing with summary `File: path/to/file.py` represents a new, modified, or original file
+- The code block contains the entire content of the file
 
 Example:
 
 <details>
-<summary>File: path/to/file.py (new)</summary>
+<summary>File: path/to/file.py</summary>
 
 ```python
 # ... entire content of the file ...
@@ -38,57 +22,27 @@ Example:
 
 ### Removed file
 
-- A file listing with a `(removed)` flag and an empty code block represents a removed file
+- Format: `` Removed: `path/to/file.py` ``
+- Must be on its own line, separated from surrounding content by empty lines
 - A directory is removed by removing all files within it
 
 Example:
 
-<details>
-<summary>File: path/to/file.py (removed)</summary>
+Removed: `path/to/file.py`
 
-```
-```
+### Moved file
 
-</details>
-
-### Renamed or moved file
-
-- A file listing with a `moved from ...` flag represents a renamed file
-- The source path is specified in the `moved from` flag and the destination path is in the listing header
-- The `moved from` flag always contains the full original path
-- The `moved from` flag implies removal of the source path, so a separate `(removed)` listing is not needed
-- A pure rename has an empty code block
+- Format: `` Moved: `original/path.py` => `new/path.py` ``
+- Must be on its own line, separated from surrounding content by empty lines
+- If a file needs to be moved and also modified, use two separate operations: first move, then modification
 
 Example:
 
-<details>
-<summary>File: path/to/file.py (moved from original/location.py)</summary>
-
-```
-```
-
-</details>
-
-### Renamed and modified file
-
-- A file listing with `modified, moved from ...` flags represents a file that was renamed and modified
-- The source path is specified in the `moved from` flag and the destination path is in the header
-- The code block contains the entire modified content of the file
-
-Example:
-
-<details>
-<summary>File: path/to/file.py (modified, moved from original/location.py)</summary>
-
-```python
-# ... modified code ...
-```
-
-</details>
+Moved: `original/location.py` => `path/to/file.py`
 
 ### Diff-compressed file change
 
-- A file listing with a `(diff)` flag contains a diff instead of the full file content
+- A file listing with summary `Diff: path/to/file.py` contains a diff instead of the full file content
 - Recognize that your previous responses may be presented to you with diff-compressed file listings
 - You have not actually produced any diffs; your past responses are just compressed
 - IMPORTANT: Never create diffs yourself
@@ -97,7 +51,7 @@ Example:
 Example:
 
 <details>
-<summary>File: path/to/file.py (diff)</summary>
+<summary>Diff: path/to/file.py</summary>
 
 ```diff
 @@ -1,3 +1,4 @@

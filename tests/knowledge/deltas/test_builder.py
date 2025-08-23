@@ -8,7 +8,7 @@ def test_init():
 
 def test_add_document_delta():
     builder = KnowledgeDeltaBuilder()
-    delta = DocumentDelta(Path('file.txt'), 'content', new=True)
+    delta = DocumentDelta(Path('file.txt'), 'content')
 
     builder.add(delta)
     result = builder.build()
@@ -19,8 +19,8 @@ def test_add_document_delta():
 def test_add_knowledge_delta():
     builder = KnowledgeDeltaBuilder()
     deltas = [
-        DocumentDelta(Path('file1.txt'), 'content1', new=True),
-        DocumentDelta(Path('file2.txt'), 'content2', modified=True),
+        DocumentDelta(Path('file1.txt'), 'content1'),
+        DocumentDelta(Path('file2.txt'), 'content2'),
     ]
     knowledge_delta = KnowledgeDelta(deltas)
 
@@ -33,12 +33,12 @@ def test_add_mixed_types():
     builder = KnowledgeDeltaBuilder()
 
     # Add individual document delta
-    doc_delta = DocumentDelta(Path('file1.txt'), 'content1', new=True)
+    doc_delta = DocumentDelta(Path('file1.txt'), 'content1')
     builder.add(doc_delta)
 
     # Add knowledge delta with multiple documents
     knowledge_delta = KnowledgeDelta([
-        DocumentDelta(Path('file2.txt'), 'content2', modified=True),
+        DocumentDelta(Path('file2.txt'), 'content2'),
         DocumentDelta(Path('file3.txt'), None, removed=True),
     ])
     builder.add(knowledge_delta)
@@ -46,7 +46,7 @@ def test_add_mixed_types():
     result = builder.build()
     expected = KnowledgeDelta([
         doc_delta,
-        DocumentDelta(Path('file2.txt'), 'content2', modified=True),
+        DocumentDelta(Path('file2.txt'), 'content2'),
         DocumentDelta(Path('file3.txt'), None, removed=True),
     ])
     assert result == expected
@@ -62,8 +62,8 @@ def test_add_invalid_type():
 
 def test_build():
     builder = KnowledgeDeltaBuilder()
-    delta1 = DocumentDelta(Path('file1.txt'), 'content1', new=True)
-    delta2 = DocumentDelta(Path('file2.txt'), 'content2', modified=True)
+    delta1 = DocumentDelta(Path('file1.txt'), 'content1')
+    delta2 = DocumentDelta(Path('file2.txt'), 'content2')
 
     builder.add(delta1)
     builder.add(delta2)
