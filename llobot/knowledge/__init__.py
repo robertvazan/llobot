@@ -1,3 +1,48 @@
+"""
+Knowledge management system for llobot.
+
+This module provides the core Knowledge class and directory loading functionality.
+Knowledge represents a collection of documents indexed by Path, supporting various
+operations like filtering, transformation, and combination with other knowledge sets.
+
+Submodules and Subpackages
+---------------------------
+
+indexes
+    KnowledgeIndex for path-based indexing and set operations
+rankings
+    KnowledgeRanking for ordered sequences of knowledge paths
+scores
+    KnowledgeScores for scoring and weighting knowledge items
+graphs
+    KnowledgeGraph for relationship graphs between knowledge items
+trees
+    KnowledgeTree for hierarchical directory tree representations
+subsets/
+    Pattern-based filtering and selection with KnowledgeSubset
+deltas/
+    Change tracking with DocumentDelta and KnowledgeDelta
+sources
+    Knowledge sources
+archives
+    Historical knowledge storage
+rankers
+    Ranking algorithm implementations
+retrievals
+    Knowledge retrievals via mentions in the prompt
+scorers
+    Knowledge scoring implementations
+fs
+    File system storage of knowledge
+tgz
+    Compressed knowledge archives
+
+Functions
+---------
+
+directory()
+    Load knowledge from filesystem directory with filtering options
+"""
 from __future__ import annotations
 from pathlib import Path
 from llobot.chats import ChatBranch
