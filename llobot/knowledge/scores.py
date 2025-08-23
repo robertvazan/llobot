@@ -169,9 +169,6 @@ def directory_max(scores: KnowledgeScores, *, recursive: bool = True) -> Knowled
             current_max = directory_scores.get(directory, float('-inf'))
             directory_scores[directory] = max(current_max, score)
 
-    # Clean up any -inf values (shouldn't happen with valid input)
-    directory_scores = {d: s for d, s in directory_scores.items() if s > float('-inf')}
-
     return KnowledgeScores(directory_scores)
 
 def directory_sum(scores: KnowledgeScores, *, recursive: bool = True) -> KnowledgeScores:
