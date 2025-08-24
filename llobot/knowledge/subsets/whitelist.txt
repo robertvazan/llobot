@@ -20,6 +20,7 @@
 *.ini # INI format
 *.conf # Configuration
 *.cfg # Configuration
+*.config # Configuration
 *.properties # Java
 
 # Source code - Systems languages
@@ -119,17 +120,30 @@
 *.graphql # GraphQL
 *.gql # GraphQL
 
-# Build files
-*.mk # Makefile
+# Build configuration files
+BUILD # Bazel
+cpanfile # Perl, cpanm
+Gemfile # Ruby, Bundler
+go.mod # Go modules
 Makefile # Make
 makefile # Make
-*.gradle # Gradle
-*.cmake # CMake
-CMakeLists.txt # CMake
-*.sbt # SBT
-*.bazel # Bazel
-BUILD # Bazel
+meson.build # Meson
+Pipfile # Python, pipenv
+Rakefile # Ruby, Rake
 WORKSPACE # Bazel
+*.bazel # Bazel
+*.cabal # Haskell, Cabal
+*.cmake # CMake
+*.csproj # C#, .NET
+*.edn # Clojure
+*.fsproj # F#, .NET
+*.gemspec # Ruby, RubyGems
+*.gradle # Gradle
+*.kts # Kotlin Script (for Gradle)
+*.mk # Makefile
+*.sbt # SBT
+*.sln # .NET Solution
+*.vbproj # VB.NET, .NET
 
 # Container files
 *.docker # Docker

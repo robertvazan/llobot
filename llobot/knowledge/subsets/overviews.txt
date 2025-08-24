@@ -77,3 +77,48 @@ default.htm # HTML default page
 default.html # HTML default page
 index.htm # HTML index page
 index.html # HTML index page
+
+# Build configuration files
+*.cabal # Haskell, Cabal
+*.csproj # C#, .NET
+*.fsproj # F#, .NET
+*.gemspec # Ruby, RubyGems
+*.sln # .NET Solution
+*.vbproj # VB.NET, .NET
+BUILD # Bazel
+BUILD.bazel # Bazel
+build.gradle # Java, Gradle
+build.gradle.kts # Java, Gradle (Kotlin DSL)
+build.sbt # Scala, SBT
+bower.json # JavaScript, Bower
+CMakeLists.txt # C/C++, CMake
+composer.json # PHP, Composer
+cpanfile # Perl, cpanm
+Cargo.toml # Rust, Cargo
+deps.edn # Clojure CLI
+docker-compose.yml # Docker
+docker-compose.yaml # Docker
+Dockerfile # Docker
+Gemfile # Ruby, Bundler
+go.mod # Go modules
+gradle.properties # Java, Gradle
+meson.build # C/C++, Meson
+mix.exs # Elixir, Mix
+package.json # JavaScript, Node.js
+package.yaml # Haskell, Stack
+Package.swift # Swift PM
+packages.config # .NET, NuGet
+Pipfile # Python, pipenv
+pom.xml # Java, Maven
+project.clj # Clojure, Leiningen
+pubspec.yaml # Dart, Flutter
+pyproject.toml # Python, PEP 518
+Rakefile # Ruby, Rake
+rebar.config # Erlang, Rebar
+requirements.txt # Python, pip
+settings.gradle # Java, Gradle
+settings.gradle.kts # Java, Gradle (Kotlin DSL)
+setup.cfg # Python, setuptools
+setup.py # Python, setuptools
+tsconfig.json # TypeScript
+WORKSPACE # Bazel

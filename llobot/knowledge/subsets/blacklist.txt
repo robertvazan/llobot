@@ -53,6 +53,9 @@ obj/** # .NET object files
 # IDE directories - Visual Studio
 .vs/** # Visual Studio
 
+# Editor configuration
+.editorconfig
+
 # Cache and temporary directories
 .cache/** # General cache
 .tmp/** # Temporary files
