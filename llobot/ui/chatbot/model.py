@@ -2,7 +2,7 @@ from __future__ import annotations
 import logging
 from llobot.chats import ChatBranch
 from llobot.models import Model
-from llobot.models.streams import ModelStream, ModelException
+from llobot.models.streams import ModelStream
 from llobot.ui.chatbot import Chatbot
 import llobot.ui.chatbot.requests
 import llobot.ui.chatbot.handlers
@@ -29,8 +29,6 @@ class ChatbotModel(Model):
         try:
             request = llobot.ui.chatbot.requests.parse(self._chatbot, prompt)
             return llobot.ui.chatbot.handlers.handle(request)
-        except ModelException as ex:
-            return ex.stream
         except Exception as ex:
             _logger.error(f'Exception in {self.name} model.', exc_info=True)
             return llobot.models.streams.exception(ex)

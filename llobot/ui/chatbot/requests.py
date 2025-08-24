@@ -8,7 +8,6 @@ import llobot.ui.chatbot.chats
 import llobot.ui.chatbot.commands
 from llobot.ui.chatbot.commands import ChatbotCommand
 import llobot.time
-import llobot.models.streams
 
 class ChatbotRequest:
     _chatbot: Chatbot
@@ -72,7 +71,7 @@ def _decode_project(chatbot: Chatbot, name: str) -> Project:
         found = project.find(name)
         if found:
             return found
-    llobot.models.streams.fail(f'No such project: {name}')
+    raise KeyError(f'No such project: {name}')
 
 def parse(chatbot: Chatbot, prompt: ChatBranch) -> ChatbotRequest:
     chat_info = llobot.ui.chatbot.chats.parse(prompt)

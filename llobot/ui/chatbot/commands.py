@@ -1,7 +1,6 @@
 from __future__ import annotations
 from enum import Enum
 import re
-import llobot.models.streams
 
 class ChatbotCommand(Enum):
     OK = 'ok'
@@ -14,7 +13,7 @@ def decode(name: str) -> ChatbotCommand:
     for command in ChatbotCommand:
         if command.value == name:
             return command
-    llobot.models.streams.fail(f'Invalid command: {name}')
+    raise ValueError(f'Invalid command: {name}')
 
 def parse_line(line: str) -> ChatbotCommand | None:
     m = COMMAND_RE.fullmatch(line.strip())
@@ -27,7 +26,7 @@ def parse(message: str) -> ChatbotCommand | None:
     top = parse_line(lines[0])
     bottom = parse_line(lines[-1]) if len(lines) > 1 else None
     if top and bottom:
-        llobot.models.streams.fail('Command is both at the top and bottom of the message.')
+        raise ValueError('Command is both at the top and bottom of the message.')
     return top or bottom
 
 def strip(message: str) -> str:

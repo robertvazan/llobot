@@ -2,6 +2,7 @@ from __future__ import annotations
 from pathlib import Path
 import traceback
 from llobot.chats import ChatIntent, ChatBranch
+import llobot.text
 
 class ModelStream:
     _response: str
@@ -86,13 +87,6 @@ class ModelFilter:
     def __ror__(self, stream: ModelStream) -> ModelStream:
         return self.apply(stream)
 
-# This can be used to propagate stream via an exception instead of using function return.
-class ModelException(Exception):
-    stream: ModelStream
-
-    def __init__(self, stream: ModelStream):
-        self.stream = stream
-
 def completed(response: str, *, chunk_size: int = 5000) -> ModelStream:
     class CompletedStream(ModelStream):
         _position: int
@@ -117,12 +111,10 @@ def error(response: str) -> ModelStream:
     return status(f'❌ {response}')
 
 def exception(ex: Exception) -> ModelStream:
-    if isinstance(ex,  ModelException):
-        return ex.stream
-    return error(f'Exception:\n\n```\n{"".join(traceback.format_exception(ex)).strip()}\n```')
-
-def fail(response: str):
-    raise ModelException(error(response))
+    message = str(ex) or ex.__class__.__name__
+    stack_trace = "".join(traceback.format_exception(ex)).strip()
+    details = llobot.text.details('Stack trace', '', stack_trace)
+    return error(f'{message}\n\n{details}')
 
 def filtered(function: Callable[[ModelStream], ModelStream]) -> ModelFilter:
     class LambdaFilter(ModelFilter):
@@ -198,13 +190,11 @@ def chat(prompt: ChatBranch, stream: ModelStream) -> ChatBranch:
 __all__ = [
     'ModelStream',
     'ModelFilter',
-    'ModelException',
     'completed',
     'status',
     'ok',
     'error',
     'exception',
-    'fail',
     'filtered',
     'notify',
     'silence',

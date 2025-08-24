@@ -6,7 +6,6 @@ from llobot.ui.chatbot.headers import ChatbotHeader
 import llobot.ui.chatbot.cutoffs
 import llobot.ui.chatbot.commands
 from llobot.ui.chatbot.commands import ChatbotCommand
-import llobot.models.streams
 
 class ChatbotChat:
     _header: ChatbotHeader
@@ -23,15 +22,15 @@ class ChatbotChat:
     @property
     def header(self) -> ChatbotHeader:
         return self._header
-    
+
     @property
     def cutoff(self) -> datetime | None:
         return self._cutoff
-    
+
     @property
     def command(self) -> ChatbotCommand | None:
         return self._command
-    
+
     @property
     def prompt(self) -> ChatBranch:
         return self._prompt
@@ -60,21 +59,21 @@ def parse(chat: ChatBranch) -> ChatbotChat:
 
     if len(chat) > 1:
         if header.command:
-            llobot.models.streams.fail('Followup message even though command was given.')
-        
+            raise ValueError('Followup message even though command was given.')
+
         automatic_cutoff = llobot.ui.chatbot.cutoffs.parse(chat[1].content)
         if automatic_cutoff:
             if header.cutoff:
-                llobot.models.streams.fail('Duplicate cutoff.')
+                raise ValueError('Duplicate cutoff.')
             cutoff = automatic_cutoff
 
         for message in chat[1:-1]:
             if message.role == ChatRole.USER and llobot.ui.chatbot.commands.parse(message.content):
-                llobot.models.streams.fail('Followup message after a command.')
+                raise ValueError('Followup message after a command.')
 
         if chat and chat[-1].role == ChatRole.USER:
             command = llobot.ui.chatbot.commands.parse(chat[-1].content)
-        
+
     prompt = strip(chat)
     return ChatbotChat(header=header, cutoff=cutoff, command=command, prompt=prompt)
 

@@ -40,7 +40,6 @@ class Model:
     def context_budget(self) -> int:
         raise NotImplementedError
 
-    # Stream may be either returned from the function or thrown as ModelException.
     def generate(self, prompt: ChatBranch) -> 'ModelStream':
         raise NotImplementedError
 

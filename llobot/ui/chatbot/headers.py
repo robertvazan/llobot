@@ -4,7 +4,6 @@ import re
 import llobot.ui.chatbot.commands
 from llobot.ui.chatbot.commands import ChatbotCommand
 import llobot.time
-import llobot.models.streams
 
 class ChatbotHeader:
     _project: str | None
@@ -29,19 +28,19 @@ class ChatbotHeader:
     @property
     def project(self) -> str | None:
         return self._project
-    
+
     @property
     def cutoff(self) -> datetime | None:
         return self._cutoff
-    
+
     @property
     def command(self) -> ChatbotCommand | None:
         return self._command
-    
+
     @property
     def model(self) -> str | None:
         return self._model
-    
+
     @property
     def options(self) -> dict | None:
         return self._options
@@ -52,7 +51,7 @@ def parse_options(query: str) -> dict:
     options = {}
     for pair in query.split('&'):
         if '=' not in pair:
-            llobot.models.streams.fail(f'Invalid model option: {pair}')
+            raise ValueError(f'Invalid model option: {pair}')
         key, value = pair.split('=', maxsplit=1)
         options[key] = value if value else None
     return options
@@ -63,7 +62,7 @@ def parse_line(line: str) -> ChatbotHeader | None:
     m = HEADER_RE.fullmatch(line.strip())
     if not m:
         return None
-    
+
     project = m[1] if m[1] else None
     cutoff = llobot.time.parse(m[2]) if m[2] else None
     model = m[3] if m[3] else None
@@ -78,7 +77,7 @@ def parse(message: str) -> ChatbotHeader | None:
         top = parse_line(lines[0])
         bottom = parse_line(lines[-1]) if len(lines) > 1 else None
         if top and bottom:
-            llobot.models.streams.fail('Command header is both at the top and bottom of the message.')
+            raise ValueError('Command header is both at the top and bottom of the message.')
         header = top or bottom
     return header
 

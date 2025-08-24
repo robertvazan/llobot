@@ -1,3 +1,35 @@
+"""
+User interface for chatbot interaction.
+
+This package provides a user interface layer that translates raw chat messages
+into structured requests for llobot's core logic. It handles parsing of
+special commands, headers, and other metadata embedded in user prompts.
+
+The main entry point is the `create` function, which wraps a `Role` and a `Model`
+into a `Chatbot`, which is then exposed as a `ChatbotModel`. This virtual model
+can be served via Ollama or OpenAI protocols.
+
+Submodules
+----------
+
+chats
+    Parses `Chatbot` specific elements from a `ChatBranch`.
+commands
+    Parses `!command` from user messages.
+cutoffs
+    Parses `:timestamp` from model responses to pin knowledge version.
+handlers
+    Main request handler for `ChatbotModel`, dispatching commands.
+headers
+    Parses `~project:cutoff@model?options!command` headers from prompts.
+info
+    Generates informational responses for the `!info` command.
+model
+    Implements `ChatbotModel` that wraps a `Chatbot` instance.
+requests
+    Parses a `ChatBranch` into a structured `ChatbotRequest`.
+"""
+
 from __future__ import annotations
 from llobot.roles import Role
 from llobot.models import Model
@@ -19,7 +51,7 @@ class Chatbot:
     @property
     def role(self) -> Role:
         return self._role
-    
+
     @property
     def model(self) -> Model:
         return self._model
@@ -27,7 +59,7 @@ class Chatbot:
     @property
     def models(self) -> ModelCatalog:
         return self._models
-    
+
     @property
     def projects(self) -> list[Project]:
         return self._projects
