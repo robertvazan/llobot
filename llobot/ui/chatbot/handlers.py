@@ -22,10 +22,6 @@ def handle_ok(request: ChatbotRequest) -> ModelStream:
     request.chatbot.role.handle_ok(chat_to_save, request.project, request.cutoff)
     return llobot.models.streams.ok('Saved.')
 
-def handle_echo(request: ChatbotRequest) -> ModelStream:
-    # We don't want any header or cutoff here, because output of echo might be pasted into other chat interfaces.
-    return llobot.models.streams.completed(llobot.ui.chatbot.requests.assemble(request).monolithic())
-
 def handle_prompt(request: ChatbotRequest) -> ModelStream:
     assembled = llobot.ui.chatbot.requests.assemble(request)
     output = request.model.generate(assembled)
@@ -44,14 +40,11 @@ def handle(request: ChatbotRequest) -> ModelStream:
 
     if request.command == ChatbotCommand.OK:
         return handle_ok(request)
-    elif request.command == ChatbotCommand.ECHO:
-        return handle_echo(request)
     else:
         return handle_prompt(request)
 
 __all__ = [
     'handle_ok',
-    'handle_echo',
     'handle_prompt',
     'handle',
 ]

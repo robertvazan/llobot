@@ -124,7 +124,6 @@ The last line is a timestamp that the bot uses to stick to particular version of
 The `~llobot` command in the prompt can be more complicated:
 
 - `~myproject@cloud` to run on backend model that we aliased as `cloud` in the above setup script
-- `~myproject!echo` to respond with the whole assembled prompt (good to get an idea what goes in there)
 
 If the context does not include the file you need, just mention it in the prompt, for example as `projects.py` or `ollama/listeners.py`, and llobot will include it in the context in addition to default knowledge.
 
