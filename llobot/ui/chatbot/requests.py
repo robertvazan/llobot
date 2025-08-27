@@ -80,10 +80,6 @@ def parse(chatbot: Chatbot, prompt: ChatBranch) -> ChatbotRequest:
     project = _decode_project(chatbot, header.project) if header.project else None
     model = chatbot.models[header.model] if header.model else chatbot.model
 
-    if header.options:
-        model.validate_options(header.options)
-        model = model.configure(header.options)
-
     cutoff = header.cutoff or chat_info.cutoff
 
     return ChatbotRequest(

@@ -21,7 +21,7 @@ cutoffs
 handlers
     Main request handler for `ChatbotModel`, dispatching commands.
 headers
-    Parses `~project:cutoff@model?options` headers from prompts.
+    Parses `~project:cutoff@model` headers from prompts.
 model
     Implements `ChatbotModel` that wraps a `Chatbot` instance.
 requests

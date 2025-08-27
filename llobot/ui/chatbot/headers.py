@@ -7,18 +7,15 @@ class ChatbotHeader:
     _project: str | None
     _cutoff: datetime | None
     _model: str | None
-    _options: dict | None
 
     def __init__(self, *,
         project: str | None = None,
         cutoff: datetime | None = None,
-        model: str | None = None,
-        options: dict | None = None
+        model: str | None = None
     ):
         self._project = project
         self._cutoff = cutoff
         self._model = model
-        self._options = options
 
     @property
     def project(self) -> str | None:
@@ -32,20 +29,7 @@ class ChatbotHeader:
     def model(self) -> str | None:
         return self._model
 
-    @property
-    def options(self) -> dict | None:
-        return self._options
-
-HEADER_RE = re.compile(r'(?:~([a-zA-Z0-9_/.-]+))?(?::([0-9-]+))?(?:@([a-zA-Z0-9:/._-]+))?(?:\?([^!\s]+))?')
-
-def parse_options(query: str) -> dict:
-    options = {}
-    for pair in query.split('&'):
-        if '=' not in pair:
-            raise ValueError(f'Invalid model option: {pair}')
-        key, value = pair.split('=', maxsplit=1)
-        options[key] = value if value else None
-    return options
+HEADER_RE = re.compile(r'(?:~([a-zA-Z0-9_/.-]+))?(?::([0-9-]+))?(?:@([a-zA-Z0-9:/._-]+))?')
 
 def parse_line(line: str) -> ChatbotHeader | None:
     if not line:
@@ -57,8 +41,7 @@ def parse_line(line: str) -> ChatbotHeader | None:
     project = m[1] if m[1] else None
     cutoff = llobot.time.parse(m[2]) if m[2] else None
     model = m[3] if m[3] else None
-    options = parse_options(m[4]) if m[4] else None
-    return ChatbotHeader(project=project, cutoff=cutoff, model=model, options=options)
+    return ChatbotHeader(project=project, cutoff=cutoff, model=model)
 
 def parse(message: str) -> ChatbotHeader | None:
     lines = message.strip().splitlines()
@@ -81,7 +64,6 @@ def strip(message: str) -> str:
 
 __all__ = [
     'ChatbotHeader',
-    'parse_options',
     'parse_line',
     'parse',
     'strip',
