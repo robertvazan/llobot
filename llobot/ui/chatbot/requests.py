@@ -85,11 +85,10 @@ def parse(chatbot: Chatbot, prompt: ChatBranch) -> ChatbotRequest:
         model = model.configure(header.options)
 
     cutoff = header.cutoff or chat_info.cutoff
-    command = header.command or chat_info.command
 
     return ChatbotRequest(
         chatbot=chatbot,
-        command=command,
+        command=chat_info.command,
         prompt=chat_info.prompt,
         project=project,
         cutoff=cutoff,

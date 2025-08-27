@@ -1,27 +1,22 @@
 from __future__ import annotations
 from datetime import datetime
 import re
-import llobot.ui.chatbot.commands
-from llobot.ui.chatbot.commands import ChatbotCommand
 import llobot.time
 
 class ChatbotHeader:
     _project: str | None
     _cutoff: datetime | None
-    _command: ChatbotCommand | None
     _model: str | None
     _options: dict | None
 
     def __init__(self, *,
         project: str | None = None,
         cutoff: datetime | None = None,
-        command: ChatbotCommand | None = None,
         model: str | None = None,
         options: dict | None = None
     ):
         self._project = project
         self._cutoff = cutoff
-        self._command = command
         self._model = model
         self._options = options
 
@@ -34,10 +29,6 @@ class ChatbotHeader:
         return self._cutoff
 
     @property
-    def command(self) -> ChatbotCommand | None:
-        return self._command
-
-    @property
     def model(self) -> str | None:
         return self._model
 
@@ -45,7 +36,7 @@ class ChatbotHeader:
     def options(self) -> dict | None:
         return self._options
 
-HEADER_RE = re.compile(r'(?:~([a-zA-Z0-9_/.-]+))?(?::([0-9-]+))?(?:@([a-zA-Z0-9:/._-]+))?(?:\?([^!\s]+))?(?:!([a-z]+))?')
+HEADER_RE = re.compile(r'(?:~([a-zA-Z0-9_/.-]+))?(?::([0-9-]+))?(?:@([a-zA-Z0-9:/._-]+))?(?:\?([^!\s]+))?')
 
 def parse_options(query: str) -> dict:
     options = {}
@@ -67,8 +58,7 @@ def parse_line(line: str) -> ChatbotHeader | None:
     cutoff = llobot.time.parse(m[2]) if m[2] else None
     model = m[3] if m[3] else None
     options = parse_options(m[4]) if m[4] else None
-    command = llobot.ui.chatbot.commands.decode(m[5]) if m[5] else None
-    return ChatbotHeader(project=project, cutoff=cutoff, command=command, model=model, options=options)
+    return ChatbotHeader(project=project, cutoff=cutoff, model=model, options=options)
 
 def parse(message: str) -> ChatbotHeader | None:
     lines = message.strip().splitlines()

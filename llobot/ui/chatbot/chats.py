@@ -58,9 +58,6 @@ def parse(chat: ChatBranch) -> ChatbotChat:
     command = None
 
     if len(chat) > 1:
-        if header.command:
-            raise ValueError('Followup message even though command was given.')
-
         automatic_cutoff = llobot.ui.chatbot.cutoffs.parse(chat[1].content)
         if automatic_cutoff:
             if header.cutoff:
