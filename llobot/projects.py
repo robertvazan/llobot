@@ -1,23 +1,21 @@
 from __future__ import annotations
 from datetime import datetime
-from pathlib import Path
 import logging
 import llobot.time
 from llobot.knowledge import Knowledge
 from llobot.knowledge.archives import KnowledgeArchive
-from llobot.knowledge.subsets import KnowledgeSubset
-import llobot.knowledge.subsets
-from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.sources import KnowledgeSource
 
 _logger = logging.getLogger(__name__)
 
-# Project usually corresponds to single git repository or a directory of related files.
 class Project:
+    """
+    A knowledge base, typically corresponding to a single git repository.
+
+    Projects are the primary source of information for llobot. They are defined by a name,
+    a knowledge source, and an archive for storing historical snapshots.
+    """
     _name: str
-    _subset: KnowledgeSubset
-    _root: Project
-    _subprojects: list[Project]
     _source: KnowledgeSource
     _archive: KnowledgeArchive
 
@@ -25,69 +23,67 @@ class Project:
         self,
         name: str,
         source: KnowledgeSource,
-        archive: KnowledgeArchive,
-        subset: KnowledgeSubset = llobot.knowledge.subsets.everything(),
-        root: Project | None = None
+        archive: KnowledgeArchive
     ):
+        """
+        Initializes a new Project.
+
+        Args:
+            name: The name of the project.
+            source: The source from which to load the project's knowledge.
+            archive: The archive to store snapshots of the project's knowledge.
+        """
         self._name = name
-        self._subset = subset
-        self._root = root or self
-        self._subprojects = []
         self._source = source
         self._archive = archive
 
-    # Project name, usually corresponding to git repository name.
     @property
     def name(self) -> str:
+        """
+        Project name, usually corresponding to a git repository name.
+        """
         return self._name
 
     @property
-    def subset(self) -> KnowledgeSubset:
-        return self._subset
-
-    @property
-    def root(self) -> Project:
-        return self._root
-
-    @property
-    def is_subproject(self) -> bool:
-        return self._root is not self
-
-    @property
-    def subprojects(self) -> list[Project]:
-        return self._subprojects
-
-    # This should be mostly unfiltered fetch of the whole project.
-    @property
     def source(self) -> KnowledgeSource:
+        """
+        The source of knowledge for this project, providing an unfiltered view.
+        """
         return self._source
 
-    # Archive used to store snapshots of this project.
     @property
     def archive(self) -> KnowledgeArchive:
+        """
+        The archive used to store snapshots of this project.
+        """
         return self._archive
 
-    def add_subproject(self, subproject: Project):
-        self._subprojects.append(subproject)
-
-    def find(self, name: str) -> Project | None:
-        if self.name == name:
-            return self
-        for subproject in self.subprojects:
-            if subproject.name == name:
-                return subproject
-        return None
-
     def knowledge(self, cutoff: datetime | None = None) -> Knowledge:
-        return self.archive.last(self.root.name, cutoff) & self.subset
+        """
+        Retrieves the project's knowledge at a specific point in time.
+
+        Args:
+            cutoff: The timestamp to retrieve the knowledge for. If None, the latest
+                    knowledge is returned.
+
+        Returns:
+            The Knowledge object representing the project state at the given cutoff.
+        """
+        return self.archive.last(self.name, cutoff)
 
     def fetch(self) -> Knowledge:
+        """
+        Loads the current state of the project from its source.
+
+        Returns:
+            The current Knowledge object from the source.
+        """
         return self.source.load_all()
 
     def refresh(self):
-        if self.is_subproject:
-            return self.root.refresh()
-
+        """
+        Checks for updates from the source and archives a new snapshot if changes are found.
+        """
         fresh = self.fetch()
         if fresh != self.knowledge():
             self.archive.add(self.name, llobot.time.now(), fresh)
@@ -98,26 +94,22 @@ class Project:
 def create(
     name: str,
     source: KnowledgeSource,
-    archive: KnowledgeArchive = llobot.knowledge.archives.standard(),
-    subprojects: dict[str, KnowledgeSubset | KnowledgeIndex | Path | str] = {}
+    archive: KnowledgeArchive = llobot.knowledge.archives.standard()
 ) -> Project:
-    root = Project(name, source, archive)
+    """
+    Creates a new Project instance.
 
-    for subproject_name, subset_spec in subprojects.items():
-        # If the name starts with a dash, it is appended to the root project name
-        if subproject_name.startswith('-'):
-            full_name = name + subproject_name
-        else:
-            full_name = subproject_name
+    Args:
+        name: The name of the project.
+        source: The source from which to load the project's knowledge.
+        archive: The archive to store snapshots. Defaults to the standard archive.
 
-        subset = llobot.knowledge.subsets.coerce(subset_spec)
-        subproject = Project(full_name, root.source, root.archive, subset, root)
-        root.add_subproject(subproject)
-
-    return root
+    Returns:
+        A new Project instance.
+    """
+    return Project(name, source, archive)
 
 __all__ = [
     'Project',
     'create',
 ]
-

@@ -39,7 +39,7 @@ class Role:
     def zone_names(self, project: Project | None) -> list[str]:
         zones = []
         if project:
-            zones.append(self.zone_name(project.root))
+            zones.append(self.zone_name(project))
         zones.append(self.zone_name(None))
         return zones
 

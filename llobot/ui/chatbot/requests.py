@@ -67,10 +67,9 @@ class ChatbotRequest:
         return self._model
 
 def _decode_project(chatbot: Chatbot, name: str) -> Project:
-    for project in chatbot.projects:
-        found = project.find(name)
-        if found:
-            return found
+    project = chatbot.projects.get(name)
+    if project:
+        return project
     raise KeyError(f'No such project: {name}')
 
 def parse(chatbot: Chatbot, prompt: ChatBranch) -> ChatbotRequest:

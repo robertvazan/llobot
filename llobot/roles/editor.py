@@ -101,7 +101,7 @@ class Editor(Role):
         cutoff: datetime,
         budget: int,
     ) -> ChatBranch:
-        knowledge = project.root.knowledge(cutoff) if project else Knowledge()
+        knowledge = project.knowledge(cutoff) if project else Knowledge()
 
         # System prompt
         system_chat = self._prompt_formatter(self._prompt)
@@ -119,8 +119,6 @@ class Editor(Role):
         # Knowledge scores
         scores = self._relevance_scorer(knowledge)
         blacklist = knowledge.keys() - scores.keys()
-        if project and project.is_subproject:
-            scores *= llobot.knowledge.scores.prioritize(knowledge, project.subset)
         scores = self._graph_scorer.rescore(knowledge, scores)
         scores -= history_paths
         scores -= blacklist
@@ -161,9 +159,9 @@ class Editor(Role):
             super().handle_ok(chat, project, cutoff)
             return
 
-        project.root.refresh()
-        initial_knowledge = project.root.knowledge(cutoff)
-        current_knowledge = project.root.knowledge()
+        project.refresh()
+        initial_knowledge = project.knowledge(cutoff)
+        current_knowledge = project.knowledge()
         delta = llobot.knowledge.deltas.between(initial_knowledge, current_knowledge, move_hints=edit_delta.moves)
 
         compressed_delta = llobot.knowledge.deltas.diff_compress(initial_knowledge, delta)

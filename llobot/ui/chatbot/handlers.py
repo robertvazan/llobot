@@ -36,7 +36,7 @@ def handle_prompt(request: ChatbotRequest) -> ModelStream:
 
 def handle(request: ChatbotRequest) -> ModelStream:
     if request.project and len(request.prompt) == 1 and request.has_implicit_cutoff:
-        request.project.root.refresh()
+        request.project.refresh()
 
     if request.command == ChatbotCommand.OK:
         return handle_ok(request)
