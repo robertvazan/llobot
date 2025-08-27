@@ -70,12 +70,13 @@ projects = [
 # Roles determine what goes in the context.
 # Lets use some standard roles that come with llobot.
 roles = [
-    Coder('coder'),
+    # Each role is tied to a specific backend model.
+    Coder('coder', models['local']),
 ]
 
-# This function configures virtual model with fixed role and default backend model.
+# This function configures virtual model for a given role.
 def define_bot(role):
-    return llobot.ui.chatbot.create(role, models['local'], models, projects)
+    return llobot.ui.chatbot.create(role, projects)
 
 bots = ModelCatalog(*[define_bot(role) for role in roles])
 
@@ -120,10 +121,6 @@ NB: Response this informative relies on using a large model and on having prior 
 > `:20250526-222015`
 
 The last line is a timestamp that the bot uses to stick to particular version of the knowledge base in case you continue the conversation.
-
-The `~llobot` command in the prompt can be more complicated:
-
-- `~myproject@cloud` to run on backend model that we aliased as `cloud` in the above setup script
 
 If the context does not include the file you need, just mention it in the prompt, for example as `projects.py` or `ollama/listeners.py`, and llobot will include it in the context in addition to default knowledge.
 

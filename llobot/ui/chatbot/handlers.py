@@ -24,13 +24,14 @@ def handle_ok(request: ChatbotRequest) -> ModelStream:
 
 def handle_prompt(request: ChatbotRequest) -> ModelStream:
     assembled = llobot.ui.chatbot.requests.assemble(request)
-    output = request.model.generate(assembled)
+    model = request.chatbot.role.model
+    output = model.generate(assembled)
 
     if request.has_implicit_cutoff and len(request.prompt) == 1:
         output += _cutoff_footer(request)
 
     def on_error():
-        _logger.error(f'Exception in {request.model.name} model ({request.chatbot.role.name} role).', exc_info=True)
+        _logger.error(f'Exception in {model.name} model ({request.chatbot.role.name} role).', exc_info=True)
 
     return output | llobot.models.streams.handler(callback=on_error)
 

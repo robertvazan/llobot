@@ -16,7 +16,6 @@ class ChatbotRequest:
     _project: Project | None
     _cutoff: datetime | None
     _has_implicit_cutoff: bool
-    _model: Model
 
     def __init__(self, *,
         chatbot: Chatbot,
@@ -24,7 +23,6 @@ class ChatbotRequest:
         prompt: ChatBranch,
         project: Project | None,
         cutoff: datetime | None,
-        model: Model
     ):
         self._chatbot = chatbot
         self._command = command
@@ -32,7 +30,6 @@ class ChatbotRequest:
         self._project = project
         self._has_implicit_cutoff = cutoff is None
         self._cutoff = cutoff
-        self._model = model
 
     @property
     def chatbot(self) -> Chatbot:
@@ -62,10 +59,6 @@ class ChatbotRequest:
     def has_implicit_cutoff(self) -> bool:
         return self._has_implicit_cutoff
 
-    @property
-    def model(self) -> Model:
-        return self._model
-
 def _decode_project(chatbot: Chatbot, name: str) -> Project:
     project = chatbot.projects.get(name)
     if project:
@@ -77,8 +70,6 @@ def parse(chatbot: Chatbot, prompt: ChatBranch) -> ChatbotRequest:
     header = chat_info.header
 
     project = _decode_project(chatbot, header.project) if header.project else None
-    model = chatbot.models[header.model] if header.model else chatbot.model
-
     cutoff = header.cutoff or chat_info.cutoff
 
     return ChatbotRequest(
@@ -87,7 +78,6 @@ def parse(chatbot: Chatbot, prompt: ChatBranch) -> ChatbotRequest:
         prompt=chat_info.prompt,
         project=project,
         cutoff=cutoff,
-        model=model
     )
 
 def stuff(request: ChatbotRequest, prompt: ChatBranch | None = None) -> ChatBranch:
@@ -96,7 +86,6 @@ def stuff(request: ChatbotRequest, prompt: ChatBranch | None = None) -> ChatBran
         prompt=prompt,
         project=request.project,
         cutoff=request.cutoff,
-        budget=request.model.context_budget
     )
 
 def assemble(request: ChatbotRequest, prompt: ChatBranch | None = None) -> ChatBranch:

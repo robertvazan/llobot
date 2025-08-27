@@ -6,6 +6,7 @@ from llobot.prompts import Prompt
 from llobot.roles import Role
 from llobot.chats import ChatBranch, ChatBuilder
 from llobot.projects import Project
+from llobot.models import Model
 import llobot.crammers.examples
 import llobot.formatters.prompts
 
@@ -15,14 +16,14 @@ class Assistant(Role):
     _prompt_formatter: PromptFormatter
     _reminder_formatter: PromptFormatter
 
-    def __init__(self, name: str, *,
+    def __init__(self, name: str, model: Model, *,
         prompt: str | Prompt = '',
         crammer: ExampleCrammer = llobot.crammers.examples.standard(),
         prompt_formatter: PromptFormatter = llobot.formatters.prompts.standard(),
         reminder_formatter: PromptFormatter = llobot.formatters.prompts.reminder(),
         **kwargs,
     ):
-        super().__init__(name, **kwargs)
+        super().__init__(name, model, **kwargs)
         self._prompt = str(prompt)
         self._crammer = crammer
         self._prompt_formatter = prompt_formatter
@@ -32,8 +33,8 @@ class Assistant(Role):
         prompt: ChatBranch,
         project: Project | None,
         cutoff: datetime,
-        budget: int,
     ) -> ChatBranch:
+        budget = self.model.context_budget
         chat = ChatBuilder()
 
         system_chat = self._prompt_formatter(self._prompt)

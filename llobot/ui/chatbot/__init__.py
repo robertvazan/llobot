@@ -5,9 +5,9 @@ This package provides a user interface layer that translates raw chat messages
 into structured requests for llobot's core logic. It handles parsing of
 special commands, headers, and other metadata embedded in user prompts.
 
-The main entry point is the `create` function, which wraps a `Role` and a `Model`
-into a `Chatbot`, which is then exposed as a `ChatbotModel`. This virtual model
-can be served via Ollama or OpenAI protocols.
+The main entry point is the `create` function, which wraps a `Role` into a
+`Chatbot`, which is then exposed as a `ChatbotModel`. This virtual model can be
+served via Ollama or OpenAI protocols.
 
 Submodules
 ----------
@@ -21,7 +21,7 @@ cutoffs
 handlers
     Main request handler for `ChatbotModel`, dispatching commands.
 headers
-    Parses `~project:cutoff@model` headers from prompts.
+    Parses `~project:cutoff` headers from prompts.
 model
     Implements `ChatbotModel` that wraps a `Chatbot` instance.
 requests
@@ -31,19 +31,14 @@ requests
 from __future__ import annotations
 from llobot.roles import Role
 from llobot.models import Model
-from llobot.models.catalogs import ModelCatalog
 from llobot.projects import Project
 
 class Chatbot:
     _role: Role
-    _model: Model
-    _models: ModelCatalog
     _projects: dict[str, Project]
 
-    def __init__(self, role: Role, model: Model, models: ModelCatalog | None = None, projects: list[Project] | None = None):
+    def __init__(self, role: Role, projects: list[Project] | None = None):
         self._role = role
-        self._model = model
-        self._models = (models or ModelCatalog()) | ModelCatalog(model)
         self._projects = {p.name: p for p in projects} if projects else {}
 
     @property
@@ -51,20 +46,12 @@ class Chatbot:
         return self._role
 
     @property
-    def model(self) -> Model:
-        return self._model
-
-    @property
-    def models(self) -> ModelCatalog:
-        return self._models
-
-    @property
     def projects(self) -> dict[str, Project]:
         return self._projects
 
-def create(role: Role, model: Model, models: ModelCatalog | None = None, projects: list[Project] | None = None) -> Model:
+def create(role: Role, projects: list[Project] | None = None) -> Model:
     from llobot.ui.chatbot.model import ChatbotModel
-    chatbot = Chatbot(role, model, models, projects)
+    chatbot = Chatbot(role, projects)
     return ChatbotModel(chatbot)
 
 __all__ = [

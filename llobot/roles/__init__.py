@@ -1,12 +1,34 @@
+"""
+Definitions of different bot personalities and capabilities.
+
+This package defines the `Role` class, which encapsulates the logic for
+assembling the context for a large language model. Each role has an associated
+model and defines how to "stuff" the context with system prompts, knowledge,
+and examples.
+
+Submodules
+----------
+
+assistant
+    A general-purpose assistant role.
+coder
+    A role specialized for software development tasks.
+editor
+    A role for editing and analyzing files, serving as a base for Coder.
+
+Markdown files like `coder.md` and `editor.md` contain the core system
+prompts for the respective roles.
+"""
 from __future__ import annotations
 import logging
 from datetime import datetime
 from pathlib import Path
 import llobot.time
-from llobot.chats import ChatBranch, ChatBuilder, ChatIntent
+from llobot.chats import ChatBranch
 from llobot.chats.archives import ChatArchive
 from llobot.projects import Project
 from llobot.fs.zones import Zoning
+from llobot.models import Model
 import llobot.fs
 import llobot.chats.archives
 
@@ -14,17 +36,23 @@ _logger = logging.getLogger(__name__)
 
 class Role:
     _name: str
+    _model: Model
     _example_archive: ChatArchive
 
-    def __init__(self, name: str, *,
+    def __init__(self, name: str, model: Model, *,
         example_archive: ChatArchive | Zoning | Path | str = llobot.chats.archives.standard(llobot.fs.data()/'llobot/examples'),
     ):
         self._name = name
+        self._model = model
         self._example_archive = llobot.chats.archives.coerce(example_archive)
 
     @property
     def name(self) -> str:
         return self._name
+
+    @property
+    def model(self) -> Model:
+        return self._model
 
     @property
     def example_archive(self) -> ChatArchive:
@@ -68,7 +96,6 @@ class Role:
         prompt: ChatBranch,
         project: Project | None,
         cutoff: datetime,
-        budget: int,
     ) -> ChatBranch:
         return ChatBranch()
 

@@ -17,6 +17,7 @@ from llobot.formatters.prompts import PromptFormatter
 from llobot.prompts import SystemPrompt, Prompt
 from llobot.projects import Project
 from llobot.roles import Role
+from llobot.models import Model
 import llobot.knowledge.retrievals
 import llobot.knowledge.scorers
 import llobot.knowledge.scores
@@ -57,7 +58,7 @@ class Editor(Role):
     _reminder_formatter: PromptFormatter
     _example_share: float
 
-    def __init__(self, name: str, *,
+    def __init__(self, name: str, model: Model, *,
         prompt: str | Prompt = system(),
         retrieval_scraper: RetrievalScraper = llobot.knowledge.retrievals.standard(),
         relevance_scorer: KnowledgeScorer | KnowledgeSubset = llobot.knowledge.scorers.irrelevant(),
@@ -77,7 +78,7 @@ class Editor(Role):
         """
         Creates a new editor role.
         """
-        super().__init__(name, **kwargs)
+        super().__init__(name, model, **kwargs)
         self._prompt = str(prompt)
         self._retrieval_scraper = retrieval_scraper
         if isinstance(relevance_scorer, KnowledgeSubset):
@@ -99,8 +100,8 @@ class Editor(Role):
         prompt: ChatBranch,
         project: Project | None,
         cutoff: datetime,
-        budget: int,
     ) -> ChatBranch:
+        budget = self.model.context_budget
         knowledge = project.knowledge(cutoff) if project else Knowledge()
 
         # System prompt
