@@ -22,8 +22,6 @@ handlers
     Main request handler for `ChatbotModel`, dispatching commands.
 headers
     Parses `~project:cutoff@model?options!command` headers from prompts.
-info
-    Generates informational responses for the `!info` command.
 model
     Implements `ChatbotModel` that wraps a `Chatbot` instance.
 requests

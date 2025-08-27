@@ -5,7 +5,6 @@ import re
 class ChatbotCommand(Enum):
     OK = 'ok'
     ECHO = 'echo'
-    INFO = 'info'
 
 COMMAND_RE = re.compile(r'!([a-z]+)')
 

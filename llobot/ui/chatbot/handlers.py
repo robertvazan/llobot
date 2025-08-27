@@ -6,7 +6,6 @@ import llobot.ui.chatbot.requests
 from llobot.ui.chatbot.requests import ChatbotRequest
 import llobot.ui.chatbot.commands
 from llobot.ui.chatbot.commands import ChatbotCommand
-import llobot.ui.chatbot.info
 import llobot.time
 import llobot.models.streams
 
@@ -30,10 +29,10 @@ def handle_echo(request: ChatbotRequest) -> ModelStream:
 def handle_prompt(request: ChatbotRequest) -> ModelStream:
     assembled = llobot.ui.chatbot.requests.assemble(request)
     output = request.model.generate(assembled)
-    
+
     if request.has_implicit_cutoff and len(request.prompt) == 1:
         output += _cutoff_footer(request)
-    
+
     def on_error():
         _logger.error(f'Exception in {request.model.name} model ({request.chatbot.role.name} role).', exc_info=True)
 
@@ -47,8 +46,6 @@ def handle(request: ChatbotRequest) -> ModelStream:
         return handle_ok(request)
     elif request.command == ChatbotCommand.ECHO:
         return handle_echo(request)
-    elif request.command == ChatbotCommand.INFO:
-        return llobot.ui.chatbot.info.handle_info(request)
     else:
         return handle_prompt(request)
 

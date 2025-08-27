@@ -123,7 +123,6 @@ The last line is a timestamp that the bot uses to stick to particular version of
 
 The `~llobot` command in the prompt can be more complicated:
 
-- `~myproject!info` to show help, available options, lots of information
 - `~myproject@cloud` to run on backend model that we aliased as `cloud` in the above setup script
 - `~myproject!echo` to respond with the whole assembled prompt (good to get an idea what goes in there)
 
