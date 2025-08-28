@@ -14,10 +14,8 @@ Submodules
 
 chats
     Parses `Chatbot` specific elements from a `ChatBranch`.
-cutoffs
-    Parses `:timestamp` from model responses to pin knowledge version.
 headers
-    Parses `~project:cutoff` headers from prompts.
+    Parses `~project` headers from prompts.
 model
     Implements `ChatbotModel` that wraps a `Chatbot` instance.
 requests

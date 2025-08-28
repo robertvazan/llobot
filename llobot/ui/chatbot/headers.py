@@ -1,28 +1,19 @@
 from __future__ import annotations
-from datetime import datetime
 import re
-import llobot.time
 
 class ChatbotHeader:
     _project: str | None
-    _cutoff: datetime | None
 
     def __init__(self, *,
         project: str | None = None,
-        cutoff: datetime | None = None
     ):
         self._project = project
-        self._cutoff = cutoff
 
     @property
     def project(self) -> str | None:
         return self._project
 
-    @property
-    def cutoff(self) -> datetime | None:
-        return self._cutoff
-
-HEADER_RE = re.compile(r'(?:~([a-zA-Z0-9_/.-]+))?(?::([0-9-]+))?')
+HEADER_RE = re.compile(r'~([a-zA-Z0-9_/.-]+)')
 
 def parse_line(line: str) -> ChatbotHeader | None:
     if not line:
@@ -30,10 +21,8 @@ def parse_line(line: str) -> ChatbotHeader | None:
     m = HEADER_RE.fullmatch(line.strip())
     if not m:
         return None
-
-    project = m[1] if m[1] else None
-    cutoff = llobot.time.parse(m[2]) if m[2] else None
-    return ChatbotHeader(project=project, cutoff=cutoff)
+    project = m[1] or None
+    return ChatbotHeader(project=project)
 
 def parse(message: str) -> ChatbotHeader | None:
     lines = message.strip().splitlines()

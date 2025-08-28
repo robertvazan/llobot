@@ -99,10 +99,9 @@ class Editor(Role):
     def stuff(self, *,
         prompt: ChatBranch,
         project: Project | None,
-        cutoff: datetime,
     ) -> ChatBranch:
         budget = self.model.context_budget
-        knowledge = project.knowledge(cutoff) if project else Knowledge()
+        knowledge = project.knowledge() if project else Knowledge()
 
         # System prompt
         system_chat = self._prompt_formatter(self._prompt)
@@ -114,7 +113,7 @@ class Editor(Role):
 
         # Examples with associated updates
         history_budget = int(budget * self._example_share)
-        recent_examples = self.recent_examples(project, cutoff)
+        recent_examples = self.recent_examples(project)
         history_chat, history_paths = self._edit_crammer(recent_examples, knowledge, history_budget)
 
         # Knowledge scores

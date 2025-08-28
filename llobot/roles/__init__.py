@@ -95,7 +95,6 @@ class Role:
     def stuff(self, *,
         prompt: ChatBranch,
         project: Project | None,
-        cutoff: datetime,
     ) -> ChatBranch:
         return ChatBranch()
 

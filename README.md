@@ -102,8 +102,6 @@ The last line is a command that tells the bot to use `llobot` project as its kno
 > endpoint = llobot.models.ollama.remote('remote.host.com', 11434)
 > model = llobot.models.ollama.create('qwen2.5-coder', 24 * 1024, endpoint=endpoint)
 > ```
->
-> `:20250526-221039`
 
 NB: Response this informative relies on using a large model and on having prior related conversations with the bot. For comparison, response from 'qwen2.5-coder' without prior conversations is below. It's close, but it's not quite there.
 
@@ -117,10 +115,6 @@ NB: Response this informative relies on using a large model and on having prior 
 > ```
 >
 > This will give you an endpoint string that you can use to interact with the remote Ollama instance.
->
-> `:20250526-222015`
-
-The last line is a timestamp that the bot uses to stick to particular version of the knowledge base in case you continue the conversation.
 
 If the context does not include the file you need, just mention it in the prompt, for example as `projects.py` or `ollama/listeners.py`, and llobot will include it in the context in addition to default knowledge.
 
@@ -131,7 +125,6 @@ Here are some practical tips for using llobot:
 - Llobot works best with cloud models, which have plenty of burst compute to handle reprocessing of large prompts. Cloud models are also smart enough to be useful.
 - Make every task meaningful on its own. Do not reference prior conversations. This will give llobot freedom to choose examples to put in the prompt.
 - If the prompt absolutely depends on the model seeing a particular file, mention it in the prompt as `file.ext` or `path/prefix/file.ext` (in backticks), whichever is sufficiently unique to match only one file. This ensures the document will be added to the assembled prompt regardless of how llobot prioritizes documents for context stuffing.
-- If you have modified your code (or other knowledge base) since querying the LLM and you don't want the changes to be visible to the LLM after you edit the prompt, take the timestamp from llobot's response and add it to the command in your prompt, for example `~myproject:20250526-222015`. Llobot will use the unmodified version of the knowledge base to answer the new prompt.
 - It is a good idea to standardize on knowledge base organization that prefixes every path with name of the project even if there's currently only one in the context. So if you are loading knowledge from directory `myproject`, then path `subdir/file.txt` would be mapped to `myproject/subdir/file.txt` in the knowledge base.
 
 ## Status

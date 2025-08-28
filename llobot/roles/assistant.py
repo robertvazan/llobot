@@ -1,5 +1,4 @@
 from __future__ import annotations
-from datetime import datetime
 from llobot.crammers.examples import ExampleCrammer
 from llobot.formatters.prompts import PromptFormatter
 from llobot.prompts import Prompt
@@ -32,7 +31,6 @@ class Assistant(Role):
     def stuff(self, *,
         prompt: ChatBranch,
         project: Project | None,
-        cutoff: datetime,
     ) -> ChatBranch:
         budget = self.model.context_budget
         chat = ChatBuilder()
@@ -44,7 +42,7 @@ class Assistant(Role):
         reminder_chat = self._reminder_formatter(self._prompt)
         budget -= reminder_chat.cost
 
-        recent_examples = self.recent_examples(project, cutoff)
+        recent_examples = self.recent_examples(project)
         examples = self._crammer(recent_examples, budget)
         chat.add(examples)
 
