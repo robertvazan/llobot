@@ -35,7 +35,7 @@ import llobot.models.anthropic
 import llobot.projects
 import llobot.knowledge.sources
 from llobot.roles.coder import Coder
-import llobot.ui.chatbot
+from llobot.roles.models import RoleModel
 import llobot.models.ollama.listeners
 
 # Backend models that respond to the assembled prompt
@@ -70,15 +70,11 @@ projects = [
 # Roles determine what goes in the context.
 # Lets use some standard roles that come with llobot.
 roles = [
-    # Each role is tied to a specific backend model.
-    Coder('coder', models['local']),
+    Coder('coder', models['local'], projects=projects),
 ]
 
-# This function configures virtual model for a given role.
-def define_bot(role):
-    return llobot.ui.chatbot.create(role, projects)
-
-bots = ModelCatalog(*[define_bot(role) for role in roles])
+# Create virtual models for all roles.
+bots = ModelCatalog(*[RoleModel(role) for role in roles])
 
 # Backend Ollama listens on 11434, so we will listen on 11435 to avoid conflicts.
 llobot.models.ollama.listeners.create(bots, port=11435).listen()

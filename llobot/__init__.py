@@ -25,8 +25,6 @@ roles
     Definitions of different bot personalities and capabilities (e.g., Coder).
 scrapers
     Tools to build knowledge graphs from source code and other documents.
-ui
-    User interface components, particularly for chatbot interactions.
 
 Modules
 -------

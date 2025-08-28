@@ -15,6 +15,8 @@ coder
     A role specialized for software development tasks.
 editor
     A role for editing and analyzing files, serving as a base for Coder.
+models
+    A wrapper that exposes a `Role` as a `Model`.
 
 Markdown files like `coder.md` and `editor.md` contain the core system
 prompts for the respective roles.
