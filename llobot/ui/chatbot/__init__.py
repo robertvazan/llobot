@@ -14,12 +14,8 @@ Submodules
 
 chats
     Parses `Chatbot` specific elements from a `ChatBranch`.
-commands
-    Parses `!command` from user messages in followup messages.
 cutoffs
     Parses `:timestamp` from model responses to pin knowledge version.
-handlers
-    Main request handler for `ChatbotModel`, dispatching commands.
 headers
     Parses `~project:cutoff` headers from prompts.
 model

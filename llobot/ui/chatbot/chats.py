@@ -1,22 +1,18 @@
 from __future__ import annotations
 from datetime import datetime
-from llobot.chats import ChatBranch, ChatBuilder, ChatRole
+from llobot.chats import ChatBranch, ChatBuilder
 import llobot.ui.chatbot.headers
 from llobot.ui.chatbot.headers import ChatbotHeader
 import llobot.ui.chatbot.cutoffs
-import llobot.ui.chatbot.commands
-from llobot.ui.chatbot.commands import ChatbotCommand
 
 class ChatbotChat:
     _header: ChatbotHeader
     _cutoff: datetime | None
-    _command: ChatbotCommand | None
     _prompt: ChatBranch
 
-    def __init__(self, *, header: ChatbotHeader, cutoff: datetime | None, command: ChatbotCommand | None, prompt: ChatBranch):
+    def __init__(self, *, header: ChatbotHeader, cutoff: datetime | None, prompt: ChatBranch):
         self._header = header
         self._cutoff = cutoff
-        self._command = command
         self._prompt = prompt
 
     @property
@@ -28,10 +24,6 @@ class ChatbotChat:
         return self._cutoff
 
     @property
-    def command(self) -> ChatbotCommand | None:
-        return self._command
-
-    @property
     def prompt(self) -> ChatBranch:
         return self._prompt
 
@@ -41,12 +33,10 @@ def strip(chat: ChatBranch) -> ChatBranch:
         return clean.build()
 
     clean.add(chat[0].with_content(llobot.ui.chatbot.headers.strip(chat[0].content)))
-    if len(chat) >= 2:
+    if len(chat) > 1:
         clean.add(chat[1].with_content(llobot.ui.chatbot.cutoffs.strip(chat[1].content)))
-    if len(chat) >= 3:
-        for message in chat[2:-1]:
-            clean.add(message)
-        clean.add(chat[-1].with_content(llobot.ui.chatbot.commands.strip(chat[-1].content)))
+        if len(chat) > 2:
+            clean.add(chat[2:])
     return clean.build()
 
 def parse(chat: ChatBranch) -> ChatbotChat:
@@ -55,7 +45,6 @@ def parse(chat: ChatBranch) -> ChatbotChat:
         header = ChatbotHeader()
 
     cutoff = None
-    command = None
 
     if len(chat) > 1:
         automatic_cutoff = llobot.ui.chatbot.cutoffs.parse(chat[1].content)
@@ -64,15 +53,8 @@ def parse(chat: ChatBranch) -> ChatbotChat:
                 raise ValueError('Duplicate cutoff.')
             cutoff = automatic_cutoff
 
-        for message in chat[1:-1]:
-            if message.role == ChatRole.USER and llobot.ui.chatbot.commands.parse(message.content):
-                raise ValueError('Followup message after a command.')
-
-        if chat and chat[-1].role == ChatRole.USER:
-            command = llobot.ui.chatbot.commands.parse(chat[-1].content)
-
     prompt = strip(chat)
-    return ChatbotChat(header=header, cutoff=cutoff, command=command, prompt=prompt)
+    return ChatbotChat(header=header, cutoff=cutoff, prompt=prompt)
 
 __all__ = [
     'ChatbotChat',

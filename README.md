@@ -124,8 +124,6 @@ The last line is a timestamp that the bot uses to stick to particular version of
 
 If the context does not include the file you need, just mention it in the prompt, for example as `projects.py` or `ollama/listeners.py`, and llobot will include it in the context in addition to default knowledge.
 
-Finally, if you are happy with the output, issue command `!ok` after the response you like. Llobot will save it as a correct example. Recent examples are included in the context by default. LLMs have [propensity to imitate what is already in the context](https://arxiv.org/abs/2005.14165), so putting correct examples in the context increases probability that the next response will be correct too. If the response is wrong, you can still show llobot how to do it right. Impersonate the LLM (edit the response, a function that is in Open WebUI but not necessarily in other frontends), put there the correct response, and then issue `!ok` command. The built-in editor and coder roles override the `!ok` command's behavior: instead of saving the conversation, they re-read the project files, calculate the difference between the state of the project before your prompt and the current state, and save this diff-compressed summary as the example. This means you don't need to impersonate the LLM; you can make your changes directly in your IDE, and then use `!ok` to tell the bot to remember the correct response.
-
 ## Best practices
 
 Here are some practical tips for using llobot:

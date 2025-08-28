@@ -2,16 +2,12 @@ from __future__ import annotations
 from datetime import datetime
 from llobot.chats import ChatBranch
 from llobot.projects import Project
-from llobot.models import Model
 from llobot.ui.chatbot import Chatbot
 import llobot.ui.chatbot.chats
-import llobot.ui.chatbot.commands
-from llobot.ui.chatbot.commands import ChatbotCommand
 import llobot.time
 
 class ChatbotRequest:
     _chatbot: Chatbot
-    _command: ChatbotCommand | None
     _prompt: ChatBranch
     _project: Project | None
     _cutoff: datetime | None
@@ -19,13 +15,11 @@ class ChatbotRequest:
 
     def __init__(self, *,
         chatbot: Chatbot,
-        command: ChatbotCommand | None,
         prompt: ChatBranch,
         project: Project | None,
         cutoff: datetime | None,
     ):
         self._chatbot = chatbot
-        self._command = command
         self._prompt = prompt
         self._project = project
         self._has_implicit_cutoff = cutoff is None
@@ -34,10 +28,6 @@ class ChatbotRequest:
     @property
     def chatbot(self) -> Chatbot:
         return self._chatbot
-
-    @property
-    def command(self) -> ChatbotCommand | None:
-        return self._command
 
     @property
     def prompt(self) -> ChatBranch:
@@ -74,7 +64,6 @@ def parse(chatbot: Chatbot, prompt: ChatBranch) -> ChatbotRequest:
 
     return ChatbotRequest(
         chatbot=chatbot,
-        command=chat_info.command,
         prompt=chat_info.prompt,
         project=project,
         cutoff=cutoff,
