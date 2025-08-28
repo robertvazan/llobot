@@ -6,6 +6,7 @@ from llobot.roles import Role
 from llobot.chats import ChatBranch, ChatBuilder
 from llobot.projects import Project
 from llobot.models import Model
+from llobot.models.streams import ModelStream
 import llobot.crammers.examples
 import llobot.formatters.prompts
 
@@ -28,15 +29,13 @@ class Assistant(Role):
         self._prompt_formatter = prompt_formatter
         self._reminder_formatter = reminder_formatter
 
-    def stuff(self, *,
-        prompt: ChatBranch,
-    ) -> ChatBranch:
+    def chat(self, prompt: ChatBranch) -> ModelStream:
         project = self.resolve_project(prompt)
         budget = self.model.context_budget
-        chat = ChatBuilder()
+        builder = ChatBuilder()
 
         system_chat = self._prompt_formatter(self._prompt)
-        chat.add(system_chat)
+        builder.add(system_chat)
         budget -= system_chat.cost
 
         reminder_chat = self._reminder_formatter(self._prompt)
@@ -44,12 +43,14 @@ class Assistant(Role):
 
         recent_examples = self.recent_examples(project)
         examples = self._crammer(recent_examples, budget)
-        chat.add(examples)
+        builder.add(examples)
 
         # Add reminder at the end
-        chat.add(reminder_chat)
+        builder.add(reminder_chat)
 
-        return chat.build()
+        context = builder.build()
+        assembled_prompt = context + prompt
+        return self.model.generate(assembled_prompt)
 
 __all__ = [
     'Assistant',

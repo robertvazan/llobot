@@ -19,19 +19,16 @@ class RoleModel(Model):
         return f'bot/{self._role.name}'
 
     def generate(self, prompt: ChatBranch) -> ModelStream:
+        role = self._role
         try:
-            role = self._role
-            context = role.stuff(prompt=prompt)
-            assembled = context + prompt
-            model = role.model
-            output = model.generate(assembled)
+            output = role.chat(prompt)
 
             def on_error():
-                _logger.error(f'Exception in {model.name} model ({role.name} role).', exc_info=True)
+                _logger.error(f'Exception while processing response stream in {role.name} role.', exc_info=True)
 
             return output | llobot.models.streams.handler(callback=on_error)
         except Exception as ex:
-            _logger.error(f'Exception in {self.name} model.', exc_info=True)
+            _logger.error(f'Exception in {role.name} role.', exc_info=True)
             return llobot.models.streams.exception(ex)
 
 __all__ = [

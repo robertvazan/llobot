@@ -32,6 +32,7 @@ from llobot.chats.archives import ChatArchive
 from llobot.projects import Project
 from llobot.fs.zones import Zoning
 from llobot.models import Model
+from llobot.models.streams import ModelStream
 import llobot.fs
 import llobot.chats.archives
 
@@ -81,6 +82,18 @@ class Role:
 
     def __str__(self) -> str:
         return self.name
+
+    def chat(self, prompt: ChatBranch) -> ModelStream:
+        """
+        Processes user's prompt and returns response as a stream.
+
+        Args:
+            prompt: The user's prompt as a chat branch.
+
+        Returns:
+            A model stream with the generated response.
+        """
+        raise NotImplementedError
 
     def resolve_project(self, prompt: ChatBranch) -> Project | None:
         """
@@ -145,12 +158,6 @@ class Role:
         for zone in self.zone_names(project):
             for time, chat in self.example_archive.recent(zone, cutoff):
                 yield chat.as_example()
-
-    # Returns the synthetic part of the prompt that is prepended to the user prompt.
-    def stuff(self, *,
-        prompt: ChatBranch,
-    ) -> ChatBranch:
-        return ChatBranch()
 
 __all__ = [
     'Role',

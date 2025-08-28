@@ -18,6 +18,7 @@ from llobot.prompts import SystemPrompt, Prompt
 from llobot.projects import Project
 from llobot.roles import Role
 from llobot.models import Model
+from llobot.models.streams import ModelStream
 import llobot.knowledge.retrievals
 import llobot.knowledge.scorers
 import llobot.knowledge.scores
@@ -96,9 +97,7 @@ class Editor(Role):
         self._reminder_formatter = reminder_formatter
         self._example_share = example_share
 
-    def stuff(self, *,
-        prompt: ChatBranch,
-    ) -> ChatBranch:
+    def chat(self, prompt: ChatBranch) -> ModelStream:
         project = self.resolve_project(prompt)
         if project and len(prompt) == 1:
             project.refresh()
@@ -141,15 +140,17 @@ class Editor(Role):
         retrieved_knowledge = (knowledge & retrieved_paths) - (knowledge_paths | history_paths)
         retrievals_chat = self._retrieval_formatter.render_fresh(retrieved_knowledge, ranking)
 
-        chat = ChatBuilder()
-        chat.add(system_chat)
-        chat.add(index_chat)
-        chat.add(knowledge_chat)
-        chat.add(history_chat)
-        chat.add(retrievals_chat)
-        chat.add(reminder_chat)
+        builder = ChatBuilder()
+        builder.add(system_chat)
+        builder.add(index_chat)
+        builder.add(knowledge_chat)
+        builder.add(history_chat)
+        builder.add(retrievals_chat)
+        builder.add(reminder_chat)
 
-        return chat.build()
+        context = builder.build()
+        assembled_prompt = context + prompt
+        return self.model.generate(assembled_prompt)
 
     def handle_ok(self, chat: ChatBranch, cutoff: datetime):
         project = self.resolve_project(chat)
