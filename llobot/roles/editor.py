@@ -98,8 +98,10 @@ class Editor(Role):
 
     def stuff(self, *,
         prompt: ChatBranch,
-        project: Project | None,
     ) -> ChatBranch:
+        project = self.resolve_project(prompt)
+        if project and len(prompt) == 1:
+            project.refresh()
         budget = self.model.context_budget
         knowledge = project.knowledge() if project else Knowledge()
 
@@ -149,14 +151,15 @@ class Editor(Role):
 
         return chat.build()
 
-    def handle_ok(self, chat: ChatBranch, project: Project | None, cutoff: datetime):
+    def handle_ok(self, chat: ChatBranch, cutoff: datetime):
+        project = self.resolve_project(chat)
         if not project:
-            super().handle_ok(chat, project, cutoff)
+            super().handle_ok(chat, cutoff)
             return
 
         edit_delta = self._envelopes.parse_chat(chat[1:])
         if not edit_delta:
-            super().handle_ok(chat, project, cutoff)
+            super().handle_ok(chat, cutoff)
             return
 
         project.refresh()

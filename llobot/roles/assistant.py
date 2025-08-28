@@ -30,8 +30,8 @@ class Assistant(Role):
 
     def stuff(self, *,
         prompt: ChatBranch,
-        project: Project | None,
     ) -> ChatBranch:
+        project = self.resolve_project(prompt)
         budget = self.model.context_budget
         chat = ChatBuilder()
 
