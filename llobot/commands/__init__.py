@@ -12,6 +12,8 @@ chains
     Command chains.
 mentions
     Parser for @command mentions in chat messages.
+projects
+    Command to select a project.
 """
 from __future__ import annotations
 from llobot.environments import Environment
@@ -40,22 +42,27 @@ class Command:
         """
         return False
 
-    def __call__(self, text: str, env: Environment):
+    def __call__(self, text: str | list[str], env: Environment):
         """
-        Executes the command.
+        Executes the command(s).
 
         This is a convenience method that calls `handle` and raises an
-        exception if the command is not recognized.
+        exception if the command is not recognized. If a list of commands
+        is provided, it will attempt to handle each one.
 
         Args:
-            text: The unparsed command string.
+            text: The unparsed command string or a list of them.
             env: The environment to manipulate.
 
         Raises:
-            ValueError: If the command is not handled.
+            ValueError: If a command is not handled.
         """
-        if not self.handle(text, env):
-            raise ValueError(f'Unrecognized command: {text}')
+        if isinstance(text, str):
+            if not self.handle(text, env):
+                raise ValueError(f'Unrecognized command: {text}')
+        else:
+            for t in text:
+                self(t, env)
 
 __all__ = [
     'Command',

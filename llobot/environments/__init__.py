@@ -4,6 +4,11 @@ Execution environments for roles.
 This package provides the `Environment` class, which serves as a container
 for stateful components that roles can use to execute commands included in user's
 request.
+
+Submodules
+----------
+projects
+    Project selection environment component.
 """
 from __future__ import annotations
 import weakref

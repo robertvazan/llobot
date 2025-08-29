@@ -86,11 +86,9 @@ Run this script and add `localhost:11435` as an additional Ollama endpoint to yo
 
 You should now be able to issue queries against the bots. Select `coder` bot and submit this prompt:
 
-> How do I connect to remote Ollama instance?
->
-> ~llobot
+> @llobot How do I connect to remote Ollama instance?
 
-The last line is a command that tells the bot to use `llobot` project as its knowledge base. If you wanted to work on `myproject`, you would write `~myproject` there. When you submit this prompt, you should get a response like this:
+The `@llobot` mention is a command that tells the bot to use the `llobot` project as its knowledge base. If you wanted to work on `myproject`, you would write `@myproject`. The mention can be placed anywhere in the prompt, but it's conventional to put it at the beginning. When you submit this prompt, you should get a response like this:
 
 > Use `llobot.models.ollama.remote(host, port, path)` to get the endpoint URL, then pass it to `llobot.models.ollama.create()` as the `endpoint` argument. For example:
 >
@@ -119,7 +117,7 @@ If the context does not include the file you need, just mention it in the prompt
 Here are some practical tips for using llobot:
 
 - Llobot works best with cloud models, which have plenty of burst compute to handle reprocessing of large prompts. Cloud models are also smart enough to be useful.
-- Make every task meaningful on its own. Do not reference prior conversations. This will give llobot freedom to choose examples to put in the prompt.
+- Make every task meaningful on its own. Do not reference prior conversations. This will give llobot freedom to choose how many examples to put in the context.
 - If the prompt absolutely depends on the model seeing a particular file, mention it in the prompt as `file.ext` or `path/prefix/file.ext` (in backticks), whichever is sufficiently unique to match only one file. This ensures the document will be added to the assembled prompt regardless of how llobot prioritizes documents for context stuffing.
 - It is a good idea to standardize on knowledge base organization that prefixes every path with name of the project even if there's currently only one in the context. So if you are loading knowledge from directory `myproject`, then path `subdir/file.txt` would be mapped to `myproject/subdir/file.txt` in the knowledge base.
 

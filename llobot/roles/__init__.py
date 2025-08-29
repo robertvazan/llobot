@@ -25,7 +25,6 @@ from __future__ import annotations
 import logging
 from datetime import datetime
 from pathlib import Path
-import re
 import llobot.time
 from llobot.chats import ChatBranch
 from llobot.chats.archives import ChatArchive
@@ -38,16 +37,12 @@ import llobot.chats.archives
 
 _logger = logging.getLogger(__name__)
 
-_PROJECT_HEADER_RE = re.compile(r'~([a-zA-Z0-9_/.-]+)')
-
 class Role:
     _name: str
     _model: Model
-    _projects: dict[str, Project]
     _example_archive: ChatArchive
 
     def __init__(self, name: str, model: Model, *,
-        projects: list[Project] | None = None,
         example_archive: ChatArchive | Zoning | Path | str = llobot.chats.archives.standard(llobot.fs.data()/'llobot/examples'),
     ):
         """
@@ -56,12 +51,10 @@ class Role:
         Args:
             name: The name of the role.
             model: The language model to use.
-            projects: A list of projects to be used as knowledge bases.
             example_archive: The archive for storing examples.
         """
         self._name = name
         self._model = model
-        self._projects = {p.name: p for p in projects} if projects else {}
         self._example_archive = llobot.chats.archives.coerce(example_archive)
 
     @property
@@ -71,10 +64,6 @@ class Role:
     @property
     def model(self) -> Model:
         return self._model
-
-    @property
-    def projects(self) -> dict[str, Project]:
-        return self._projects
 
     @property
     def example_archive(self) -> ChatArchive:
@@ -94,39 +83,6 @@ class Role:
             A model stream with the generated response.
         """
         raise NotImplementedError
-
-    def resolve_project(self, prompt: ChatBranch) -> Project | None:
-        """
-        Parses the project name from the last line of the first message in a prompt.
-
-        The project name is expected to be in the format `~project_name`.
-
-        Args:
-            prompt: The chat branch to parse.
-
-        Returns:
-            The resolved Project instance, or None if no project is specified.
-
-        Raises:
-            KeyError: If the specified project name is not found.
-        """
-        if not prompt:
-            return None
-        first_message = prompt[0].content
-        lines = first_message.strip().splitlines()
-        if not lines:
-            return None
-        last_line = lines[-1].strip()
-        match = _PROJECT_HEADER_RE.fullmatch(last_line)
-        if not match:
-            return None
-        project_name = match[1]
-        if not project_name:
-            return None
-        project = self._projects.get(project_name)
-        if not project:
-            raise KeyError(f'No such project: {project_name}')
-        return project
 
     def zone_name(self, project: Project | None) -> str:
         return f'{project.name}-{self.name}' if project else self.name
@@ -151,8 +107,7 @@ class Role:
         _logger.info(f"Archived example: {', '.join(zones)}")
 
     def handle_ok(self, chat: ChatBranch, cutoff: datetime):
-        project = self.resolve_project(chat)
-        self.save_example(chat, project)
+        self.save_example(chat, None)
 
     def recent_examples(self, project: Project | None, cutoff: datetime | None = None) -> Iterable[ChatBranch]:
         for zone in self.zone_names(project):

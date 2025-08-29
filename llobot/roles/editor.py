@@ -2,6 +2,10 @@ from __future__ import annotations
 from functools import cache
 from datetime import datetime
 from llobot.chats import ChatBranch, ChatBuilder, ChatIntent
+from llobot.commands.chains import CommandChain
+from llobot.commands.projects import ProjectCommand
+from llobot.environments import Environment
+from llobot.environments.projects import ProjectEnv
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.subsets import KnowledgeSubset
@@ -19,6 +23,7 @@ from llobot.projects import Project
 from llobot.roles import Role
 from llobot.models import Model
 from llobot.models.streams import ModelStream
+import llobot.commands.mentions
 import llobot.knowledge.retrievals
 import llobot.knowledge.scorers
 import llobot.knowledge.scores
@@ -45,7 +50,7 @@ def system() -> SystemPrompt:
     )
 
 class Editor(Role):
-    _prompt: str
+    _system: str
     _retrieval_scraper: RetrievalScraper
     _relevance_scorer: KnowledgeScorer
     _graph_scorer: KnowledgeScorer
@@ -58,9 +63,11 @@ class Editor(Role):
     _prompt_formatter: PromptFormatter
     _reminder_formatter: PromptFormatter
     _example_share: float
+    _command_chain: CommandChain
 
     def __init__(self, name: str, model: Model, *,
         prompt: str | Prompt = system(),
+        projects: list[Project] | None = None,
         retrieval_scraper: RetrievalScraper = llobot.knowledge.retrievals.standard(),
         relevance_scorer: KnowledgeScorer | KnowledgeSubset = llobot.knowledge.scorers.irrelevant(),
         graph_scorer: KnowledgeScorer = llobot.knowledge.scorers.standard(),
@@ -80,7 +87,7 @@ class Editor(Role):
         Creates a new editor role.
         """
         super().__init__(name, model, **kwargs)
-        self._prompt = str(prompt)
+        self._system = str(prompt)
         self._retrieval_scraper = retrieval_scraper
         if isinstance(relevance_scorer, KnowledgeSubset):
             self._relevance_scorer = llobot.knowledge.scorers.relevant(relevance_scorer)
@@ -96,20 +103,25 @@ class Editor(Role):
         self._prompt_formatter = prompt_formatter
         self._reminder_formatter = reminder_formatter
         self._example_share = example_share
+        self._command_chain = CommandChain(ProjectCommand(projects))
 
     def chat(self, prompt: ChatBranch) -> ModelStream:
-        project = self.resolve_project(prompt)
+        env = Environment()
+        commands = llobot.commands.mentions.parse(prompt)
+        self._command_chain(commands, env)
+        project = env[ProjectEnv].get()
+
         if project and len(prompt) == 1:
             project.refresh()
         budget = self.model.context_budget
         knowledge = project.knowledge() if project else Knowledge()
 
         # System prompt
-        system_chat = self._prompt_formatter(self._prompt)
+        system_chat = self._prompt_formatter(self._system)
         budget -= system_chat.cost
 
         # Reminder
-        reminder_chat = self._reminder_formatter(self._prompt)
+        reminder_chat = self._reminder_formatter(self._system)
         budget -= reminder_chat.cost
 
         # Examples with associated updates
@@ -153,14 +165,18 @@ class Editor(Role):
         return self.model.generate(assembled_prompt)
 
     def handle_ok(self, chat: ChatBranch, cutoff: datetime):
-        project = self.resolve_project(chat)
+        env = Environment()
+        commands = llobot.commands.mentions.parse(chat)
+        self._command_chain(commands, env)
+        project = env[ProjectEnv].get()
+
         if not project:
-            super().handle_ok(chat, cutoff)
+            self.save_example(chat, None)
             return
 
         edit_delta = self._envelopes.parse_chat(chat[1:])
         if not edit_delta:
-            super().handle_ok(chat, cutoff)
+            self.save_example(chat, project)
             return
 
         project.refresh()
