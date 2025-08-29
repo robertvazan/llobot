@@ -4,6 +4,14 @@ Command execution framework for roles.
 This package defines the `Command` class, which serves as a base for
 implementing commands that can be included in a user's request. Roles can
 use these commands to manipulate their execution environment.
+
+Submodules
+----------
+
+chains
+    Command chains.
+mentions
+    Parser for @command mentions in chat messages.
 """
 from __future__ import annotations
 from llobot.environments import Environment
