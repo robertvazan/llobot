@@ -8,7 +8,11 @@ request.
 Submodules
 ----------
 projects
-    Project selection environment component.
+    Selected project.
+knowledge
+    Knowledge base for selected project.
+retrievals
+    Document retrievals.
 """
 from __future__ import annotations
 import weakref

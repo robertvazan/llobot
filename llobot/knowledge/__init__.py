@@ -28,8 +28,6 @@ archives
     Historical knowledge storage
 rankers
     Ranking algorithm implementations
-retrievals
-    Knowledge retrievals via mentions in the prompt
 scorers
     Knowledge scoring implementations
 fs

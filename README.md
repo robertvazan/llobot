@@ -110,7 +110,7 @@ NB: Response this informative relies on using a large model and on having prior 
 >
 > This will give you an endpoint string that you can use to interact with the remote Ollama instance.
 
-If the context does not include the file you need, just mention it in the prompt, for example as `projects.py` or `ollama/listeners.py`, and llobot will include it in the context in addition to default knowledge.
+If the context does not include the file you need, just mention it in the prompt, for example as `@projects.py` or `` @`ollama/listeners.py` ``, and llobot will include it in the context in addition to default knowledge.
 
 ## Best practices
 
@@ -118,7 +118,7 @@ Here are some practical tips for using llobot:
 
 - Llobot works best with cloud models, which have plenty of burst compute to handle reprocessing of large prompts. Cloud models are also smart enough to be useful.
 - Make every task meaningful on its own. Do not reference prior conversations. This will give llobot freedom to choose how many examples to put in the context.
-- If the prompt absolutely depends on the model seeing a particular file, mention it in the prompt as `file.ext` or `path/prefix/file.ext` (in backticks), whichever is sufficiently unique to match only one file. This ensures the document will be added to the assembled prompt regardless of how llobot prioritizes documents for context stuffing.
+- If the prompt absolutely depends on the model seeing a particular file, mention it in the prompt as `@file.ext` or `@path/to/file.ext`, whichever is sufficiently unique to match only one file. This ensures the document will be added to the assembled prompt regardless of how llobot prioritizes documents for context stuffing.
 - It is a good idea to standardize on knowledge base organization that prefixes every path with name of the project even if there's currently only one in the context. So if you are loading knowledge from directory `myproject`, then path `subdir/file.txt` would be mapped to `myproject/subdir/file.txt` in the knowledge base.
 
 ## Status

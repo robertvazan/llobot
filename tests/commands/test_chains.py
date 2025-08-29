@@ -55,7 +55,7 @@ def test_command_chain_call_unhandled():
     """Tests that CommandChain.__call__ raises when no command handles the text."""
     chain = CommandChain(MockCommand(False), MockCommand(False))
     env = Environment()
-    with pytest.raises(ValueError, match="Unrecognized command: test"):
+    with pytest.raises(ValueError, match="Unrecognized: test"):
         chain("test", env)
 
 def test_command_chain_call_handled():

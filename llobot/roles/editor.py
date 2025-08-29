@@ -4,13 +4,15 @@ from datetime import datetime
 from llobot.chats import ChatBranch, ChatBuilder, ChatIntent
 from llobot.commands.chains import CommandChain
 from llobot.commands.projects import ProjectCommand
+from llobot.commands.retrievals import RetrievalCommand
 from llobot.environments import Environment
+from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.projects import ProjectEnv
+from llobot.environments.retrievals import RetrievalsEnv
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.knowledge.rankers import KnowledgeRanker
-from llobot.knowledge.retrievals import RetrievalScraper
 from llobot.knowledge.scorers import KnowledgeScorer
 from llobot.crammers.knowledge import KnowledgeCrammer
 from llobot.crammers.edits import EditCrammer
@@ -24,7 +26,6 @@ from llobot.roles import Role
 from llobot.models import Model
 from llobot.models.streams import ModelStream
 import llobot.commands.mentions
-import llobot.knowledge.retrievals
 import llobot.knowledge.scorers
 import llobot.knowledge.scores
 import llobot.crammers.knowledge
@@ -51,7 +52,6 @@ def system() -> SystemPrompt:
 
 class Editor(Role):
     _system: str
-    _retrieval_scraper: RetrievalScraper
     _relevance_scorer: KnowledgeScorer
     _graph_scorer: KnowledgeScorer
     _ranker: KnowledgeRanker
@@ -68,7 +68,6 @@ class Editor(Role):
     def __init__(self, name: str, model: Model, *,
         prompt: str | Prompt = system(),
         projects: list[Project] | None = None,
-        retrieval_scraper: RetrievalScraper = llobot.knowledge.retrievals.standard(),
         relevance_scorer: KnowledgeScorer | KnowledgeSubset = llobot.knowledge.scorers.irrelevant(),
         graph_scorer: KnowledgeScorer = llobot.knowledge.scorers.standard(),
         ranker: KnowledgeRanker = llobot.knowledge.rankers.standard(),
@@ -88,7 +87,6 @@ class Editor(Role):
         """
         super().__init__(name, model, **kwargs)
         self._system = str(prompt)
-        self._retrieval_scraper = retrieval_scraper
         if isinstance(relevance_scorer, KnowledgeSubset):
             self._relevance_scorer = llobot.knowledge.scorers.relevant(relevance_scorer)
         else:
@@ -103,18 +101,15 @@ class Editor(Role):
         self._prompt_formatter = prompt_formatter
         self._reminder_formatter = reminder_formatter
         self._example_share = example_share
-        self._command_chain = CommandChain(ProjectCommand(projects))
+        self._command_chain = CommandChain(ProjectCommand(projects), RetrievalCommand())
 
     def chat(self, prompt: ChatBranch) -> ModelStream:
         env = Environment()
         commands = llobot.commands.mentions.parse(prompt)
         self._command_chain(commands, env)
         project = env[ProjectEnv].get()
-
-        if project and len(prompt) == 1:
-            project.refresh()
+        knowledge = env[KnowledgeEnv].get()
         budget = self.model.context_budget
-        knowledge = project.knowledge() if project else Knowledge()
 
         # System prompt
         system_chat = self._prompt_formatter(self._system)
@@ -148,7 +143,7 @@ class Editor(Role):
         knowledge_chat, knowledge_paths = self._knowledge_crammer(knowledge, knowledge_budget, scores, ranking)
 
         # Retrievals
-        retrieved_paths = self._retrieval_scraper(prompt, knowledge.keys())
+        retrieved_paths = env[RetrievalsEnv].get()
         retrieved_knowledge = (knowledge & retrieved_paths) - (knowledge_paths | history_paths)
         retrievals_chat = self._retrieval_formatter.render_fresh(retrieved_knowledge, ranking)
 

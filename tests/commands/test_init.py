@@ -12,7 +12,7 @@ def test_command_call_unhandled():
     """Tests that Command.__call__ raises ValueError for unhandled commands."""
     cmd = Command()
     env = Environment()
-    with pytest.raises(ValueError, match="Unrecognized command: some command"):
+    with pytest.raises(ValueError, match="Unrecognized: some command"):
         cmd("some command", env)
 
 def test_command_call_handled():

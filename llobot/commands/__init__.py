@@ -14,6 +14,8 @@ mentions
     Parser for @command mentions in chat messages.
 projects
     Command to select a project.
+retrievals
+    Command to retrieve a document.
 """
 from __future__ import annotations
 from llobot.environments import Environment
@@ -59,7 +61,7 @@ class Command:
         """
         if isinstance(text, str):
             if not self.handle(text, env):
-                raise ValueError(f'Unrecognized command: {text}')
+                raise ValueError(f'Unrecognized: {text}')
         else:
             for t in text:
                 self(t, env)
