@@ -9,6 +9,8 @@ Subpackages
 
 chats
     Data structures for representing chat conversations.
+commands
+    Command execution framework for roles.
 crammers
     Components for selecting information to fit into a context budget.
 environments
