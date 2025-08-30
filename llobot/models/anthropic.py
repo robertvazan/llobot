@@ -1,6 +1,6 @@
 from __future__ import annotations
 from anthropic import Anthropic
-from llobot.chats import ChatRole, ChatBranch
+from llobot.chats import ChatIntent, ChatBranch
 from llobot.models import Model
 from llobot.models.streams import ModelStream
 import llobot.models.streams
@@ -30,7 +30,7 @@ class _AnthropicStream(ModelStream):
         messages = []
         for message in prompt:
             messages.append({
-                'role': 'user' if message.role == ChatRole.USER else 'assistant',
+                'role': 'user' if message.intent.binarize() == ChatIntent.PROMPT else 'assistant',
                 'content': message.content,
             })
         # Skip the last message, which is the user's prompt, because it tends to be frequently edited.
@@ -154,4 +154,3 @@ def create(name: str, **kwargs) -> Model:
 __all__ = [
     'create',
 ]
-

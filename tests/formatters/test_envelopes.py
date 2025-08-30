@@ -2,7 +2,7 @@ from textwrap import dedent
 from pathlib import Path
 from llobot.formatters.envelopes import details, standard
 from llobot.knowledge.deltas import DocumentDelta, KnowledgeDelta
-from llobot.chats import ChatMessage, ChatBranch, ChatRole
+from llobot.chats import ChatMessage, ChatBranch, ChatIntent
 
 def test_format_file():
     formatter = standard()
@@ -224,8 +224,8 @@ def test_parse_message():
 def test_parse_chat():
     formatter = standard()
     chat = ChatBranch([
-        ChatMessage(ChatRole.USER, "Please make some changes."),
-        ChatMessage(ChatRole.MODEL, dedent("""
+        ChatMessage(ChatIntent.PROMPT, "Please make some changes."),
+        ChatMessage(ChatIntent.RESPONSE, dedent("""
             Sure! Here's what I'll do:
 
             <details>

@@ -3,7 +3,7 @@ from llobot.models.streams import (
     ModelStream, completed, status, ok, error, exception,
     notify, silence, handler, chat
 )
-from llobot.chats import ChatBranch, ChatRole
+from llobot.chats import ChatBranch, ChatIntent
 
 # A simple stream implementation for testing
 class ListStream(ModelStream):
@@ -105,11 +105,11 @@ def test_handler_with_callback():
     assert callback_called
 
 def test_chat():
-    prompt = ChatRole.USER.message("User prompt")
+    prompt = ChatIntent.PROMPT.message("User prompt")
     stream = completed("Model response")
     result_chat = chat(prompt.branch(), stream)
 
     assert len(result_chat) == 2
     assert result_chat[0] == prompt
-    assert result_chat[1].role == ChatRole.MODEL
+    assert result_chat[1].intent == ChatIntent.RESPONSE
     assert result_chat[1].content == "Model response"

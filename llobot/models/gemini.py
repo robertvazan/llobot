@@ -1,7 +1,7 @@
 from __future__ import annotations
 from google import genai
 from google.genai import types
-from llobot.chats import ChatRole, ChatBranch
+from llobot.chats import ChatIntent, ChatBranch
 from llobot.models import Model
 from llobot.models.streams import ModelStream
 import llobot.models.openai
@@ -27,7 +27,7 @@ class _GeminiStream(ModelStream):
     ) -> Iterable[str]:
         contents = []
         for message in prompt:
-            if message.role == ChatRole.USER:
+            if message.intent.binarize() == ChatIntent.PROMPT:
                 contents.append(types.UserContent(parts=[types.Part(text=message.content)]))
             else:
                 contents.append(types.ModelContent(parts=[types.Part(text=message.content)]))
@@ -130,4 +130,3 @@ __all__ = [
     'create',
     'via_openai_protocol',
 ]
-

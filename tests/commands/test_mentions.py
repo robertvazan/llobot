@@ -1,5 +1,5 @@
 import llobot.commands.mentions
-from llobot.chats import ChatMessage, ChatBranch, ChatRole
+from llobot.chats import ChatMessage, ChatBranch, ChatIntent
 
 def test_parse_empty():
     assert llobot.commands.mentions.parse('') == []
@@ -63,12 +63,12 @@ def test_empty_commands():
     assert llobot.commands.mentions.parse('`@`') == [] # this is an inline code span
 
 def test_chat_message_input():
-    message = ChatRole.USER.message('this is a test with @a-mention')
+    message = ChatIntent.PROMPT.message('this is a test with @a-mention')
     assert llobot.commands.mentions.parse(message) == ['a-mention']
 
 def test_chat_branch_input():
     branch = ChatBranch([
-        ChatRole.USER.message('first message with @one'),
-        ChatRole.MODEL.message('second message with @`two`'),
+        ChatIntent.PROMPT.message('first message with @one'),
+        ChatIntent.RESPONSE.message('second message with @`two`'),
     ])
     assert llobot.commands.mentions.parse(branch) == ['one', 'two']

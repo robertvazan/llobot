@@ -1,6 +1,5 @@
 from __future__ import annotations
 import llobot.text
-from ._roles import ChatRole
 from ._intents import ChatIntent
 
 # Guesstimate of how many chars are consumed per message by typical chat format.
@@ -11,19 +10,10 @@ class ChatMessage:
     _content: str
     _hash: int | None
 
-    def __init__(self, kind: ChatRole | ChatIntent, content: str):
-        if isinstance(kind, ChatRole):
-            self._intent = kind.intent
-        elif isinstance(kind, ChatIntent):
-            self._intent = kind
-        else:
-            raise TypeError
+    def __init__(self, intent: ChatIntent, content: str):
+        self._intent = intent
         self._content = content
         self._hash = None
-
-    @property
-    def role(self) -> ChatRole:
-        return self.intent.role
 
     @property
     def intent(self) -> ChatIntent:
@@ -58,7 +48,13 @@ class ChatMessage:
         return ChatBranch([self])
 
     def with_intent(self, intent: ChatIntent) -> ChatMessage:
-        return intent.message(self.content)
+        return ChatMessage(intent, self.content)
+
+    def binarize(self) -> ChatMessage:
+        """
+        Returns a new message with binarized intent (PROMPT or RESPONSE).
+        """
+        return self.with_intent(self.intent.binarize())
 
     def as_example(self) -> ChatMessage:
         return self.with_intent(self.intent.as_example())

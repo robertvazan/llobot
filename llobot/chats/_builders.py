@@ -36,7 +36,7 @@ class ChatBuilder:
             for message in what:
                 self.add(message)
         elif isinstance(what, ChatMessage):
-            if self and self[-1].role == what.role:
+            if self and self[-1].intent == what.intent:
                 self._messages[-1] = self[-1].with_postscript(what.content)
             else:
                 self._messages.append(what)
@@ -61,4 +61,3 @@ class ChatBuilder:
 
     def build(self) -> ChatBranch:
         return ChatBranch(self._messages)
-

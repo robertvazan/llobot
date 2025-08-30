@@ -1,7 +1,7 @@
 from __future__ import annotations
 import time
 import json
-from llobot.chats import ChatRole, ChatMessage, ChatBranch, ChatBuilder
+from llobot.chats import ChatIntent, ChatMessage, ChatBranch, ChatBuilder
 from llobot.models.streams import ModelStream
 
 def format_name(model: str):
@@ -14,19 +14,22 @@ def format_name(model: str):
     # It is unclear what model name syntax is supported, but chances are that unmodified model name will work.
     return model
 
-def encode_role(role: ChatRole) -> str:
-    if role == ChatRole.USER:
-        return 'user'
-    if role == ChatRole.MODEL:
+def encode_role(intent: ChatIntent) -> str:
+    if intent.binarize() == ChatIntent.RESPONSE:
         return 'assistant'
-    raise ValueError
+    else:
+        return 'user'
 
-def decode_role(data: str) -> ChatRole:
-    return next(role for role in ChatRole if encode_role(role) == data)
+def decode_role(data: str) -> ChatIntent:
+    if data == 'user':
+        return ChatIntent.PROMPT
+    if data == 'assistant':
+        return ChatIntent.RESPONSE
+    raise ValueError(f'Unknown role: {data}')
 
 def encode_message(message: ChatMessage) -> dict:
     return {
-        'role': encode_role(message.role),
+        'role': encode_role(message.intent),
         'content': message.content
     }
 
@@ -51,12 +54,12 @@ def _encode_event_defaults(model: str) -> dict:
         "choices": []
     }
 
-def encode_role_event(model: str, role: ChatRole) -> dict:
+def encode_role_event(model: str, intent: ChatIntent) -> dict:
     return _encode_event_defaults(model) | {
         "choices": [{
             "index": 0,
             "delta": {
-                "role": encode_role(role),
+                "role": encode_role(intent),
                 "content": ""
             },
             "finish_reason": None
@@ -95,7 +98,7 @@ def _format_event(data: dict) -> str:
     return f'data: {json.dumps(data)}'
 
 def format_stream(model: str, stream: ModelStream) -> Iterator[str]:
-    yield _format_event(encode_role_event(model, ChatRole.MODEL))
+    yield _format_event(encode_role_event(model, ChatIntent.RESPONSE))
     for token in stream:
         yield _format_event(encode_content_event(model, token))
     yield _format_event(encode_stop_event(model))
@@ -165,4 +168,3 @@ __all__ = [
     'encode_list',
     'decode_list',
 ]
-

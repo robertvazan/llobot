@@ -1,6 +1,6 @@
 from __future__ import annotations
 import json
-from llobot.chats import ChatRole, ChatMessage, ChatBranch, ChatBuilder
+from llobot.chats import ChatIntent, ChatMessage, ChatBranch, ChatBuilder
 from llobot.models.streams import ModelStream
 import llobot.text
 
@@ -15,19 +15,22 @@ def format_name(model: str):
         model += ':latest'
     return model
 
-def encode_role(role: ChatRole) -> str:
-    if role == ChatRole.USER:
-        return 'user'
-    if role == ChatRole.MODEL:
+def encode_role(intent: ChatIntent) -> str:
+    if intent.binarize() == ChatIntent.RESPONSE:
         return 'assistant'
-    raise ValueError
+    else:
+        return 'user'
 
-def decode_role(data: str) -> ChatRole:
-    return next(role for role in ChatRole if encode_role(role) == data)
+def decode_role(data: str) -> ChatIntent:
+    if data == 'user':
+        return ChatIntent.PROMPT
+    if data == 'assistant':
+        return ChatIntent.RESPONSE
+    raise ValueError(f"Unknown role: {data}")
 
 def encode_message(message: ChatMessage) -> dict:
     return {
-        'role': encode_role(message.role),
+        'role': encode_role(message.intent),
         'content': message.content
     }
 
@@ -43,11 +46,11 @@ def decode_chat(data: list) -> ChatBranch:
         chat.add(decode_message(item))
     return chat.build()
 
-def encode_content_event(model: str, role: ChatRole, token: str) -> dict:
+def encode_content_event(model: str, token: str) -> dict:
     return {
         'model': format_name(model),
         'message': {
-            'role': encode_role(role),
+            'role': encode_role(ChatIntent.RESPONSE),
             'content': token
         },
         'done': False
@@ -64,7 +67,7 @@ def decode_event(data: dict) -> str | None:
 
 def format_stream(model: str, stream: ModelStream) -> Iterator[str]:
     for token in stream:
-        yield json.dumps(encode_content_event(model, ChatRole.MODEL, token))
+        yield json.dumps(encode_content_event(model, token))
     yield json.dumps(encode_done_event(model))
 
 def parse_stream(lines: Iterator[str]) -> Iterator[str]:
