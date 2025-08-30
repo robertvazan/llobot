@@ -74,7 +74,7 @@ def echo(*, context_budget: int = 100_000, aliases: Iterable[str] = []) -> Model
         def context_budget(self) -> int:
             return self._context_budget
         def generate(self, prompt: ChatBranch) -> ModelStream:
-            return llobot.models.streams.completed(prompt.monolithic())
+            return llobot.models.streams.text(prompt.monolithic())
     return EchoModel(context_budget)
 
 __all__ = [

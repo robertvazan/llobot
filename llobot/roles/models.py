@@ -23,10 +23,11 @@ class RoleModel(Model):
         try:
             output = role.chat(prompt)
 
-            def on_error():
-                _logger.error(f'Exception while processing response stream in {role.name} role.', exc_info=True)
+            # def on_error():
+            #     _logger.error(f'Exception while processing response stream in {role.name} role.', exc_info=True)
 
-            return output | llobot.models.streams.handler(callback=on_error)
+            # return output | llobot.models.streams.handler(callback=on_error)
+            return output
         except Exception as ex:
             _logger.error(f'Exception in {role.name} role.', exc_info=True)
             return llobot.models.streams.exception(ex)
