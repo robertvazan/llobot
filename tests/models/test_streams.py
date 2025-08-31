@@ -1,28 +1,22 @@
 import pytest
-from llobot.models.streams import ModelStream, text, ok, error, exception
-
-def test_stream_concatenation():
-    stream1 = text("First part.")
-    stream2 = text("Second part.")
-    concatenated = stream1 + stream2
-    assert concatenated.response() == "First part.\n\nSecond part."
+from llobot.models.streams import text, ok, error, exception, buffer
 
 def test_text_stream():
     stream = text("This is a test.")
     chunks = list(stream)
     assert chunks == ["This is a test."]
-    assert stream.response() == "This is a test."
+    assert "".join(text("This is a test.")) == "This is a test."
 
 def test_text_stream_empty():
     stream = text("")
     chunks = list(stream)
     assert not chunks
-    assert stream.response() == ""
+    assert "".join(text("")) == ""
 
 def test_ok_error_streams():
-    assert text("Ready.").response() == "Ready."
-    assert ok("Done.").response() == "✅ Done."
-    assert error("Failed.").response() == "❌ Failed."
+    assert "".join(text("Ready.")) == "Ready."
+    assert "".join(ok("Done.")) == "✅ Done."
+    assert "".join(error("Failed.")) == "❌ Failed."
 
 def test_exception_stream():
     try:
@@ -31,11 +25,11 @@ def test_exception_stream():
         ex = e
 
     stream = exception(ex)
-    response = stream.response()
-    assert response.startswith("❌ `Something went wrong`\n\n<details>\n<summary>Stack trace</summary>")
-    assert "ValueError: Something went wrong" in response
-    assert "```" in response # check for code block
-    assert "</details>" in response
+    res = "".join(stream)
+    assert res.startswith("❌ `Something went wrong`\n\n<details>\n<summary>Stack trace</summary>")
+    assert "ValueError: Something went wrong" in res
+    assert "```" in res # check for code block
+    assert "</details>" in res
 
 def test_exception_stream_no_message():
     try:
@@ -44,5 +38,28 @@ def test_exception_stream_no_message():
         ex = e
 
     stream = exception(ex)
-    response = stream.response()
-    assert response.startswith("❌ `ValueError`\n\n<details>\n<summary>Stack trace</summary>")
+    res = "".join(stream)
+    assert res.startswith("❌ `ValueError`\n\n<details>\n<summary>Stack trace</summary>")
+
+def test_buffer():
+    """
+    Tests that the buffer consumes the stream in a background thread.
+    """
+    def producer_stream():
+        # This will run in a worker thread.
+        yield "one"
+        yield "two"
+
+    stream = buffer(producer_stream())
+    assert list(stream) == ["one", "two"]
+
+def test_buffer_exception():
+    def failing_stream():
+        yield "one"
+        raise ValueError("test error")
+
+    stream = buffer(failing_stream())
+    iterator = iter(stream)
+    assert next(iterator) == "one"
+    with pytest.raises(ValueError, match="test error"):
+        next(iterator)

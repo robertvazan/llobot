@@ -1,108 +1,62 @@
 from __future__ import annotations
 import traceback
+from typing import Iterable
+from collections.abc import Callable
+import threading
+from queue import Queue
 import llobot.text
 
-class ModelStream:
-    _response: str
-    _done: bool
-
-    def __init__(self):
-        self._response = ''
-        self._done = False
-
-    # Returns next chunk. Returns None when the response is complete.
-    def _receive(self) -> str | None:
-        return None
-
-    # Must tolerate multiple close() calls. Must tolerate broken connection.
-    def _close(self):
-        pass
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, exc_tb):
-        self._close()
-
-    def close(self):
-        self._close()
-
-    def receive(self) -> str | None:
-        if self._done:
-            return None
-        item = self._receive()
-        if item is None:
-            self._done = True
-            return None
-        self._response += item
-        return item
-
-    def receive_all(self):
-        while not self._done:
-            self.receive()
-
-    def __iter__(self) -> Iterator[str]:
-        while True:
-            token = self.receive()
-            if token is None:
-                break
-            yield token
-
-    def response(self) -> str:
-        self.receive_all()
-        return self._response
-
-    def __add__(self, second: ModelStream) -> ModelStream:
-        first = self
-        class ConcatenatedStream(ModelStream):
-            _separated: bool
-            def __init__(self):
-                super().__init__()
-                self._separated = False
-            def _receive(self) -> str | None:
-                token1 = first.receive()
-                if token1 is not None:
-                    return token1
-                token2 = second.receive()
-                if token2 is not None:
-                    if not self._separated and first.response():
-                        self._separated = True
-                        token2 = '\n\n' + token2
-                    return token2
-                return None
-            def _close(self):
-                first._close()
-                second._close()
-        return ConcatenatedStream()
+type ModelStream = Iterable[str]
 
 def text(response: str) -> ModelStream:
     """Creates a stream that yields a constant string."""
-    class TextStream(ModelStream):
-        _sent: bool
-        def __init__(self):
-            super().__init__()
-            self._sent = False
-        def _receive(self) -> str | None:
-            if self._sent or not response:
-                return None
-            self._sent = True
-            return response
-    return TextStream()
+    if response:
+        yield response
 
 def ok(response: str) -> ModelStream:
     """Creates a success status stream with a checkmark prefix."""
-    return text(f'✅ {response}')
+    yield from text(f'✅ {response}')
 
 def error(response: str) -> ModelStream:
     """Creates an error status stream with a cross mark prefix."""
-    return text(f'❌ {response}')
+    yield from text(f'❌ {response}')
 
 def exception(ex: Exception) -> ModelStream:
     """Creates an error stream from an exception, including a stack trace."""
     message = str(ex) or ex.__class__.__name__
     stack_trace = "".join(traceback.format_exception(ex)).strip()
     details = llobot.text.details('Stack trace', '', stack_trace)
-    return error(f'`{message}`\n\n{details}')
+    yield from error(f'`{message}`\n\n{details}')
+
+def buffer(stream: ModelStream) -> ModelStream:
+    """
+    Wraps a stream in a thread-safe queue.
+
+    The queue is populated in a separate thread by iterating over the provided stream.
+    The thread is started immediately when this function is called and terminates when iteration completes.
+    This is useful for timely consumption of resources like network connections.
+    If the iteration fails with an exception, this exception is propagated to the reader.
+    """
+    queue: Queue[str | None | Exception] = Queue()
+
+    def worker():
+        try:
+            for item in stream:
+                queue.put(item)
+        except Exception as e:
+            queue.put(e)
+        finally:
+            queue.put(None)
+
+    threading.Thread(target=worker, daemon=True).start()
+
+    while True:
+        item = queue.get()
+        if item is None:
+            break
+        if isinstance(item, Exception):
+            raise item
+        yield item
 
 __all__ = [
     'ModelStream',
@@ -110,4 +64,5 @@ __all__ = [
     'ok',
     'error',
     'exception',
+    'buffer',
 ]

@@ -7,48 +7,6 @@ from llobot.models.streams import ModelStream
 import llobot.models.openai
 import llobot.models.streams
 
-class _GeminiStream(ModelStream):
-    _iterator: Iterator[str]
-
-    def __init__(self,
-        client: genai.Client,
-        model: str,
-        prompt: ChatBranch,
-        thinking: int | None = None,
-    ):
-        super().__init__()
-        self._iterator = self._iterate(client, model, prompt, thinking)
-
-    def _iterate(self,
-        client: genai.Client,
-        model: str,
-        prompt: ChatBranch,
-        thinking: int | None = None,
-    ) -> Iterable[str]:
-        contents = []
-        for message in prompt:
-            if message.intent.binarize() == ChatIntent.PROMPT:
-                contents.append(types.UserContent(parts=[types.Part(text=message.content)]))
-            else:
-                contents.append(types.ModelContent(parts=[types.Part(text=message.content)]))
-        config = types.GenerateContentConfig()
-        if thinking is not None:
-            config.thinking_config = types.ThinkingConfig(thinking_budget=thinking)
-        stream = client.models.generate_content_stream(
-            model=model,
-            contents=contents,
-            config=config,
-        )
-        for chunk in stream:
-            if chunk.text:
-                yield chunk.text
-
-    def _receive(self) -> str | None:
-        try:
-            return next(self._iterator)
-        except StopIteration:
-            return None
-
 class _GeminiModel(Model):
     _client: genai.Client
     _name: str
@@ -113,12 +71,25 @@ class _GeminiModel(Model):
         return self._context_budget
 
     def generate(self, prompt: ChatBranch) -> ModelStream:
-        return _GeminiStream(
-            self._client,
-            self._name,
-            prompt,
-            self._thinking,
-        )
+        def _stream() -> ModelStream:
+            contents = []
+            for message in prompt:
+                if message.intent.binarize() == ChatIntent.PROMPT:
+                    contents.append(types.UserContent(parts=[types.Part(text=message.content)]))
+                else:
+                    contents.append(types.ModelContent(parts=[types.Part(text=message.content)]))
+            config = types.GenerateContentConfig()
+            if self._thinking is not None:
+                config.thinking_config = types.ThinkingConfig(thinking_budget=self._thinking)
+            stream = self._client.models.generate_content_stream(
+                model=self._name,
+                contents=contents,
+                config=config,
+            )
+            for chunk in stream:
+                if chunk.text:
+                    yield chunk.text
+        return llobot.models.streams.buffer(_stream())
 
 def create(name: str, **kwargs) -> Model:
     return _GeminiModel(name, **kwargs)

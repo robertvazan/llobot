@@ -19,18 +19,24 @@ class RoleModel(Model):
         return f'bot/{self._role.name}'
 
     def generate(self, prompt: ChatBranch) -> ModelStream:
-        role = self._role
+        """
+        Generates a response by invoking the role's chat method.
+
+        This method wraps the role's chat logic with error handling. It catches exceptions
+        during both the initial call to `role.chat()` and during the streaming of the response.
+        Exceptions are logged, and an error is streamed to the client.
+
+        Args:
+            prompt: The user's prompt as a chat branch.
+
+        Returns:
+            A model stream with the generated response
+        """
         try:
-            output = role.chat(prompt)
-
-            # def on_error():
-            #     _logger.error(f'Exception while processing response stream in {role.name} role.', exc_info=True)
-
-            # return output | llobot.models.streams.handler(callback=on_error)
-            return output
+            yield from self._role.chat(prompt)
         except Exception as ex:
-            _logger.error(f'Exception in {role.name} role.', exc_info=True)
-            return llobot.models.streams.exception(ex)
+            _logger.error(f'Exception in {self._role.name} role.', exc_info=True)
+            yield from llobot.models.streams.exception(ex)
 
 __all__ = [
     'RoleModel',

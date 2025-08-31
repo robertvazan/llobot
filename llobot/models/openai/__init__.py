@@ -6,26 +6,6 @@ from llobot.models import Model
 from llobot.models.streams import ModelStream
 import llobot.models.streams
 
-class _OpenAIStream(ModelStream):
-    def __init__(self, endpoint: str, auth: str, model: str, options: dict, prompt: ChatBranch):
-        super().__init__()
-        from llobot.models.openai import encoding
-        request = encoding.encode_request(model, options, prompt)
-        headers = {}
-        if auth:
-            headers['Authorization'] = f'Bearer {auth}'
-        self._http_response = requests.post(endpoint + '/chat/completions', stream=True, json=request, headers=headers)
-        self._http_response.raise_for_status()
-        if self._http_response.encoding is None:
-            self._http_response.encoding = 'utf-8'
-        self._iterator = encoding.parse_stream(self._http_response.iter_lines(decode_unicode=True))
-
-    def _receive(self) -> str | None:
-        return next(self._iterator, None)
-
-    def _close(self):
-        self._http_response.close()
-
 class _OpenAIModel(Model):
     _namespace: str
     _name: str
@@ -82,7 +62,18 @@ class _OpenAIModel(Model):
         return self._context_budget
 
     def generate(self, prompt: ChatBranch) -> ModelStream:
-        return _OpenAIStream(self._endpoint, self._auth, self._name, self.options, prompt)
+        def _stream() -> ModelStream:
+            from llobot.models.openai import encoding
+            request = encoding.encode_request(self._name, self.options, prompt)
+            headers = {}
+            if self._auth:
+                headers['Authorization'] = f'Bearer {self._auth}'
+            with requests.post(self._endpoint + '/chat/completions', stream=True, json=request, headers=headers) as http_response:
+                http_response.raise_for_status()
+                if http_response.encoding is None:
+                    http_response.encoding = 'utf-8'
+                yield from encoding.parse_stream(http_response.iter_lines(decode_unicode=True))
+        return llobot.models.streams.buffer(_stream())
 
 def proprietary(name: str, auth: str, **kwargs) -> Model:
     return _OpenAIModel(name, auth=auth, **kwargs)

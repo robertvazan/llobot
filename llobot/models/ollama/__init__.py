@@ -7,21 +7,6 @@ from llobot.models import Model
 from llobot.models.streams import ModelStream
 import llobot.models.streams
 
-class _OllamaStream(ModelStream):
-    def __init__(self, endpoint: str, model: str, options: dict, prompt: ChatBranch):
-        super().__init__()
-        from llobot.models.ollama import encoding
-        request = encoding.encode_request(model, options, prompt)
-        self._http_response = requests.post(endpoint + '/chat', stream=True, json=request)
-        self._http_response.raise_for_status()
-        self._iterator = encoding.parse_stream(self._http_response.iter_lines())
-
-    def _receive(self) -> str | None:
-        return next(self._iterator, None)
-
-    def _close(self):
-        self._http_response.close()
-
 class _OllamaModel(Model):
     # Normalized Ollama name: no ollama/ prefix and no :latest suffix.
     _name: str
@@ -82,9 +67,15 @@ class _OllamaModel(Model):
         return self._context_budget
 
     def generate(self, prompt: ChatBranch) -> ModelStream:
-        options = self.options
+        options = self.options.copy()
         del options['context_budget']
-        return _OllamaStream(self._endpoint, self._name, options, prompt)
+        def _stream() -> ModelStream:
+            from llobot.models.ollama import encoding
+            request = encoding.encode_request(self._name, options, prompt)
+            with requests.post(self._endpoint + '/chat', stream=True, json=request) as http_response:
+                http_response.raise_for_status()
+                yield from encoding.parse_stream(http_response.iter_lines())
+        return llobot.models.streams.buffer(_stream())
 
 # Default tag is :latest.
 def create(name: str, num_ctx: int, **kwargs) -> Model:

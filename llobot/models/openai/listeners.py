@@ -40,9 +40,9 @@ def _handler(models: ModelCatalog) -> type:
                     self.send_header('Content-Type', 'text/event-stream; charset=utf-8')
                     self.send_header('Cache-Control', 'no-cache')
                     self.end_headers()
-                    with model.generate(prompt) as stream:
-                        for line in encoding.format_stream(name, stream):
-                            self.wfile.write(bytes(line + '\n\n', "utf-8"))
+                    stream = model.generate(prompt)
+                    for line in encoding.format_stream(name, stream):
+                        self.wfile.write(bytes(line + '\n\n', "utf-8"))
                 except Exception as ex:
                     traceback.print_exception(ex)
                     raise ex
@@ -59,4 +59,3 @@ def create(port: int, models: ModelCatalog, *, host: str = '127.0.0.1') -> Model
 __all__ = [
     'create',
 ]
-

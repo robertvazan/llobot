@@ -5,67 +5,6 @@ from llobot.models import Model
 from llobot.models.streams import ModelStream
 import llobot.models.streams
 
-class _AnthropicStream(ModelStream):
-    _iterator: Iterator[str]
-
-    def __init__(self,
-        client: Anthropic,
-        model: str,
-        max_tokens: int,
-        prompt: ChatBranch,
-        cached: bool,
-        thinking: int | None,
-    ):
-        super().__init__()
-        self._iterator = self._iterate(client, model, max_tokens, prompt, cached, thinking)
-
-    def _iterate(self,
-        client: Anthropic,
-        model: str,
-        max_tokens: int,
-        prompt: ChatBranch,
-        cached: bool,
-        thinking: int | None,
-    ) -> Iterable[str]:
-        messages = []
-        for message in prompt:
-            messages.append({
-                'role': 'user' if message.intent.binarize() == ChatIntent.PROMPT else 'assistant',
-                'content': message.content,
-            })
-        # Skip the last message, which is the user's prompt, because it tends to be frequently edited.
-        cacheable = prompt[:-1]
-        if cached and cacheable:
-            breakpoints = [int(bp * cacheable.cost) for bp in (0.25, 0.5, 0.75, 1.0)]
-            cumulative = 0
-            for i, message in enumerate(cacheable):
-                cumulative += message.cost
-                if breakpoints and cumulative >= breakpoints[0]:
-                    messages[i]['content'] = [{'type': 'text', 'text': messages[i]['content'], 'cache_control': {'type': 'ephemeral'}}]
-                    breakpoints.pop(0)
-        parameters = {
-            'model': model,
-            'max_tokens': max_tokens,
-            'messages': messages,
-        }
-        if thinking is not None:
-            parameters['thinking'] = {
-                "type": "enabled",
-                "budget_tokens": thinking
-            }
-        with client.messages.stream(**parameters) as stream:
-            for chunk in stream.text_stream:
-                yield chunk
-
-    def _receive(self) -> str | None:
-        try:
-            return next(self._iterator)
-        except StopIteration:
-            return None
-
-    def _close(self):
-        self._iterator.close()
-
 class _AnthropicModel(Model):
     _client: Anthropic
     _name: str
@@ -139,14 +78,36 @@ class _AnthropicModel(Model):
         return self._context_budget
 
     def generate(self, prompt: ChatBranch) -> ModelStream:
-        return _AnthropicStream(
-            self._client,
-            self._name,
-            self._max_tokens,
-            prompt,
-            self._cached,
-            self._thinking,
-        )
+        def _stream() -> ModelStream:
+            messages = []
+            for message in prompt:
+                messages.append({
+                    'role': 'user' if message.intent.binarize() == ChatIntent.PROMPT else 'assistant',
+                    'content': message.content,
+                })
+            # Skip the last message, which is the user's prompt, because it tends to be frequently edited.
+            cacheable = prompt[:-1]
+            if self._cached and cacheable:
+                breakpoints = [int(bp * cacheable.cost) for bp in (0.25, 0.5, 0.75, 1.0)]
+                cumulative = 0
+                for i, message in enumerate(cacheable):
+                    cumulative += message.cost
+                    if breakpoints and cumulative >= breakpoints[0]:
+                        messages[i]['content'] = [{'type': 'text', 'text': messages[i]['content'], 'cache_control': {'type': 'ephemeral'}}]
+                        breakpoints.pop(0)
+            parameters = {
+                'model': self._name,
+                'max_tokens': self._max_tokens,
+                'messages': messages,
+            }
+            if self._thinking is not None:
+                parameters['thinking'] = {
+                    "type": "enabled",
+                    "budget_tokens": self._thinking
+                }
+            with self._client.messages.stream(**parameters) as stream:
+                yield from stream.text_stream
+        return llobot.models.streams.buffer(_stream())
 
 def create(name: str, **kwargs) -> Model:
     return _AnthropicModel(name, **kwargs)
