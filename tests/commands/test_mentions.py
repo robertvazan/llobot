@@ -63,12 +63,12 @@ def test_empty_commands():
     assert llobot.commands.mentions.parse('`@`') == [] # this is an inline code span
 
 def test_chat_message_input():
-    message = ChatIntent.PROMPT.message('this is a test with @a-mention')
+    message = ChatMessage(ChatIntent.PROMPT, 'this is a test with @a-mention')
     assert llobot.commands.mentions.parse(message) == ['a-mention']
 
 def test_chat_branch_input():
     branch = ChatBranch([
-        ChatIntent.PROMPT.message('first message with @one'),
-        ChatIntent.RESPONSE.message('second message with @`two`'),
+        ChatMessage(ChatIntent.PROMPT, 'first message with @one'),
+        ChatMessage(ChatIntent.RESPONSE, 'second message with @`two`'),
     ])
     assert llobot.commands.mentions.parse(branch) == ['one', 'two']

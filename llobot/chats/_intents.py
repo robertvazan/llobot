@@ -33,7 +33,3 @@ class ChatIntent(Enum):
             return self.EXAMPLE_RESPONSE
         else:
             return self.EXAMPLE_PROMPT
-
-    def message(self, content: str) -> 'ChatMessage':
-        from ._messages import ChatMessage
-        return ChatMessage(self, content)

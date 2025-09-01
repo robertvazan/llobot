@@ -41,7 +41,7 @@ class ChatBuilder:
             else:
                 self._messages.append(what)
         elif isinstance(what, ChatIntent):
-            self._messages.append(what.message(''))
+            self._messages.append(ChatMessage(what, ''))
         elif isinstance(what, str):
             self._messages[-1] = self[-1].with_postscript(what)
         elif what is None:

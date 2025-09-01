@@ -1,7 +1,7 @@
 from __future__ import annotations
 from functools import cache
 from datetime import datetime
-from llobot.chats import ChatBranch, ChatBuilder, ChatIntent
+from llobot.chats import ChatBranch, ChatBuilder, ChatIntent, ChatMessage
 from llobot.commands.chains import CommandChain
 from llobot.commands.projects import ProjectCommand
 from llobot.commands.retrievals import RetrievalCommand
@@ -181,7 +181,7 @@ class Editor(Role):
 
         compressed_delta = llobot.knowledge.deltas.diff_compress(initial_knowledge, delta)
         response_content = self._envelopes.format_all(compressed_delta)
-        synthetic_response = ChatIntent.RESPONSE.message(response_content)
+        synthetic_response = ChatMessage(ChatIntent.RESPONSE, response_content)
         example_chat = chat[0].branch() + synthetic_response
 
         self.save_example(example_chat, project)

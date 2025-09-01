@@ -1,7 +1,7 @@
 from __future__ import annotations
 from functools import cache
 import re
-from llobot.chats import ChatIntent, ChatBuilder, ChatBranch
+from llobot.chats import ChatIntent, ChatBuilder, ChatBranch, ChatMessage
 from llobot.prompts import Prompt
 
 class PromptFormatter:
@@ -23,8 +23,8 @@ def plain(affirmation: str = 'Okay.') -> PromptFormatter:
         if not prompt:
             return ChatBranch()
         chat = ChatBuilder()
-        chat.add(ChatIntent.SYSTEM.message(prompt))
-        chat.add(ChatIntent.AFFIRMATION.message(affirmation))
+        chat.add(ChatMessage(ChatIntent.SYSTEM, prompt))
+        chat.add(ChatMessage(ChatIntent.AFFIRMATION, affirmation))
         return chat.build()
     return create(render)
 
@@ -49,8 +49,8 @@ def reminder(
 
         content = '\n'.join(lines)
         chat = ChatBuilder()
-        chat.add(ChatIntent.SYSTEM.message(content))
-        chat.add(ChatIntent.AFFIRMATION.message(affirmation))
+        chat.add(ChatMessage(ChatIntent.SYSTEM, content))
+        chat.add(ChatMessage(ChatIntent.AFFIRMATION, affirmation))
         return chat.build()
 
     return create(render)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 from functools import cache, lru_cache
-from llobot.chats import ChatIntent, ChatBuilder, ChatBranch
+from llobot.chats import ChatIntent, ChatBuilder, ChatBranch, ChatMessage
 from llobot.knowledge import Knowledge
 from llobot.knowledge.deltas import KnowledgeDelta
 from llobot.knowledge.rankings import KnowledgeRanking
@@ -29,8 +29,8 @@ def granular(envelopes: EnvelopeFormatter = llobot.formatters.envelopes.standard
             for document in delta:
                 formatted = envelopes(document)
                 if formatted is not None:
-                    chat.add(ChatIntent.SYSTEM.message(formatted))
-                    chat.add(ChatIntent.AFFIRMATION.message(affirmation))
+                    chat.add(ChatMessage(ChatIntent.SYSTEM, formatted))
+                    chat.add(ChatMessage(ChatIntent.AFFIRMATION, affirmation))
             return chat.build()
 
     return GranularKnowledgeFormatter()
@@ -56,16 +56,16 @@ def chunked(
                     # If we've reached the minimum chunk size, emit the chunk
                     if size >= min_size:
                         chunk = llobot.text.concat(*buffer)
-                        chat.add(ChatIntent.SYSTEM.message(chunk))
-                        chat.add(ChatIntent.AFFIRMATION.message(affirmation))
+                        chat.add(ChatMessage(ChatIntent.SYSTEM, chunk))
+                        chat.add(ChatMessage(ChatIntent.AFFIRMATION, affirmation))
                         buffer = []
                         size = 0
 
             # Handle any remaining items in the last chunk
             if buffer:
                 chunk = llobot.text.concat(*buffer)
-                chat.add(ChatIntent.SYSTEM.message(chunk))
-                chat.add(ChatIntent.AFFIRMATION.message(affirmation))
+                chat.add(ChatMessage(ChatIntent.SYSTEM, chunk))
+                chat.add(ChatMessage(ChatIntent.AFFIRMATION, affirmation))
 
             return chat.build()
 

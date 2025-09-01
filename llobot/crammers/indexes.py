@@ -1,6 +1,6 @@
 from __future__ import annotations
 from functools import cache, lru_cache
-from llobot.chats import ChatBranch, ChatBuilder, ChatIntent
+from llobot.chats import ChatBranch, ChatBuilder, ChatIntent, ChatMessage
 from llobot.knowledge.scores import KnowledgeScores
 from llobot.knowledge.trees import KnowledgeTree
 from llobot.formatters.trees import TreeFormatter
@@ -79,8 +79,8 @@ def optional(
 
         # Check if it fits in budget
         chat = ChatBuilder()
-        chat.add(ChatIntent.SYSTEM.message(formatted_content))
-        chat.add(ChatIntent.AFFIRMATION.message(affirmation))
+        chat.add(ChatMessage(ChatIntent.SYSTEM, formatted_content))
+        chat.add(ChatMessage(ChatIntent.AFFIRMATION, affirmation))
         result = chat.build()
 
         if result.cost <= budget:

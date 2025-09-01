@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from llobot.chats import ChatIntent, ChatBranch, ChatBuilder
+from llobot.chats import ChatIntent, ChatBranch, ChatBuilder, ChatMessage
 import llobot.fs
 
 SUFFIX = '.md'
@@ -75,7 +75,7 @@ def parse(formatted: str) -> ChatBranch:
                 if intent:
                     if len(lines) < 2 or lines[0] or lines[-1]:
                         raise ValueError
-                    builder.add(intent.message('\n'.join(lines[1:-1])))
+                    builder.add(ChatMessage(intent, '\n'.join(lines[1:-1])))
                 intent = parse_intent(matched.group(1))
                 lines = []
                 first_message = False
@@ -87,12 +87,12 @@ def parse(formatted: str) -> ChatBranch:
     if intent:
         if len(lines) < 1 or lines[0]:
             raise ValueError
-        builder.add(intent.message('\n'.join(lines[1:])))
+        builder.add(ChatMessage(intent, '\n'.join(lines[1:])))
     return builder.build()
 
 def save(path: Path, chat: ChatBranch):
     llobot.fs.write_text(path, format(chat))
-    
+
 def load(path: Path) -> ChatBranch:
     return parse(llobot.fs.read_text(path))
 
