@@ -1,5 +1,6 @@
 import pytest
 from llobot.models.streams import text, ok, error, exception, buffer
+from llobot.chats import ChatIntent
 
 def test_text_stream():
     stream = text("This is a test.")
@@ -52,6 +53,26 @@ def test_buffer():
 
     stream = buffer(producer_stream())
     assert list(stream) == ["one", "two"]
+
+def test_buffer_multimessage():
+    """
+    Tests that the buffer can handle a multi-message stream.
+    """
+    def producer_stream():
+        yield ChatIntent.RESPONSE
+        yield "message one"
+        yield ChatIntent.AFFIRMATION
+        yield "message two"
+        yield " part two"
+
+    stream = buffer(producer_stream())
+    assert list(stream) == [
+        ChatIntent.RESPONSE,
+        "message one",
+        ChatIntent.AFFIRMATION,
+        "message two",
+        " part two",
+    ]
 
 def test_buffer_exception():
     def failing_stream():

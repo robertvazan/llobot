@@ -99,8 +99,9 @@ def _format_event(data: dict) -> str:
 
 def format_stream(model: str, stream: ModelStream) -> Iterator[str]:
     yield _format_event(encode_role_event(model, ChatIntent.RESPONSE))
-    for token in stream:
-        yield _format_event(encode_content_event(model, token))
+    for item in stream:
+        if isinstance(item, str):
+            yield _format_event(encode_content_event(model, item))
     yield _format_event(encode_stop_event(model))
     yield 'data: [DONE]'
 

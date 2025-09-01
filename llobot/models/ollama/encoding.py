@@ -66,8 +66,9 @@ def decode_event(data: dict) -> str | None:
     return data.get('message', {}).get('content')
 
 def format_stream(model: str, stream: ModelStream) -> Iterator[str]:
-    for token in stream:
-        yield json.dumps(encode_content_event(model, token))
+    for item in stream:
+        if isinstance(item, str):
+            yield json.dumps(encode_content_event(model, item))
     yield json.dumps(encode_done_event(model))
 
 def parse_stream(lines: Iterator[str]) -> Iterator[str]:

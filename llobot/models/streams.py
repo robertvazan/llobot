@@ -1,3 +1,22 @@
+"""
+ModelStream is a stream of tokens that can represent one or more messages.
+
+A ModelStream is an iterable of `str` and `ChatIntent` objects.
+String chunks are concatenated to form message content. `ChatIntent` objects
+mark the beginning of a new message.
+
+- If the stream starts with a `str`, the first message is implicitly of
+  `ChatIntent.RESPONSE` intent.
+- A new message starts when a `ChatIntent` is yielded.
+- A message ends when a new `ChatIntent` is yielded or the stream ends.
+- Empty messages are possible (two `ChatIntent`s in a row).
+- It is possible for two consecutive messages to have the same intent.
+- By convention, an initial `ChatIntent.RESPONSE` is omitted.
+
+Code that consumes streams and only expects a single message can simply
+filter out `ChatIntent` objects and concatenate the strings.
+"""
+
 from __future__ import annotations
 import traceback
 from typing import Iterable
@@ -5,8 +24,9 @@ from collections.abc import Callable
 import threading
 from queue import Queue
 import llobot.text
+from llobot.chats import ChatIntent
 
-type ModelStream = Iterable[str]
+type ModelStream = Iterable[str | ChatIntent]
 
 def text(response: str) -> ModelStream:
     """Creates a stream that yields a constant string."""
@@ -37,7 +57,7 @@ def buffer(stream: ModelStream) -> ModelStream:
     This is useful for timely consumption of resources like network connections.
     If the iteration fails with an exception, this exception is propagated to the reader.
     """
-    queue: Queue[str | None | Exception] = Queue()
+    queue: Queue[str | ChatIntent | None | Exception] = Queue()
 
     def worker():
         try:
