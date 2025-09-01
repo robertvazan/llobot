@@ -5,43 +5,13 @@ import llobot.fs
 
 SUFFIX = '.md'
 
-def format_intent(intent: ChatIntent) -> str:
-    if intent == ChatIntent.SYSTEM:
-        return 'System'
-    if intent == ChatIntent.AFFIRMATION:
-        return 'Affirmation'
-    if intent == ChatIntent.EXAMPLE_PROMPT:
-        return 'Example-Prompt'
-    if intent == ChatIntent.EXAMPLE_RESPONSE:
-        return 'Example-Response'
-    if intent == ChatIntent.PROMPT:
-        return 'Prompt'
-    if intent == ChatIntent.RESPONSE:
-        return 'Response'
-    raise ValueError
-
-def parse_intent(codename: str) -> ChatIntent:
-    if codename == 'System' or codename == 'Context':
-        return ChatIntent.SYSTEM
-    if codename == 'Affirmation':
-        return ChatIntent.AFFIRMATION
-    if codename == 'Example-Prompt':
-        return ChatIntent.EXAMPLE_PROMPT
-    if codename == 'Example-Response':
-        return ChatIntent.EXAMPLE_RESPONSE
-    if codename == 'Prompt':
-        return ChatIntent.PROMPT
-    if codename == 'Response':
-        return ChatIntent.RESPONSE
-    raise ValueError(f'Unknown intent: {codename}')
-
 _INTENT_RE = re.compile('> ([A-Z][-A-Za-z]*)')
 
 def format(chat: ChatBranch) -> str:
     lines = []
     for message in chat:
         lines.append('')
-        lines.append(f'> {format_intent(message.intent)}')
+        lines.append(f'> {message.intent}')
         lines.append('')
         for line in message.content.splitlines():
             matched = _INTENT_RE.fullmatch(line)
@@ -76,7 +46,7 @@ def parse(formatted: str) -> ChatBranch:
                     if len(lines) < 2 or lines[0] or lines[-1]:
                         raise ValueError
                     builder.add(ChatMessage(intent, '\n'.join(lines[1:-1])))
-                intent = parse_intent(matched.group(1))
+                intent = ChatIntent.parse(matched.group(1))
                 lines = []
                 first_message = False
         else:
@@ -98,8 +68,6 @@ def load(path: Path) -> ChatBranch:
 
 __all__ = [
     'SUFFIX',
-    'format_intent',
-    'parse_intent',
     'format',
     'parse',
     'save',
