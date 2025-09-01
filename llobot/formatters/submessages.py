@@ -56,6 +56,24 @@ class SubmessageFormatter:
         """
         raise NotImplementedError
 
+    def parse_chat(self, chat: ChatBranch) -> ChatBranch:
+        """
+        Parses submessages within RESPONSE messages of a chat branch.
+
+        Args:
+            chat: The chat branch to parse.
+
+        Returns:
+            A new `ChatBranch` with submessages expanded.
+        """
+        builder = ChatBuilder()
+        for message in chat:
+            if message.intent == ChatIntent.RESPONSE:
+                builder.add(self.parse(message.content))
+            else:
+                builder.add(message)
+        return builder.build()
+
 _BACKTICK_RE = re.compile(r'^(`{3,})')
 
 @cache

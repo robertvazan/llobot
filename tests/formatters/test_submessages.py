@@ -535,3 +535,86 @@ def test_format_stream_ends_with_intent():
         </details>
     """).strip()
     assert result == expected
+
+def test_parse_chat_empty():
+    formatter = standard_formatter()
+    chat = ChatBranch()
+    parsed = formatter.parse_chat(chat)
+    assert parsed == chat
+
+def test_parse_chat_no_response():
+    formatter = standard_formatter()
+    chat = ChatBranch([
+        ChatMessage(ChatIntent.SYSTEM, "System message."),
+        ChatMessage(ChatIntent.PROMPT, "User prompt.")
+    ])
+    parsed = formatter.parse_chat(chat)
+    assert parsed == chat
+
+def test_parse_chat_with_submessages():
+    formatter = standard_formatter()
+    response_content = dedent("""
+        This is a response.
+
+        <details>
+        <summary>Nested message: System</summary>
+
+        System prompt content.
+
+        </details>
+
+        Another response part.
+    """).strip()
+    chat = ChatBranch([
+        ChatMessage(ChatIntent.PROMPT, "User prompt."),
+        ChatMessage(ChatIntent.RESPONSE, response_content)
+    ])
+    parsed = formatter.parse_chat(chat)
+    expected = ChatBranch([
+        ChatMessage(ChatIntent.PROMPT, "User prompt."),
+        ChatMessage(ChatIntent.RESPONSE, "This is a response."),
+        ChatMessage(ChatIntent.SYSTEM, "System prompt content."),
+        ChatMessage(ChatIntent.RESPONSE, "Another response part.")
+    ])
+    assert parsed == expected
+
+def test_parse_chat_multiple_responses():
+    formatter = standard_formatter()
+    response1_content = dedent("""
+        <details>
+        <summary>Nested message: Affirmation</summary>
+
+        OK.
+
+        </details>
+    """).strip()
+    response2_content = "Just a simple response."
+    response3_content = dedent("""
+        Response part 1.
+        <details>
+        <summary>Nested message: System</summary>
+
+        System.
+
+        </details>
+    """).strip()
+
+    chat = ChatBranch([
+        ChatMessage(ChatIntent.PROMPT, "Prompt."),
+        ChatMessage(ChatIntent.RESPONSE, response1_content),
+        ChatMessage(ChatIntent.RESPONSE, response2_content),
+        ChatMessage(ChatIntent.PROMPT, "Another prompt."),
+        ChatMessage(ChatIntent.RESPONSE, response3_content),
+    ])
+
+    parsed = formatter.parse_chat(chat)
+
+    expected = ChatBranch([
+        ChatMessage(ChatIntent.PROMPT, "Prompt."),
+        ChatMessage(ChatIntent.AFFIRMATION, "OK."),
+        ChatMessage(ChatIntent.RESPONSE, "Just a simple response."),
+        ChatMessage(ChatIntent.PROMPT, "Another prompt."),
+        ChatMessage(ChatIntent.RESPONSE, "Response part 1."),
+        ChatMessage(ChatIntent.SYSTEM, "System."),
+    ])
+    assert parsed == expected
