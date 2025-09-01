@@ -19,6 +19,8 @@ languages
     Supports file extension mapping and content-based detection
 prompts
     Prompt formatters for assembling complete LLM prompts
+submessages
+    Submessage formatters for packing a chat branch into one message
 trees
     Tree formatters for hierarchical knowledge presentation
     Renders directory structures and file hierarchies
