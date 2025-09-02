@@ -1,8 +1,10 @@
 from __future__ import annotations
 from llobot.commands.chains import CommandChain
 from llobot.commands.projects import ProjectCommand
+from llobot.commands.cutoffs import CutoffCommand
 from llobot.crammers.examples import ExampleCrammer
 from llobot.environments import Environment
+from llobot.environments.cutoffs import CutoffEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.sessions import SessionEnv
 from llobot.formatters.prompts import PromptFormatter
@@ -37,12 +39,13 @@ class Assistant(Role):
         self._crammer = crammer
         self._prompt_formatter = prompt_formatter
         self._reminder_formatter = reminder_formatter
-        self._command_chain = CommandChain(ProjectCommand(projects))
+        self._command_chain = CommandChain(ProjectCommand(projects), CutoffCommand())
 
     def chat(self, prompt: ChatBranch) -> ModelStream:
         env = Environment()
         self._command_chain.handle_chat(prompt, env)
         project = env[ProjectEnv].get()
+        cutoff = env[CutoffEnv].get()
 
         budget = self.model.context_budget
         builder = ChatBuilder()
@@ -54,7 +57,7 @@ class Assistant(Role):
         reminder_chat = self._reminder_formatter(self._system)
         budget -= reminder_chat.cost
 
-        recent_examples = self.recent_examples(project)
+        recent_examples = self.recent_examples(project, cutoff)
         examples = self._crammer(recent_examples, budget)
         builder.add(examples)
 

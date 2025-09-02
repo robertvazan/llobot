@@ -5,7 +5,9 @@ from llobot.chats import ChatBranch, ChatBuilder, ChatIntent, ChatMessage
 from llobot.commands.chains import CommandChain
 from llobot.commands.projects import ProjectCommand
 from llobot.commands.retrievals import RetrievalCommand
+from llobot.commands.cutoffs import CutoffCommand
 from llobot.environments import Environment
+from llobot.environments.cutoffs import CutoffEnv
 from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.retrievals import RetrievalsEnv
@@ -102,13 +104,14 @@ class Editor(Role):
         self._prompt_formatter = prompt_formatter
         self._reminder_formatter = reminder_formatter
         self._example_share = example_share
-        self._command_chain = CommandChain(ProjectCommand(projects), RetrievalCommand())
+        self._command_chain = CommandChain(ProjectCommand(projects), RetrievalCommand(), CutoffCommand())
 
     def chat(self, prompt: ChatBranch) -> ModelStream:
         env = Environment()
         self._command_chain.handle_chat(prompt, env)
         project = env[ProjectEnv].get()
         knowledge = env[KnowledgeEnv].get()
+        cutoff = env[CutoffEnv].get()
         budget = self.model.context_budget
 
         # System prompt
@@ -121,7 +124,7 @@ class Editor(Role):
 
         # Examples with associated updates
         history_budget = int(budget * self._example_share)
-        recent_examples = self.recent_examples(project)
+        recent_examples = self.recent_examples(project, cutoff)
         history_chat, history_paths = self._edit_crammer(recent_examples, knowledge, history_budget)
 
         # Knowledge scores

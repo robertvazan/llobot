@@ -5,6 +5,7 @@ from __future__ import annotations
 from functools import cached_property
 from llobot.environments import EnvBase
 from llobot.environments.projects import ProjectEnv
+from llobot.environments.cutoffs import CutoffEnv
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 
@@ -16,13 +17,13 @@ class KnowledgeEnv(EnvBase):
     def _knowledge(self) -> Knowledge:
         project = self.env[ProjectEnv].get()
         if project:
-            project.refresh()
-            return project.knowledge()
+            cutoff = self.env[CutoffEnv].get()
+            return project.knowledge(cutoff)
         return Knowledge()
 
     def get(self) -> Knowledge:
         """
-        Gets the project's knowledge, refreshing it on first access.
+        Gets the project's knowledge at the configured cutoff.
 
         Returns:
             The project's knowledge, or empty knowledge if no project is selected.

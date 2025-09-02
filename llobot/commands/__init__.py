@@ -16,6 +16,8 @@ projects
     Command to select a project.
 retrievals
     Command to retrieve a document.
+cutoffs
+    Command to set knowledge cutoff.
 """
 from __future__ import annotations
 from llobot.chats import ChatBranch, ChatIntent

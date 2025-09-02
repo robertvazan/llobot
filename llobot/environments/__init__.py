@@ -15,6 +15,8 @@ retrievals
     Document retrievals.
 sessions
     Session messages.
+cutoffs
+    Knowledge cutoff timestamp.
 """
 from __future__ import annotations
 import weakref
