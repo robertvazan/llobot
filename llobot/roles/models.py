@@ -4,6 +4,7 @@ from llobot.chats import ChatBranch
 from llobot.models import Model
 from llobot.models.streams import ModelStream
 from llobot.roles import Role
+from llobot.formatters.submessages import SubmessageFormatter
 import llobot.models.streams
 import llobot.formatters.submessages
 
@@ -11,9 +12,18 @@ _logger = logging.getLogger(__name__)
 
 class RoleModel(Model):
     _role: Role
+    _formatter: SubmessageFormatter
 
-    def __init__(self, role: Role):
+    def __init__(self, role: Role, formatter: SubmessageFormatter | None = None):
+        """
+        Initializes the RoleModel.
+
+        Args:
+            role: The role to wrap.
+            formatter: The submessage formatter to use. Defaults to the standard one.
+        """
         self._role = role
+        self._formatter = formatter or llobot.formatters.submessages.standard()
 
     @property
     def name(self) -> str:
@@ -38,10 +48,9 @@ class RoleModel(Model):
             A model stream with the generated response
         """
         try:
-            formatter = llobot.formatters.submessages.standard()
-            parsed_prompt = formatter.parse_chat(prompt)
+            parsed_prompt = self._formatter.parse_chat(prompt)
             stream = self._role.chat(parsed_prompt)
-            yield from formatter.format_stream(stream)
+            yield from self._formatter.format_stream(stream)
         except Exception as ex:
             _logger.error(f'Exception in {self._role.name} role.', exc_info=True)
             yield from llobot.models.streams.exception(ex)
