@@ -15,7 +15,7 @@ class ChatBranch:
     def messages(self) -> list[ChatMessage]:
         return self._messages.copy()
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return str(self._messages)
 
     def __bool__(self) -> bool:

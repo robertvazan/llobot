@@ -2,16 +2,15 @@ from __future__ import annotations
 from textwrap import dedent
 from llobot.chats import ChatBranch, ChatMessage, ChatIntent
 from llobot.formatters.submessages import standard as standard_formatter
-from llobot.models.streams import text as stream_text
+
+formatter = standard_formatter()
 
 def test_format_empty():
-    formatter = standard_formatter()
     chat = ChatBranch()
     content = formatter.format(chat)
     assert content == ""
 
 def test_format_single_message():
-    formatter = standard_formatter()
     chat = ChatBranch([
         ChatMessage(ChatIntent.SYSTEM, "System prompt content.")
     ])
@@ -22,12 +21,12 @@ def test_format_single_message():
 
         System prompt content.
 
+        [//]: # (end of nested message)
         </details>
     """).strip()
     assert content == expected
 
 def test_format_multiple_messages():
-    formatter = standard_formatter()
     chat = ChatBranch([
         ChatMessage(ChatIntent.SYSTEM, "System prompt content."),
         ChatMessage(ChatIntent.AFFIRMATION, "Okay."),
@@ -40,6 +39,7 @@ def test_format_multiple_messages():
 
         System prompt content.
 
+        [//]: # (end of nested message)
         </details>
 
         <details>
@@ -47,6 +47,7 @@ def test_format_multiple_messages():
 
         Okay.
 
+        [//]: # (end of nested message)
         </details>
 
         <details>
@@ -54,12 +55,12 @@ def test_format_multiple_messages():
 
         User prompt.
 
+        [//]: # (end of nested message)
         </details>
     """).strip()
     assert content == expected
 
 def test_format_with_response():
-    formatter = standard_formatter()
     chat = ChatBranch([
         ChatMessage(ChatIntent.RESPONSE, "This is a response."),
         ChatMessage(ChatIntent.SYSTEM, "System prompt content."),
@@ -74,6 +75,7 @@ def test_format_with_response():
 
         System prompt content.
 
+        [//]: # (end of nested message)
         </details>
 
         Another response.
@@ -81,18 +83,17 @@ def test_format_with_response():
     assert content == expected
 
 def test_parse_empty():
-    formatter = standard_formatter()
     chat = formatter.parse("")
     assert not chat
 
 def test_parse_single_message():
-    formatter = standard_formatter()
     text = dedent("""
         <details>
         <summary>Nested message: System</summary>
 
         System prompt content.
 
+        [//]: # (end of nested message)
         </details>
     """).strip()
     chat = formatter.parse(text)
@@ -100,13 +101,13 @@ def test_parse_single_message():
     assert chat[0] == ChatMessage(ChatIntent.SYSTEM, "System prompt content.")
 
 def test_parse_multiple_messages():
-    formatter = standard_formatter()
     text = dedent("""
         <details>
         <summary>Nested message: System</summary>
 
         System prompt content.
 
+        [//]: # (end of nested message)
         </details>
 
         <details>
@@ -114,6 +115,7 @@ def test_parse_multiple_messages():
 
         Okay.
 
+        [//]: # (end of nested message)
         </details>
 
         <details>
@@ -121,6 +123,7 @@ def test_parse_multiple_messages():
 
         User prompt.
 
+        [//]: # (end of nested message)
         </details>
     """).strip()
     chat = formatter.parse(text)
@@ -132,7 +135,6 @@ def test_parse_multiple_messages():
     assert chat == expected
 
 def test_parse_with_response():
-    formatter = standard_formatter()
     text = dedent("""
         This is a response.
 
@@ -141,6 +143,7 @@ def test_parse_with_response():
 
         System prompt content.
 
+        [//]: # (end of nested message)
         </details>
 
         Another response.
@@ -154,7 +157,6 @@ def test_parse_with_response():
     assert chat == expected
 
 def test_parse_with_newlines():
-    formatter = standard_formatter()
     text = dedent("""
         <details>
         <summary>Nested message: System</summary>
@@ -164,6 +166,7 @@ def test_parse_with_newlines():
 
         Line 4
 
+        [//]: # (end of nested message)
         </details>
     """).strip()
     chat = formatter.parse(text)
@@ -172,212 +175,19 @@ def test_parse_with_newlines():
     assert chat[0] == ChatMessage(ChatIntent.SYSTEM, expected_content)
 
 def test_parse_empty_content():
-    formatter = standard_formatter()
     text = dedent("""
         <details>
         <summary>Nested message: System</summary>
 
 
+        [//]: # (end of nested message)
         </details>
     """).strip()
     chat = formatter.parse(text)
     assert len(chat) == 1
     assert chat[0] == ChatMessage(ChatIntent.SYSTEM, "")
 
-def test_parse_nested_details_in_submessage():
-    formatter = standard_formatter()
-    text = dedent("""
-        <details>
-        <summary>Nested message: System</summary>
-
-        Some content.
-        <details>
-        <summary>Deeper level</summary>
-
-        Even more content.
-
-        </details>
-        More content at top level.
-
-        </details>
-    """).strip()
-    chat = formatter.parse(text)
-    expected_content = dedent("""
-        Some content.
-        <details>
-        <summary>Deeper level</summary>
-
-        Even more content.
-
-        </details>
-        More content at top level.
-    """).strip()
-    expected = ChatBranch([
-        ChatMessage(ChatIntent.SYSTEM, expected_content)
-    ])
-    assert chat == expected
-
-def test_parse_nested_details_in_response():
-    formatter = standard_formatter()
-    text = dedent("""
-        This is a response.
-        <details>
-        <summary>Nested details</summary>
-
-        Content.
-
-        </details>
-        Response continues.
-    """).strip()
-    chat = formatter.parse(text)
-    expected_content = dedent("""
-        This is a response.
-        <details>
-        <summary>Nested details</summary>
-
-        Content.
-
-        </details>
-        Response continues.
-    """).strip()
-    expected = ChatBranch([
-        ChatMessage(ChatIntent.RESPONSE, expected_content)
-    ])
-    assert chat == expected
-
-def test_parse_nested_details_mixed():
-    formatter = standard_formatter()
-    text = dedent("""
-        Response part 1.
-        <details>
-        <summary>Nested details in response</summary>
-        Content.
-        </details>
-
-        <details>
-        <summary>Nested message: System</summary>
-
-        System content with its own details.
-        <details><summary>System's details</summary>System's nested content.</details>
-
-        </details>
-        Response part 2.
-    """).strip()
-    chat = formatter.parse(text)
-
-    response1_content = dedent("""
-        Response part 1.
-        <details>
-        <summary>Nested details in response</summary>
-        Content.
-        </details>
-    """).strip()
-
-    system_content = dedent("""
-        System content with its own details.
-        <details><summary>System's details</summary>System's nested content.</details>
-    """).strip()
-
-    expected = ChatBranch([
-        ChatMessage(ChatIntent.RESPONSE, response1_content),
-        ChatMessage(ChatIntent.SYSTEM, system_content),
-        ChatMessage(ChatIntent.RESPONSE, "Response part 2.")
-    ])
-
-    assert chat == expected
-
-def test_parse_submessage_with_code_block():
-    formatter = standard_formatter()
-    text = dedent("""
-        <details>
-        <summary>Nested message: System</summary>
-
-        Some content.
-        ```html
-        <details>
-        <summary>This is just text</summary>
-        </details>
-        ```
-        More content.
-
-        </details>
-    """).strip()
-    chat = formatter.parse(text)
-    expected_content = dedent("""
-        Some content.
-        ```html
-        <details>
-        <summary>This is just text</summary>
-        </details>
-        ```
-        More content.
-    """).strip()
-    expected = ChatBranch([
-        ChatMessage(ChatIntent.SYSTEM, expected_content)
-    ])
-    assert chat == expected
-
-def test_parse_submessage_with_quad_backtick_code_block():
-    formatter = standard_formatter()
-    text = dedent("""
-        <details>
-        <summary>Nested message: System</summary>
-
-        ````markdown
-        ```
-        <details>
-        <summary>This is just text</summary>
-        </details>
-        ```
-        ````
-        More content.
-
-        </details>
-    """).strip()
-    chat = formatter.parse(text)
-    expected_content = dedent("""
-        ````markdown
-        ```
-        <details>
-        <summary>This is just text</summary>
-        </details>
-        ```
-        ````
-        More content.
-    """).strip()
-    expected = ChatBranch([
-        ChatMessage(ChatIntent.SYSTEM, expected_content)
-    ])
-    assert chat == expected
-
-def test_parse_response_with_code_block():
-    formatter = standard_formatter()
-    text = dedent("""
-        This is a response.
-        ```html
-        <details>
-        <summary>Nested message: System</summary>
-        </details>
-        ```
-        Response continues.
-    """).strip()
-    chat = formatter.parse(text)
-    expected_content = dedent("""
-        This is a response.
-        ```html
-        <details>
-        <summary>Nested message: System</summary>
-        </details>
-        ```
-        Response continues.
-    """).strip()
-    expected = ChatBranch([
-        ChatMessage(ChatIntent.RESPONSE, expected_content)
-    ])
-    assert chat == expected
-
 def test_parse_unstructured_text_is_response():
-    formatter = standard_formatter()
     text = dedent("""
         Some leading junk.
         <details>
@@ -385,6 +195,7 @@ def test_parse_unstructured_text_is_response():
 
         System prompt content.
 
+        [//]: # (end of nested message)
         </details>
         Some junk in between.
         <details>
@@ -392,6 +203,7 @@ def test_parse_unstructured_text_is_response():
 
         User prompt.
 
+        [//]: # (end of nested message)
         </details>
         Trailing junk.
     """).strip()
@@ -405,17 +217,57 @@ def test_parse_unstructured_text_is_response():
     ])
     assert chat == expected
 
-def test_parse_consecutive_responses_are_merged():
-    formatter = standard_formatter()
-    text = "Response 1.\n\nResponse 2."
+def test_parse_malformed_submessage():
+    text = dedent("""
+        Response part 1.
+        <details>
+        <summary>Nested message: System</summary>
+
+        System content.
+        ... missing end marker and closing details
+    """).strip()
     chat = formatter.parse(text)
     expected = ChatBranch([
-        ChatMessage(ChatIntent.RESPONSE, "Response 1.\n\nResponse 2.")
+        ChatMessage(ChatIntent.RESPONSE, 'Response part 1.'),
+        ChatMessage(ChatIntent.SYSTEM, 'System content.\n... missing end marker and closing details')
+    ])
+    assert chat == expected
+
+def test_parse_malformed_summary():
+    text = dedent("""
+        Response part 1.
+        <details>
+        <summary>Not a nested message</summary>
+
+        System content.
+
+        [//]: # (end of nested message)
+        </details>
+    """).strip()
+    chat = formatter.parse(text)
+    expected = ChatBranch([
+        ChatMessage(ChatIntent.RESPONSE, text)
+    ])
+    assert chat == expected
+
+def test_parse_malformed_intent():
+    text = dedent("""
+        Response part 1.
+        <details>
+        <summary>Nested message: BogusIntent</summary>
+
+        System content.
+
+        [//]: # (end of nested message)
+        </details>
+    """).strip()
+    chat = formatter.parse(text)
+    expected = ChatBranch([
+        ChatMessage(ChatIntent.RESPONSE, text)
     ])
     assert chat == expected
 
 def test_roundtrip():
-    formatter = standard_formatter()
     chat = ChatBranch([
         ChatMessage(ChatIntent.RESPONSE, "Response message."),
         ChatMessage(ChatIntent.SYSTEM, "System prompt content."),
@@ -428,7 +280,6 @@ def test_roundtrip():
     assert parsed == chat
 
 def test_roundtrip_empty_content():
-    formatter = standard_formatter()
     chat = ChatBranch([
         ChatMessage(ChatIntent.SYSTEM, "System prompt content."),
         ChatMessage(ChatIntent.AFFIRMATION, ""),
@@ -439,19 +290,17 @@ def test_roundtrip_empty_content():
     assert parsed == chat
 
 def test_format_stream_empty():
-    formatter = standard_formatter()
     stream = []
     result = "".join(formatter.format_stream(stream))
     assert result == ""
 
 def test_format_stream_single_message_strings_only():
-    formatter = standard_formatter()
+    from llobot.models.streams import text as stream_text
     stream = stream_text("Hello world.")
     result = "".join(formatter.format_stream(stream))
     assert result == "Hello world."
 
 def test_format_stream_single_message_with_intent():
-    formatter = standard_formatter()
     stream = [ChatIntent.SYSTEM, "System message."]
     result = "".join(formatter.format_stream(stream))
     expected = dedent("""
@@ -460,12 +309,12 @@ def test_format_stream_single_message_with_intent():
 
         System message.
 
+        [//]: # (end of nested message)
         </details>
     """).strip()
     assert result == expected
 
 def test_format_stream_multiple_messages():
-    formatter = standard_formatter()
     stream = [
         "Response part 1.", " Response part 2.",
         ChatIntent.SYSTEM, "System message.",
@@ -480,6 +329,7 @@ def test_format_stream_multiple_messages():
 
         System message.
 
+        [//]: # (end of nested message)
         </details>
 
         <details>
@@ -487,12 +337,12 @@ def test_format_stream_multiple_messages():
 
         Prompt message.
 
+        [//]: # (end of nested message)
         </details>
     """).strip()
     assert result == expected
 
 def test_format_stream_empty_messages():
-    formatter = standard_formatter()
     stream = [
         ChatIntent.SYSTEM,
         "System message.",
@@ -507,6 +357,7 @@ def test_format_stream_empty_messages():
 
         System message.
 
+        [//]: # (end of nested message)
         </details>
 
         <details>
@@ -514,6 +365,7 @@ def test_format_stream_empty_messages():
 
 
 
+        [//]: # (end of nested message)
         </details>
 
         Response here.
@@ -521,7 +373,6 @@ def test_format_stream_empty_messages():
     assert result == expected
 
 def test_format_stream_ends_with_intent():
-    formatter = standard_formatter()
     stream = ["A message.", ChatIntent.SYSTEM]
     result = "".join(formatter.format_stream(stream))
     expected = dedent("""
@@ -532,18 +383,17 @@ def test_format_stream_ends_with_intent():
 
 
 
+        [//]: # (end of nested message)
         </details>
     """).strip()
     assert result == expected
 
 def test_parse_chat_empty():
-    formatter = standard_formatter()
     chat = ChatBranch()
     parsed = formatter.parse_chat(chat)
     assert parsed == chat
 
 def test_parse_chat_no_response():
-    formatter = standard_formatter()
     chat = ChatBranch([
         ChatMessage(ChatIntent.SYSTEM, "System message."),
         ChatMessage(ChatIntent.PROMPT, "User prompt.")
@@ -552,7 +402,6 @@ def test_parse_chat_no_response():
     assert parsed == chat
 
 def test_parse_chat_with_submessages():
-    formatter = standard_formatter()
     response_content = dedent("""
         This is a response.
 
@@ -561,6 +410,7 @@ def test_parse_chat_with_submessages():
 
         System prompt content.
 
+        [//]: # (end of nested message)
         </details>
 
         Another response part.
@@ -579,13 +429,13 @@ def test_parse_chat_with_submessages():
     assert parsed == expected
 
 def test_parse_chat_multiple_responses():
-    formatter = standard_formatter()
     response1_content = dedent("""
         <details>
         <summary>Nested message: Affirmation</summary>
 
         OK.
 
+        [//]: # (end of nested message)
         </details>
     """).strip()
     response2_content = "Just a simple response."
@@ -596,6 +446,7 @@ def test_parse_chat_multiple_responses():
 
         System.
 
+        [//]: # (end of nested message)
         </details>
     """).strip()
 

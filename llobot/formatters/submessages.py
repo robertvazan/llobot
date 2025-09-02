@@ -74,8 +74,6 @@ class SubmessageFormatter:
                 builder.add(message)
         return builder.build()
 
-_BACKTICK_RE = re.compile(r'^(`{3,})')
-
 @cache
 def details() -> SubmessageFormatter:
     """
@@ -96,13 +94,7 @@ def details() -> SubmessageFormatter:
 
     Nested message content
 
-    </details>
-
-    <details>
-    <summary>Nested message: Affirmation</summary>
-
-    Okay
-
+    [//]: # (end of nested message)
     </details>
 
     Following response content
@@ -124,7 +116,7 @@ def details() -> SubmessageFormatter:
                     submessages.append(message.content)
                 else:
                     summary = f'Nested message: {message.intent}'
-                    block = f'<details>\n<summary>{summary}</summary>\n\n{message.content}\n\n</details>'
+                    block = f'<details>\n<summary>{summary}</summary>\n\n{message.content}\n\n[//]: # (end of nested message)\n</details>'
                     submessages.append(block)
 
             # Join consecutive submessages with an empty line.
@@ -137,7 +129,7 @@ def details() -> SubmessageFormatter:
             for item in stream:
                 if isinstance(item, ChatIntent):
                     if in_details:
-                        yield '\n\n</details>'
+                        yield '\n\n[//]: # (end of nested message)\n</details>'
                         in_details = False
 
                     if not is_first_message:
@@ -154,68 +146,64 @@ def details() -> SubmessageFormatter:
                     yield item
 
             if in_details:
-                yield '\n\n</details>'
+                yield '\n\n[//]: # (end of nested message)\n</details>'
 
         def parse(self, formatted: str) -> ChatBranch:
             builder = ChatBuilder()
-            in_submessage = False
-            details_depth = 0
-            current_intent = None
-            content_lines = []
-            in_code_block = False
-            backtick_count = 0
+            state = 'response'
+            intent = None
+            lines = []
 
             def flush_response():
-                content = '\n'.join(content_lines).strip()
+                content = '\n'.join(lines).strip()
                 if content:
                     builder.add(ChatMessage(ChatIntent.RESPONSE, content))
-                content_lines.clear()
+                lines.clear()
+
+            def flush_submessage():
+                content = '\n'.join(lines).strip()
+                builder.add(ChatMessage(intent, content))
+                lines.clear()
 
             for line in formatted.splitlines():
-                if in_code_block:
-                    if line == '`' * backtick_count:
-                        in_code_block = False
-                    content_lines.append(line)
-                    continue
-
-                match = _BACKTICK_RE.match(line)
-                if match:
-                    in_code_block = True
-                    backtick_count = len(match.group(1))
-                    content_lines.append(line)
-                    continue
-
-                if line == '<details>':
-                    details_depth += 1
-                    content_lines.append(line)
-                elif line == '</details>':
-                    if in_submessage and details_depth == 1:
-                        message_content = '\n'.join(content_lines).strip()
-                        builder.add(ChatMessage(current_intent, message_content))
-                        content_lines.clear()
-                        in_submessage = False
-                        current_intent = None
-                        details_depth -= 1
-                    else:
-                        details_depth = max(0, details_depth - 1)
-                        content_lines.append(line)
-                elif line.startswith('<summary>Nested message: ') and line.endswith('</summary>'):
-                    if not in_submessage and details_depth == 1 and content_lines and content_lines[-1] == '<details>':
-                        summary_content = line.removeprefix('<summary>Nested message: ').removesuffix('</summary>')
+                if state == 'response':
+                    if line == '<details>':
+                        state = 'details'
+                    lines.append(line)
+                elif state == 'details':
+                    if line.startswith('<summary>Nested message: ') and line.endswith('</summary>'):
+                        summary = line.removeprefix('<summary>Nested message: ').removesuffix('</summary>')
                         try:
-                            intent = ChatIntent.parse(summary_content)
-                            content_lines.pop()  # remove '<details>'
+                            intent = ChatIntent.parse(summary)
+                            lines.pop()
                             flush_response()
-                            in_submessage = True
-                            current_intent = intent
+                            state = 'submessage'
                         except ValueError:
-                            content_lines.append(line)
+                            lines.append(line)
+                            state = 'response'
                     else:
-                        content_lines.append(line)
-                else:
-                    content_lines.append(line)
+                        lines.append(line)
+                        state = 'response'
+                elif state == 'submessage':
+                    if line == '[//]: # (end of nested message)':
+                        state = 'end_marker'
+                    else:
+                        lines.append(line)
+                elif state == 'end_marker':
+                    if line == '</details>':
+                        flush_submessage()
+                        intent = None
+                        state = 'response'
+                    else:
+                        lines.append('[//]: # (end of nested message)')
+                        lines.append(line)
+                        state = 'submessage'
 
-            flush_response()
+            if state in ['submessage', 'end_marker']:
+                flush_submessage()
+            else:
+                flush_response()
+
             return builder.build()
 
     return DetailsSubmessageFormatter()

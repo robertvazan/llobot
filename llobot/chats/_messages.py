@@ -27,7 +27,7 @@ class ChatMessage:
     def cost(self) -> int:
         return len(self.content) + MESSAGE_OVERHEAD
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return f'{self.intent}: {self.content}'
 
     def __eq__(self, other) -> bool:
