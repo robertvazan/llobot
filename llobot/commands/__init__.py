@@ -81,7 +81,8 @@ class Command:
         Parses and executes commands from all messages in a chat.
 
         Session recording is enabled for the last message in the chat.
-        This method also reorders prompt-session message pairs to session-prompt pairs.
+        The chat is normalized to an alternating sequence of prompts and responses
+        before processing. This includes reordering of prompt-session message pairs.
 
         Args:
             chat: The chat branch to process.
@@ -89,23 +90,10 @@ class Command:
         """
         import llobot.commands.mentions
 
-        messages = chat.messages
-        # Reorder prompt-session pairs.
-        reordered = []
-        i = 0
-        while i < len(messages):
-            if (i + 1 < len(messages) and
-                    messages[i].intent == ChatIntent.PROMPT and
-                    messages[i+1].intent == ChatIntent.SESSION):
-                reordered.append(messages[i+1])
-                reordered.append(messages[i])
-                i += 2
-            else:
-                reordered.append(messages[i])
-                i += 1
+        processed_chat = chat.binarize()
 
-        for i, message in enumerate(reordered):
-            if i == len(reordered) - 1:
+        for i, message in enumerate(processed_chat):
+            if i == len(processed_chat) - 1:
                 env[SessionEnv].record()
             commands = llobot.commands.mentions.parse(message)
             self.handle_all(commands, env)

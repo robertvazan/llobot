@@ -64,7 +64,8 @@ class _OpenAIModel(Model):
     def generate(self, prompt: ChatBranch) -> ModelStream:
         def _stream() -> ModelStream:
             from llobot.models.openai import encoding
-            request = encoding.encode_request(self._name, self.options, prompt)
+            sanitized_prompt = prompt.binarize(last=ChatIntent.PROMPT)
+            request = encoding.encode_request(self._name, self.options, sanitized_prompt)
             headers = {}
             if self._auth:
                 headers['Authorization'] = f'Bearer {self._auth}'

@@ -80,13 +80,14 @@ class _AnthropicModel(Model):
     def generate(self, prompt: ChatBranch) -> ModelStream:
         def _stream() -> ModelStream:
             messages = []
-            for message in prompt:
+            sanitized_prompt = prompt.binarize(last=ChatIntent.PROMPT)
+            for message in sanitized_prompt:
                 messages.append({
-                    'role': 'user' if message.intent.binarize() == ChatIntent.PROMPT else 'assistant',
+                    'role': 'user' if message.intent == ChatIntent.PROMPT else 'assistant',
                     'content': message.content,
                 })
             # Skip the last message, which is the user's prompt, because it tends to be frequently edited.
-            cacheable = prompt[:-1]
+            cacheable = sanitized_prompt[:-1]
             if self._cached and cacheable:
                 breakpoints = [int(bp * cacheable.cost) for bp in (0.25, 0.5, 0.75, 1.0)]
                 cumulative = 0

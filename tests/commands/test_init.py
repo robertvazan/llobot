@@ -79,11 +79,11 @@ def test_command_handle_chat_reorder():
     chat = ChatBranch([
         ChatMessage(ChatIntent.PROMPT, "msg @p1"),
         ChatMessage(ChatIntent.SESSION, "msg @s1"),
+        ChatMessage(ChatIntent.RESPONSE, "msg @r1"),
         ChatMessage(ChatIntent.PROMPT, "msg @p2"),
-        ChatMessage(ChatIntent.PROMPT, "msg @p3"),
-        ChatMessage(ChatIntent.SESSION, "msg @s3"),
+        ChatMessage(ChatIntent.SESSION, "msg @s2"),
     ])
 
     cmd.handle_chat(chat, env)
 
-    assert handled_commands_from_messages == [['s1'], ['p1'], ['p2'], ['s3'], ['p3']]
+    assert handled_commands_from_messages == [['s1'], [], ['p1'], ['r1'], ['s2'], [], ['p2']]

@@ -73,8 +73,9 @@ class _GeminiModel(Model):
     def generate(self, prompt: ChatBranch) -> ModelStream:
         def _stream() -> ModelStream:
             contents = []
-            for message in prompt:
-                if message.intent.binarize() == ChatIntent.PROMPT:
+            sanitized_prompt = prompt.binarize(last=ChatIntent.PROMPT)
+            for message in sanitized_prompt:
+                if message.intent == ChatIntent.PROMPT:
                     contents.append(types.UserContent(parts=[types.Part(text=message.content)]))
                 else:
                     contents.append(types.ModelContent(parts=[types.Part(text=message.content)]))

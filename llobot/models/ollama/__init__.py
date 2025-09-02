@@ -71,7 +71,8 @@ class _OllamaModel(Model):
         del options['context_budget']
         def _stream() -> ModelStream:
             from llobot.models.ollama import encoding
-            request = encoding.encode_request(self._name, options, prompt)
+            sanitized_prompt = prompt.binarize(last=ChatIntent.PROMPT)
+            request = encoding.encode_request(self._name, options, sanitized_prompt)
             with requests.post(self._endpoint + '/chat', stream=True, json=request) as http_response:
                 http_response.raise_for_status()
                 yield ChatIntent.RESPONSE
