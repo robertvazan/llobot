@@ -1,7 +1,7 @@
 from __future__ import annotations
 from functools import cache
 import requests
-from llobot.chats import ChatBranch
+from llobot.chats import ChatBranch, ChatIntent
 from llobot.models import Model
 from llobot.models.streams import ModelStream
 import llobot.models.streams
@@ -72,6 +72,7 @@ class _OpenAIModel(Model):
                 http_response.raise_for_status()
                 if http_response.encoding is None:
                     http_response.encoding = 'utf-8'
+                yield ChatIntent.RESPONSE
                 yield from encoding.parse_stream(http_response.iter_lines(decode_unicode=True))
         return llobot.models.streams.buffer(_stream())
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 from functools import cache
 import json
 import requests
-from llobot.chats import ChatBranch
+from llobot.chats import ChatBranch, ChatIntent
 from llobot.models import Model
 from llobot.models.streams import ModelStream
 import llobot.models.streams
@@ -74,6 +74,7 @@ class _OllamaModel(Model):
             request = encoding.encode_request(self._name, options, prompt)
             with requests.post(self._endpoint + '/chat', stream=True, json=request) as http_response:
                 http_response.raise_for_status()
+                yield ChatIntent.RESPONSE
                 yield from encoding.parse_stream(http_response.iter_lines())
         return llobot.models.streams.buffer(_stream())
 

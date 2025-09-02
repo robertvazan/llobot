@@ -50,16 +50,3 @@ def test_command_chain_second_handles():
     assert chain.handle("test", env)
     assert cmd1.was_called
     assert cmd2.was_called
-
-def test_command_chain_call_unhandled():
-    """Tests that CommandChain.__call__ raises when no command handles the text."""
-    chain = CommandChain(MockCommand(False), MockCommand(False))
-    env = Environment()
-    with pytest.raises(ValueError, match="Unrecognized: test"):
-        chain("test", env)
-
-def test_command_chain_call_handled():
-    """Tests that CommandChain.__call__ does not raise when a command handles the text."""
-    chain = CommandChain(MockCommand(False), MockCommand(True))
-    env = Environment()
-    chain("test", env)  # Should not raise

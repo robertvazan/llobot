@@ -7,6 +7,7 @@ class ChatIntent(Enum):
     # System messages include everything prepended to user prompt, whether static content or prompt-dependent retrievals.
     # The only exception is few-shot examples, which have their own intent types.
     SYSTEM = 'System'
+    SESSION = 'Session'
     AFFIRMATION = 'Affirmation'
     EXAMPLE_PROMPT = 'Example-Prompt'
     EXAMPLE_RESPONSE = 'Example-Response'
@@ -27,6 +28,8 @@ class ChatIntent(Enum):
         """
         if codename == 'System':
             return ChatIntent.SYSTEM
+        if codename == 'Session':
+            return ChatIntent.SESSION
         if codename == 'Affirmation':
             return ChatIntent.AFFIRMATION
         if codename == 'Example-Prompt':
@@ -43,7 +46,7 @@ class ChatIntent(Enum):
         """
         Reduces the intent to either PROMPT or RESPONSE.
         """
-        if self in [self.SYSTEM, self.EXAMPLE_PROMPT, self.PROMPT]:
+        if self in [self.SYSTEM, self.SESSION, self.EXAMPLE_PROMPT, self.PROMPT]:
             return ChatIntent.PROMPT
         if self in [self.AFFIRMATION, self.EXAMPLE_RESPONSE, self.RESPONSE]:
             return ChatIntent.RESPONSE

@@ -86,6 +86,7 @@ class _GeminiModel(Model):
                 contents=contents,
                 config=config,
             )
+            yield ChatIntent.RESPONSE
             for chunk in stream:
                 if chunk.text:
                     yield chunk.text

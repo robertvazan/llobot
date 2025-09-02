@@ -18,7 +18,9 @@ retrievals
     Command to retrieve a document.
 """
 from __future__ import annotations
+from llobot.chats import ChatBranch, ChatIntent
 from llobot.environments import Environment
+from llobot.environments.sessions import SessionEnv
 
 class Command:
     """
@@ -44,27 +46,67 @@ class Command:
         """
         return False
 
-    def __call__(self, text: str | list[str], env: Environment):
+    def handle_or_fail(self, text: str, env: Environment):
         """
-        Executes the command(s).
-
-        This is a convenience method that calls `handle` and raises an
-        exception if the command is not recognized. If a list of commands
-        is provided, it will attempt to handle each one.
+        Executes the command or raises an exception if it is not recognized.
 
         Args:
-            text: The unparsed command string or a list of them.
+            text: The unparsed command string.
             env: The environment to manipulate.
 
         Raises:
-            ValueError: If a command is not handled.
+            ValueError: If the command is not handled.
         """
-        if isinstance(text, str):
-            if not self.handle(text, env):
-                raise ValueError(f'Unrecognized: {text}')
-        else:
-            for t in text:
-                self(t, env)
+        if not self.handle(text, env):
+            raise ValueError(f'Unrecognized: {text}')
+
+    def handle_all(self, texts: list[str], env: Environment):
+        """
+        Executes a list of commands.
+
+        Args:
+            texts: A list of unparsed command strings.
+            env: The environment to manipulate.
+
+        Raises:
+            ValueError: If any command is not handled.
+        """
+        for text in texts:
+            self.handle_or_fail(text, env)
+
+    def handle_chat(self, chat: ChatBranch, env: Environment):
+        """
+        Parses and executes commands from all messages in a chat.
+
+        Session recording is enabled for the last message in the chat.
+        This method also reorders prompt-session message pairs to session-prompt pairs.
+
+        Args:
+            chat: The chat branch to process.
+            env: The environment to manipulate.
+        """
+        import llobot.commands.mentions
+
+        messages = chat.messages
+        # Reorder prompt-session pairs.
+        reordered = []
+        i = 0
+        while i < len(messages):
+            if (i + 1 < len(messages) and
+                    messages[i].intent == ChatIntent.PROMPT and
+                    messages[i+1].intent == ChatIntent.SESSION):
+                reordered.append(messages[i+1])
+                reordered.append(messages[i])
+                i += 2
+            else:
+                reordered.append(messages[i])
+                i += 1
+
+        for i, message in enumerate(reordered):
+            if i == len(reordered) - 1:
+                env[SessionEnv].record()
+            commands = llobot.commands.mentions.parse(message)
+            self.handle_all(commands, env)
 
 __all__ = [
     'Command',

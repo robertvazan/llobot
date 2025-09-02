@@ -4,6 +4,7 @@ from llobot.commands.projects import ProjectCommand
 from llobot.crammers.examples import ExampleCrammer
 from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
+from llobot.environments.sessions import SessionEnv
 from llobot.formatters.prompts import PromptFormatter
 from llobot.prompts import Prompt
 from llobot.roles import Role
@@ -40,8 +41,7 @@ class Assistant(Role):
 
     def chat(self, prompt: ChatBranch) -> ModelStream:
         env = Environment()
-        commands = llobot.commands.mentions.parse(prompt)
-        self._command_chain(commands, env)
+        self._command_chain.handle_chat(prompt, env)
         project = env[ProjectEnv].get()
 
         budget = self.model.context_budget
@@ -63,12 +63,12 @@ class Assistant(Role):
 
         context = builder.build()
         assembled_prompt = context + prompt
-        return self.model.generate(assembled_prompt)
+        yield from env[SessionEnv].stream()
+        yield from self.model.generate(assembled_prompt)
 
     def handle_ok(self, chat: ChatBranch, cutoff: datetime):
         env = Environment()
-        commands = llobot.commands.mentions.parse(chat)
-        self._command_chain(commands, env)
+        self._command_chain.handle_chat(chat, env)
         project = env[ProjectEnv].get()
         self.save_example(chat, project)
 

@@ -13,6 +13,8 @@ knowledge
     Knowledge base for selected project.
 retrievals
     Document retrievals.
+sessions
+    Session messages.
 """
 from __future__ import annotations
 import weakref

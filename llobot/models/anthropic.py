@@ -106,6 +106,7 @@ class _AnthropicModel(Model):
                     "budget_tokens": self._thinking
                 }
             with self._client.messages.stream(**parameters) as stream:
+                yield ChatIntent.RESPONSE
                 yield from stream.text_stream
         return llobot.models.streams.buffer(_stream())
 

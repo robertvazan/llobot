@@ -11,7 +11,6 @@ mark the beginning of a new message.
 - A message ends when a new `ChatIntent` is yielded or the stream ends.
 - Empty messages are possible (two `ChatIntent`s in a row).
 - It is possible for two consecutive messages to have the same intent.
-- By convention, an initial `ChatIntent.RESPONSE` is omitted.
 
 Code that consumes streams and only expects a single message can simply
 filter out `ChatIntent` objects and concatenate the strings.
@@ -24,7 +23,7 @@ from collections.abc import Callable
 import threading
 from queue import Queue
 import llobot.text
-from llobot.chats import ChatIntent
+from llobot.chats import ChatIntent, ChatMessage
 
 type ModelStream = Iterable[str | ChatIntent]
 
@@ -32,6 +31,12 @@ def text(response: str) -> ModelStream:
     """Creates a stream that yields a constant string."""
     if response:
         yield response
+
+def message(msg: ChatMessage) -> ModelStream:
+    """Creates a stream that yields a single message."""
+    yield msg.intent
+    if msg.content:
+        yield msg.content
 
 def ok(response: str) -> ModelStream:
     """Creates a success status stream with a checkmark prefix."""
@@ -81,6 +86,7 @@ def buffer(stream: ModelStream) -> ModelStream:
 __all__ = [
     'ModelStream',
     'text',
+    'message',
     'ok',
     'error',
     'exception',
