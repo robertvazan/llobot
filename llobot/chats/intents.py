@@ -4,6 +4,12 @@ from enum import Enum
 # Fine-grained message type, so that we can recognize different parts of the conversation.
 # Role can be always determined automatically from intent.
 class ChatIntent(Enum):
+    """
+    Specifies the type and purpose of a chat message.
+
+    This enum provides a fine-grained classification of messages, allowing different
+    parts of a conversation to be identified and handled appropriately.
+    """
     # System messages include everything prepended to user prompt, whether static content or prompt-dependent retrievals.
     # The only exception is few-shot examples, which have their own intent types.
     SYSTEM = 'System'
@@ -43,8 +49,21 @@ class ChatIntent(Enum):
         raise ValueError(f'Unknown intent: {codename}')
 
     def as_example(self) -> ChatIntent:
+        """
+        Converts this intent to its corresponding example intent.
+
+        Prompt-like intents are converted to `EXAMPLE_PROMPT`, and response-like
+        intents are converted to `EXAMPLE_RESPONSE`.
+
+        Returns:
+            The example version of the intent.
+        """
         import llobot.chats.binarization
         if llobot.chats.binarization.binarize_intent(self) == ChatIntent.RESPONSE:
-            return self.EXAMPLE_RESPONSE
+            return ChatIntent.EXAMPLE_RESPONSE
         else:
-            return self.EXAMPLE_PROMPT
+            return ChatIntent.EXAMPLE_PROMPT
+
+__all__ = [
+    'ChatIntent',
+]

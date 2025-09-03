@@ -4,15 +4,28 @@ from llobot.chats.intents import ChatIntent
 from llobot.chats.messages import ChatMessage
 
 class ChatBranch:
+    """
+    Represents an immutable sequence of chat messages.
+
+    A ChatBranch is a list-like object that holds ChatMessage instances. It provides
+    methods for accessing, combining, and transforming branches.
+    """
     _messages: list[ChatMessage]
     _hash: int | None
 
     def __init__(self, messages: list[ChatMessage] = []):
+        """
+        Initializes a new ChatBranch.
+
+        Args:
+            messages: A list of ChatMessage objects.
+        """
         self._messages = messages
         self._hash = None
 
     @property
     def messages(self) -> list[ChatMessage]:
+        """A copy of the list of messages in this branch."""
         return self._messages.copy()
 
     def __repr__(self) -> str:
@@ -36,10 +49,12 @@ class ChatBranch:
 
     @property
     def cost(self) -> int:
+        """The total estimated cost of all messages in the branch."""
         return sum([message.cost for message in self], 0)
 
     @property
     def pretty_cost(self) -> str:
+        """A human-readable string representing the cost of the branch."""
         cost = self.cost
         kb = cost / 1000
         if kb < 10:
@@ -58,6 +73,9 @@ class ChatBranch:
         return any((text in message.content) for message in self)
 
     def __add__(self, suffix: ChatBranch | ChatMessage | None) -> ChatBranch:
+        """
+        Concatenates this branch with another branch or a single message.
+        """
         if suffix is None:
             return self
         if isinstance(suffix, ChatMessage):
@@ -65,18 +83,26 @@ class ChatBranch:
         return ChatBranch(self._messages + suffix._messages)
 
     def to_builder(self) -> 'ChatBuilder':
+        """Creates a ChatBuilder initialized with the messages from this branch."""
         from llobot.chats.builders import ChatBuilder
         builder = ChatBuilder()
         builder.add(self)
         return builder
 
     def as_example(self) -> ChatBranch:
+        """Converts all messages in the branch to their example versions."""
         return ChatBranch([message.as_example() for message in self])
 
     def monolithic(self) -> str:
+        """
+        Returns a single-string representation of the entire branch.
+        """
         return llobot.text.concat(*(message.monolithic() for message in self))
 
     def __and__(self, other: ChatBranch) -> ChatBranch:
+        """
+        Finds the common prefix between this branch and another.
+        """
         from llobot.chats.builders import ChatBuilder
         shared = ChatBuilder()
         for message1, message2 in zip(self, other):
@@ -85,3 +111,7 @@ class ChatBranch:
             else:
                 break
         return shared.build()
+
+__all__ = [
+    'ChatBranch',
+]

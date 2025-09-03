@@ -1,3 +1,8 @@
+"""
+Serialization of chat branches to and from Markdown format.
+
+The format uses blockquotes to denote message metadata, like intent.
+"""
 import re
 from pathlib import Path
 from llobot.chats.intents import ChatIntent
@@ -11,6 +16,17 @@ SUFFIX = '.md'
 _INTENT_RE = re.compile('> ([A-Z][-A-Za-z]*)')
 
 def format(chat: ChatBranch) -> str:
+    """
+    Serializes a chat branch into a Markdown string.
+
+    Each message is preceded by a blockquote indicating its intent, e.g., `> Prompt`.
+
+    Args:
+        chat: The chat branch to format.
+
+    Returns:
+        The Markdown representation of the chat.
+    """
     lines = []
     for message in chat:
         lines.append('')
@@ -30,6 +46,20 @@ def format(chat: ChatBranch) -> str:
     return ''.join([l + '\n' for l in lines])
 
 def parse(formatted: str) -> ChatBranch:
+    """
+    Parses a chat branch from its Markdown representation.
+
+    This is the reverse of `format()`.
+
+    Args:
+        formatted: The Markdown string to parse.
+
+    Returns:
+        The parsed chat branch.
+
+    Raises:
+        ValueError: If the format is invalid.
+    """
     builder = ChatBuilder()
     intent = None
     lines = None
@@ -64,9 +94,25 @@ def parse(formatted: str) -> ChatBranch:
     return builder.build()
 
 def save(path: Path, chat: ChatBranch):
+    """
+    Saves a chat branch to a Markdown file.
+
+    Args:
+        path: The path to the file.
+        chat: The chat branch to save.
+    """
     llobot.fs.write_text(path, format(chat))
 
 def load(path: Path) -> ChatBranch:
+    """
+    Loads a chat branch from a Markdown file.
+
+    Args:
+        path: The path to the file.
+
+    Returns:
+        The loaded chat branch.
+    """
     return parse(llobot.fs.read_text(path))
 
 __all__ = [

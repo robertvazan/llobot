@@ -22,5 +22,3 @@ archives
 markdown
     Handles serialization of chats to/from Markdown format.
 """
-
-__all__ = []
