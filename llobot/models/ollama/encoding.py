@@ -3,6 +3,7 @@ import json
 from llobot.chats import ChatIntent, ChatMessage, ChatBranch, ChatBuilder
 from llobot.models.streams import ModelStream
 import llobot.text
+import llobot.chats.binarization
 
 def format_name(model: str):
     # This is Ollama protocol, so don't qualify models coming from Ollama registry.
@@ -16,7 +17,7 @@ def format_name(model: str):
     return model
 
 def encode_role(intent: ChatIntent) -> str:
-    if intent.binarize() == ChatIntent.RESPONSE:
+    if llobot.chats.binarization.binarize_intent(intent) == ChatIntent.RESPONSE:
         return 'assistant'
     else:
         return 'user'

@@ -4,6 +4,7 @@ from llobot.chats import ChatIntent, ChatBranch
 from llobot.models import Model
 from llobot.models.streams import ModelStream
 import llobot.models.streams
+import llobot.chats.binarization
 
 class _AnthropicModel(Model):
     _client: Anthropic
@@ -80,7 +81,7 @@ class _AnthropicModel(Model):
     def generate(self, prompt: ChatBranch) -> ModelStream:
         def _stream() -> ModelStream:
             messages = []
-            sanitized_prompt = prompt.binarize(last=ChatIntent.PROMPT)
+            sanitized_prompt = llobot.chats.binarization.binarize_chat(prompt, last=ChatIntent.PROMPT)
             for message in sanitized_prompt:
                 messages.append({
                     'role': 'user' if message.intent == ChatIntent.PROMPT else 'assistant',

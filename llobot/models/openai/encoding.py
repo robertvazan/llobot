@@ -3,6 +3,7 @@ import time
 import json
 from llobot.chats import ChatIntent, ChatMessage, ChatBranch, ChatBuilder
 from llobot.models.streams import ModelStream
+import llobot.chats.binarization
 
 def format_name(model: str):
     # This is OpenAI protocol, so don't qualify proprietary models released by OpenAI.
@@ -15,7 +16,7 @@ def format_name(model: str):
     return model
 
 def encode_role(intent: ChatIntent) -> str:
-    if intent.binarize() == ChatIntent.RESPONSE:
+    if llobot.chats.binarization.binarize_intent(intent) == ChatIntent.RESPONSE:
         return 'assistant'
     else:
         return 'user'

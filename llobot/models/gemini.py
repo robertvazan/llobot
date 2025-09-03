@@ -6,6 +6,7 @@ from llobot.models import Model
 from llobot.models.streams import ModelStream
 import llobot.models.openai
 import llobot.models.streams
+import llobot.chats.binarization
 
 class _GeminiModel(Model):
     _client: genai.Client
@@ -73,7 +74,7 @@ class _GeminiModel(Model):
     def generate(self, prompt: ChatBranch) -> ModelStream:
         def _stream() -> ModelStream:
             contents = []
-            sanitized_prompt = prompt.binarize(last=ChatIntent.PROMPT)
+            sanitized_prompt = llobot.chats.binarization.binarize_chat(prompt, last=ChatIntent.PROMPT)
             for message in sanitized_prompt:
                 if message.intent == ChatIntent.PROMPT:
                     contents.append(types.UserContent(parts=[types.Part(text=message.content)]))

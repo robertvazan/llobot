@@ -23,6 +23,7 @@ from __future__ import annotations
 from llobot.chats import ChatBranch, ChatIntent
 from llobot.environments import Environment
 from llobot.environments.sessions import SessionEnv
+import llobot.chats.binarization
 
 class Command:
     """
@@ -90,7 +91,7 @@ class Command:
         """
         import llobot.commands.mentions
 
-        processed_chat = chat.binarize()
+        processed_chat = llobot.chats.binarization.binarize_chat(chat)
 
         for i, message in enumerate(processed_chat):
             if i == len(processed_chat) - 1:

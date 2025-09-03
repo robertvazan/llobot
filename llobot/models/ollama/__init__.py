@@ -6,6 +6,7 @@ from llobot.chats import ChatBranch, ChatIntent
 from llobot.models import Model
 from llobot.models.streams import ModelStream
 import llobot.models.streams
+import llobot.chats.binarization
 
 class _OllamaModel(Model):
     # Normalized Ollama name: no ollama/ prefix and no :latest suffix.
@@ -71,7 +72,7 @@ class _OllamaModel(Model):
         del options['context_budget']
         def _stream() -> ModelStream:
             from llobot.models.ollama import encoding
-            sanitized_prompt = prompt.binarize(last=ChatIntent.PROMPT)
+            sanitized_prompt = llobot.chats.binarization.binarize_chat(prompt, last=ChatIntent.PROMPT)
             request = encoding.encode_request(self._name, options, sanitized_prompt)
             with requests.post(self._endpoint + '/chat', stream=True, json=request) as http_response:
                 http_response.raise_for_status()

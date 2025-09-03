@@ -5,6 +5,7 @@ from llobot.chats import ChatBranch, ChatIntent
 from llobot.models import Model
 from llobot.models.streams import ModelStream
 import llobot.models.streams
+import llobot.chats.binarization
 
 class _OpenAIModel(Model):
     _namespace: str
@@ -64,7 +65,7 @@ class _OpenAIModel(Model):
     def generate(self, prompt: ChatBranch) -> ModelStream:
         def _stream() -> ModelStream:
             from llobot.models.openai import encoding
-            sanitized_prompt = prompt.binarize(last=ChatIntent.PROMPT)
+            sanitized_prompt = llobot.chats.binarization.binarize_chat(prompt, last=ChatIntent.PROMPT)
             request = encoding.encode_request(self._name, self.options, sanitized_prompt)
             headers = {}
             if self._auth:

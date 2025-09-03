@@ -50,12 +50,6 @@ class ChatMessage:
     def with_intent(self, intent: ChatIntent) -> ChatMessage:
         return ChatMessage(intent, self.content)
 
-    def binarize(self) -> ChatMessage:
-        """
-        Returns a new message with binarized intent (PROMPT or RESPONSE).
-        """
-        return self.with_intent(self.intent.binarize())
-
     def as_example(self) -> ChatMessage:
         return self.with_intent(self.intent.as_example())
 

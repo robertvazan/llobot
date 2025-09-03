@@ -42,18 +42,9 @@ class ChatIntent(Enum):
             return ChatIntent.RESPONSE
         raise ValueError(f'Unknown intent: {codename}')
 
-    def binarize(self) -> ChatIntent:
-        """
-        Reduces the intent to either PROMPT or RESPONSE.
-        """
-        if self in [self.SYSTEM, self.SESSION, self.EXAMPLE_PROMPT, self.PROMPT]:
-            return ChatIntent.PROMPT
-        if self in [self.AFFIRMATION, self.EXAMPLE_RESPONSE, self.RESPONSE]:
-            return ChatIntent.RESPONSE
-        raise ValueError
-
     def as_example(self) -> ChatIntent:
-        if self.binarize() == ChatIntent.RESPONSE:
+        import llobot.chats.binarization
+        if llobot.chats.binarization.binarize_intent(self) == ChatIntent.RESPONSE:
             return self.EXAMPLE_RESPONSE
         else:
             return self.EXAMPLE_PROMPT
