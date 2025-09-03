@@ -3,7 +3,8 @@ Session messages.
 """
 from __future__ import annotations
 import llobot.text
-from llobot.chats import ChatIntent, ChatMessage
+from llobot.chats.intents import ChatIntent
+from llobot.chats.messages import ChatMessage
 from llobot.environments import EnvBase
 from llobot.models.streams import ModelStream
 import llobot.models.streams

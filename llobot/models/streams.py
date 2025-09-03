@@ -23,7 +23,8 @@ from collections.abc import Callable
 import threading
 from queue import Queue
 import llobot.text
-from llobot.chats import ChatIntent, ChatMessage
+from llobot.chats.intents import ChatIntent
+from llobot.chats.messages import ChatMessage
 
 type ModelStream = Iterable[str | ChatIntent]
 

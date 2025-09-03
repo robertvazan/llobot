@@ -1,6 +1,8 @@
 from __future__ import annotations
 from textwrap import dedent
-from llobot.chats import ChatBranch, ChatMessage, ChatIntent
+from llobot.chats.branches import ChatBranch
+from llobot.chats.messages import ChatMessage
+from llobot.chats.intents import ChatIntent
 from llobot.formatters.submessages import standard as standard_formatter
 
 formatter = standard_formatter()

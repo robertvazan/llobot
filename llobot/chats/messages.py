@@ -1,6 +1,6 @@
 from __future__ import annotations
 import llobot.text
-from ._intents import ChatIntent
+from llobot.chats.intents import ChatIntent
 
 # Guesstimate of how many chars are consumed per message by typical chat format.
 MESSAGE_OVERHEAD: int = 10
@@ -44,7 +44,7 @@ class ChatMessage:
         return text in self.content
 
     def branch(self) -> 'ChatBranch':
-        from ._branches import ChatBranch
+        from llobot.chats.branches import ChatBranch
         return ChatBranch([self])
 
     def with_intent(self, intent: ChatIntent) -> ChatMessage:

@@ -43,7 +43,7 @@ directory()
 """
 from __future__ import annotations
 from pathlib import Path
-from llobot.chats import ChatBranch
+from llobot.chats.branches import ChatBranch
 import llobot.fs
 import llobot.chats.markdown
 

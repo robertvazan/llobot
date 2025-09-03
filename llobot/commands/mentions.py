@@ -3,7 +3,8 @@ Parser for @command mentions in chat messages.
 """
 from __future__ import annotations
 import re
-from llobot.chats import ChatMessage, ChatBranch
+from llobot.chats.messages import ChatMessage
+from llobot.chats.branches import ChatBranch
 
 _CODE_BLOCK_RE = re.compile(r'(`{3,}).*?\1', re.DOTALL)
 

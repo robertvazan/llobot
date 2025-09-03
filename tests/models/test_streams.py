@@ -1,6 +1,6 @@
 import pytest
 from llobot.models.streams import text, ok, error, exception, buffer
-from llobot.chats import ChatIntent
+from llobot.chats.intents import ChatIntent
 
 def test_text_stream():
     stream = text("This is a test.")

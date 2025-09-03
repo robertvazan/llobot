@@ -1,7 +1,10 @@
 from __future__ import annotations
 from functools import cache
 from datetime import datetime
-from llobot.chats import ChatBranch, ChatBuilder, ChatIntent, ChatMessage
+from llobot.chats.branches import ChatBranch
+from llobot.chats.builders import ChatBuilder
+from llobot.chats.intents import ChatIntent
+from llobot.chats.messages import ChatMessage
 from llobot.commands.chains import CommandChain
 from llobot.commands.projects import ProjectCommand
 from llobot.commands.retrievals import RetrievalCommand

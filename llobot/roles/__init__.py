@@ -26,7 +26,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 import llobot.time
-from llobot.chats import ChatBranch
+from llobot.chats.branches import ChatBranch
 from llobot.chats.archives import ChatArchive
 from llobot.projects import Project
 from llobot.fs.zones import Zoning

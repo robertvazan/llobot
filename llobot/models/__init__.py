@@ -1,5 +1,5 @@
 from __future__ import annotations
-from llobot.chats import ChatBranch
+from llobot.chats.branches import ChatBranch
 import llobot.text
 
 class Model:

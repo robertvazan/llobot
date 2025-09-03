@@ -7,13 +7,13 @@ chats into a strict prompt/response sequence.
 
 Submodules
 ----------
-_intents
+intents
     Defines `ChatIntent` for message types.
-_messages
+messages
     Defines `ChatMessage` for individual messages.
-_branches
+branches
     Defines `ChatBranch` for sequences of messages.
-_builders
+builders
     Defines `ChatBuilder` for constructing chats.
 binarization
     Provides functions for chat binarization.
@@ -22,14 +22,5 @@ archives
 markdown
     Handles serialization of chats to/from Markdown format.
 """
-from ._intents import ChatIntent
-from ._messages import ChatMessage
-from ._branches import ChatBranch
-from ._builders import ChatBuilder
 
-__all__ = [
-    'ChatIntent',
-    'ChatMessage',
-    'ChatBranch',
-    'ChatBuilder'
-]
+__all__ = []

@@ -1,6 +1,9 @@
 from __future__ import annotations
 import json
-from llobot.chats import ChatIntent, ChatMessage, ChatBranch, ChatBuilder
+from llobot.chats.intents import ChatIntent
+from llobot.chats.messages import ChatMessage
+from llobot.chats.branches import ChatBranch
+from llobot.chats.builders import ChatBuilder
 from llobot.models.streams import ModelStream
 import llobot.text
 import llobot.chats.binarization

@@ -35,7 +35,8 @@ import re
 from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.formatters.languages import LanguageGuesser
 from llobot.knowledge.deltas import DocumentDelta, KnowledgeDelta, KnowledgeDeltaBuilder
-from llobot.chats import ChatMessage, ChatBranch
+from llobot.chats.messages import ChatMessage
+from llobot.chats.branches import ChatBranch
 import llobot.knowledge.subsets
 import llobot.formatters.languages
 import llobot.text

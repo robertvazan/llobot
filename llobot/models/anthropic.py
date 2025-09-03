@@ -1,6 +1,7 @@
 from __future__ import annotations
 from anthropic import Anthropic
-from llobot.chats import ChatIntent, ChatBranch
+from llobot.chats.intents import ChatIntent
+from llobot.chats.branches import ChatBranch
 from llobot.models import Model
 from llobot.models.streams import ModelStream
 import llobot.models.streams

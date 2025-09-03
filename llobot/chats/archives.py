@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 from datetime import datetime
 from llobot.fs.zones import Zoning
-from llobot.chats import ChatBranch
+from llobot.chats.branches import ChatBranch
 import llobot.time
 import llobot.fs
 import llobot.fs.time

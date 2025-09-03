@@ -1,4 +1,6 @@
-from llobot.chats import ChatBranch, ChatMessage, ChatIntent
+from llobot.chats.branches import ChatBranch
+from llobot.chats.messages import ChatMessage
+from llobot.chats.intents import ChatIntent
 from llobot.chats.binarization import binarize_chat, binarize_intent, binarize_message
 
 def test_binarize_intent():

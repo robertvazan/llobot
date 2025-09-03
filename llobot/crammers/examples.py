@@ -1,6 +1,7 @@
 from __future__ import annotations
 from functools import cache, lru_cache
-from llobot.chats import ChatBranch, ChatBuilder
+from llobot.chats.branches import ChatBranch
+from llobot.chats.builders import ChatBuilder
 
 class ExampleCrammer:
     def cram(self, examples: Iterable[ChatBranch], budget: int) -> ChatBranch:

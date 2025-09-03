@@ -10,7 +10,8 @@ from llobot.environments.sessions import SessionEnv
 from llobot.formatters.prompts import PromptFormatter
 from llobot.prompts import Prompt
 from llobot.roles import Role
-from llobot.chats import ChatBranch, ChatBuilder
+from llobot.chats.branches import ChatBranch
+from llobot.chats.builders import ChatBuilder
 from llobot.projects import Project
 from llobot.models import Model
 from llobot.models.streams import ModelStream

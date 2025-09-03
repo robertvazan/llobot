@@ -2,7 +2,9 @@ import pytest
 from llobot.environments import Environment
 from llobot.environments.sessions import SessionEnv
 from llobot.commands import Command
-from llobot.chats import ChatBranch, ChatMessage, ChatIntent
+from llobot.chats.branches import ChatBranch
+from llobot.chats.messages import ChatMessage
+from llobot.chats.intents import ChatIntent
 
 def test_command_handle_default():
     """Tests that Command.handle returns False by default."""

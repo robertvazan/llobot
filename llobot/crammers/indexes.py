@@ -1,6 +1,9 @@
 from __future__ import annotations
 from functools import cache, lru_cache
-from llobot.chats import ChatBranch, ChatBuilder, ChatIntent, ChatMessage
+from llobot.chats.branches import ChatBranch
+from llobot.chats.builders import ChatBuilder
+from llobot.chats.intents import ChatIntent
+from llobot.chats.messages import ChatMessage
 from llobot.knowledge.scores import KnowledgeScores
 from llobot.knowledge.trees import KnowledgeTree
 from llobot.formatters.trees import TreeFormatter

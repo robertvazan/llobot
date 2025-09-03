@@ -20,7 +20,8 @@ cutoffs
     Command to set knowledge cutoff.
 """
 from __future__ import annotations
-from llobot.chats import ChatBranch, ChatIntent
+from llobot.chats.branches import ChatBranch
+from llobot.chats.intents import ChatIntent
 from llobot.environments import Environment
 from llobot.environments.sessions import SessionEnv
 import llobot.chats.binarization

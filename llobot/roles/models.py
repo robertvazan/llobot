@@ -1,6 +1,6 @@
 from __future__ import annotations
 import logging
-from llobot.chats import ChatBranch
+from llobot.chats.branches import ChatBranch
 from llobot.models import Model
 from llobot.models.streams import ModelStream
 from llobot.roles import Role

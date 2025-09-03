@@ -1,7 +1,7 @@
 from __future__ import annotations
 import llobot.text
-from ._intents import ChatIntent
-from ._messages import ChatMessage
+from llobot.chats.intents import ChatIntent
+from llobot.chats.messages import ChatMessage
 
 class ChatBranch:
     _messages: list[ChatMessage]
@@ -65,7 +65,7 @@ class ChatBranch:
         return ChatBranch(self._messages + suffix._messages)
 
     def to_builder(self) -> 'ChatBuilder':
-        from ._builders import ChatBuilder
+        from llobot.chats.builders import ChatBuilder
         builder = ChatBuilder()
         builder.add(self)
         return builder
@@ -77,7 +77,7 @@ class ChatBranch:
         return llobot.text.concat(*(message.monolithic() for message in self))
 
     def __and__(self, other: ChatBranch) -> ChatBranch:
-        from ._builders import ChatBuilder
+        from llobot.chats.builders import ChatBuilder
         shared = ChatBuilder()
         for message1, message2 in zip(self, other):
             if message1 == message2:

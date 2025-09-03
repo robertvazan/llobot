@@ -1,7 +1,8 @@
 from __future__ import annotations
 from collections import deque
 from functools import cache, lru_cache
-from llobot.chats import ChatBranch, ChatBuilder
+from llobot.chats.branches import ChatBranch
+from llobot.chats.builders import ChatBuilder
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.deltas import DocumentDelta, KnowledgeDeltaBuilder

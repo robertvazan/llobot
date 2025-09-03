@@ -1,5 +1,7 @@
 import llobot.commands.mentions
-from llobot.chats import ChatMessage, ChatBranch, ChatIntent
+from llobot.chats.messages import ChatMessage
+from llobot.chats.branches import ChatBranch
+from llobot.chats.intents import ChatIntent
 
 def test_parse_empty():
     assert llobot.commands.mentions.parse('') == []

@@ -1,6 +1,9 @@
 import re
 from pathlib import Path
-from llobot.chats import ChatIntent, ChatBranch, ChatBuilder, ChatMessage
+from llobot.chats.intents import ChatIntent
+from llobot.chats.branches import ChatBranch
+from llobot.chats.builders import ChatBuilder
+from llobot.chats.messages import ChatMessage
 import llobot.fs
 
 SUFFIX = '.md'

@@ -1,5 +1,6 @@
 import pytest
-from llobot.chats import ChatIntent, ChatMessage
+from llobot.chats.intents import ChatIntent
+from llobot.chats.messages import ChatMessage
 from llobot.environments.sessions import SessionEnv
 import llobot.text
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
-from ._intents import ChatIntent
-from ._messages import ChatMessage
-from ._branches import ChatBranch
+from llobot.chats.intents import ChatIntent
+from llobot.chats.messages import ChatMessage
+from llobot.chats.branches import ChatBranch
 
 class ChatBuilder:
     _messages: list[ChatMessage]

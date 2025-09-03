@@ -5,9 +5,9 @@ This module provides functions to normalize a chat into a strict alternating
 sequence of PROMPT and RESPONSE messages, which is required by many LLM APIs.
 """
 from __future__ import annotations
-from ._intents import ChatIntent
-from ._messages import ChatMessage
-from ._branches import ChatBranch
+from llobot.chats.intents import ChatIntent
+from llobot.chats.messages import ChatMessage
+from llobot.chats.branches import ChatBranch
 
 def binarize_intent(intent: ChatIntent) -> ChatIntent:
     """

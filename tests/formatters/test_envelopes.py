@@ -2,7 +2,9 @@ from textwrap import dedent
 from pathlib import Path
 from llobot.formatters.envelopes import details, standard
 from llobot.knowledge.deltas import DocumentDelta, KnowledgeDelta
-from llobot.chats import ChatMessage, ChatBranch, ChatIntent
+from llobot.chats.messages import ChatMessage
+from llobot.chats.branches import ChatBranch
+from llobot.chats.intents import ChatIntent
 
 def test_format_file():
     formatter = standard()

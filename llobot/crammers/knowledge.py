@@ -1,7 +1,7 @@
 from __future__ import annotations
 import math
 from functools import cache, lru_cache
-from llobot.chats import ChatBranch
+from llobot.chats.branches import ChatBranch
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.rankings import KnowledgeRanking

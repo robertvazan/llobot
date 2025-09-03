@@ -2,7 +2,10 @@ from __future__ import annotations
 from functools import cache
 from typing import Iterable
 import re
-from llobot.chats import ChatBranch, ChatMessage, ChatIntent, ChatBuilder
+from llobot.chats.branches import ChatBranch
+from llobot.chats.messages import ChatMessage
+from llobot.chats.intents import ChatIntent
+from llobot.chats.builders import ChatBuilder
 import llobot.text
 
 class SubmessageFormatter:
