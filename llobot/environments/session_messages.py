@@ -6,19 +6,18 @@ from llobot.text import concat_documents
 from llobot.chats.intents import ChatIntent
 from llobot.chats.messages import ChatMessage
 from llobot.environments import EnvBase
+from llobot.environments.replay import ReplayEnv
 from llobot.models.streams import ModelStream, message_stream
 
-class SessionEnv(EnvBase):
+class SessionMessageEnv(EnvBase):
     """
     An environment component that accumulates session messages from commands.
     """
     _fragments: list[str]
-    _recording: bool
 
     def __init__(self):
         super().__init__()
         self._fragments = []
-        self._recording = False
 
     def append(self, text: str | None):
         """
@@ -26,7 +25,7 @@ class SessionEnv(EnvBase):
 
         The fragment is ignored if recording is off or if the text is empty.
         """
-        if self._recording and text:
+        if self.env[ReplayEnv].recording() and text:
             self._fragments.append(text)
 
     def content(self) -> str:
@@ -59,18 +58,6 @@ class SessionEnv(EnvBase):
         if msg:
             yield from message_stream(msg)
 
-    def recording(self) -> bool:
-        """
-        Checks whether session data is being recorded.
-        """
-        return self._recording
-
-    def record(self):
-        """
-        Turns on recording of session data.
-        """
-        self._recording = True
-
 __all__ = [
-    'SessionEnv',
+    'SessionMessageEnv',
 ]

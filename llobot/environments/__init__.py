@@ -13,8 +13,10 @@ knowledge
     Knowledge base for selected project.
 retrievals
     Document retrievals.
-sessions
+session_messages
     Session messages.
+replay
+    Replay controls.
 cutoffs
     Knowledge cutoff timestamp.
 """

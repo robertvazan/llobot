@@ -1,6 +1,7 @@
 import pytest
 from llobot.environments import Environment
-from llobot.environments.sessions import SessionEnv
+from llobot.environments.replay import ReplayEnv
+from llobot.environments.session_messages import SessionMessageEnv
 from llobot.commands import Command
 from llobot.chats.branches import ChatBranch
 from llobot.chats.messages import ChatMessage
@@ -49,7 +50,7 @@ def test_command_handle_chat():
         def handle(self, text: str, env: Environment) -> bool:
             if text.startswith("cmd"):
                 handled_commands.append(text)
-                env[SessionEnv].append(f"Handled {text}")
+                env[SessionMessageEnv].append(f"Handled {text}")
                 return True
             return False
 
@@ -63,10 +64,11 @@ def test_command_handle_chat():
     cmd.handle_chat(chat, env)
 
     assert handled_commands == ["cmd1", "cmd2", "cmd3"]
-    session_env = env[SessionEnv]
-    assert session_env.recording()
-    assert session_env.content() == "Handled cmd2\n\nHandled cmd3"
-    assert session_env.message().content == "Handled cmd2\n\nHandled cmd3"
+    replay_env = env[ReplayEnv]
+    session_message_env = env[SessionMessageEnv]
+    assert replay_env.recording()
+    assert session_message_env.content() == "Handled cmd2\n\nHandled cmd3"
+    assert session_message_env.message().content == "Handled cmd2\n\nHandled cmd3"
 
 def test_command_handle_chat_reorder():
     """Tests reordering of prompt-session pairs in handle_chat."""

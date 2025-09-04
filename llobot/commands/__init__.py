@@ -23,7 +23,7 @@ from __future__ import annotations
 from llobot.chats.branches import ChatBranch
 from llobot.chats.intents import ChatIntent
 from llobot.environments import Environment
-from llobot.environments.sessions import SessionEnv
+from llobot.environments.replay import ReplayEnv
 from llobot.chats.binarization import binarize_chat
 
 class Command:
@@ -96,7 +96,7 @@ class Command:
 
         for i, message in enumerate(processed_chat):
             if i == len(processed_chat) - 1:
-                env[SessionEnv].record()
+                env[ReplayEnv].start_recording()
             commands = parse_mentions(message)
             self.handle_all(commands, env)
 

@@ -17,7 +17,7 @@ from llobot.environments.cutoffs import CutoffEnv
 from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.retrievals import RetrievalsEnv
-from llobot.environments.sessions import SessionEnv
+from llobot.environments.session_messages import SessionMessageEnv
 from llobot.formatters.envelopes import EnvelopeFormatter, standard_envelopes
 from llobot.formatters.knowledge import KnowledgeFormatter, standard_knowledge_formatter
 from llobot.formatters.prompts import (
@@ -167,7 +167,7 @@ class Editor(Role):
 
         context = builder.build()
         assembled_prompt = context + prompt
-        yield from env[SessionEnv].stream()
+        yield from env[SessionMessageEnv].stream()
         yield from self.model.generate(assembled_prompt)
 
     def handle_ok(self, chat: ChatBranch, cutoff: datetime):

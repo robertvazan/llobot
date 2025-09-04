@@ -6,7 +6,7 @@ from datetime import datetime
 from llobot.time import current_time, format_time
 from llobot.environments import EnvBase
 from llobot.environments.projects import ProjectEnv
-from llobot.environments.sessions import SessionEnv
+from llobot.environments.session_messages import SessionMessageEnv
 
 class CutoffEnv(EnvBase):
     """
@@ -46,7 +46,7 @@ class CutoffEnv(EnvBase):
             if project:
                 project.refresh()
             self._cutoff = current_time()
-            self.env[SessionEnv].append(f"Knowledge cutoff: @{format_time(self._cutoff)}")
+            self.env[SessionMessageEnv].append(f"Knowledge cutoff: @{format_time(self._cutoff)}")
         return self._cutoff
 
 __all__ = [

@@ -5,7 +5,8 @@ from llobot.time import current_time, format_time
 from llobot.environments import Environment
 from llobot.environments.cutoffs import CutoffEnv
 from llobot.environments.projects import ProjectEnv
-from llobot.environments.sessions import SessionEnv
+from llobot.environments.replay import ReplayEnv
+from llobot.environments.session_messages import SessionMessageEnv
 from llobot.projects import Project
 
 def test_cutoff_env_set():
@@ -39,14 +40,14 @@ def test_cutoff_env_get_generate_no_project(mock_now):
 
     full_env = Environment()
     cutoff_env = full_env[CutoffEnv]
-    session_env = full_env[SessionEnv]
-    session_env.record()
+    full_env[ReplayEnv].start_recording()
+    session_message_env = full_env[SessionMessageEnv]
 
     assert cutoff_env.get() == now
     # It gets called again, but it should return the cached value
     assert cutoff_env.get() == now
 
-    assert session_env.content() == f"Knowledge cutoff: @{format_time(now)}"
+    assert session_message_env.content() == f"Knowledge cutoff: @{format_time(now)}"
     mock_now.assert_called_once()
 
 
@@ -58,14 +59,13 @@ def test_cutoff_env_get_generate_with_project(mock_now):
     project = Mock(spec=Project)
     full_env = Environment()
     full_env[ProjectEnv].set(project)
-
     cutoff_env = full_env[CutoffEnv]
-    session_env = full_env[SessionEnv]
-    session_env.record()
+    full_env[ReplayEnv].start_recording()
+    session_message_env = full_env[SessionMessageEnv]
 
     assert cutoff_env.get() == now
     assert cutoff_env.get() == now
 
     project.refresh.assert_called_once()
-    assert session_env.content() == f"Knowledge cutoff: @{format_time(now)}"
+    assert session_message_env.content() == f"Knowledge cutoff: @{format_time(now)}"
     mock_now.assert_called_once()

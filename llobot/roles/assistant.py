@@ -9,7 +9,7 @@ from llobot.crammers.examples import ExampleCrammer, standard_example_crammer
 from llobot.environments import Environment
 from llobot.environments.cutoffs import CutoffEnv
 from llobot.environments.projects import ProjectEnv
-from llobot.environments.sessions import SessionEnv
+from llobot.environments.session_messages import SessionMessageEnv
 from llobot.formatters.prompts import (
     PromptFormatter,
     reminder_prompt_formatter,
@@ -68,7 +68,7 @@ class Assistant(Role):
 
         context = builder.build()
         assembled_prompt = context + prompt
-        yield from env[SessionEnv].stream()
+        yield from env[SessionMessageEnv].stream()
         yield from self.model.generate(assembled_prompt)
 
     def handle_ok(self, chat: ChatBranch, cutoff: datetime):
