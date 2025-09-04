@@ -14,14 +14,14 @@ class PromptFormatter:
     def __call__(self, prompt: str | Prompt) -> ChatBranch:
         return self.render(str(prompt))
 
-def create(function: Callable[[str], ChatBranch]) -> PromptFormatter:
+def create_prompt_formatter(function: Callable[[str], ChatBranch]) -> PromptFormatter:
     class LambdaPromptFormatter(PromptFormatter):
         def render(self, prompt: str) -> ChatBranch:
             return function(prompt)
     return LambdaPromptFormatter()
 
 @cache
-def plain(affirmation: str = 'Okay.') -> PromptFormatter:
+def plain_prompt_formatter(affirmation: str = 'Okay.') -> PromptFormatter:
     def render(prompt: str) -> ChatBranch:
         if not prompt:
             return ChatBranch()
@@ -29,10 +29,10 @@ def plain(affirmation: str = 'Okay.') -> PromptFormatter:
         chat.add(ChatMessage(ChatIntent.SYSTEM, prompt))
         chat.add(ChatMessage(ChatIntent.AFFIRMATION, affirmation))
         return chat.build()
-    return create(render)
+    return create_prompt_formatter(render)
 
 @cache
-def reminder(
+def reminder_prompt_formatter(
     pattern: str = r'^- IMPORTANT:\s*(.+)$',
     header: str = 'Reminder:',
     affirmation: str = 'Okay.'
@@ -56,16 +56,16 @@ def reminder(
         chat.add(ChatMessage(ChatIntent.AFFIRMATION, affirmation))
         return chat.build()
 
-    return create(render)
+    return create_prompt_formatter(render)
 
 @cache
-def standard() -> PromptFormatter:
-    return plain()
+def standard_prompt_formatter() -> PromptFormatter:
+    return plain_prompt_formatter()
 
 __all__ = [
     'PromptFormatter',
-    'create',
-    'plain',
-    'reminder',
-    'standard',
+    'create_prompt_formatter',
+    'plain_prompt_formatter',
+    'reminder_prompt_formatter',
+    'standard_prompt_formatter',
 ]

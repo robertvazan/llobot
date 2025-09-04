@@ -1,6 +1,6 @@
 from pathlib import Path
 from llobot.knowledge import Knowledge
-from llobot.knowledge.deltas import fresh, between, diff_compress, DocumentDelta, KnowledgeDelta
+from llobot.knowledge.deltas import fresh_knowledge_delta, knowledge_delta_between, diff_compress_knowledge, DocumentDelta, KnowledgeDelta
 
 def test_fresh():
     knowledge = Knowledge({
@@ -8,7 +8,7 @@ def test_fresh():
         Path('file2.txt'): 'content2',
     })
 
-    delta = fresh(knowledge)
+    delta = fresh_knowledge_delta(knowledge)
 
     expected = KnowledgeDelta([
         DocumentDelta(Path('file1.txt'), 'content1'),
@@ -23,7 +23,7 @@ def test_between_with_addition():
         Path('new_file.txt'): 'new content',
     })
 
-    delta = between(before, after)
+    delta = knowledge_delta_between(before, after)
 
     expected = KnowledgeDelta([
         DocumentDelta(Path('new_file.txt'), 'new content')
@@ -34,7 +34,7 @@ def test_between_with_modification():
     before = Knowledge({Path('file.txt'): 'old content'})
     after = Knowledge({Path('file.txt'): 'new content'})
 
-    delta = between(before, after)
+    delta = knowledge_delta_between(before, after)
 
     expected = KnowledgeDelta([
         DocumentDelta(Path('file.txt'), 'new content')
@@ -45,7 +45,7 @@ def test_between_with_removal():
     before = Knowledge({Path('file.txt'): 'content'})
     after = Knowledge({})
 
-    delta = between(before, after)
+    delta = knowledge_delta_between(before, after)
 
     expected = KnowledgeDelta([
         DocumentDelta(Path('file.txt'), None, removed=True)
@@ -57,7 +57,7 @@ def test_between_with_move_hints():
     after = Knowledge({Path('new.txt'): 'content'})
     move_hints = {Path('new.txt'): Path('old.txt')}
 
-    delta = between(before, after, move_hints=move_hints)
+    delta = knowledge_delta_between(before, after, move_hints=move_hints)
 
     expected = KnowledgeDelta([
         DocumentDelta(Path('new.txt'), None, moved_from=Path('old.txt'))
@@ -69,7 +69,7 @@ def test_between_with_move_and_modification():
     after = Knowledge({Path('new.txt'): 'new content'})
     move_hints = {Path('new.txt'): Path('old.txt')}
 
-    delta = between(before, after, move_hints=move_hints)
+    delta = knowledge_delta_between(before, after, move_hints=move_hints)
 
     expected = KnowledgeDelta([
         DocumentDelta(Path('new.txt'), None, moved_from=Path('old.txt')),
@@ -89,7 +89,7 @@ def test_between_with_multiple_move_hints():
         Path('new2.txt'): Path('old.txt'),  # This should be ignored
     }
 
-    delta = between(before, after, move_hints=move_hints)
+    delta = knowledge_delta_between(before, after, move_hints=move_hints)
 
     # Only the first hint should be used for the move
     expected = KnowledgeDelta([
@@ -110,7 +110,7 @@ def test_diff_compress():
         DocumentDelta(Path('file.txt'), modified_content)
     ])
 
-    compressed = diff_compress(before, delta, threshold=0.9)
+    compressed = diff_compress_knowledge(before, delta, threshold=0.9)
 
     # Should be compressed to diff format
     compressed_delta = next(iter(compressed))
@@ -125,7 +125,7 @@ def test_diff_compress_no_change():
         DocumentDelta(Path('file.txt'), 'content')
     ])
 
-    compressed = diff_compress(before, delta)
+    compressed = diff_compress_knowledge(before, delta)
 
     # Should be empty since there's no actual change
     assert compressed == KnowledgeDelta()
@@ -138,7 +138,7 @@ def test_diff_compress_threshold():
         DocumentDelta(Path('file.txt'), 'completely different and much longer content')
     ])
 
-    compressed = diff_compress(before, delta, threshold=0.1)  # Very low threshold
+    compressed = diff_compress_knowledge(before, delta, threshold=0.1)  # Very low threshold
 
     # Should not be compressed due to threshold
     expected = KnowledgeDelta([

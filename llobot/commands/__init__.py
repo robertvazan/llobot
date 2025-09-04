@@ -24,7 +24,7 @@ from llobot.chats.branches import ChatBranch
 from llobot.chats.intents import ChatIntent
 from llobot.environments import Environment
 from llobot.environments.sessions import SessionEnv
-import llobot.chats.binarization
+from llobot.chats.binarization import binarize_chat
 
 class Command:
     """
@@ -90,14 +90,14 @@ class Command:
             chat: The chat branch to process.
             env: The environment to manipulate.
         """
-        import llobot.commands.mentions
+        from llobot.commands.mentions import parse_mentions
 
-        processed_chat = llobot.chats.binarization.binarize_chat(chat)
+        processed_chat = binarize_chat(chat)
 
         for i, message in enumerate(processed_chat):
             if i == len(processed_chat) - 1:
                 env[SessionEnv].record()
-            commands = llobot.commands.mentions.parse(message)
+            commands = parse_mentions(message)
             self.handle_all(commands, env)
 
 __all__ = [

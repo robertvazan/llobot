@@ -1,16 +1,31 @@
-from pathlib import Path
-import llobot.text
+"""
+Filesystem utilities.
 
-def home() -> Path:
+This package provides functions for interacting with the filesystem, including
+path manipulation, file I/O, and archive handling.
+
+This module provides core filesystem utilities for paths and I/O.
+
+Submodules
+----------
+archives
+    Utilities for handling timestamped file-based archives.
+zones
+    Zoning system for mapping abstract zone names to filesystem paths.
+"""
+from pathlib import Path
+from llobot.text import normalize_document
+
+def user_home() -> Path:
     return Path.home()
 
 # TODO: Use platform-independent paths (platformdirs package).
 
-def data() -> Path:
-    return home()/'.local/share'
+def data_home() -> Path:
+    return user_home()/'.local/share'
 
-def cache() -> Path:
-    return home()/'.cache'
+def cache_home() -> Path:
+    return user_home()/'.cache'
 
 def create_parents(path: Path):
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -29,22 +44,22 @@ def read_text(path: Path) -> str:
         raise ValueError(path) from ex
 
 def read_document(path: Path) -> str:
-    return llobot.text.normalize(read_text(path))
+    return normalize_document(read_text(path))
 
-def stem(path: Path | str) -> str:
+def path_stem(path: Path | str) -> str:
     path = Path(path)
     while path.suffix:
         path = path.with_suffix('')
     return path.name
 
 __all__ = [
-    'home',
-    'data',
-    'cache',
+    'user_home',
+    'data_home',
+    'cache_home',
     'create_parents',
     'write_bytes',
     'write_text',
     'read_text',
     'read_document',
-    'stem',
+    'path_stem',
 ]

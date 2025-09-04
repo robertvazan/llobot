@@ -2,7 +2,7 @@
 Command to set knowledge cutoff.
 """
 from __future__ import annotations
-import llobot.time
+from llobot.time import try_parse_time
 from llobot.commands import Command
 from llobot.environments import Environment
 from llobot.environments.cutoffs import CutoffEnv
@@ -22,7 +22,7 @@ class CutoffCommand(Command):
         Returns:
             `True` if the command was handled, `False` otherwise.
         """
-        cutoff = llobot.time.try_parse(text)
+        cutoff = try_parse_time(text)
         if cutoff:
             env[CutoffEnv].set(cutoff)
             return True

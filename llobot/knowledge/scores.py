@@ -4,13 +4,10 @@ from functools import lru_cache
 from pathlib import Path
 from zlib import crc32
 from llobot.knowledge import Knowledge
-from llobot.knowledge.subsets import KnowledgeSubset
-from llobot.knowledge.indexes import KnowledgeIndex
-from llobot.knowledge.rankings import KnowledgeRanking
+from llobot.knowledge.subsets import KnowledgeSubset, coerce_subset
+from llobot.knowledge.indexes import KnowledgeIndex, coerce_index
+from llobot.knowledge.rankings import KnowledgeRanking, rank_lexicographically
 from llobot.knowledge.graphs import KnowledgeGraph
-import llobot.knowledge.indexes
-import llobot.knowledge.subsets
-import llobot.knowledge.rankings
 
 class KnowledgeScores:
     _scores: dict[Path, float]
@@ -53,8 +50,8 @@ class KnowledgeScores:
 
     def _coerce_operand(self, other: int | float | KnowledgeScores | Knowledge) -> KnowledgeScores:
         if isinstance(other, (int, float)):
-            return constant(self, other)
-        return coerce(other)
+            return constant_scores(self, other)
+        return coerce_scores(other)
 
     def __add__(self, other: int | float | KnowledgeScores | Knowledge) -> KnowledgeScores:
         other = self._coerce_operand(other)
@@ -65,7 +62,7 @@ class KnowledgeScores:
 
     def __sub__(self, other: int | float | KnowledgeScores | Knowledge | KnowledgeSubset | str | KnowledgeIndex | KnowledgeRanking) -> KnowledgeScores:
         if isinstance(other, (KnowledgeSubset, str, KnowledgeIndex, KnowledgeRanking)):
-            return self & ~llobot.knowledge.subsets.coerce(other)
+            return self & ~coerce_subset(other)
         other = self._coerce_operand(other)
         return KnowledgeScores({path: self[path] - other[path] for path in self.keys() | other.keys()})
 
@@ -90,7 +87,7 @@ class KnowledgeScores:
         return self._coerce_operand(other) / self
 
     def __and__(self, subset: KnowledgeSubset | str | KnowledgeIndex | KnowledgeRanking | Knowledge) -> KnowledgeScores:
-        subset = llobot.knowledge.subsets.coerce(subset)
+        subset = coerce_subset(subset)
         return KnowledgeScores({path: score for path, score in self if path in subset})
 
     def __or__(self, other: KnowledgeScores) -> KnowledgeScores:
@@ -108,42 +105,42 @@ class KnowledgeScores:
     def clip_below(self, threshold: float | int) -> KnowledgeScores:
         return KnowledgeScores({path: score for path, score in self if score >= threshold})
 
-def coerce(what: KnowledgeScores | Knowledge | KnowledgeIndex | KnowledgeRanking) -> KnowledgeScores:
+def coerce_scores(what: KnowledgeScores | Knowledge | KnowledgeIndex | KnowledgeRanking) -> KnowledgeScores:
     if isinstance(what, KnowledgeScores):
         return what
     if isinstance(what, Knowledge):
-        return length(what)
+        return score_length(what)
     if isinstance(what, (KnowledgeIndex, KnowledgeRanking)):
-        return constant(what)
+        return constant_scores(what)
     raise TypeError(what)
 
-def normalize(denormalized: KnowledgeScores, budget: float = 1) -> KnowledgeScores:
+def normalize_scores(denormalized: KnowledgeScores, budget: float = 1) -> KnowledgeScores:
     total = denormalized.total()
     if not total:
         return denormalized
     return (budget / total) * denormalized
 
-def constant(keys: KnowledgeIndex | KnowledgeRanking | Knowledge | KnowledgeScores, score: float = 1) -> KnowledgeScores:
-    keys = llobot.knowledge.indexes.coerce(keys)
+def constant_scores(keys: KnowledgeIndex | KnowledgeRanking | Knowledge | KnowledgeScores, score: float = 1) -> KnowledgeScores:
+    keys = coerce_index(keys)
     return KnowledgeScores({path: score for path in keys})
 
-def uniform(keys: KnowledgeIndex | KnowledgeRanking | Knowledge | KnowledgeScores, budget: float = 1) -> KnowledgeScores:
-    keys = llobot.knowledge.indexes.coerce(keys)
-    return constant(keys, budget / len(keys)) if keys else KnowledgeScores()
+def uniform_scores(keys: KnowledgeIndex | KnowledgeRanking | Knowledge | KnowledgeScores, budget: float = 1) -> KnowledgeScores:
+    keys = coerce_index(keys)
+    return constant_scores(keys, budget / len(keys)) if keys else KnowledgeScores()
 
-def length(knowledge: Knowledge) -> KnowledgeScores:
+def score_length(knowledge: Knowledge) -> KnowledgeScores:
     return KnowledgeScores({path: len(content) for path, content in knowledge})
 
-def sqrt_length(knowledge: Knowledge) -> KnowledgeScores:
+def score_sqrt_length(knowledge: Knowledge) -> KnowledgeScores:
     return KnowledgeScores({path: math.sqrt(len(content)) for path, content in knowledge})
 
 # This uses only path, not content, so that content changes do not cause cache-killing reorderings.
-def random(paths: KnowledgeIndex | KnowledgeRanking | Knowledge | KnowledgeScores) -> KnowledgeScores:
-    paths = llobot.knowledge.indexes.coerce(paths)
+def random_scores(paths: KnowledgeIndex | KnowledgeRanking | Knowledge | KnowledgeScores) -> KnowledgeScores:
+    paths = coerce_index(paths)
     # Here we have to be careful to avoid zero scores, so that the resulting score object has all the paths.
     return KnowledgeScores({path: crc32(str(path).encode('utf-8')) or 1 for path in paths})
 
-def directory_max(scores: KnowledgeScores, *, recursive: bool = True) -> KnowledgeScores:
+def directory_max_scores(scores: KnowledgeScores, *, recursive: bool = True) -> KnowledgeScores:
     """
     Assigns each directory the highest score among contained files.
 
@@ -171,7 +168,7 @@ def directory_max(scores: KnowledgeScores, *, recursive: bool = True) -> Knowled
 
     return KnowledgeScores(directory_scores)
 
-def directory_sum(scores: KnowledgeScores, *, recursive: bool = True) -> KnowledgeScores:
+def directory_sum_scores(scores: KnowledgeScores, *, recursive: bool = True) -> KnowledgeScores:
     """
     Assigns each directory the sum of scores of contained files.
 
@@ -198,7 +195,7 @@ def directory_sum(scores: KnowledgeScores, *, recursive: bool = True) -> Knowled
 
     return KnowledgeScores(directory_scores)
 
-def directory_count(keys: KnowledgeIndex | KnowledgeRanking | Knowledge | KnowledgeScores, *, recursive: bool = True) -> KnowledgeScores:
+def directory_count_scores(keys: KnowledgeIndex | KnowledgeRanking | Knowledge | KnowledgeScores, *, recursive: bool = True) -> KnowledgeScores:
     """
     Assigns each directory the count of contained files.
 
@@ -209,13 +206,13 @@ def directory_count(keys: KnowledgeIndex | KnowledgeRanking | Knowledge | Knowle
     Returns:
         Directory scores with file count per directory.
     """
-    return directory_sum(constant(keys), recursive=recursive)
+    return directory_sum_scores(constant_scores(keys), recursive=recursive)
 
-def hub(graph: KnowledgeGraph) -> KnowledgeScores:
+def hub_scores(graph: KnowledgeGraph) -> KnowledgeScores:
     return KnowledgeScores({path: len(targets) for path, targets in graph.symmetrical()})
 
 @lru_cache(maxsize=2)
-def pagerank(
+def pagerank_scores(
     graph: KnowledgeGraph,
     nodes: KnowledgeIndex = KnowledgeIndex(),
     initial: KnowledgeScores = KnowledgeScores(),
@@ -230,7 +227,7 @@ def pagerank(
     # because the neat version using our high-level classes was too slow.
     backlinks = graph.reverse()
     nodes = nodes | graph.keys() | backlinks.keys()
-    ranking = list(llobot.knowledge.rankings.lexicographical(nodes))
+    ranking = list(rank_lexicographically(nodes))
     path_ids = {path: i for i, path in enumerate(ranking)}
     count = len(ranking)
     graph_table = [tuple(path_ids[target] for target in graph[source]) for source in ranking]
@@ -258,10 +255,10 @@ def pagerank(
             break
     return KnowledgeScores({ranking[i]: scores[i] for i in range(count)})
 
-def reverse_pagerank(graph: KnowledgeGraph, nodes: KnowledgeIndex = KnowledgeIndex(), **kwargs) -> KnowledgeScores:
-    return pagerank(graph.reverse(), nodes, **kwargs)
+def reverse_pagerank_scores(graph: KnowledgeGraph, nodes: KnowledgeIndex = KnowledgeIndex(), **kwargs) -> KnowledgeScores:
+    return pagerank_scores(graph.reverse(), nodes, **kwargs)
 
-def prioritize(
+def priority_scores(
     index: Knowledge | KnowledgeIndex | KnowledgeRanking | KnowledgeScores,
     subset: KnowledgeSubset | str | Path | KnowledgeIndex,
     *,
@@ -270,26 +267,26 @@ def prioritize(
     """
     Assigns a high score to documents in a subset and a low background score to other documents.
     """
-    index = llobot.knowledge.indexes.coerce(index)
-    subset = llobot.knowledge.subsets.coerce(subset)
-    priority_scores = coerce(index & subset)
-    background_scores = uniform(index, background_score)
+    index = coerce_index(index)
+    subset = coerce_subset(subset)
+    priority_scores = coerce_scores(index & subset)
+    background_scores = uniform_scores(index, background_score)
     return background_scores + priority_scores
 
 __all__ = [
     'KnowledgeScores',
-    'coerce',
-    'normalize',
-    'constant',
-    'uniform',
-    'length',
-    'sqrt_length',
-    'random',
-    'directory_max',
-    'directory_sum',
-    'directory_count',
-    'hub',
-    'pagerank',
-    'reverse_pagerank',
-    'prioritize',
+    'coerce_scores',
+    'normalize_scores',
+    'constant_scores',
+    'uniform_scores',
+    'score_length',
+    'score_sqrt_length',
+    'random_scores',
+    'directory_max_scores',
+    'directory_sum_scores',
+    'directory_count_scores',
+    'hub_scores',
+    'pagerank_scores',
+    'reverse_pagerank_scores',
+    'priority_scores',
 ]

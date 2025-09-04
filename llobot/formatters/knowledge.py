@@ -5,13 +5,10 @@ from llobot.chats.builders import ChatBuilder
 from llobot.chats.branches import ChatBranch
 from llobot.chats.messages import ChatMessage
 from llobot.knowledge import Knowledge
-from llobot.knowledge.deltas import KnowledgeDelta
+from llobot.knowledge.deltas import KnowledgeDelta, fresh_knowledge_delta
 from llobot.knowledge.rankings import KnowledgeRanking
-from llobot.formatters.envelopes import EnvelopeFormatter
-import llobot.formatters.envelopes
-import llobot.knowledge.rankings
-import llobot.knowledge.deltas
-import llobot.text
+from llobot.formatters.envelopes import EnvelopeFormatter, standard_envelopes
+from llobot.text import concat_documents
 
 class KnowledgeFormatter:
     def render(self, delta: KnowledgeDelta) -> ChatBranch:
@@ -21,11 +18,11 @@ class KnowledgeFormatter:
         return self.render(delta)
 
     def render_fresh(self, knowledge: Knowledge, ranking: KnowledgeRanking | None = None) -> ChatBranch:
-        delta = llobot.knowledge.deltas.fresh(knowledge, ranking)
+        delta = fresh_knowledge_delta(knowledge, ranking)
         return self.render(delta)
 
 @lru_cache
-def granular(envelopes: EnvelopeFormatter = llobot.formatters.envelopes.standard(), affirmation: str = 'I see.') -> KnowledgeFormatter:
+def granular_knowledge_formatter(envelopes: EnvelopeFormatter = standard_envelopes(), affirmation: str = 'I see.') -> KnowledgeFormatter:
     class GranularKnowledgeFormatter(KnowledgeFormatter):
         def render(self, delta: KnowledgeDelta) -> ChatBranch:
             chat = ChatBuilder()
@@ -39,8 +36,8 @@ def granular(envelopes: EnvelopeFormatter = llobot.formatters.envelopes.standard
     return GranularKnowledgeFormatter()
 
 @lru_cache
-def chunked(
-    envelopes: EnvelopeFormatter = llobot.formatters.envelopes.standard(),
+def chunked_knowledge_formatter(
+    envelopes: EnvelopeFormatter = standard_envelopes(),
     affirmation: str = 'I see.',
     min_size: int = 10000
 ) -> KnowledgeFormatter:
@@ -58,7 +55,7 @@ def chunked(
 
                     # If we've reached the minimum chunk size, emit the chunk
                     if size >= min_size:
-                        chunk = llobot.text.concat(*buffer)
+                        chunk = concat_documents(*buffer)
                         chat.add(ChatMessage(ChatIntent.SYSTEM, chunk))
                         chat.add(ChatMessage(ChatIntent.AFFIRMATION, affirmation))
                         buffer = []
@@ -66,7 +63,7 @@ def chunked(
 
             # Handle any remaining items in the last chunk
             if buffer:
-                chunk = llobot.text.concat(*buffer)
+                chunk = concat_documents(*buffer)
                 chat.add(ChatMessage(ChatIntent.SYSTEM, chunk))
                 chat.add(ChatMessage(ChatIntent.AFFIRMATION, affirmation))
 
@@ -75,12 +72,12 @@ def chunked(
     return ChunkedKnowledgeFormatter()
 
 @cache
-def standard() -> KnowledgeFormatter:
-    return chunked()
+def standard_knowledge_formatter() -> KnowledgeFormatter:
+    return chunked_knowledge_formatter()
 
 __all__ = [
     'KnowledgeFormatter',
-    'granular',
-    'chunked',
-    'standard',
+    'granular_knowledge_formatter',
+    'chunked_knowledge_formatter',
+    'standard_knowledge_formatter',
 ]

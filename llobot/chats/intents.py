@@ -58,8 +58,8 @@ class ChatIntent(Enum):
         Returns:
             The example version of the intent.
         """
-        import llobot.chats.binarization
-        if llobot.chats.binarization.binarize_intent(self) == ChatIntent.RESPONSE:
+        from llobot.chats.binarization import binarize_intent
+        if binarize_intent(self) == ChatIntent.RESPONSE:
             return ChatIntent.EXAMPLE_RESPONSE
         else:
             return ChatIntent.EXAMPLE_PROMPT

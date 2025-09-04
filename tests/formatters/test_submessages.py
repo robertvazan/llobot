@@ -3,9 +3,9 @@ from textwrap import dedent
 from llobot.chats.branches import ChatBranch
 from llobot.chats.messages import ChatMessage
 from llobot.chats.intents import ChatIntent
-from llobot.formatters.submessages import standard as standard_formatter
+from llobot.formatters.submessages import standard_submessage_formatter
 
-formatter = standard_formatter()
+formatter = standard_submessage_formatter()
 
 def test_format_empty():
     chat = ChatBranch()
@@ -297,8 +297,8 @@ def test_format_stream_empty():
     assert result == ""
 
 def test_format_stream_single_message_strings_only():
-    from llobot.models.streams import text as stream_text
-    stream = stream_text("Hello world.")
+    from llobot.models.streams import text_stream
+    stream = text_stream("Hello world.")
     result = "".join(formatter.format_stream(stream))
     assert result == "Hello world."
 

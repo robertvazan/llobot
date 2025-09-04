@@ -1,88 +1,88 @@
 import pytest
-from llobot.text import terminate, normalize, join, concat, dashed_name, quote, details
+from llobot.text import terminate_document, normalize_document, join_documents, concat_documents, dashed_name, markdown_code_block, markdown_code_details
 
 
-def test_terminate():
+def test_terminate_document():
     # Adds newline when missing
-    assert terminate("hello") == "hello\n"
+    assert terminate_document("hello") == "hello\n"
 
     # Doesn't add newline when already present
-    assert terminate("hello\n") == "hello\n"
+    assert terminate_document("hello\n") == "hello\n"
 
     # Handles empty string
-    assert terminate("") == ""
+    assert terminate_document("") == ""
 
     # Handles multiple newlines at end
-    assert terminate("hello\n\n") == "hello\n\n"
+    assert terminate_document("hello\n\n") == "hello\n\n"
 
 
-def test_normalize():
+def test_normalize_document():
     # Basic normalization
-    assert normalize("hello\nworld") == "hello\nworld\n"
+    assert normalize_document("hello\nworld") == "hello\nworld\n"
 
     # Removes trailing whitespace on lines
-    assert normalize("hello   \nworld  ") == "hello\nworld\n"
+    assert normalize_document("hello   \nworld  ") == "hello\nworld\n"
 
     # Removes empty lines at beginning and end
-    assert normalize("\n\nhello\nworld\n\n") == "hello\nworld\n"
+    assert normalize_document("\n\nhello\nworld\n\n") == "hello\nworld\n"
 
     # Handles mixed whitespace
-    assert normalize("  \nhello\n  \nworld\n  ") == "hello\n\nworld\n"
+    assert normalize_document("  \nhello\n  \nworld\n  ") == "hello\n\nworld\n"
 
     # Handles empty string
-    assert normalize("") == ""
+    assert normalize_document("") == ""
 
     # Handles only whitespace
-    assert normalize("   \n  \n  ") == ""
+    assert normalize_document("   \n  \n  ") == ""
 
     # Preserves internal empty lines
-    assert normalize("hello\n\nworld") == "hello\n\nworld\n"
+    assert normalize_document("hello\n\nworld") == "hello\n\nworld\n"
 
     # Already normalized document
-    assert normalize("hello\nworld\n") == "hello\nworld\n"
+    assert normalize_document("hello\nworld\n") == "hello\nworld\n"
 
     # Single line
-    assert normalize("hello") == "hello\n"
+    assert normalize_document("hello") == "hello\n"
 
 
-def test_join():
+def test_join_documents():
     # Basic joining with separator, last part is not terminated
-    assert join("---\n", ["hello", "world"]) == "hello\n---\nworld"
+    assert join_documents("---\n", ["hello", "world"]) == "hello\n---\nworld"
 
     # Filters out empty and whitespace-only strings
-    assert join("---\n", ["hello", "", "world"]) == "hello\n---\nworld"
-    assert join("---\n", ["hello", "  ", "world"]) == "hello\n---\nworld"
+    assert join_documents("---\n", ["hello", "", "world"]) == "hello\n---\nworld"
+    assert join_documents("---\n", ["hello", "  ", "world"]) == "hello\n---\nworld"
 
     # Last part with newline is preserved
-    assert join("---\n", ["hello", "world\n"]) == "hello\n---\nworld\n"
+    assert join_documents("---\n", ["hello", "world\n"]) == "hello\n---\nworld\n"
 
     # Handles empty input
-    assert join("---\n", []) == ""
-    assert join("---\n", [""]) == ""
+    assert join_documents("---\n", []) == ""
+    assert join_documents("---\n", [""]) == ""
 
     # Single document is returned as-is
-    assert join("---\n", ["hello"]) == "hello"
+    assert join_documents("---\n", ["hello"]) == "hello"
 
 
-def test_concat():
+def test_concat_documents():
     # Basic concatenation with double newline
-    assert concat("hello", "world") == "hello\n\nworld"
+    assert concat_documents("hello", "world") == "hello\n\nworld"
 
     # Filters out empty and whitespace-only strings
-    assert concat("hello", "", "world") == "hello\n\nworld"
-    assert concat("hello", "  ", "world") == "hello\n\nworld"
+    assert concat_documents("hello", "", "world") == "hello\n\nworld"
+    assert concat_documents("hello", "  ", "world") == "hello\n\nworld"
 
     # Whitespace is preserved
-    assert concat("  hello  ", "world") == "  hello  \n\nworld"
+    assert concat_documents("  hello  ", "world") == "  hello  \n\nworld"
 
     # Documents other than the last one are newline-terminated unless they already are
-    assert concat("hello\n", "world\n") == "hello\n\nworld\n"
+    assert concat_documents("hello\n", "world\n") == "hello\n\nworld\n"
 
     # Handles empty input
-    assert concat() == ""
+    assert concat_documents() == ""
 
     # Single document
-    assert concat("hello") == "hello"
+    assert concat_documents("hello") == "hello"
 
 
 def test_dashed_name():
@@ -107,38 +107,38 @@ def test_dashed_name():
     assert dashed_name("hello123world") == "hello123world"
 
 
-def test_quote():
+def test_markdown_code_block():
     # Basic quoting
-    assert quote("python", "print('hello')") == "```python\nprint('hello')\n```"
-    assert quote("", "some code") == "```\nsome code\n```"
+    assert markdown_code_block("python", "print('hello')") == "```python\nprint('hello')\n```"
+    assert markdown_code_block("", "some code") == "```\nsome code\n```"
 
     # Document already has terminal newline
-    assert quote("python", "print('hello')\n") == "```python\nprint('hello')\n```"
+    assert markdown_code_block("python", "print('hello')\n") == "```python\nprint('hello')\n```"
 
     # Automatically adjusts backtick count when document contains backticks
-    assert quote("markdown", "Here is some `code`") == "```markdown\nHere is some `code`\n```"
-    assert quote("markdown", "```\ncode block\n```") == "````markdown\n```\ncode block\n```\n````"
-    assert quote("markdown", "````\ncode block\n````") == "`````markdown\n````\ncode block\n````\n`````"
+    assert markdown_code_block("markdown", "Here is some `code`") == "```markdown\nHere is some `code`\n```"
+    assert markdown_code_block("markdown", "```\ncode block\n```") == "````markdown\n```\ncode block\n```\n````"
+    assert markdown_code_block("markdown", "````\ncode block\n````") == "`````markdown\n````\ncode block\n````\n`````"
 
     # Handles document starting with backticks
-    assert quote("markdown", "```python\ncode\n```") == "````markdown\n```python\ncode\n```\n````"
+    assert markdown_code_block("markdown", "```python\ncode\n```") == "````markdown\n```python\ncode\n```\n````"
 
     # Handles empty document
-    assert quote("python", "") == "```python\n```"
+    assert markdown_code_block("python", "") == "```python\n```"
 
     # Custom backtick count
-    assert quote("python", "print('hello')", backtick_count=4) == "````python\nprint('hello')\n````"
+    assert markdown_code_block("python", "print('hello')", backtick_count=4) == "````python\nprint('hello')\n````"
 
 
-def test_details():
+def test_markdown_code_details():
     # Basic details formatting
     expected = "<details>\n<summary>Test Summary</summary>\n\n```python\nprint('hello')\n```\n\n</details>"
-    assert details("Test Summary", "python", "print('hello')") == expected
+    assert markdown_code_details("Test Summary", "python", "print('hello')") == expected
 
     # Complex summary with special characters
     expected = "<details>\n<summary>File: path/to/file.py (new)</summary>\n\n```python\nprint('hello')\n```\n\n</details>"
-    assert details("File: path/to/file.py (new)", "python", "print('hello')") == expected
+    assert markdown_code_details("File: path/to/file.py (new)", "python", "print('hello')") == expected
 
     # Custom backtick count is passed through to quote()
     expected = "<details>\n<summary>Test Summary</summary>\n\n````python\nprint('hello')\n````\n\n</details>"
-    assert details("Test Summary", "python", "print('hello')", backtick_count=4) == expected
+    assert markdown_code_details("Test Summary", "python", "print('hello')", backtick_count=4) == expected

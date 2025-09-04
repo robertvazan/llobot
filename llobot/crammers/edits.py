@@ -6,12 +6,8 @@ from llobot.chats.builders import ChatBuilder
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.deltas import DocumentDelta, KnowledgeDeltaBuilder
-from llobot.formatters.envelopes import EnvelopeFormatter
-from llobot.formatters.knowledge import KnowledgeFormatter
-import llobot.formatters.envelopes
-import llobot.formatters.knowledge
-import llobot.knowledge.rankings
-import llobot.knowledge.deltas
+from llobot.formatters.envelopes import EnvelopeFormatter, standard_envelopes
+from llobot.formatters.knowledge import KnowledgeFormatter, standard_knowledge_formatter
 
 class EditCrammer:
     """
@@ -23,16 +19,16 @@ class EditCrammer:
     def __call__(self, examples: Iterable[ChatBranch], knowledge: Knowledge, budget: int) -> tuple[ChatBranch, KnowledgeIndex]:
         return self.cram(examples, knowledge, budget)
 
-def create(function: Callable[[Iterable[ChatBranch], Knowledge, int], tuple[ChatBranch, KnowledgeIndex]]) -> EditCrammer:
+def create_edit_crammer(function: Callable[[Iterable[ChatBranch], Knowledge, int], tuple[ChatBranch, KnowledgeIndex]]) -> EditCrammer:
     class LambdaEditCrammer(EditCrammer):
         def cram(self, examples: Iterable[ChatBranch], knowledge: Knowledge, budget: int) -> tuple[ChatBranch, KnowledgeIndex]:
             return function(examples, knowledge, budget)
     return LambdaEditCrammer()
 
 @lru_cache
-def greedy(
-    envelopes: EnvelopeFormatter = llobot.formatters.envelopes.standard(),
-    knowledge_formatter: KnowledgeFormatter = llobot.formatters.knowledge.standard(),
+def greedy_edit_crammer(
+    envelopes: EnvelopeFormatter = standard_envelopes(),
+    knowledge_formatter: KnowledgeFormatter = standard_knowledge_formatter(),
     # Overscan depth to prevent single large example from clogging the stream and leaving large unused budget.
     depth: int = 10,
     # Do not keep looking for old examples when we reach reasonable fill rate.
@@ -99,15 +95,15 @@ def greedy(
             result.add(chunk)
         return result.build(), KnowledgeIndex(touched_paths)
 
-    return create(cram)
+    return create_edit_crammer(cram)
 
 @cache
-def standard() -> EditCrammer:
-    return greedy()
+def standard_edit_crammer() -> EditCrammer:
+    return greedy_edit_crammer()
 
 __all__ = [
     'EditCrammer',
-    'create',
-    'greedy',
-    'standard',
+    'create_edit_crammer',
+    'greedy_edit_crammer',
+    'standard_edit_crammer',
 ]

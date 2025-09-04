@@ -26,64 +26,64 @@ class KnowledgeSubset:
         return accepted
 
     def __or__(self, other: KnowledgeSubset) -> KnowledgeSubset:
-        return create(lambda path: self.contains(path) or other.contains(path))
+        return create_subset(lambda path: self.contains(path) or other.contains(path))
 
     def __and__(self, other: KnowledgeSubset) -> KnowledgeSubset:
-        return create(lambda path: self.contains(path) and other.contains(path))
+        return create_subset(lambda path: self.contains(path) and other.contains(path))
 
     def __sub__(self, other: KnowledgeSubset) -> KnowledgeSubset:
-        return create(lambda path: self.contains(path) and not other.contains(path))
+        return create_subset(lambda path: self.contains(path) and not other.contains(path))
 
     def __invert__(self) -> KnowledgeSubset:
-        return create(lambda path: not self.contains(path))
+        return create_subset(lambda path: not self.contains(path))
 
-def create(predicate: Callable[[Path], bool]) -> KnowledgeSubset:
+def create_subset(predicate: Callable[[Path], bool]) -> KnowledgeSubset:
     class LambdaSubset(KnowledgeSubset):
         def contains(self, path: Path) -> bool:
             return predicate(path)
     return LambdaSubset()
 
-def solo(solo_path: Path) -> KnowledgeSubset:
-    return create(lambda other_path: solo_path == other_path)
+def match_solo(solo_path: Path) -> KnowledgeSubset:
+    return create_subset(lambda other_path: solo_path == other_path)
 
 @cache
-def nothing() -> KnowledgeSubset:
-    return create(lambda path: False)
+def match_nothing() -> KnowledgeSubset:
+    return create_subset(lambda path: False)
 
 @cache
-def everything() -> KnowledgeSubset:
-    return create(lambda path: True)
+def match_everything() -> KnowledgeSubset:
+    return create_subset(lambda path: True)
 
-def suffix(*suffixes: str) -> KnowledgeSubset:
+def match_suffix(*suffixes: str) -> KnowledgeSubset:
     if not suffixes:
-        return nothing()
+        return match_nothing()
     suffix_set = set(suffixes)
-    return create(lambda path: path.suffix in suffix_set)
+    return create_subset(lambda path: path.suffix in suffix_set)
 
-def filename(*names: str) -> KnowledgeSubset:
+def match_filename(*names: str) -> KnowledgeSubset:
     if not names:
-        return nothing()
+        return match_nothing()
     name_set = set(names)
-    return create(lambda path: path.name in name_set)
+    return create_subset(lambda path: path.name in name_set)
 
-def directory(*directories: str) -> KnowledgeSubset:
+def match_directory(*directories: str) -> KnowledgeSubset:
     if not directories:
-        return nothing()
+        return match_nothing()
     directory_set = set(directories)
-    return create(lambda path: any(part in directory_set for part in path.parts))
+    return create_subset(lambda path: any(part in directory_set for part in path.parts))
 
-def relative(pattern: str) -> KnowledgeSubset:
+def match_relative(pattern: str) -> KnowledgeSubset:
     """Create subset matching simple relative pattern using Path.match()."""
-    return create(lambda path: path.match(pattern))
+    return create_subset(lambda path: path.match(pattern))
 
-def absolute(pattern: str) -> KnowledgeSubset:
+def match_absolute(pattern: str) -> KnowledgeSubset:
     """Create subset matching absolute pattern using Path.full_match()."""
-    return create(lambda path: path.full_match(pattern))
+    return create_subset(lambda path: path.full_match(pattern))
 
-def glob(*patterns: str) -> KnowledgeSubset:
+def match_glob(*patterns: str) -> KnowledgeSubset:
     """Create subset matching glob patterns with optimized handling."""
     if not patterns:
-        return nothing()
+        return match_nothing()
 
     suffixes = []
     filenames = []
@@ -119,25 +119,25 @@ def glob(*patterns: str) -> KnowledgeSubset:
     subsets = []
 
     if suffixes:
-        subsets.append(suffix(*suffixes))
+        subsets.append(match_suffix(*suffixes))
     if filenames:
-        subsets.append(filename(*filenames))
+        subsets.append(match_filename(*filenames))
     if directories:
-        subsets.append(directory(*directories))
+        subsets.append(match_directory(*directories))
     for pattern in relatives:
-        subsets.append(relative(pattern))
+        subsets.append(match_relative(pattern))
     for pattern in absolutes:
-        subsets.append(absolute(pattern))
+        subsets.append(match_absolute(pattern))
 
     # Chain unions
     if not subsets:
-        return nothing()
+        return match_nothing()
     result = subsets[0]
     for subset in subsets[1:]:
         result = result | subset
     return result
 
-def parse(text: str) -> KnowledgeSubset:
+def parse_subset(text: str) -> KnowledgeSubset:
     """Parse patterns from text, ignoring comments and blank lines."""
     patterns = []
     for line in text.splitlines():
@@ -148,70 +148,70 @@ def parse(text: str) -> KnowledgeSubset:
         line = line.strip()
         if line:
             patterns.append(line)
-    return glob(*patterns)
+    return match_glob(*patterns)
 
-def load(filename: str, *, package: str | None = None) -> KnowledgeSubset:
+def load_subset(filename: str, *, package: str | None = None) -> KnowledgeSubset:
     """Load patterns from resource file."""
     if package is None:
         frame = inspect.currentframe().f_back
         package = frame.f_globals['__name__']
     content = (resources.files(package) / filename).read_text()
-    return parse(content)
+    return parse_subset(content)
 
-def coerce(material: KnowledgeSubset | str | Path | 'KnowledgeIndex' | 'KnowledgeRanking' | 'KnowledgeScores' | 'Knowledge') -> KnowledgeSubset:
+def coerce_subset(material: KnowledgeSubset | str | Path | 'KnowledgeIndex' | 'KnowledgeRanking' | 'KnowledgeScores' | 'Knowledge') -> KnowledgeSubset:
     if isinstance(material, KnowledgeSubset):
         return material
     if isinstance(material, str):
-        return glob(material)
+        return match_glob(material)
     if isinstance(material, Path):
-        return solo(material)
+        return match_solo(material)
     import llobot.knowledge.indexes
-    index = llobot.knowledge.indexes.coerce(material)
-    return create(lambda path: path in index)
+    index = llobot.knowledge.indexes.coerce_index(material)
+    return create_subset(lambda path: path in index)
 
 @cache
-def whitelist() -> KnowledgeSubset:
-    return load('whitelist.txt')
+def whitelist_subset() -> KnowledgeSubset:
+    return load_subset('whitelist.txt')
 
 @cache
-def blacklist() -> KnowledgeSubset:
-    return load('blacklist.txt')
+def blacklist_subset() -> KnowledgeSubset:
+    return load_subset('blacklist.txt')
 
 # What we almost never want to put in the context.
 # This mostly covers files that are predictable and rarely edited.
 @cache
-def boilerplate() -> KnowledgeSubset:
-    return load('boilerplate.txt')
+def boilerplate_subset() -> KnowledgeSubset:
+    return load_subset('boilerplate.txt')
 
 @cache
-def overviews() -> KnowledgeSubset:
-    return load('overviews.txt')
+def overviews_subset() -> KnowledgeSubset:
+    return load_subset('overviews.txt')
 
 # Ancillary files accompany core files. They are always secondary in some way.
 # They are included in the context, but their default weight is much lower.
 # This also matches boilerplate files, so that it's a superset of boilerplate.
 @cache
-def ancillary() -> KnowledgeSubset:
-    return (boilerplate() | load('ancillary.txt')) - overviews()
+def ancillary_subset() -> KnowledgeSubset:
+    return (boilerplate_subset() | load_subset('ancillary.txt')) - overviews_subset()
 
 __all__ = [
     'KnowledgeSubset',
-    'create',
-    'solo',
-    'nothing',
-    'everything',
-    'suffix',
-    'filename',
-    'directory',
-    'relative',
-    'absolute',
-    'glob',
-    'parse',
-    'load',
-    'coerce',
-    'whitelist',
-    'blacklist',
-    'boilerplate',
-    'overviews',
-    'ancillary',
+    'create_subset',
+    'match_solo',
+    'match_nothing',
+    'match_everything',
+    'match_suffix',
+    'match_filename',
+    'match_directory',
+    'match_relative',
+    'match_absolute',
+    'match_glob',
+    'parse_subset',
+    'load_subset',
+    'coerce_subset',
+    'whitelist_subset',
+    'blacklist_subset',
+    'boilerplate_subset',
+    'overviews_subset',
+    'ancillary_subset',
 ]

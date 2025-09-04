@@ -2,12 +2,12 @@ from pathlib import Path
 import io
 import tarfile
 from llobot.knowledge import Knowledge
-import llobot.text
-import llobot.fs
+from llobot.text import normalize_document
+from llobot.fs import write_bytes
 
-SUFFIX = '.tar.gz'
+KNOWLEDGE_TGZ_SUFFIX = '.tar.gz'
 
-def serialize(knowledge: Knowledge) -> bytes:
+def serialize_knowledge_tgz(knowledge: Knowledge) -> bytes:
     buffer = io.BytesIO()
     with tarfile.open(fileobj=buffer, mode='w:gz') as tar:
         for path in knowledge.keys().sorted():
@@ -17,27 +17,26 @@ def serialize(knowledge: Knowledge) -> bytes:
             tar.addfile(info, io.BytesIO(content))
     return buffer.getvalue()
 
-def deserialize(buffer: bytes) -> Knowledge:
+def deserialize_knowledge_tgz(buffer: bytes) -> Knowledge:
     knowledge = {}
     with tarfile.open(fileobj=io.BytesIO(buffer), mode='r:gz') as tar:
         for member in tar.getmembers():
             if not member.isfile():
                 continue
-            content = llobot.text.normalize(tar.extractfile(member).read().decode('utf-8'))
+            content = normalize_document(tar.extractfile(member).read().decode('utf-8'))
             knowledge[Path(member.name)] = content
     return Knowledge(knowledge)
 
-def save(path: Path, knowledge: Knowledge):
-    llobot.fs.write_bytes(path, serialize(knowledge))
+def save_knowledge_tgz(path: Path, knowledge: Knowledge):
+    write_bytes(path, serialize_knowledge_tgz(knowledge))
 
-def load(path: Path) -> Knowledge:
-    return deserialize(path.read_bytes())
+def load_knowledge_tgz(path: Path) -> Knowledge:
+    return deserialize_knowledge_tgz(path.read_bytes())
 
 __all__ = [
-    'SUFFIX',
-    'serialize',
-    'deserialize',
-    'save',
-    'load',
+    'KNOWLEDGE_TGZ_SUFFIX',
+    'serialize_knowledge_tgz',
+    'deserialize_knowledge_tgz',
+    'save_knowledge_tgz',
+    'load_knowledge_tgz',
 ]
-

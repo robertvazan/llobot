@@ -4,9 +4,10 @@ import requests
 from llobot.chats.branches import ChatBranch
 from llobot.chats.intents import ChatIntent
 from llobot.models import Model
-from llobot.models.streams import ModelStream
-import llobot.models.streams
-import llobot.chats.binarization
+from llobot.models.streams import ModelStream, buffer_stream
+from llobot.chats.binarization import binarize_chat
+from llobot.models.openai.endpoints import proprietary_openai_endpoint
+from llobot.models.openai.encoding import encode_openai_request, parse_openai_stream
 
 class _OpenAIModel(Model):
     _namespace: str
@@ -23,11 +24,10 @@ class _OpenAIModel(Model):
         aliases: list[str] = [],
         context_budget: int = 100_000,
     ):
-        from llobot.models.openai import endpoints
         self._namespace = namespace
         self._name = name
         self._aliases = aliases
-        self._endpoint = endpoint or endpoints.proprietary()
+        self._endpoint = endpoint or proprietary_openai_endpoint()
         self._auth = auth
         self._context_budget = context_budget
 
@@ -65,9 +65,8 @@ class _OpenAIModel(Model):
 
     def generate(self, prompt: ChatBranch) -> ModelStream:
         def _stream() -> ModelStream:
-            from llobot.models.openai import encoding
-            sanitized_prompt = llobot.chats.binarization.binarize_chat(prompt, last=ChatIntent.PROMPT)
-            request = encoding.encode_request(self._name, self.options, sanitized_prompt)
+            sanitized_prompt = binarize_chat(prompt, last=ChatIntent.PROMPT)
+            request = encode_openai_request(self._name, self.options, sanitized_prompt)
             headers = {}
             if self._auth:
                 headers['Authorization'] = f'Bearer {self._auth}'
@@ -76,16 +75,16 @@ class _OpenAIModel(Model):
                 if http_response.encoding is None:
                     http_response.encoding = 'utf-8'
                 yield ChatIntent.RESPONSE
-                yield from encoding.parse_stream(http_response.iter_lines(decode_unicode=True))
-        return llobot.models.streams.buffer(_stream())
+                yield from parse_openai_stream(http_response.iter_lines(decode_unicode=True))
+        return buffer_stream(_stream())
 
-def proprietary(name: str, auth: str, **kwargs) -> Model:
+def openai_model(name: str, auth: str, **kwargs) -> Model:
     return _OpenAIModel(name, auth=auth, **kwargs)
 
-def compatible(endpoint: str, namespace: str, name: str, **kwargs) -> Model:
+def openai_compatible_model(endpoint: str, namespace: str, name: str, **kwargs) -> Model:
     return _OpenAIModel(name, endpoint=endpoint, namespace=namespace, **kwargs)
 
 __all__ = [
-    'proprietary',
-    'compatible',
+    'openai_model',
+    'openai_compatible_model',
 ]

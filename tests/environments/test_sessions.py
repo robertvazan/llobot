@@ -2,7 +2,7 @@ import pytest
 from llobot.chats.intents import ChatIntent
 from llobot.chats.messages import ChatMessage
 from llobot.environments.sessions import SessionEnv
-import llobot.text
+from llobot.text import concat_documents
 
 def test_session_env_default():
     """Tests the default state of SessionEnv."""
@@ -31,7 +31,7 @@ def test_session_env_append():
     env.append(None)
     env.append("")
     env.append("Second part.")
-    expected = llobot.text.concat("First part.", "Second part.")
+    expected = concat_documents("First part.", "Second part.")
     assert env.content() == expected
 
 def test_session_env_message():

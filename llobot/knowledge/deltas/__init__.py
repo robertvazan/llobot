@@ -17,11 +17,11 @@ KnowledgeDeltaBuilder
 Functions
 ---------
 
-fresh()
+fresh_knowledge_delta()
     Create delta representing fresh knowledge state
-between()
+knowledge_delta_between()
     Compute differences between two knowledge states
-diff_compress()
+diff_compress_knowledge()
     Compress deltas using unified diff format when beneficial
 
 The delta system supports move detection and various derived properties like
@@ -44,18 +44,17 @@ from __future__ import annotations
 from pathlib import Path
 import difflib
 from llobot.knowledge import Knowledge
-from llobot.knowledge.rankings import KnowledgeRanking
+from llobot.knowledge.rankings import KnowledgeRanking, rank_in_standard_order
 from ._documents import DocumentDelta
 from ._knowledge import KnowledgeDelta
 from ._builder import KnowledgeDeltaBuilder
-import llobot.knowledge.rankings
 
-def fresh(knowledge: Knowledge, ranking: KnowledgeRanking | None = None) -> KnowledgeDelta:
+def fresh_knowledge_delta(knowledge: Knowledge, ranking: KnowledgeRanking | None = None) -> KnowledgeDelta:
     if ranking is None:
-        ranking = llobot.knowledge.rankings.standard(knowledge)
+        ranking = rank_in_standard_order(knowledge)
     return KnowledgeDelta([DocumentDelta(path, knowledge[path]) for path in ranking if path in knowledge])
 
-def between(before: Knowledge, after: Knowledge, *, move_hints: dict[Path, Path] = {}) -> KnowledgeDelta:
+def knowledge_delta_between(before: Knowledge, after: Knowledge, *, move_hints: dict[Path, Path] = {}) -> KnowledgeDelta:
     builder = KnowledgeDeltaBuilder()
     before_paths = before.keys()
     after_paths = after.keys()
@@ -84,7 +83,7 @@ def between(before: Knowledge, after: Knowledge, *, move_hints: dict[Path, Path]
 
     return builder.build()
 
-def diff_compress(before: Knowledge, delta: KnowledgeDelta, *, threshold: float = 0.8) -> KnowledgeDelta:
+def diff_compress_knowledge(before: Knowledge, delta: KnowledgeDelta, *, threshold: float = 0.8) -> KnowledgeDelta:
     builder = KnowledgeDeltaBuilder()
     # At every step, this contains full file content for all paths where that is possible.
     full = dict(before)
@@ -133,7 +132,7 @@ __all__ = [
     'DocumentDelta',
     'KnowledgeDelta',
     'KnowledgeDeltaBuilder',
-    'fresh',
-    'between',
-    'diff_compress',
+    'fresh_knowledge_delta',
+    'knowledge_delta_between',
+    'diff_compress_knowledge',
 ]

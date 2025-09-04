@@ -2,14 +2,14 @@ from __future__ import annotations
 from functools import cache
 from importlib import resources
 import inspect
-import llobot.text
+from llobot.text import normalize_document, concat_documents
 
-def read(filename: str, *, package: str | None = None) -> str:
+def read_prompt(filename: str, *, package: str | None = None) -> str:
     if package is None:
         frame = inspect.currentframe().f_back
         package = frame.f_globals['__name__']
     content = (resources.files(package) / filename).read_text()
-    return llobot.text.normalize(content).strip()
+    return normalize_document(content).strip()
 
 class Prompt:
     """Base class for all prompt types."""
@@ -57,7 +57,7 @@ class PromptFragment(Prompt):
 
     def __str__(self) -> str:
         """Converts sections to a single string."""
-        return llobot.text.concat(*self._sections)
+        return concat_documents(*self._sections)
 
 class PromptSection(Prompt):
     """Represents a prompt section with its prerequisite sections."""
@@ -116,49 +116,49 @@ class SystemPrompt(Prompt):
         return PromptFragment(self._role, *self._sections)
 
 @cache
-def blocks() -> PromptSection:
-    return PromptSection(read('blocks.md'))
+def blocks_prompt_section() -> PromptSection:
+    return PromptSection(read_prompt('blocks.md'))
 
 @cache
-def listings() -> PromptSection:
-    return PromptSection(read('listings.md'), blocks())
+def listings_prompt_section() -> PromptSection:
+    return PromptSection(read_prompt('listings.md'), blocks_prompt_section())
 
 @cache
-def knowledge() -> PromptSection:
-    return PromptSection(read('knowledge.md'), listings())
+def knowledge_prompt_section() -> PromptSection:
+    return PromptSection(read_prompt('knowledge.md'), listings_prompt_section())
 
 @cache
-def deltas() -> PromptSection:
-    return PromptSection(read('deltas.md'), knowledge())
+def deltas_prompt_section() -> PromptSection:
+    return PromptSection(read_prompt('deltas.md'), knowledge_prompt_section())
 
 @cache
-def editing() -> PromptSection:
-    return PromptSection(read('editing.md'), deltas())
+def editing_prompt_section() -> PromptSection:
+    return PromptSection(read_prompt('editing.md'), deltas_prompt_section())
 
 @cache
-def coding() -> PromptSection:
-    return PromptSection(read('coding.md'), editing())
+def coding_prompt_section() -> PromptSection:
+    return PromptSection(read_prompt('coding.md'), editing_prompt_section())
 
 @cache
-def documentation() -> PromptSection:
-    return PromptSection(read('documentation.md'), coding())
+def documentation_prompt_section() -> PromptSection:
+    return PromptSection(read_prompt('documentation.md'), coding_prompt_section())
 
 @cache
-def answering() -> PromptSection:
-    return PromptSection(read('answering.md'), knowledge())
+def answering_prompt_section() -> PromptSection:
+    return PromptSection(read_prompt('answering.md'), knowledge_prompt_section())
 
 __all__ = [
-    'read',
+    'read_prompt',
     'Prompt',
     'PromptFragment',
     'PromptSection',
     'SystemPrompt',
-    'blocks',
-    'listings',
-    'knowledge',
-    'deltas',
-    'editing',
-    'coding',
-    'documentation',
-    'answering',
+    'blocks_prompt_section',
+    'listings_prompt_section',
+    'knowledge_prompt_section',
+    'deltas_prompt_section',
+    'editing_prompt_section',
+    'coding_prompt_section',
+    'documentation_prompt_section',
+    'answering_prompt_section',
 ]

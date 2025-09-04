@@ -11,15 +11,15 @@ class LanguageGuesser:
         return self.guess(path, content)
 
     def __or__(self, other: LanguageGuesser) -> LanguageGuesser:
-        return create(lambda path, content: self(path, content) or other(path, content))
+        return create_language_guesser(lambda path, content: self(path, content) or other(path, content))
 
-def create(function: Callable[[Path, str], str]) -> LanguageGuesser:
+def create_language_guesser(function: Callable[[Path, str], str]) -> LanguageGuesser:
     class LambdaGuesser(LanguageGuesser):
         def guess(self, path: Path, content: str) -> str:
             return function(path, content)
     return LambdaGuesser()
 
-EXTENSIONS = {
+LANGUAGES_BY_EXTENSION = {
     # Documentation and markup
     '.md': 'markdown',
     '.rst': 'rst',
@@ -126,11 +126,11 @@ EXTENSIONS = {
 }
 
 @cache
-def extension(extensions: dict[str, str] | None = None) -> LanguageGuesser:
-    extensions = EXTENSIONS if extensions is None else extensions
-    return create(lambda path, content: extensions.get(path.suffix, ''))
+def extension_language_guesser(extensions: dict[str, str] | None = None) -> LanguageGuesser:
+    extensions = LANGUAGES_BY_EXTENSION if extensions is None else extensions
+    return create_language_guesser(lambda path, content: extensions.get(path.suffix, ''))
 
-FILENAMES = {
+LANGUAGES_BY_FILENAME = {
     'Makefile': 'makefile',
     'makefile': 'makefile',
     'CMakeLists.txt': 'cmake',
@@ -141,20 +141,20 @@ FILENAMES = {
 }
 
 @cache
-def filename(filenames: dict[str, str] | None = None) -> LanguageGuesser:
-    filenames = FILENAMES if filenames is None else filenames
-    return create(lambda path, content: filenames.get(path.name, ''))
+def filename_language_guesser(filenames: dict[str, str] | None = None) -> LanguageGuesser:
+    filenames = LANGUAGES_BY_FILENAME if filenames is None else filenames
+    return create_language_guesser(lambda path, content: filenames.get(path.name, ''))
 
 @cache
-def standard() -> LanguageGuesser:
-    return filename() | extension()
+def standard_language_guesser() -> LanguageGuesser:
+    return filename_language_guesser() | extension_language_guesser()
 
 __all__ = [
     'LanguageGuesser',
-    'create',
-    'EXTENSIONS',
-    'extension',
-    'FILENAMES',
-    'filename',
-    'standard',
+    'create_language_guesser',
+    'LANGUAGES_BY_EXTENSION',
+    'extension_language_guesser',
+    'LANGUAGES_BY_FILENAME',
+    'filename_language_guesser',
+    'standard_language_guesser',
 ]

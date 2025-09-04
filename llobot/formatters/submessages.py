@@ -6,7 +6,7 @@ from llobot.chats.branches import ChatBranch
 from llobot.chats.messages import ChatMessage
 from llobot.chats.intents import ChatIntent
 from llobot.chats.builders import ChatBuilder
-import llobot.text
+from llobot.text import concat_documents
 
 class SubmessageFormatter:
     """
@@ -78,7 +78,7 @@ class SubmessageFormatter:
         return builder.build()
 
 @cache
-def details() -> SubmessageFormatter:
+def details_submessage_formatter() -> SubmessageFormatter:
     """
     Creates a submessage formatter using HTML details/summary tags.
 
@@ -123,7 +123,7 @@ def details() -> SubmessageFormatter:
                     submessages.append(block)
 
             # Join consecutive submessages with an empty line.
-            return llobot.text.concat(*submessages)
+            return concat_documents(*submessages)
 
         def format_stream(self, stream: ModelStream) -> ModelStream:
             in_details = False
@@ -212,12 +212,12 @@ def details() -> SubmessageFormatter:
     return DetailsSubmessageFormatter()
 
 @cache
-def standard() -> SubmessageFormatter:
+def standard_submessage_formatter() -> SubmessageFormatter:
     """Returns the standard submessage formatter."""
-    return details()
+    return details_submessage_formatter()
 
 __all__ = [
     'SubmessageFormatter',
-    'details',
-    'standard',
+    'details_submessage_formatter',
+    'standard_submessage_formatter',
 ]

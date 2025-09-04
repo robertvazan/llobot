@@ -1,5 +1,5 @@
 from __future__ import annotations
-import llobot.text
+from llobot.text import concat_documents
 from llobot.chats.intents import ChatIntent
 
 # Guesstimate of how many chars are consumed per message by typical chat format.
@@ -75,7 +75,7 @@ class ChatMessage:
         """
         Returns a single-string representation of the message, including its intent.
         """
-        return llobot.text.concat(f'**{self.intent}:**', self.content)
+        return concat_documents(f'**{self.intent}:**', self.content)
 
     def with_content(self, content: str) -> ChatMessage:
         """Creates a new message with the same intent but different content."""
@@ -92,7 +92,7 @@ class ChatMessage:
             return self
         if not self.content:
             return self.with_content(postscript)
-        return self.with_content(llobot.text.concat(self.content, postscript))
+        return self.with_content(concat_documents(self.content, postscript))
 
 __all__ = [
     'ChatMessage',

@@ -4,8 +4,7 @@ import re
 from pathlib import Path
 from llobot.knowledge import Knowledge
 from llobot.knowledge.graphs import KnowledgeGraph, KnowledgeGraphBuilder
-from llobot.scrapers import GraphScraper
-import llobot.scrapers
+from llobot.scrapers import GraphScraper, create_scraper
 
 def _source_path(source: Path) -> Path:
     """Convert a Rust file path to its module path."""
@@ -70,7 +69,7 @@ def _resolve_use_path(source: Path, path: str, knowledge: Knowledge) -> Path | N
         return None
 
 @cache
-def submodule() -> GraphScraper:
+def submodule_rust_scraper() -> GraphScraper:
     pattern = re.compile(r'^ *(?:pub )?mod ([\w_]+);', re.MULTILINE)
     def scrape(knowledge: Knowledge) -> KnowledgeGraph:
         builder = KnowledgeGraphBuilder()
@@ -85,10 +84,10 @@ def submodule() -> GraphScraper:
                     elif mod_path in knowledge:
                         builder.add(path, mod_path)
         return builder.build()
-    return llobot.scrapers.create(scrape)
+    return create_scraper(scrape)
 
 @cache
-def use() -> GraphScraper:
+def use_rust_scraper() -> GraphScraper:
     statement_pattern = re.compile(r'^( *)(?:pub )?use ([^;]+);', re.MULTILINE)
     brace_pattern = re.compile(r'([\w_:]*){([^{}]*)}')
     item_pattern = re.compile(r'([\w_:]+)')
@@ -114,17 +113,17 @@ def use() -> GraphScraper:
                         if target:
                             builder.add(path, target)
         return builder.build()
-    return llobot.scrapers.create(scrape)
+    return create_scraper(scrape)
 
 @cache
-def standard() -> GraphScraper:
+def standard_rust_scraper() -> GraphScraper:
     # Including submodule references by default is a bit controversial,
     # because parent does not depend on the submodule just because it exists.
     # It is however common for dependency relationship to match submodule relationship.
-    return submodule() | use()
+    return submodule_rust_scraper() | use_rust_scraper()
 
 __all__ = [
-    'submodule',
-    'use',
-    'standard',
+    'submodule_rust_scraper',
+    'use_rust_scraper',
+    'standard_rust_scraper',
 ]

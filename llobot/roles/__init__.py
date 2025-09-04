@@ -21,19 +21,19 @@ models
 Markdown files like `coder.md` and `editor.md` contain the core system
 prompts for the respective roles.
 """
+
 from __future__ import annotations
 import logging
 from datetime import datetime
 from pathlib import Path
-import llobot.time
+from llobot.time import current_time
 from llobot.chats.branches import ChatBranch
-from llobot.chats.archives import ChatArchive
+from llobot.chats.archives import ChatArchive, standard_chat_archive, coerce_chat_archive
 from llobot.projects import Project
 from llobot.fs.zones import Zoning
 from llobot.models import Model
 from llobot.models.streams import ModelStream
-import llobot.fs
-import llobot.chats.archives
+from llobot.fs import data_home
 
 _logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ class Role:
     _example_archive: ChatArchive
 
     def __init__(self, name: str, model: Model, *,
-        example_archive: ChatArchive | Zoning | Path | str = llobot.chats.archives.standard(llobot.fs.data()/'llobot/examples'),
+        example_archive: ChatArchive | Zoning | Path | str = standard_chat_archive(data_home()/'llobot/examples'),
     ):
         """
         Initializes the Role.
@@ -55,7 +55,7 @@ class Role:
         """
         self._name = name
         self._model = model
-        self._example_archive = llobot.chats.archives.coerce(example_archive)
+        self._example_archive = coerce_chat_archive(example_archive)
 
     @property
     def name(self) -> str:
@@ -101,7 +101,7 @@ class Role:
             if last_chat and last_chat[0].content == chat[0].content:
                 self.example_archive.remove(zone, last_time)
 
-        time = llobot.time.now()
+        time = current_time()
         zones = self.zone_names(project)
         self.example_archive.scatter(zones, time, chat)
         _logger.info(f"Archived example: {', '.join(zones)}")

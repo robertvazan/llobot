@@ -1,5 +1,6 @@
 from __future__ import annotations
-import llobot.text
+from typing import Iterator
+from llobot.text import concat_documents
 from llobot.chats.intents import ChatIntent
 from llobot.chats.messages import ChatMessage
 
@@ -97,7 +98,7 @@ class ChatBranch:
         """
         Returns a single-string representation of the entire branch.
         """
-        return llobot.text.concat(*(message.monolithic() for message in self))
+        return concat_documents(*(message.monolithic() for message in self))
 
     def __and__(self, other: ChatBranch) -> ChatBranch:
         """

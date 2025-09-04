@@ -22,39 +22,39 @@ from typing import Iterable
 from collections.abc import Callable
 import threading
 from queue import Queue
-import llobot.text
+from llobot.text import markdown_code_details
 from llobot.chats.intents import ChatIntent
 from llobot.chats.messages import ChatMessage
 
 type ModelStream = Iterable[str | ChatIntent]
 
-def text(response: str) -> ModelStream:
+def text_stream(response: str) -> ModelStream:
     """Creates a stream that yields a constant string."""
     if response:
         yield response
 
-def message(msg: ChatMessage) -> ModelStream:
+def message_stream(msg: ChatMessage) -> ModelStream:
     """Creates a stream that yields a single message."""
     yield msg.intent
     if msg.content:
         yield msg.content
 
-def ok(response: str) -> ModelStream:
+def ok_stream(response: str) -> ModelStream:
     """Creates a success status stream with a checkmark prefix."""
-    yield from text(f'✅ {response}')
+    yield from text_stream(f'✅ {response}')
 
-def error(response: str) -> ModelStream:
+def error_stream(response: str) -> ModelStream:
     """Creates an error status stream with a cross mark prefix."""
-    yield from text(f'❌ {response}')
+    yield from text_stream(f'❌ {response}')
 
-def exception(ex: Exception) -> ModelStream:
+def exception_stream(ex: Exception) -> ModelStream:
     """Creates an error stream from an exception, including a stack trace."""
     message = str(ex) or ex.__class__.__name__
     stack_trace = "".join(traceback.format_exception(ex)).strip()
-    details = llobot.text.details('Stack trace', '', stack_trace)
-    yield from error(f'`{message}`\n\n{details}')
+    details = markdown_code_details('Stack trace', '', stack_trace)
+    yield from error_stream(f'`{message}`\n\n{details}')
 
-def buffer(stream: ModelStream) -> ModelStream:
+def buffer_stream(stream: ModelStream) -> ModelStream:
     """
     Wraps a stream in a thread-safe queue.
 
@@ -86,10 +86,10 @@ def buffer(stream: ModelStream) -> ModelStream:
 
 __all__ = [
     'ModelStream',
-    'text',
-    'message',
-    'ok',
-    'error',
-    'exception',
-    'buffer',
+    'text_stream',
+    'message_stream',
+    'ok_stream',
+    'error_stream',
+    'exception_stream',
+    'buffer_stream',
 ]

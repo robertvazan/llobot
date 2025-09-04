@@ -4,11 +4,8 @@ import re
 from pathlib import Path
 from llobot.knowledge import Knowledge
 from llobot.knowledge.graphs import KnowledgeGraph, KnowledgeGraphBuilder
-from llobot.knowledge.indexes import KnowledgeIndex
-from llobot.scrapers import GraphScraper
-from llobot.scrapers.index import ScrapingIndex
-import llobot.scrapers
-import llobot.scrapers.index
+from llobot.scrapers import GraphScraper, create_scraper
+from llobot.scrapers.index import ScrapingIndex, create_scraping_index
 
 def _python_module_paths(module: str) -> tuple[Path, Path]:
     """
@@ -89,11 +86,11 @@ def _resolve_python_module(knowledge: Knowledge, source: Path, module: str, inde
         return index.lookup(source, py_path, init_path)
 
 @cache
-def simple_imports() -> GraphScraper:
+def simple_imports_python_scraper() -> GraphScraper:
     pattern = re.compile(r'^ *import ([\w_]+(?:\.[\w_]+)*)', re.MULTILINE)
     def scrape(knowledge: Knowledge) -> KnowledgeGraph:
         builder = KnowledgeGraphBuilder()
-        index = llobot.scrapers.index.create(knowledge)
+        index = create_scraping_index(knowledge)
         for path, content in knowledge:
             if path.suffix == '.py':
                 for module in pattern.findall(content):
@@ -103,14 +100,14 @@ def simple_imports() -> GraphScraper:
                     if target:
                         builder.add(path, target)
         return builder.build()
-    return llobot.scrapers.create(scrape)
+    return create_scraper(scrape)
 
 @cache
-def from_imports() -> GraphScraper:
+def from_imports_python_scraper() -> GraphScraper:
     pattern = re.compile(r'^ *from ([\w_.]+) import', re.MULTILINE)
     def scrape(knowledge: Knowledge) -> KnowledgeGraph:
         builder = KnowledgeGraphBuilder()
-        index = llobot.scrapers.index.create(knowledge)
+        index = create_scraping_index(knowledge)
         for path, content in knowledge:
             if path.suffix == '.py':
                 modules = set(pattern.findall(content))
@@ -119,16 +116,16 @@ def from_imports() -> GraphScraper:
                     if target:
                         builder.add(path, target)
         return builder.build()
-    return llobot.scrapers.create(scrape)
+    return create_scraper(scrape)
 
 @cache
-def item_imports() -> GraphScraper:
+def item_imports_python_scraper() -> GraphScraper:
     from_re = re.compile(r'^ *from ([\w_.]+) import ([\w_.]+(?: as [\w_]+)?(?:, [\w_.]+(?: as [\w_]+)?)*)', re.MULTILINE)
     multiline_re = re.compile(r'^ *from ([\w_.]+) import +\(\s*([\w_.]+(?: as [\w_]+)?(?:,\s*[\w_.]+(?: as [\w_]+)?)*)', re.MULTILINE)
     item_re = re.compile(r'([\w_.]+)(?: as [\w_]+)?')
     def scrape(knowledge: Knowledge) -> KnowledgeGraph:
         builder = KnowledgeGraphBuilder()
-        index = llobot.scrapers.index.create(knowledge)
+        index = create_scraping_index(knowledge)
         for path, content in knowledge:
             if path.suffix == '.py':
                 for module, items in from_re.findall(content) + multiline_re.findall(content):
@@ -139,20 +136,20 @@ def item_imports() -> GraphScraper:
                         if target:
                             builder.add(path, target)
         return builder.build()
-    return llobot.scrapers.create(scrape)
+    return create_scraper(scrape)
 
 @cache
-def imports() -> GraphScraper:
-    return simple_imports() | from_imports() | item_imports()
+def imports_python_scraper() -> GraphScraper:
+    return simple_imports_python_scraper() | from_imports_python_scraper() | item_imports_python_scraper()
 
 @cache
-def standard() -> GraphScraper:
-    return imports()
+def standard_python_scraper() -> GraphScraper:
+    return imports_python_scraper()
 
 __all__ = [
-    'simple_imports',
-    'from_imports',
-    'item_imports',
-    'imports',
-    'standard',
+    'simple_imports_python_scraper',
+    'from_imports_python_scraper',
+    'item_imports_python_scraper',
+    'imports_python_scraper',
+    'standard_python_scraper',
 ]

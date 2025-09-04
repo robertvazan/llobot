@@ -41,7 +41,7 @@ _UNIFIED_RE = re.compile(
     re.VERBOSE
 )
 
-def parse(source: str | ChatMessage | ChatBranch) -> list[str]:
+def parse_mentions(source: str | ChatMessage | ChatBranch) -> list[str]:
     """
     Parses @command mentions from a string, ChatMessage, or ChatBranch.
 
@@ -90,5 +90,5 @@ def parse(source: str | ChatMessage | ChatBranch) -> list[str]:
     return mentions
 
 __all__ = [
-    'parse',
+    'parse_mentions',
 ]

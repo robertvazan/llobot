@@ -38,14 +38,13 @@ tgz
 Functions
 ---------
 
-directory()
+load_directory_knowledge()
     Load knowledge from filesystem directory with filtering options
 """
 from __future__ import annotations
 from pathlib import Path
 from llobot.chats.branches import ChatBranch
-import llobot.fs
-import llobot.chats.markdown
+from llobot.fs import read_document
 
 class Knowledge:
     _documents: dict[Path, str]
@@ -95,16 +94,16 @@ class Knowledge:
         return Knowledge({path: operation(path, content) for path, content in self})
 
     def __and__(self, subset: 'KnowledgeSubset' | str | Path | 'KnowledgeIndex' | 'KnowledgeRanking' | 'KnowledgeScores') -> Knowledge:
-        import llobot.knowledge.subsets
-        subset = llobot.knowledge.subsets.coerce(subset)
+        from llobot.knowledge.subsets import coerce_subset
+        subset = coerce_subset(subset)
         return Knowledge({path: content for path, content in self if path in subset})
 
     def __or__(self, addition: Knowledge) -> Knowledge:
         return Knowledge(self._documents | addition._documents)
 
     def __sub__(self, subset: 'KnowledgeSubset' | str | Path | 'KnowledgeIndex' | Path | 'KnowledgeRanking' | 'KnowledgeScores') -> Knowledge:
-        import llobot.knowledge.subsets
-        return self & ~llobot.knowledge.subsets.coerce(subset)
+        from llobot.knowledge.subsets import coerce_subset
+        return self & ~coerce_subset(subset)
 
     def __rtruediv__(self, prefix: Path | str) -> Knowledge:
         prefix = Path(prefix)
@@ -116,32 +115,31 @@ class Knowledge:
 
 _default_subset = object()
 
-def directory(
+def load_directory_knowledge(
     directory: Path | str,
     whitelist: 'KnowledgeSubset' | str | Path | 'KnowledgeIndex' | 'KnowledgeRanking' | None | object = _default_subset,
     blacklist: 'KnowledgeSubset' | str | Path | 'KnowledgeIndex' | 'KnowledgeRanking' | None | object = _default_subset,
 ) -> Knowledge:
-    from llobot.knowledge.indexes import KnowledgeIndex
+    from llobot.knowledge.indexes import KnowledgeIndex, directory_index, coerce_index
     from llobot.knowledge.rankings import KnowledgeRanking
-    import llobot.knowledge.subsets
-    import llobot.knowledge.indexes
+    from llobot.knowledge.subsets import coerce_subset, whitelist_subset, blacklist_subset, match_nothing, match_everything
     directory = Path(directory)
     if whitelist is _default_subset:
-        whitelist = llobot.knowledge.subsets.whitelist()
+        whitelist = whitelist_subset()
     if blacklist is _default_subset:
-        blacklist = llobot.knowledge.subsets.blacklist()
-    blacklist = llobot.knowledge.subsets.coerce(blacklist or llobot.knowledge.subsets.nothing())
+        blacklist = blacklist_subset()
+    blacklist = coerce_subset(blacklist or match_nothing())
     # Special-case concrete whitelist, so that we don't recurse into potentially large directories unnecessarily.
     if isinstance(whitelist, (Path, KnowledgeIndex, KnowledgeRanking)):
-        whitelist = llobot.knowledge.indexes.coerce(whitelist)
-        knowledge = Knowledge({path: llobot.fs.read_document(directory/path) for path in whitelist if (directory/path).is_file() and path not in blacklist})
+        whitelist = coerce_index(whitelist)
+        knowledge = Knowledge({path: read_document(directory/path) for path in whitelist if (directory/path).is_file() and path not in blacklist})
     else:
-        whitelist = llobot.knowledge.subsets.coerce(whitelist or llobot.knowledge.subsets.everything())
-        index = llobot.knowledge.indexes.directory(directory, whitelist, blacklist)
-        knowledge = Knowledge({path: llobot.fs.read_document(directory/path) for path in index})
+        whitelist = coerce_subset(whitelist or match_everything())
+        index = directory_index(directory, whitelist, blacklist)
+        knowledge = Knowledge({path: read_document(directory/path) for path in index})
     return knowledge
 
 __all__ = [
     'Knowledge',
-    'directory',
+    'load_directory_knowledge',
 ]

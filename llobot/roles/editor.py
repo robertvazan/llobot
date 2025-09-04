@@ -1,59 +1,63 @@
 from __future__ import annotations
-from functools import cache
 from datetime import datetime
+from functools import cache
 from llobot.chats.branches import ChatBranch
 from llobot.chats.builders import ChatBuilder
 from llobot.chats.intents import ChatIntent
 from llobot.chats.messages import ChatMessage
 from llobot.commands.chains import CommandChain
+from llobot.commands.cutoffs import CutoffCommand
 from llobot.commands.projects import ProjectCommand
 from llobot.commands.retrievals import RetrievalCommand
-from llobot.commands.cutoffs import CutoffCommand
+from llobot.crammers.edits import EditCrammer, standard_edit_crammer
+from llobot.crammers.indexes import IndexCrammer, standard_index_crammer
+from llobot.crammers.knowledge import KnowledgeCrammer, standard_knowledge_crammer
 from llobot.environments import Environment
 from llobot.environments.cutoffs import CutoffEnv
 from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.retrievals import RetrievalsEnv
 from llobot.environments.sessions import SessionEnv
+from llobot.formatters.envelopes import EnvelopeFormatter, standard_envelopes
+from llobot.formatters.knowledge import KnowledgeFormatter, standard_knowledge_formatter
+from llobot.formatters.prompts import (
+    PromptFormatter,
+    reminder_prompt_formatter,
+    standard_prompt_formatter,
+)
 from llobot.knowledge import Knowledge
+from llobot.knowledge.deltas import diff_compress_knowledge, knowledge_delta_between
 from llobot.knowledge.indexes import KnowledgeIndex
+from llobot.knowledge.rankers import KnowledgeRanker, standard_ranker
+from llobot.knowledge.scorers import (
+    KnowledgeScorer,
+    irrelevant_subset_scorer,
+    relevant_subset_scorer,
+    standard_scorer,
+)
+from llobot.knowledge.scores import uniform_scores
 from llobot.knowledge.subsets import KnowledgeSubset
-from llobot.knowledge.rankers import KnowledgeRanker
-from llobot.knowledge.scorers import KnowledgeScorer
-from llobot.crammers.knowledge import KnowledgeCrammer
-from llobot.crammers.edits import EditCrammer
-from llobot.crammers.indexes import IndexCrammer
-from llobot.formatters.envelopes import EnvelopeFormatter
-from llobot.formatters.knowledge import KnowledgeFormatter
-from llobot.formatters.prompts import PromptFormatter
-from llobot.prompts import SystemPrompt, Prompt
-from llobot.projects import Project
-from llobot.roles import Role
 from llobot.models import Model
 from llobot.models.streams import ModelStream
-import llobot.commands.mentions
-import llobot.knowledge.scorers
-import llobot.knowledge.scores
-import llobot.crammers.knowledge
-import llobot.crammers.edits
-import llobot.crammers.indexes
-import llobot.formatters.knowledge
-import llobot.formatters.prompts
-import llobot.formatters.envelopes
-import llobot.prompts
-import llobot.knowledge.rankings
-import llobot.knowledge.rankers
-import llobot.knowledge.deltas
+from llobot.projects import Project
+from llobot.prompts import (
+    Prompt,
+    SystemPrompt,
+    answering_prompt_section,
+    editing_prompt_section,
+    read_prompt,
+)
+from llobot.roles import Role
 
 @cache
-def system() -> SystemPrompt:
+def editor_system_prompt() -> SystemPrompt:
     """
     Returns the standard system prompt for the editor role.
     """
     return SystemPrompt(
-        llobot.prompts.read('editor.md'),
-        llobot.prompts.editing(),
-        llobot.prompts.answering(),
+        read_prompt('editor.md'),
+        editing_prompt_section(),
+        answering_prompt_section(),
     )
 
 class Editor(Role):
@@ -72,18 +76,18 @@ class Editor(Role):
     _command_chain: CommandChain
 
     def __init__(self, name: str, model: Model, *,
-        prompt: str | Prompt = system(),
+        prompt: str | Prompt = editor_system_prompt(),
         projects: list[Project] | None = None,
-        relevance_scorer: KnowledgeScorer | KnowledgeSubset = llobot.knowledge.scorers.irrelevant(),
-        graph_scorer: KnowledgeScorer = llobot.knowledge.scorers.standard(),
-        ranker: KnowledgeRanker = llobot.knowledge.rankers.standard(),
-        knowledge_crammer: KnowledgeCrammer = llobot.crammers.knowledge.standard(),
-        edit_crammer: EditCrammer = llobot.crammers.edits.standard(),
-        index_crammer: IndexCrammer = llobot.crammers.indexes.standard(),
-        envelopes: EnvelopeFormatter = llobot.formatters.envelopes.standard(),
-        retrieval_formatter: KnowledgeFormatter = llobot.formatters.knowledge.standard(),
-        prompt_formatter: PromptFormatter = llobot.formatters.prompts.standard(),
-        reminder_formatter: PromptFormatter = llobot.formatters.prompts.reminder(),
+        relevance_scorer: KnowledgeScorer | KnowledgeSubset = irrelevant_subset_scorer(),
+        graph_scorer: KnowledgeScorer = standard_scorer(),
+        ranker: KnowledgeRanker = standard_ranker(),
+        knowledge_crammer: KnowledgeCrammer = standard_knowledge_crammer(),
+        edit_crammer: EditCrammer = standard_edit_crammer(),
+        index_crammer: IndexCrammer = standard_index_crammer(),
+        envelopes: EnvelopeFormatter = standard_envelopes(),
+        retrieval_formatter: KnowledgeFormatter = standard_knowledge_formatter(),
+        prompt_formatter: PromptFormatter = standard_prompt_formatter(),
+        reminder_formatter: PromptFormatter = reminder_prompt_formatter(),
         # Share of the context dedicated to examples and associated knowledge updates.
         example_share: float = 0.4,
         **kwargs,
@@ -94,7 +98,7 @@ class Editor(Role):
         super().__init__(name, model, **kwargs)
         self._system = str(prompt)
         if isinstance(relevance_scorer, KnowledgeSubset):
-            self._relevance_scorer = llobot.knowledge.scorers.relevant(relevance_scorer)
+            self._relevance_scorer = relevant_subset_scorer(relevance_scorer)
         else:
             self._relevance_scorer = relevance_scorer
         self._graph_scorer = graph_scorer
@@ -140,7 +144,7 @@ class Editor(Role):
         # Index
         index_budget = budget - history_chat.cost
         # Add background scores so nothing is omitted from index
-        index_scores = scores | llobot.knowledge.scores.uniform(knowledge.keys(), 0.001)
+        index_scores = scores | uniform_scores(knowledge.keys(), 0.001)
         index_chat = self._index_crammer(index_scores, index_budget)
 
         # Knowledge
@@ -183,9 +187,9 @@ class Editor(Role):
         project.refresh()
         initial_knowledge = project.knowledge(cutoff)
         current_knowledge = project.knowledge()
-        delta = llobot.knowledge.deltas.between(initial_knowledge, current_knowledge, move_hints=edit_delta.moves)
+        delta = knowledge_delta_between(initial_knowledge, current_knowledge, move_hints=edit_delta.moves)
 
-        compressed_delta = llobot.knowledge.deltas.diff_compress(initial_knowledge, delta)
+        compressed_delta = diff_compress_knowledge(initial_knowledge, delta)
         response_content = self._envelopes.format_all(compressed_delta)
         synthetic_response = ChatMessage(ChatIntent.RESPONSE, response_content)
         example_chat = chat[0].branch() + synthetic_response
@@ -193,6 +197,6 @@ class Editor(Role):
         self.save_example(example_chat, project)
 
 __all__ = [
-    'system',
+    'editor_system_prompt',
     'Editor',
 ]

@@ -3,9 +3,8 @@ from anthropic import Anthropic
 from llobot.chats.intents import ChatIntent
 from llobot.chats.branches import ChatBranch
 from llobot.models import Model
-from llobot.models.streams import ModelStream
-import llobot.models.streams
-import llobot.chats.binarization
+from llobot.models.streams import ModelStream, buffer_stream
+from llobot.chats.binarization import binarize_chat
 
 class _AnthropicModel(Model):
     _client: Anthropic
@@ -82,7 +81,7 @@ class _AnthropicModel(Model):
     def generate(self, prompt: ChatBranch) -> ModelStream:
         def _stream() -> ModelStream:
             messages = []
-            sanitized_prompt = llobot.chats.binarization.binarize_chat(prompt, last=ChatIntent.PROMPT)
+            sanitized_prompt = binarize_chat(prompt, last=ChatIntent.PROMPT)
             for message in sanitized_prompt:
                 messages.append({
                     'role': 'user' if message.intent == ChatIntent.PROMPT else 'assistant',
@@ -111,11 +110,11 @@ class _AnthropicModel(Model):
             with self._client.messages.stream(**parameters) as stream:
                 yield ChatIntent.RESPONSE
                 yield from stream.text_stream
-        return llobot.models.streams.buffer(_stream())
+        return buffer_stream(_stream())
 
-def create(name: str, **kwargs) -> Model:
+def anthropic_model(name: str, **kwargs) -> Model:
     return _AnthropicModel(name, **kwargs)
 
 __all__ = [
-    'create',
+    'anthropic_model',
 ]

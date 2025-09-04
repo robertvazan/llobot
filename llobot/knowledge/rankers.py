@@ -1,8 +1,14 @@
 from __future__ import annotations
 from functools import cache, lru_cache
 from llobot.knowledge import Knowledge
-from llobot.knowledge.rankings import KnowledgeRanking
-import llobot.knowledge.rankings
+from llobot.knowledge.rankings import (
+    KnowledgeRanking,
+    rank_lexicographically,
+    rank_overviews_first,
+    rank_ascending,
+    rank_descending,
+    rank_shuffled,
+)
 
 class KnowledgeRanker:
     def rank(self, knowledge: Knowledge) -> KnowledgeRanking:
@@ -11,43 +17,43 @@ class KnowledgeRanker:
     def __call__(self, knowledge: Knowledge) -> KnowledgeRanking:
         return self.rank(knowledge)
 
-def create(function: Callable[[Knowledge], KnowledgeRanking]) -> KnowledgeRanker:
+def create_ranker(function: Callable[[Knowledge], KnowledgeRanking]) -> KnowledgeRanker:
     class LambdaKnowledgeRanker(KnowledgeRanker):
         def rank(self, knowledge: Knowledge) -> KnowledgeRanking:
             return function(knowledge)
     return LambdaKnowledgeRanker()
 
 @cache
-def lexicographical() -> KnowledgeRanker:
-    return create(lambda knowledge: llobot.knowledge.rankings.lexicographical(knowledge))
+def lexicographical_ranker() -> KnowledgeRanker:
+    return create_ranker(lambda knowledge: rank_lexicographically(knowledge))
 
 @cache
-def overviews_first(overviews: KnowledgeSubset | None = None) -> KnowledgeRanker:
-    return create(lambda knowledge: llobot.knowledge.rankings.overviews_first(knowledge, overviews))
+def overviews_first_ranker(overviews: KnowledgeSubset | None = None) -> KnowledgeRanker:
+    return create_ranker(lambda knowledge: rank_overviews_first(knowledge, overviews))
 
 @lru_cache
-def ascending(scorer: 'KnowledgeScorer') -> KnowledgeRanker:
-    return create(lambda knowledge: llobot.knowledge.rankings.ascending(scorer(knowledge)))
+def ascending_ranker(scorer: 'KnowledgeScorer') -> KnowledgeRanker:
+    return create_ranker(lambda knowledge: rank_ascending(scorer(knowledge)))
 
 @lru_cache
-def descending(scorer: 'KnowledgeScorer') -> KnowledgeRanker:
-    return create(lambda knowledge: llobot.knowledge.rankings.descending(scorer(knowledge)))
+def descending_ranker(scorer: 'KnowledgeScorer') -> KnowledgeRanker:
+    return create_ranker(lambda knowledge: rank_descending(scorer(knowledge)))
 
 @cache
-def shuffle() -> KnowledgeRanker:
-    return create(lambda knowledge: llobot.knowledge.rankings.shuffle(knowledge))
+def shuffling_ranker() -> KnowledgeRanker:
+    return create_ranker(lambda knowledge: rank_shuffled(knowledge))
 
 @cache
-def standard() -> KnowledgeRanker:
-    return overviews_first()
+def standard_ranker() -> KnowledgeRanker:
+    return overviews_first_ranker()
 
 __all__ = [
     'KnowledgeRanker',
-    'create',
-    'lexicographical',
-    'overviews_first',
-    'ascending',
-    'descending',
-    'shuffle',
-    'standard',
+    'create_ranker',
+    'lexicographical_ranker',
+    'overviews_first_ranker',
+    'ascending_ranker',
+    'descending_ranker',
+    'shuffling_ranker',
+    'standard_ranker',
 ]

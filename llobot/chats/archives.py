@@ -2,13 +2,12 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 from datetime import datetime
-from llobot.fs.zones import Zoning
+from typing import Iterable, Callable
+from llobot.fs.zones import Zoning, coerce_zoning
 from llobot.chats.branches import ChatBranch
-import llobot.time
-import llobot.fs
-import llobot.fs.time
-import llobot.fs.zones
-import llobot.chats.markdown
+from llobot.fs import create_parents
+from llobot.fs.archives import format_archive_path, parse_archive_path, recent_archive_paths
+from llobot.chats.markdown import save_chat_as_markdown, load_chat_as_markdown
 
 _logger = logging.getLogger(__name__)
 
@@ -109,7 +108,7 @@ class ChatArchive:
             return last_item
         return None, None
 
-def markdown(location: Zoning | Path | str) -> ChatArchive:
+def markdown_chat_archive(location: Zoning | Path | str) -> ChatArchive:
     """
     Creates a chat archive that stores chats as Markdown files on the filesystem.
 
@@ -119,12 +118,12 @@ def markdown(location: Zoning | Path | str) -> ChatArchive:
     Returns:
         A ChatArchive instance.
     """
-    location = llobot.fs.zones.coerce(location)
+    location = coerce_zoning(location)
     class MarkdownChatArchive(ChatArchive):
         def _path(self, zone: str, time: datetime) -> Path:
-            return llobot.fs.time.path(location[zone], time, llobot.chats.markdown.SUFFIX)
+            return format_archive_path(location[zone], time, '.md')
         def add(self, zone: str, time: datetime, chat: ChatBranch):
-            llobot.chats.markdown.save(self._path(zone, time), chat)
+            save_chat_as_markdown(self._path(zone, time), chat)
         def scatter(self, zones: Iterable[str], time: datetime, chat: ChatBranch):
             zones = list(zones)
             if not zones:
@@ -134,7 +133,7 @@ def markdown(location: Zoning | Path | str) -> ChatArchive:
                 source_path = self._path(zones[0], time)
                 target_path = self._path(zone, time)
                 try:
-                    llobot.fs.create_parents(target_path)
+                    create_parents(target_path)
                     target_path.hardlink_to(source_path)
                 except Exception as ex:
                     # Fall back to regular saving if hardlink fails
@@ -144,15 +143,15 @@ def markdown(location: Zoning | Path | str) -> ChatArchive:
             self._path(zone, time).unlink(missing_ok=True)
         def read(self, zone: str, time: datetime) -> ChatBranch | None:
             path = self._path(zone, time)
-            return llobot.chats.markdown.load(path) if path.exists() else None
+            return load_chat_as_markdown(path) if path.exists() else None
         def contains(self, zone: str, time: datetime) -> bool:
             return self._path(zone, time).exists()
         def recent(self, zone: str, cutoff: datetime | None = None) -> Iterable[tuple[datetime, ChatBranch]]:
-            for path in llobot.fs.time.recent(location[zone], llobot.chats.markdown.SUFFIX, cutoff):
-                yield (llobot.fs.time.parse(path), llobot.chats.markdown.load(path))
+            for path in recent_archive_paths(location[zone], '.md', cutoff):
+                yield (parse_archive_path(path), load_chat_as_markdown(path))
     return MarkdownChatArchive()
 
-def standard(location: Zoning | Path | str) -> ChatArchive:
+def standard_chat_archive(location: Zoning | Path | str) -> ChatArchive:
     """
     Creates a standard chat archive using the markdown implementation.
 
@@ -162,14 +161,14 @@ def standard(location: Zoning | Path | str) -> ChatArchive:
     Returns:
         A ChatArchive instance.
     """
-    return markdown(location)
+    return markdown_chat_archive(location)
 
-def coerce(what: ChatArchive | Zoning | Path | str) -> ChatArchive:
+def coerce_chat_archive(what: ChatArchive | Zoning | Path | str) -> ChatArchive:
     """
     Coerces various types into a ChatArchive instance.
 
     If `what` is already a `ChatArchive`, it's returned as is.
-    Otherwise, it's passed to `standard()` to create a new archive.
+    Otherwise, it's passed to `standard_chat_archive()` to create a new archive.
 
     Args:
         what: The object to coerce.
@@ -180,9 +179,9 @@ def coerce(what: ChatArchive | Zoning | Path | str) -> ChatArchive:
     if isinstance(what, ChatArchive):
         return what
     else:
-        return standard(what)
+        return standard_chat_archive(what)
 
-def rename(mapping: Callable[[str], str], underlying: ChatArchive) -> ChatArchive:
+def rename_chat_archive(mapping: Callable[[str], str], underlying: ChatArchive) -> ChatArchive:
     """
     Wraps a chat archive, renaming zones before passing them to the underlying archive.
 
@@ -210,8 +209,8 @@ def rename(mapping: Callable[[str], str], underlying: ChatArchive) -> ChatArchiv
 
 __all__ = [
     'ChatArchive',
-    'markdown',
-    'standard',
-    'coerce',
-    'rename',
+    'markdown_chat_archive',
+    'standard_chat_archive',
+    'coerce_chat_archive',
+    'rename_chat_archive',
 ]

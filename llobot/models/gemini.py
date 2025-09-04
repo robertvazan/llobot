@@ -4,10 +4,9 @@ from google.genai import types
 from llobot.chats.intents import ChatIntent
 from llobot.chats.branches import ChatBranch
 from llobot.models import Model
-from llobot.models.streams import ModelStream
-import llobot.models.openai
-import llobot.models.streams
-import llobot.chats.binarization
+from llobot.models.streams import ModelStream, buffer_stream
+from llobot.models.openai import openai_compatible_model
+from llobot.chats.binarization import binarize_chat
 
 class _GeminiModel(Model):
     _client: genai.Client
@@ -75,7 +74,7 @@ class _GeminiModel(Model):
     def generate(self, prompt: ChatBranch) -> ModelStream:
         def _stream() -> ModelStream:
             contents = []
-            sanitized_prompt = llobot.chats.binarization.binarize_chat(prompt, last=ChatIntent.PROMPT)
+            sanitized_prompt = binarize_chat(prompt, last=ChatIntent.PROMPT)
             for message in sanitized_prompt:
                 if message.intent == ChatIntent.PROMPT:
                     contents.append(types.UserContent(parts=[types.Part(text=message.content)]))
@@ -93,15 +92,15 @@ class _GeminiModel(Model):
             for chunk in stream:
                 if chunk.text:
                     yield chunk.text
-        return llobot.models.streams.buffer(_stream())
+        return buffer_stream(_stream())
 
-def create(name: str, **kwargs) -> Model:
+def gemini_model(name: str, **kwargs) -> Model:
     return _GeminiModel(name, **kwargs)
 
-def via_openai_protocol(name: str, auth: str, **kwargs) -> Model:
-    return llobot.models.openai.compatible('https://generativelanguage.googleapis.com/v1beta/openai', 'gemini', name, auth=auth, **kwargs)
+def gemini_via_openai_protocol(name: str, auth: str, **kwargs) -> Model:
+    return openai_compatible_model('https://generativelanguage.googleapis.com/v1beta/openai', 'gemini', name, auth=auth, **kwargs)
 
 __all__ = [
-    'create',
-    'via_openai_protocol',
+    'gemini_model',
+    'gemini_via_openai_protocol',
 ]

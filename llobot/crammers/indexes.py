@@ -5,10 +5,8 @@ from llobot.chats.builders import ChatBuilder
 from llobot.chats.intents import ChatIntent
 from llobot.chats.messages import ChatMessage
 from llobot.knowledge.scores import KnowledgeScores
-from llobot.knowledge.trees import KnowledgeTree
-from llobot.formatters.trees import TreeFormatter
-import llobot.knowledge.trees
-import llobot.formatters.trees
+from llobot.knowledge.trees import KnowledgeTree, standard_tree
+from llobot.formatters.trees import TreeFormatter, standard_tree_formatter
 
 class IndexCrammer:
     """
@@ -34,7 +32,7 @@ class IndexCrammer:
     def __call__(self, scores: KnowledgeScores, budget: int) -> ChatBranch:
         return self.cram(scores, budget)
 
-def create(function: Callable[[KnowledgeScores, int], ChatBranch]) -> IndexCrammer:
+def create_index_crammer(function: Callable[[KnowledgeScores, int], ChatBranch]) -> IndexCrammer:
     """
     Creates an index crammer from a function.
 
@@ -50,8 +48,8 @@ def create(function: Callable[[KnowledgeScores, int], ChatBranch]) -> IndexCramm
     return LambdaIndexCrammer()
 
 @lru_cache
-def optional(
-    tree_formatter: TreeFormatter = llobot.formatters.trees.standard("Project files"),
+def optional_index_crammer(
+    tree_formatter: TreeFormatter = standard_tree_formatter("Project files"),
     affirmation: str = 'I see.',
 ) -> IndexCrammer:
     """
@@ -73,7 +71,7 @@ def optional(
 
         # Create tree from index
         index = scores.keys()
-        tree = llobot.knowledge.trees.standard(index)
+        tree = standard_tree(index)
 
         # Format tree
         formatted_content = tree_formatter(tree)
@@ -91,21 +89,21 @@ def optional(
         else:
             return ChatBranch()
 
-    return create(cram)
+    return create_index_crammer(cram)
 
 @cache
-def standard() -> IndexCrammer:
+def standard_index_crammer() -> IndexCrammer:
     """
     Returns the standard index crammer.
 
     Returns:
         The default IndexCrammer (currently optional with standard tree formatter).
     """
-    return optional()
+    return optional_index_crammer()
 
 __all__ = [
     'IndexCrammer',
-    'create',
-    'optional',
-    'standard',
+    'create_index_crammer',
+    'optional_index_crammer',
+    'standard_index_crammer',
 ]

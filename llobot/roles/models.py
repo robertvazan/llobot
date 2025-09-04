@@ -2,11 +2,9 @@ from __future__ import annotations
 import logging
 from llobot.chats.branches import ChatBranch
 from llobot.models import Model
-from llobot.models.streams import ModelStream
+from llobot.models.streams import ModelStream, exception_stream
 from llobot.roles import Role
-from llobot.formatters.submessages import SubmessageFormatter
-import llobot.models.streams
-import llobot.formatters.submessages
+from llobot.formatters.submessages import SubmessageFormatter, standard_submessage_formatter
 
 _logger = logging.getLogger(__name__)
 
@@ -23,7 +21,7 @@ class RoleModel(Model):
             formatter: The submessage formatter to use. Defaults to the standard one.
         """
         self._role = role
-        self._formatter = formatter or llobot.formatters.submessages.standard()
+        self._formatter = formatter or standard_submessage_formatter()
 
     @property
     def name(self) -> str:
@@ -53,7 +51,7 @@ class RoleModel(Model):
             yield from self._formatter.format_stream(stream)
         except Exception as ex:
             _logger.error(f'Exception in {self._role.name} role.', exc_info=True)
-            yield from llobot.models.streams.exception(ex)
+            yield from exception_stream(ex)
 
 __all__ = [
     'RoleModel',

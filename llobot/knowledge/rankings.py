@@ -1,9 +1,7 @@
 from __future__ import annotations
 from pathlib import Path
-from llobot.knowledge.subsets import KnowledgeSubset
-from llobot.knowledge.indexes import KnowledgeIndex
-import llobot.knowledge.subsets
-import llobot.knowledge.indexes
+from llobot.knowledge.subsets import KnowledgeSubset, coerce_subset
+from llobot.knowledge.indexes import KnowledgeIndex, coerce_index
 
 class KnowledgeRanking:
     _paths: list[Path]
@@ -45,21 +43,21 @@ class KnowledgeRanking:
         return KnowledgeRanking(reversed(self._paths))
 
     def __and__(self, whitelist: KnowledgeSubset | str | KnowledgeIndex) -> KnowledgeRanking:
-        return KnowledgeRanking(filter(llobot.knowledge.subsets.coerce(whitelist), self))
+        return KnowledgeRanking(filter(coerce_subset(whitelist), self))
 
     def __sub__(self, blacklist: KnowledgeSubset | str | KnowledgeIndex | Path) -> KnowledgeRanking:
-        return self & ~llobot.knowledge.subsets.coerce(blacklist)
+        return self & ~coerce_subset(blacklist)
 
-def coerce(what: KnowledgeRanking | Iterable[Path | str]) -> KnowledgeRanking:
+def coerce_ranking(what: KnowledgeRanking | Iterable[Path | str]) -> KnowledgeRanking:
     if isinstance(what, KnowledgeRanking):
         return what
     return KnowledgeRanking(what)
 
-def lexicographical(index: KnowledgeIndex | KnowledgeRanking | 'Knowledge') -> KnowledgeRanking:
-    index = llobot.knowledge.indexes.coerce(index)
+def rank_lexicographically(index: KnowledgeIndex | KnowledgeRanking | 'Knowledge') -> KnowledgeRanking:
+    index = coerce_index(index)
     return KnowledgeRanking(sorted(index))
 
-def overviews_first(
+def rank_overviews_first(
     index: KnowledgeIndex | KnowledgeRanking | 'Knowledge',
     overviews: KnowledgeSubset | None = None
 ) -> KnowledgeRanking:
@@ -75,32 +73,32 @@ def overviews_first(
         A knowledge ranking with overview files prioritized.
     """
     # Use local import to avoid cycles
-    import llobot.knowledge.trees
-    tree = llobot.knowledge.trees.overviews_first(index, overviews)
+    from llobot.knowledge.trees import overviews_first_tree
+    tree = overviews_first_tree(index, overviews)
     return tree.ranking
 
-def ascending(scores: 'KnowledgeScores') -> KnowledgeRanking:
+def rank_ascending(scores: 'KnowledgeScores') -> KnowledgeRanking:
     # Sort items with equal score lexicographically.
-    paths = lexicographical(scores)
+    paths = rank_lexicographically(scores)
     return KnowledgeRanking(sorted(paths, key=lambda path: scores[path]))
 
-def descending(scores: 'KnowledgeScores') -> KnowledgeRanking:
-    return ascending(-scores)
+def rank_descending(scores: 'KnowledgeScores') -> KnowledgeRanking:
+    return rank_ascending(-scores)
 
-def shuffle(paths: KnowledgeIndex | KnowledgeRanking | 'Knowledge' | 'KnowledgeScores') -> KnowledgeRanking:
-    import llobot.knowledge.scores
-    return descending(llobot.knowledge.scores.random(paths))
+def rank_shuffled(paths: KnowledgeIndex | KnowledgeRanking | 'Knowledge' | 'KnowledgeScores') -> KnowledgeRanking:
+    from llobot.knowledge.scores import random_scores
+    return rank_descending(random_scores(paths))
 
-def standard(index: KnowledgeIndex | KnowledgeRanking | 'Knowledge') -> KnowledgeRanking:
-    return overviews_first(index)
+def rank_in_standard_order(index: KnowledgeIndex | KnowledgeRanking | 'Knowledge') -> KnowledgeRanking:
+    return rank_overviews_first(index)
 
 __all__ = [
     'KnowledgeRanking',
-    'coerce',
-    'lexicographical',
-    'overviews_first',
-    'ascending',
-    'descending',
-    'shuffle',
-    'standard',
+    'coerce_ranking',
+    'rank_lexicographically',
+    'rank_overviews_first',
+    'rank_ascending',
+    'rank_descending',
+    'rank_shuffled',
+    'rank_in_standard_order',
 ]

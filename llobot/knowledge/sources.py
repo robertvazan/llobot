@@ -1,12 +1,9 @@
 from __future__ import annotations
 from pathlib import Path
-from llobot.knowledge.subsets import KnowledgeSubset
-from llobot.knowledge.indexes import KnowledgeIndex
+from llobot.knowledge.subsets import KnowledgeSubset, coerce_subset, whitelist_subset, blacklist_subset
+from llobot.knowledge.indexes import KnowledgeIndex, directory_index
 from llobot.knowledge.rankings import KnowledgeRanking
-from llobot.knowledge import Knowledge
-import llobot.knowledge.subsets
-import llobot.knowledge.indexes
-import llobot.knowledge
+from llobot.knowledge import Knowledge, load_directory_knowledge
 
 class KnowledgeSource:
     def enumerate(self) -> KnowledgeIndex:
@@ -19,36 +16,36 @@ class KnowledgeSource:
         return self.load(self.enumerate())
 
     def __or__(self, other: KnowledgeSource) -> KnowledgeSource:
-        return create(
+        return create_knowledge_source(
             enumerator=lambda: self.enumerate() | other.enumerate(),
             loader=lambda filelist: self.load(filelist) | other.load(filelist)
         )
 
     def __and__(self, subset: str | KnowledgeSubset) -> KnowledgeSource:
-        subset = llobot.knowledge.subsets.coerce(subset)
-        return create(
+        subset = coerce_subset(subset)
+        return create_knowledge_source(
             enumerator=lambda: self.enumerate() & subset,
             loader=lambda filelist: self.load(filelist)
         )
 
     def __sub__(self, blacklist: str | KnowledgeSubset) -> KnowledgeSource:
-        return self & ~llobot.knowledge.subsets.coerce(blacklist)
+        return self & ~coerce_subset(blacklist)
 
     def __truediv__(self, subtree: Path | str) -> KnowledgeSource:
         subtree = Path(subtree)
-        return create(
+        return create_knowledge_source(
             enumerator=lambda: self.enumerate()/subtree,
             loader=lambda filelist: self.load(subtree/filelist)/subtree
         )
 
     def __rtruediv__(self, prefix: Path | str) -> KnowledgeSource:
         prefix = Path(prefix)
-        return create(
+        return create_knowledge_source(
             enumerator=lambda: prefix/self.enumerate(),
             loader=lambda filelist: prefix/self.load(filelist/prefix)
         )
 
-def create(enumerator: Callable[[], KnowledgeIndex], loader: Callable[[KnowledgeIndex], Knowledge]) -> KnowledgeSource:
+def create_knowledge_source(enumerator: Callable[[], KnowledgeIndex], loader: Callable[[KnowledgeIndex], Knowledge]) -> KnowledgeSource:
     class LambdaSource(KnowledgeSource):
         def enumerate(self) -> KnowledgeIndex:
             return enumerator()
@@ -56,27 +53,26 @@ def create(enumerator: Callable[[], KnowledgeIndex], loader: Callable[[Knowledge
             return loader(filelist)
     return LambdaSource()
 
-def empty() -> KnowledgeSource:
-    return create(
+def empty_knowledge_source() -> KnowledgeSource:
+    return create_knowledge_source(
         enumerator=lambda: KnowledgeIndex(),
         loader=lambda _: Knowledge()
     )
 
-def directory(
+def directory_knowledge_source(
     directory: Path | str,
-    whitelist: KnowledgeSubset | str | Path | KnowledgeIndex | KnowledgeRanking | None = llobot.knowledge.subsets.whitelist(),
-    blacklist: KnowledgeSubset | str | Path | KnowledgeIndex | KnowledgeRanking | None = llobot.knowledge.subsets.blacklist(),
+    whitelist: KnowledgeSubset | str | Path | KnowledgeIndex | KnowledgeRanking | None = whitelist_subset(),
+    blacklist: KnowledgeSubset | str | Path | KnowledgeIndex | KnowledgeRanking | None = blacklist_subset(),
 ) -> KnowledgeSource:
     directory = Path(directory)
-    return create(
-        enumerator=lambda: llobot.knowledge.indexes.directory(directory, whitelist, blacklist),
-        loader=lambda filelist: llobot.knowledge.directory(directory, filelist, None)
+    return create_knowledge_source(
+        enumerator=lambda: directory_index(directory, whitelist, blacklist),
+        loader=lambda filelist: load_directory_knowledge(directory, filelist, None)
     )
 
 __all__ = [
     'KnowledgeSource',
-    'create',
-    'empty',
-    'directory',
+    'create_knowledge_source',
+    'empty_knowledge_source',
+    'directory_knowledge_source',
 ]
-

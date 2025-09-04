@@ -9,13 +9,11 @@ from llobot.chats.intents import ChatIntent
 from llobot.chats.branches import ChatBranch
 from llobot.chats.builders import ChatBuilder
 from llobot.chats.messages import ChatMessage
-import llobot.fs
-
-SUFFIX = '.md'
+from llobot.fs import read_text, write_text
 
 _INTENT_RE = re.compile('> ([A-Z][-A-Za-z]*)')
 
-def format(chat: ChatBranch) -> str:
+def format_chat_as_markdown(chat: ChatBranch) -> str:
     """
     Serializes a chat branch into a Markdown string.
 
@@ -45,11 +43,11 @@ def format(chat: ChatBranch) -> str:
         lines.pop(0)
     return ''.join([l + '\n' for l in lines])
 
-def parse(formatted: str) -> ChatBranch:
+def parse_chat_as_markdown(formatted: str) -> ChatBranch:
     """
     Parses a chat branch from its Markdown representation.
 
-    This is the reverse of `format()`.
+    This is the reverse of `format_chat_as_markdown()`.
 
     Args:
         formatted: The Markdown string to parse.
@@ -93,7 +91,7 @@ def parse(formatted: str) -> ChatBranch:
         builder.add(ChatMessage(intent, '\n'.join(lines[1:])))
     return builder.build()
 
-def save(path: Path, chat: ChatBranch):
+def save_chat_as_markdown(path: Path, chat: ChatBranch):
     """
     Saves a chat branch to a Markdown file.
 
@@ -101,9 +99,9 @@ def save(path: Path, chat: ChatBranch):
         path: The path to the file.
         chat: The chat branch to save.
     """
-    llobot.fs.write_text(path, format(chat))
+    write_text(path, format_chat_as_markdown(chat))
 
-def load(path: Path) -> ChatBranch:
+def load_chat_as_markdown(path: Path) -> ChatBranch:
     """
     Loads a chat branch from a Markdown file.
 
@@ -113,12 +111,11 @@ def load(path: Path) -> ChatBranch:
     Returns:
         The loaded chat branch.
     """
-    return parse(llobot.fs.read_text(path))
+    return parse_chat_as_markdown(read_text(path))
 
 __all__ = [
-    'SUFFIX',
-    'format',
-    'parse',
-    'save',
-    'load',
+    'format_chat_as_markdown',
+    'parse_chat_as_markdown',
+    'save_chat_as_markdown',
+    'load_chat_as_markdown',
 ]

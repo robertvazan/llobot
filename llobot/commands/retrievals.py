@@ -7,7 +7,7 @@ from llobot.commands import Command
 from llobot.environments import Environment
 from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.retrievals import RetrievalsEnv
-import llobot.knowledge.subsets
+from llobot.knowledge.subsets import match_glob
 
 _PATH_RE = re.compile(r'^[a-zA-Z0-9_./-]+$')
 
@@ -39,7 +39,7 @@ class RetrievalCommand(Command):
         if not knowledge_index:
             return False
 
-        subset = llobot.knowledge.subsets.glob(text)
+        subset = match_glob(text)
         matches = list(knowledge_index & subset)
 
         if len(matches) == 1:

@@ -1,12 +1,12 @@
 from __future__ import annotations
 from functools import cache, lru_cache
 from pathlib import Path
+from typing import Callable
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.rankings import KnowledgeRanking
-from llobot.knowledge.trees import KnowledgeTree
-import llobot.knowledge.trees
-import llobot.text
+from llobot.knowledge.trees import KnowledgeTree, coerce_tree
+from llobot.text import concat_documents, markdown_code_details
 
 class TreeFormatter:
     """
@@ -44,10 +44,10 @@ class TreeFormatter:
         Returns:
             Markdown representation of the sorted tree.
         """
-        tree = llobot.knowledge.trees.coerce(material)
+        tree = coerce_tree(material)
         return self.render(tree)
 
-def create(function: Callable[[KnowledgeTree], str]) -> TreeFormatter:
+def create_tree_formatter(function: Callable[[KnowledgeTree], str]) -> TreeFormatter:
     """
     Creates a tree formatter from a function.
 
@@ -63,7 +63,7 @@ def create(function: Callable[[KnowledgeTree], str]) -> TreeFormatter:
     return LambdaTreeFormatter()
 
 @lru_cache
-def flat(title: str) -> TreeFormatter:
+def flat_tree_formatter(title: str) -> TreeFormatter:
     """
     Creates a tree formatter that lists all file paths in a flat list.
 
@@ -81,11 +81,11 @@ def flat(title: str) -> TreeFormatter:
         if not paths:
             return ''
         file_list = '\n'.join(str(path) for path in paths)
-        return llobot.text.details(title, '', file_list)
-    return create(render_flat)
+        return markdown_code_details(title, '', file_list)
+    return create_tree_formatter(render_flat)
 
 @lru_cache
-def grouped(title: str) -> TreeFormatter:
+def grouped_tree_formatter(title: str) -> TreeFormatter:
     """
     Creates a tree formatter that groups files by directory.
 
@@ -121,13 +121,13 @@ def grouped(title: str) -> TreeFormatter:
         if not sections:
             return ''
 
-        content = llobot.text.concat(*sections)
-        return llobot.text.details(title, '', content)
+        content = concat_documents(*sections)
+        return markdown_code_details(title, '', content)
 
-    return create(render_grouped)
+    return create_tree_formatter(render_grouped)
 
 @lru_cache
-def standard(title: str = 'Files') -> TreeFormatter:
+def standard_tree_formatter(title: str = 'Files') -> TreeFormatter:
     """
     Creates the standard tree formatter to be used by default.
 
@@ -139,12 +139,12 @@ def standard(title: str = 'Files') -> TreeFormatter:
     Returns:
         The standard TreeFormatter (currently grouped formatting).
     """
-    return grouped(title)
+    return grouped_tree_formatter(title)
 
 __all__ = [
     'TreeFormatter',
-    'create',
-    'flat',
-    'grouped',
-    'standard',
+    'create_tree_formatter',
+    'flat_tree_formatter',
+    'grouped_tree_formatter',
+    'standard_tree_formatter',
 ]

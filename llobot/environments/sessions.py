@@ -2,12 +2,11 @@
 Session messages.
 """
 from __future__ import annotations
-import llobot.text
+from llobot.text import concat_documents
 from llobot.chats.intents import ChatIntent
 from llobot.chats.messages import ChatMessage
 from llobot.environments import EnvBase
-from llobot.models.streams import ModelStream
-import llobot.models.streams
+from llobot.models.streams import ModelStream, message_stream
 
 class SessionEnv(EnvBase):
     """
@@ -34,7 +33,7 @@ class SessionEnv(EnvBase):
         """
         Returns the combined content of all session message fragments.
         """
-        return llobot.text.concat(*self._fragments)
+        return concat_documents(*self._fragments)
 
     def message(self) -> ChatMessage | None:
         """
@@ -58,7 +57,7 @@ class SessionEnv(EnvBase):
         """
         msg = self.message()
         if msg:
-            yield from llobot.models.streams.message(msg)
+            yield from message_stream(msg)
 
     def recording(self) -> bool:
         """

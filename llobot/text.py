@@ -1,11 +1,12 @@
 from __future__ import annotations
 import re
+from typing import Iterable
 
-def terminate(text: str) -> str:
+def terminate_document(text: str) -> str:
     """Adds a terminal newline to the text if it doesn't have one."""
     return text if not text or text.endswith('\n') else text + '\n'
 
-def normalize(document: str) -> str:
+def normalize_document(document: str) -> str:
     """
     Normalizes a document by:
     - Removing trailing whitespace on all lines
@@ -29,7 +30,7 @@ def normalize(document: str) -> str:
 
     return '\n'.join(lines) + '\n'
 
-def join(separator: str, documents: Iterable[str | None]) -> str:
+def join_documents(separator: str, documents: Iterable[str | None]) -> str:
     """
     Joins a collection of documents with a separator.
 
@@ -42,17 +43,17 @@ def join(separator: str, documents: Iterable[str | None]) -> str:
         return ""
     if len(docs) == 1:
         return docs[0]
-    terminated_front = [terminate(d) for d in docs[:-1]]
+    terminated_front = [terminate_document(d) for d in docs[:-1]]
     return separator.join(terminated_front + [docs[-1]])
 
-def concat(*documents: str | None) -> str:
+def concat_documents(*documents: str | None) -> str:
     """
     Concatenates several documents into a single one, separated by double newlines.
 
     This is suitable for creating a single text from multiple sections.
     The resulting string is not terminated with a newline unless the last document was.
     """
-    return join('\n', documents)
+    return join_documents('\n', documents)
 
 _DASHED_NAME_RE = re.compile('[^a-zA-Z0-9_]+')
 
@@ -60,28 +61,28 @@ def dashed_name(name) -> str:
     return _DASHED_NAME_RE.sub(' ', name).strip().replace(' ', '-')
 
 # Language can be an empty string. Code block without language will be produced in that case.
-def quote(lang: str, document: str, *, backtick_count: int = 3) -> str:
+def markdown_code_block(lang: str, document: str, *, backtick_count: int = 3) -> str:
     while '\n' + '`' * backtick_count in document or document.startswith('`' * backtick_count):
         backtick_count += 1
     backticks = '`' * backtick_count
-    return f'{backticks}{lang}\n{terminate(document)}{backticks}'
+    return f'{backticks}{lang}\n{terminate_document(document)}{backticks}'
 
-def details(summary: str, lang: str, document: str, *, backtick_count: int = 3) -> str:
+def markdown_code_details(summary: str, lang: str, document: str, *, backtick_count: int = 3) -> str:
     """
     Wraps a document in HTML details/summary tags with a code block inside.
 
     The document is quoted using the specified language and then wrapped in
     details/summary tags for collapsible display.
     """
-    quoted = quote(lang, document, backtick_count=backtick_count)
+    quoted = markdown_code_block(lang, document, backtick_count=backtick_count)
     return f'<details>\n<summary>{summary}</summary>\n\n{quoted}\n\n</details>'
 
 __all__ = [
-    'terminate',
-    'normalize',
-    'join',
-    'concat',
+    'terminate_document',
+    'normalize_document',
+    'join_documents',
+    'concat_documents',
     'dashed_name',
-    'quote',
-    'details',
+    'markdown_code_block',
+    'markdown_code_details',
 ]

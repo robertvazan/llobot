@@ -1,9 +1,9 @@
 from __future__ import annotations
 from datetime import datetime
 import logging
-import llobot.time
+from llobot.time import current_time
 from llobot.knowledge import Knowledge
-from llobot.knowledge.archives import KnowledgeArchive
+from llobot.knowledge.archives import KnowledgeArchive, standard_knowledge_archive
 from llobot.knowledge.sources import KnowledgeSource
 
 _logger = logging.getLogger(__name__)
@@ -86,15 +86,15 @@ class Project:
         """
         fresh = self.fetch()
         if fresh != self.knowledge():
-            self.archive.add(self.name, llobot.time.now(), fresh)
+            self.archive.add(self.name, current_time(), fresh)
             _logger.info(f"Refreshed: {self.name}")
         else:
             _logger.info(f"Refreshed (no change): {self.name}")
 
-def create(
+def create_project(
     name: str,
     source: KnowledgeSource,
-    archive: KnowledgeArchive = llobot.knowledge.archives.standard()
+    archive: KnowledgeArchive = standard_knowledge_archive()
 ) -> Project:
     """
     Creates a new Project instance.
@@ -111,5 +111,5 @@ def create(
 
 __all__ = [
     'Project',
-    'create',
+    'create_project',
 ]

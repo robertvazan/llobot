@@ -10,14 +10,14 @@ class ExampleCrammer:
     def __call__(self, examples: Iterable[ChatBranch], budget: int) -> ChatBranch:
         return self.cram(examples, budget)
 
-def create(function: Callable[[Iterable[ChatBranch], int], ChatBranch]) -> ExampleCrammer:
+def create_example_crammer(function: Callable[[Iterable[ChatBranch], int], ChatBranch]) -> ExampleCrammer:
     class LambdaExampleCrammer(ExampleCrammer):
         def cram(self, examples: Iterable[ChatBranch], budget: int) -> ChatBranch:
             return function(examples, budget)
     return LambdaExampleCrammer()
 
 @lru_cache
-def greedy(
+def greedy_example_crammer(
     # Overscan depth to prevent single large example from clogging the stream and leaving large unused budget.
     depth: int = 10,
     # Do not overscan when we reach reasonable fill rate.
@@ -50,15 +50,15 @@ def greedy(
         for example in selected_examples:
             chat.add(example)
         return chat.build()
-    return create(cram)
+    return create_example_crammer(cram)
 
 @cache
-def standard() -> ExampleCrammer:
-    return greedy()
+def standard_example_crammer() -> ExampleCrammer:
+    return greedy_example_crammer()
 
 __all__ = [
     'ExampleCrammer',
-    'create',
-    'greedy',
-    'standard',
+    'create_example_crammer',
+    'greedy_example_crammer',
+    'standard_example_crammer',
 ]

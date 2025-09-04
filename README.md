@@ -29,30 +29,30 @@ from pathlib import Path
 sys.path.insert(0, str(Path.home() / 'Sources' / 'llobot'))
 
 from llobot.models.catalogs import ModelCatalog
-import llobot.models.ollama
-import llobot.models.gemini
-import llobot.models.anthropic
-import llobot.projects
-import llobot.knowledge.sources
+from llobot.models.ollama import ollama_model
+from llobot.models.gemini import gemini_model
+from llobot.models.anthropic import anthropic_model
+from llobot.projects import create_project
+from llobot.knowledge.sources import directory_knowledge_source
 from llobot.roles.coder import Coder
 from llobot.roles.models import RoleModel
-import llobot.models.ollama.listeners
+from llobot.models.ollama.listeners import ollama_listener
 
 # Backend models that respond to the assembled prompt
 models = ModelCatalog(
     # This will use qwen2.5-coder:7b on localhost instance of Ollama.
-    llobot.models.ollama.create(
+    ollama_model(
         'qwen2.5-coder',
         # Context size has to be always specified, because Ollama defaults are tiny.
         24 * 1024,
         aliases=['local']
     ),
-    llobot.models.gemini.create(
+    gemini_model(
         'gemini-2.5-flash',
         auth='YOUR_GOOGLE_API_KEY',
         aliases=['cloud']
     ),
-    llobot.models.anthropic.create(
+    anthropic_model(
         'claude-sonnet-4-0',
         auth='YOUR_ANTHROPIC_API_KEY',
         aliases=['claude']
@@ -61,10 +61,10 @@ models = ModelCatalog(
 
 # Projects that will be used as knowledge bases
 projects = [
-    llobot.projects.create('llobot',
-        llobot.knowledge.sources.directory(Path.home() / 'Sources' / 'llobot')),
-    llobot.projects.create('myproject',
-        llobot.knowledge.sources.directory(Path.home() / 'Sources' / 'myproject')),
+    create_project('llobot',
+        directory_knowledge_source(Path.home() / 'Sources' / 'llobot')),
+    create_project('myproject',
+        directory_knowledge_source(Path.home() / 'Sources' / 'myproject')),
 ]
 
 # Roles determine what goes in the context.
@@ -77,7 +77,7 @@ roles = [
 bots = ModelCatalog(*[RoleModel(role) for role in roles])
 
 # Backend Ollama listens on 11434, so we will listen on 11435 to avoid conflicts.
-llobot.models.ollama.listeners.create(bots, port=11435).listen()
+ollama_listener(bots, port=11435).listen()
 ```
 
 Run this script and add `localhost:11435` as an additional Ollama endpoint to your UI frontend (like Open WebUI, which is [no longer open source](https://github.com/open-webui/open-webui/issues/13579), so feel free to look for alternatives). You should now see the virtual model `coder` listed in the UI.

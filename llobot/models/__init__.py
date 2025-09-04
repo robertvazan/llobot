@@ -1,6 +1,7 @@
 from __future__ import annotations
+from typing import Iterable
 from llobot.chats.branches import ChatBranch
-import llobot.text
+from llobot.text import dashed_name
 
 class Model:
     # Name must be globally unique, something like ollama/model-name:tag.
@@ -11,7 +12,7 @@ class Model:
 
     @property
     def dashed_name(self) -> str:
-        return llobot.text.dashed_name(self.name)
+        return dashed_name(self.name)
 
     # Shorter names that are not necessarily unique.
     @property
@@ -43,9 +44,8 @@ class Model:
     def generate(self, prompt: ChatBranch) -> 'ModelStream':
         raise NotImplementedError
 
-def echo(*, context_budget: int = 100_000, aliases: Iterable[str] = []) -> Model:
-    from llobot.models.streams import ModelStream
-    import llobot.models.streams
+def echo_model(*, context_budget: int = 100_000, aliases: Iterable[str] = []) -> Model:
+    from llobot.models.streams import ModelStream, text_stream
     class EchoModel(Model):
         _context_budget: int
         def __init__(self, context_budget: int):
@@ -74,10 +74,10 @@ def echo(*, context_budget: int = 100_000, aliases: Iterable[str] = []) -> Model
         def context_budget(self) -> int:
             return self._context_budget
         def generate(self, prompt: ChatBranch) -> ModelStream:
-            return llobot.models.streams.text(prompt.monolithic())
+            return text_stream(prompt.monolithic())
     return EchoModel(context_budget)
 
 __all__ = [
     'Model',
-    'echo',
+    'echo_model',
 ]

@@ -3,7 +3,7 @@ Knowledge cutoff environment component.
 """
 from __future__ import annotations
 from datetime import datetime
-import llobot.time
+from llobot.time import current_time, format_time
 from llobot.environments import EnvBase
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.sessions import SessionEnv
@@ -27,7 +27,7 @@ class CutoffEnv(EnvBase):
             ValueError: If a different cutoff is already set.
         """
         if self._cutoff is not None and self._cutoff != cutoff:
-            raise ValueError(f"Cutoff already set to {llobot.time.format(self._cutoff)}, cannot change to {llobot.time.format(cutoff)}")
+            raise ValueError(f"Cutoff already set to {format_time(self._cutoff)}, cannot change to {format_time(cutoff)}")
         self._cutoff = cutoff
 
     def get(self) -> datetime:
@@ -45,8 +45,8 @@ class CutoffEnv(EnvBase):
             project = self.env[ProjectEnv].get()
             if project:
                 project.refresh()
-            self._cutoff = llobot.time.now()
-            self.env[SessionEnv].append(f"Knowledge cutoff: @{llobot.time.format(self._cutoff)}")
+            self._cutoff = current_time()
+            self.env[SessionEnv].append(f"Knowledge cutoff: @{format_time(self._cutoff)}")
         return self._cutoff
 
 __all__ = [

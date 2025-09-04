@@ -1,7 +1,13 @@
 from __future__ import annotations
 from pathlib import Path
-from llobot.knowledge.subsets import KnowledgeSubset
-import llobot.knowledge.subsets
+from llobot.knowledge.subsets import (
+    KnowledgeSubset,
+    coerce_subset,
+    whitelist_subset,
+    blacklist_subset,
+    match_nothing,
+    match_everything,
+)
 
 class KnowledgeIndex:
     _paths: set[Path]
@@ -38,13 +44,13 @@ class KnowledgeIndex:
 
     def sorted(self) -> 'KnowledgeRanking':
         import llobot.knowledge.rankings
-        return llobot.knowledge.rankings.lexicographical(self)
+        return llobot.knowledge.rankings.rank_lexicographically(self)
 
     def reversed(self) -> 'KnowledgeRanking':
         return self.sorted().reversed()
 
     def __and__(self, whitelist: KnowledgeSubset | str | KnowledgeIndex) -> KnowledgeIndex:
-        whitelist = llobot.knowledge.subsets.coerce(whitelist)
+        whitelist = coerce_subset(whitelist)
         return KnowledgeIndex(path for path in self if path in whitelist)
 
     def __or__(self, addition: Path | KnowledgeIndex) -> KnowledgeIndex:
@@ -55,7 +61,7 @@ class KnowledgeIndex:
         raise TypeError
 
     def __sub__(self, blacklist: KnowledgeSubset | str | KnowledgeIndex | Path) -> KnowledgeIndex:
-        return self & ~llobot.knowledge.subsets.coerce(blacklist)
+        return self & ~coerce_subset(blacklist)
 
     def __rtruediv__(self, prefix: Path | str) -> KnowledgeIndex:
         prefix = Path(prefix)
@@ -65,7 +71,7 @@ class KnowledgeIndex:
         subtree = Path(subtree)
         return KnowledgeIndex(path.relative_to(subtree) for path in self if path.is_relative_to(subtree))
 
-def coerce(what: KnowledgeIndex | 'Knowledge' | 'KnowledgeRanking' | 'KnowledgeScores') -> KnowledgeIndex:
+def coerce_index(what: KnowledgeIndex | 'Knowledge' | 'KnowledgeRanking' | 'KnowledgeScores') -> KnowledgeIndex:
     if isinstance(what, KnowledgeIndex):
         return what
     from llobot.knowledge import Knowledge
@@ -90,26 +96,26 @@ def _walk(root: Path, directory: Path, whitelist: KnowledgeSubset, blacklist: Kn
             yield relative
 
 # Blacklist is separate, because it is applied to whole directories in addition to files whereas whitelist is applied only to individual files.
-def directory(
+def directory_index(
     root: Path | str,
-    whitelist: KnowledgeSubset | str | Path | KnowledgeIndex | 'KnowledgeRanking' | None = llobot.knowledge.subsets.whitelist(),
-    blacklist: KnowledgeSubset | str | Path | KnowledgeIndex | 'KnowledgeRanking' | None = llobot.knowledge.subsets.blacklist(),
+    whitelist: KnowledgeSubset | str | Path | KnowledgeIndex | 'KnowledgeRanking' | None = whitelist_subset(),
+    blacklist: KnowledgeSubset | str | Path | KnowledgeIndex | 'KnowledgeRanking' | None = blacklist_subset(),
 ) -> KnowledgeIndex:
     from llobot.knowledge.rankings import KnowledgeRanking
     root = Path(root)
     if not root.exists():
         return KnowledgeIndex()
-    blacklist = llobot.knowledge.subsets.coerce(blacklist or llobot.knowledge.subsets.nothing())
+    blacklist = coerce_subset(blacklist or match_nothing())
     # Special-case concrete whitelist, so that we don't recurse into potentially large directories unnecessarily.
     if isinstance(whitelist, (Path, KnowledgeIndex, KnowledgeRanking)):
-        whitelist = coerce(whitelist)
+        whitelist = coerce_index(whitelist)
         return KnowledgeIndex([path for path in whitelist if (root/path).is_file() and path not in blacklist])
-    whitelist = llobot.knowledge.subsets.coerce(whitelist or llobot.knowledge.subsets.everything())
+    whitelist = coerce_subset(whitelist or match_everything())
     # Carefully walk the tree recursively, so that we can blacklist entire directories.
     return KnowledgeIndex(_walk(root, root, whitelist, blacklist))
 
 __all__ = [
     'KnowledgeIndex',
-    'coerce',
-    'directory',
+    'coerce_index',
+    'directory_index',
 ]

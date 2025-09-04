@@ -1,11 +1,10 @@
 from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
-from llobot.knowledge.indexes import KnowledgeIndex
+from llobot.knowledge.indexes import KnowledgeIndex, coerce_index
 from llobot.knowledge import Knowledge
 from llobot.knowledge.rankings import KnowledgeRanking
 from llobot.knowledge.scores import KnowledgeScores
-import llobot.knowledge.indexes
 
 class ScrapingIndex:
     """
@@ -124,10 +123,10 @@ class ScrapingIndex:
         return length
 
 @lru_cache(maxsize=2)
-def _create(index: KnowledgeIndex) -> ScrapingIndex:
+def _create_scraping_index(index: KnowledgeIndex) -> ScrapingIndex:
     return ScrapingIndex(index)
 
-def create(index: KnowledgeIndex | Knowledge | KnowledgeRanking | KnowledgeScores) -> ScrapingIndex:
+def create_scraping_index(index: KnowledgeIndex | Knowledge | KnowledgeRanking | KnowledgeScores) -> ScrapingIndex:
     """
     Creates a scraping index from knowledge index.
 
@@ -137,9 +136,9 @@ def create(index: KnowledgeIndex | Knowledge | KnowledgeRanking | KnowledgeScore
     Returns:
         A scraping index for efficient path lookups
     """
-    return _create(llobot.knowledge.indexes.coerce(index))
+    return _create_scraping_index(coerce_index(index))
 
 __all__ = [
     'ScrapingIndex',
-    'create',
+    'create_scraping_index',
 ]

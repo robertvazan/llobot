@@ -15,9 +15,9 @@ EnvelopeFormatter
 Functions
 ---------
 
-details()
+details_envelopes()
     Creates formatter using HTML details blocks and one-line operations
-standard()
+standard_envelopes()
     Default envelope formatter instance
 
 The envelope system supports:
@@ -32,14 +32,12 @@ from __future__ import annotations
 from functools import cache, lru_cache
 from pathlib import Path
 import re
-from llobot.knowledge.subsets import KnowledgeSubset
-from llobot.formatters.languages import LanguageGuesser
+from llobot.knowledge.subsets import KnowledgeSubset, coerce_subset
+from llobot.formatters.languages import LanguageGuesser, standard_language_guesser
 from llobot.knowledge.deltas import DocumentDelta, KnowledgeDelta, KnowledgeDeltaBuilder
 from llobot.chats.messages import ChatMessage
 from llobot.chats.branches import ChatBranch
-import llobot.knowledge.subsets
-import llobot.formatters.languages
-import llobot.text
+from llobot.text import concat_documents, markdown_code_details, normalize_document
 
 class EnvelopeFormatter:
     """
@@ -67,7 +65,7 @@ class EnvelopeFormatter:
 
     def format_all(self, delta: KnowledgeDelta) -> str:
         """Format all deltas in a KnowledgeDelta, concatenating results."""
-        return llobot.text.concat(*(self.format(d) for d in delta))
+        return concat_documents(*(self.format(d) for d in delta))
 
     def find(self, message: str) -> list[str]:
         """
@@ -130,7 +128,7 @@ class EnvelopeFormatter:
     def __and__(self, whitelist: KnowledgeSubset | str) -> EnvelopeFormatter:
         """Filter formatter to only handle paths in the whitelist."""
         myself = self
-        whitelist = llobot.knowledge.subsets.coerce(whitelist)
+        whitelist = coerce_subset(whitelist)
         class AndEnvelopeFormatter(EnvelopeFormatter):
             def format(self, delta: DocumentDelta) -> str | None:
                 return myself.format(delta) if delta.path in whitelist else None
@@ -167,8 +165,8 @@ _REMOVED_RE = re.compile(_REMOVED_PATTERN, re.MULTILINE)
 _MOVED_RE = re.compile(_MOVED_PATTERN, re.MULTILINE)
 
 @lru_cache
-def details(*,
-    guesser: LanguageGuesser = llobot.formatters.languages.standard(),
+def details_envelopes(*,
+    guesser: LanguageGuesser = standard_language_guesser(),
     quad_backticks: tuple[str, ...] = ('markdown',),
 ) -> EnvelopeFormatter:
     """
@@ -207,7 +205,7 @@ def details(*,
                 lang = guesser(delta.path, content)
 
             backtick_count = 4 if lang in quad_backticks else 3
-            return llobot.text.details(summary, lang, content, backtick_count=backtick_count)
+            return markdown_code_details(summary, lang, content, backtick_count=backtick_count)
 
         def find(self, message: str) -> list[str]:
             return [match.group(0) for match in _DETECTION_REGEX.finditer(message)]
@@ -233,7 +231,7 @@ def details(*,
             if details_match:
                 block_type, path_str, content = details_match.groups()
                 path = Path(path_str.strip())
-                content = llobot.text.normalize(content)
+                content = normalize_document(content)
 
                 if block_type == 'Diff':
                     return DocumentDelta(path, content, diff=True)
@@ -245,12 +243,12 @@ def details(*,
     return DetailsEnvelopeFormatter()
 
 @cache
-def standard() -> EnvelopeFormatter:
+def standard_envelopes() -> EnvelopeFormatter:
     """Get the standard envelope formatter instance."""
-    return details()
+    return details_envelopes()
 
 __all__ = [
     'EnvelopeFormatter',
-    'details',
-    'standard',
+    'details_envelopes',
+    'standard_envelopes',
 ]
