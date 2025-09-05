@@ -77,7 +77,7 @@ def parse_mentions(source: str | ChatMessage | ChatBranch) -> list[str]:
             command = match.group('quoted_single').strip()
         elif match.group('bare') is not None:
             # For bare mentions, strip trailing dots and colons.
-            command = match.group('bare').rstrip('.:')
+            command = match.group('bare').rstrip('.:?')
         else:
             # If it is a code span, we just ignore it. The regex consumes it
             # so its content is not available for subsequent bare mention matching.

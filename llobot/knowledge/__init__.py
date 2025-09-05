@@ -24,16 +24,12 @@ deltas/
     Change tracking with DocumentDelta and KnowledgeDelta
 sources
     Knowledge sources
-archives
+archives/
     Historical knowledge storage
 rankers
     Ranking algorithm implementations
 scorers
     Knowledge scoring implementations
-fs
-    File system storage of knowledge
-tgz
-    Compressed knowledge archives
 
 Functions
 ---------
@@ -54,7 +50,7 @@ class Knowledge:
         self._documents = dict(documents)
         self._hash = None
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return str(self.keys())
 
     def keys(self) -> 'KnowledgeIndex':
