@@ -7,10 +7,10 @@ from llobot.chats.messages import ChatMessage
 from llobot.knowledge import Knowledge
 from llobot.knowledge.deltas import KnowledgeDelta, fresh_knowledge_delta
 from llobot.knowledge.rankings import KnowledgeRanking
-from llobot.formatters.envelopes import EnvelopeFormatter, standard_envelopes
+from llobot.formats.deltas import DeltaFormat, standard_delta_format
 from llobot.text import concat_documents
 
-class KnowledgeFormatter:
+class KnowledgeFormat:
     def render(self, delta: KnowledgeDelta) -> ChatBranch:
         return ChatBranch()
 
@@ -22,33 +22,33 @@ class KnowledgeFormatter:
         return self.render(delta)
 
 @lru_cache
-def granular_knowledge_formatter(envelopes: EnvelopeFormatter = standard_envelopes(), affirmation: str = 'I see.') -> KnowledgeFormatter:
-    class GranularKnowledgeFormatter(KnowledgeFormatter):
+def granular_knowledge_format(delta_format: DeltaFormat = standard_delta_format(), affirmation: str = 'I see.') -> KnowledgeFormat:
+    class GranularKnowledgeFormat(KnowledgeFormat):
         def render(self, delta: KnowledgeDelta) -> ChatBranch:
             chat = ChatBuilder()
             for document in delta:
-                formatted = envelopes(document)
+                formatted = delta_format(document)
                 if formatted is not None:
                     chat.add(ChatMessage(ChatIntent.SYSTEM, formatted))
                     chat.add(ChatMessage(ChatIntent.AFFIRMATION, affirmation))
             return chat.build()
 
-    return GranularKnowledgeFormatter()
+    return GranularKnowledgeFormat()
 
 @lru_cache
-def chunked_knowledge_formatter(
-    envelopes: EnvelopeFormatter = standard_envelopes(),
+def chunked_knowledge_format(
+    delta_format: DeltaFormat = standard_delta_format(),
     affirmation: str = 'I see.',
     min_size: int = 10000
-) -> KnowledgeFormatter:
-    class ChunkedKnowledgeFormatter(KnowledgeFormatter):
+) -> KnowledgeFormat:
+    class ChunkedKnowledgeFormat(KnowledgeFormat):
         def render(self, delta: KnowledgeDelta) -> ChatBranch:
             chat = ChatBuilder()
             buffer = []
             size = 0
 
             for document in delta:
-                formatted = envelopes(document)
+                formatted = delta_format(document)
                 if formatted is not None:
                     buffer.append(formatted)
                     size += len(formatted)
@@ -69,15 +69,15 @@ def chunked_knowledge_formatter(
 
             return chat.build()
 
-    return ChunkedKnowledgeFormatter()
+    return ChunkedKnowledgeFormat()
 
 @cache
-def standard_knowledge_formatter() -> KnowledgeFormatter:
-    return chunked_knowledge_formatter()
+def standard_knowledge_format() -> KnowledgeFormat:
+    return chunked_knowledge_format()
 
 __all__ = [
-    'KnowledgeFormatter',
-    'granular_knowledge_formatter',
-    'chunked_knowledge_formatter',
-    'standard_knowledge_formatter',
+    'KnowledgeFormat',
+    'granular_knowledge_format',
+    'chunked_knowledge_format',
+    'standard_knowledge_format',
 ]

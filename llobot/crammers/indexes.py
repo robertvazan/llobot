@@ -6,7 +6,7 @@ from llobot.chats.intents import ChatIntent
 from llobot.chats.messages import ChatMessage
 from llobot.knowledge.scores import KnowledgeScores
 from llobot.knowledge.trees import KnowledgeTree, standard_tree
-from llobot.formatters.trees import TreeFormatter, standard_tree_formatter
+from llobot.formats.trees import TreeFormat, standard_tree_format
 
 class IndexCrammer:
     """
@@ -49,18 +49,18 @@ def create_index_crammer(function: Callable[[KnowledgeScores, int], ChatBranch])
 
 @lru_cache
 def optional_index_crammer(
-    tree_formatter: TreeFormatter = standard_tree_formatter("Project files"),
+    tree_format: TreeFormat = standard_tree_format("Project files"),
     affirmation: str = 'I see.',
 ) -> IndexCrammer:
     """
     Creates an index crammer that includes the full tree or nothing.
 
     This crammer formats the entire index as a directory tree using the specified
-    tree formatter. If the formatted tree fits within the budget, it returns it
+    tree format. If the formatted tree fits within the budget, it returns it
     wrapped in a ChatBranch. Otherwise, it returns an empty ChatBranch.
 
     Args:
-        tree_formatter: Formatter to use for rendering the directory tree.
+        tree_format: Formatter to use for rendering the directory tree.
 
     Returns:
         IndexCrammer that includes all files or none.
@@ -74,7 +74,7 @@ def optional_index_crammer(
         tree = standard_tree(index)
 
         # Format tree
-        formatted_content = tree_formatter(tree)
+        formatted_content = tree_format(tree)
         if not formatted_content:
             return ChatBranch()
 
@@ -97,7 +97,7 @@ def standard_index_crammer() -> IndexCrammer:
     Returns the standard index crammer.
 
     Returns:
-        The default IndexCrammer (currently optional with standard tree formatter).
+        The default IndexCrammer (currently optional with standard tree format).
     """
     return optional_index_crammer()
 

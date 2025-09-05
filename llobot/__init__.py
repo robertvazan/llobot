@@ -15,8 +15,8 @@ crammers
     Components for selecting information to fit into a context budget.
 environments
     Execution environments for roles to run commands.
-formatters
-    Tools for converting data structures to readable text for prompts.
+formats
+    Tools for rendering data structures to readable text for prompts.
 fs
     Filesystem utilities for data and cache management.
 knowledge

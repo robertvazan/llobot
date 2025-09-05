@@ -6,7 +6,7 @@ from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.rankings import KnowledgeRanking, rank_descending
 from llobot.knowledge.scores import KnowledgeScores, score_length, uniform_scores
-from llobot.formatters.knowledge import KnowledgeFormatter, standard_knowledge_formatter
+from llobot.formats.knowledge import KnowledgeFormat, standard_knowledge_format
 
 class KnowledgeCrammer:
     def cram(self, knowledge: Knowledge, budget: int, scores: KnowledgeScores, ranking: KnowledgeRanking) -> tuple[ChatBranch, KnowledgeIndex]:
@@ -17,7 +17,7 @@ class KnowledgeCrammer:
 
 @lru_cache
 def prioritized_knowledge_crammer(*,
-    formatter: KnowledgeFormatter = standard_knowledge_formatter(),
+    knowledge_format: KnowledgeFormat = standard_knowledge_format(),
 ) -> KnowledgeCrammer:
     class PrioritizedKnowledgeCrammer(KnowledgeCrammer):
         def cram(self, knowledge: Knowledge, budget: int, scores: KnowledgeScores, ranking: KnowledgeRanking) -> tuple[ChatBranch, KnowledgeIndex]:
@@ -26,7 +26,7 @@ def prioritized_knowledge_crammer(*,
             # Premultiply with document lengths. Both scores and lengths will get a denominator in the loop.
             scores *= score_length(knowledge)
             while True:
-                formatted = formatter.render_fresh(knowledge, ranking)
+                formatted = knowledge_format.render_fresh(knowledge, ranking)
                 length = formatted.cost
                 if length <= budget:
                     return formatted, knowledge.keys()

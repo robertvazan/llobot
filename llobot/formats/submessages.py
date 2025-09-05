@@ -8,28 +8,28 @@ from llobot.chats.intents import ChatIntent
 from llobot.chats.builders import ChatBuilder
 from llobot.text import concat_documents
 
-class SubmessageFormatter:
+class SubmessageFormat:
     """
-    Base class for submessage formatters.
+    Base class for submessage formats.
 
-    Submessage formatters pack a `ChatBranch` into a single string.
+    Submessage formats pack a `ChatBranch` into a single string.
     They can also parse the formatted string back into a `ChatBranch`.
     """
-    def format(self, chat: ChatBranch) -> str:
+    def render(self, chat: ChatBranch) -> str:
         """
-        Formats a chat branch into a single string.
+        Renders a chat branch into a single string.
 
         Args:
-            chat: The chat branch to format.
+            chat: The chat branch to render.
 
         Returns:
             A single string representing the branch.
         """
         raise NotImplementedError
 
-    def format_stream(self, stream: 'ModelStream') -> 'ModelStream':
+    def render_stream(self, stream: 'ModelStream') -> 'ModelStream':
         """
-        Formats a model stream into a single message stream.
+        Renders a model stream into a single message stream.
 
         This method processes an incoming stream of message chunks and intents,
         which may represent multiple messages, and wraps each message in a
@@ -78,9 +78,9 @@ class SubmessageFormatter:
         return builder.build()
 
 @cache
-def details_submessage_formatter() -> SubmessageFormatter:
+def details_submessage_format() -> SubmessageFormat:
     """
-    Creates a submessage formatter using HTML details/summary tags.
+    Creates a submessage format using HTML details/summary tags.
 
     Each message in the branch with an intent other than `RESPONSE` is
     wrapped in a collapsible `<details>` block. The content of `RESPONSE`
@@ -108,11 +108,11 @@ def details_submessage_formatter() -> SubmessageFormatter:
     messages (both wrapped and unwrapped) by an empty line.
 
     Returns:
-        A `SubmessageFormatter` instance.
+        A `SubmessageFormat` instance.
     """
     from llobot.models.streams import ModelStream
-    class DetailsSubmessageFormatter(SubmessageFormatter):
-        def format(self, chat: ChatBranch) -> str:
+    class DetailsSubmessageFormat(SubmessageFormat):
+        def render(self, chat: ChatBranch) -> str:
             submessages = []
             for message in chat:
                 if message.intent == ChatIntent.RESPONSE:
@@ -125,7 +125,7 @@ def details_submessage_formatter() -> SubmessageFormatter:
             # Join consecutive submessages with an empty line.
             return concat_documents(*submessages)
 
-        def format_stream(self, stream: ModelStream) -> ModelStream:
+        def render_stream(self, stream: ModelStream) -> ModelStream:
             in_details = False
             is_first_message = True
 
@@ -209,15 +209,15 @@ def details_submessage_formatter() -> SubmessageFormatter:
 
             return builder.build()
 
-    return DetailsSubmessageFormatter()
+    return DetailsSubmessageFormat()
 
 @cache
-def standard_submessage_formatter() -> SubmessageFormatter:
-    """Returns the standard submessage formatter."""
-    return details_submessage_formatter()
+def standard_submessage_format() -> SubmessageFormat:
+    """Returns the standard submessage format."""
+    return details_submessage_format()
 
 __all__ = [
-    'SubmessageFormatter',
-    'details_submessage_formatter',
-    'standard_submessage_formatter',
+    'SubmessageFormat',
+    'details_submessage_format',
+    'standard_submessage_format',
 ]

@@ -1,98 +1,98 @@
 """
-Envelope formatters for knowledge deltas.
+Delta formats for knowledge deltas.
 
-This module provides formatters that can serialize DocumentDelta objects into
-readable text formats and parse them back. The primary formatter uses HTML
+This module provides formats that can serialize DocumentDelta objects into
+readable text formats and parse them back. The primary format uses HTML
 details blocks for file listings and simple one-line formats for operations
 like removals and moves.
 
 Classes
 -------
 
-EnvelopeFormatter
-    Abstract base for envelope formatters with format/parse capabilities
+DeltaFormat
+    Abstract base for delta formats with render/parse capabilities
 
 Functions
 ---------
 
-details_envelopes()
-    Creates formatter using HTML details blocks and one-line operations
-standard_envelopes()
-    Default envelope formatter instance
+details_delta_format()
+    Creates format using HTML details blocks and one-line operations
+standard_delta_format()
+    Default delta format instance
 
-The envelope system supports:
+The delta format system supports:
 - File listings with complete content in details blocks
 - One-line removals in format: Removed: `path/to/file.py`
 - One-line moves in format: Moved: `old/path.py` => `new/path.py`
 - Diff-compressed listings for space efficiency
 - Language detection for syntax highlighting
-- Combining multiple formatters with | and & operators
+- Combining multiple formats with | and & operators
 """
 from __future__ import annotations
 from functools import cache, lru_cache
 from pathlib import Path
 import re
 from llobot.knowledge.subsets import KnowledgeSubset, coerce_subset
-from llobot.formatters.languages import LanguageGuesser, standard_language_guesser
+from llobot.formats.languages import LanguageGuesser, standard_language_guesser
 from llobot.knowledge.deltas import DocumentDelta, KnowledgeDelta, KnowledgeDeltaBuilder
 from llobot.chats.messages import ChatMessage
 from llobot.chats.branches import ChatBranch
 from llobot.text import concat_documents, markdown_code_details, normalize_document
 
-class EnvelopeFormatter:
+class DeltaFormat:
     """
-    Base class for envelope formatters that handle DocumentDelta serialization.
+    Base class for delta formats that handle DocumentDelta serialization.
 
-    Envelope formatters can convert DocumentDelta objects to formatted strings
+    Delta formats can convert DocumentDelta objects to formatted strings
     and parse formatted text back into DocumentDelta objects. They support
     combining via | (union) and & (filtering) operators.
     """
 
-    def format(self, delta: DocumentDelta) -> str | None:
+    def render(self, delta: DocumentDelta) -> str | None:
         """
-        Format a DocumentDelta into a string representation.
+        Renders a DocumentDelta into a string representation.
 
         Args:
-            delta: The document delta to format
+            delta: The document delta to render.
 
         Returns:
-            Formatted string or None if this formatter cannot handle the delta
+            Formatted string or None if this format cannot handle the delta.
         """
         return None
 
     def __call__(self, delta: DocumentDelta) -> str | None:
-        return self.format(delta)
+        return self.render(delta)
 
-    def format_all(self, delta: KnowledgeDelta) -> str:
-        """Format all deltas in a KnowledgeDelta, concatenating results."""
-        return concat_documents(*(self.format(d) for d in delta))
+    def render_all(self, delta: KnowledgeDelta) -> str:
+        """Renders all deltas in a KnowledgeDelta, concatenating results."""
+        return concat_documents(*(self.render(d) for d in delta))
 
     def find(self, message: str) -> list[str]:
         """
-        Find all formatted delta strings in a message.
+        Finds all formatted delta strings in a message.
 
         Args:
-            message: Text to search for formatted deltas
+            message: Text to search for formatted deltas.
 
         Returns:
-            List of formatted delta strings found in the message
+            List of formatted delta strings found in the message.
         """
         return []
 
     def parse(self, formatted: str) -> DocumentDelta | None:
         """
-        Parse a formatted string back into a DocumentDelta.
+        Parses a formatted string back into a DocumentDelta.
 
         Args:
-            formatted: The formatted string to parse
+            formatted: The formatted string to parse.
 
         Returns:
-            DocumentDelta object or None if parsing fails
+            DocumentDelta object or None if parsing fails.
         """
         return None
 
     def parse_message(self, message: str | ChatMessage) -> KnowledgeDelta:
-        """Parse all deltas found in a chat message."""
+        """Parses all deltas found in a chat message."""
         if isinstance(message, ChatMessage):
             message = message.content
 
@@ -104,18 +104,18 @@ class EnvelopeFormatter:
         return builder.build()
 
     def parse_chat(self, chat: ChatBranch) -> KnowledgeDelta:
-        """Parse all deltas found in a chat branch."""
+        """Parses all deltas found in a chat branch."""
         builder = KnowledgeDeltaBuilder()
         for message in chat:
             builder.add(self.parse_message(message.content))
         return builder.build()
 
-    def __or__(self, other: EnvelopeFormatter) -> EnvelopeFormatter:
-        """Combine formatters with union semantics (try first, then second)."""
+    def __or__(self, other: DeltaFormat) -> DeltaFormat:
+        """Combines formats with union semantics (try first, then second)."""
         myself = self
-        class OrEnvelopeFormatter(EnvelopeFormatter):
-            def format(self, delta: DocumentDelta) -> str | None:
-                return myself.format(delta) or other.format(delta)
+        class OrDeltaFormat(DeltaFormat):
+            def render(self, delta: DocumentDelta) -> str | None:
+                return myself.render(delta) or other.render(delta)
             def find(self, message: str) -> list[str]:
                 return myself.find(message) + other.find(message)
             def parse(self, formatted: str) -> DocumentDelta | None:
@@ -123,15 +123,15 @@ class EnvelopeFormatter:
                 if delta:
                     return delta
                 return other.parse(formatted)
-        return OrEnvelopeFormatter()
+        return OrDeltaFormat()
 
-    def __and__(self, whitelist: KnowledgeSubset | str) -> EnvelopeFormatter:
-        """Filter formatter to only handle paths in the whitelist."""
+    def __and__(self, whitelist: KnowledgeSubset | str) -> DeltaFormat:
+        """Filters format to only handle paths in the whitelist."""
         myself = self
         whitelist = coerce_subset(whitelist)
-        class AndEnvelopeFormatter(EnvelopeFormatter):
-            def format(self, delta: DocumentDelta) -> str | None:
-                return myself.format(delta) if delta.path in whitelist else None
+        class AndDeltaFormat(DeltaFormat):
+            def render(self, delta: DocumentDelta) -> str | None:
+                return myself.render(delta) if delta.path in whitelist else None
             def find(self, message: str) -> list[str]:
                 return myself.find(message)
             def parse(self, formatted: str) -> DocumentDelta | None:
@@ -139,7 +139,7 @@ class EnvelopeFormatter:
                 if delta and delta.path not in whitelist:
                     return None
                 return delta
-        return AndEnvelopeFormatter()
+        return AndDeltaFormat()
 
 # Build regex for multi-backtick code blocks (3-10 backticks)
 _CODE_BLOCK_PATTERN = '|'.join(rf'{"`" * i}[^`\n]*\n.*?^{"`" * i}' for i in range(3, 11))
@@ -165,14 +165,14 @@ _REMOVED_RE = re.compile(_REMOVED_PATTERN, re.MULTILINE)
 _MOVED_RE = re.compile(_MOVED_PATTERN, re.MULTILINE)
 
 @lru_cache
-def details_envelopes(*,
+def details_delta_format(*,
     guesser: LanguageGuesser = standard_language_guesser(),
     quad_backticks: tuple[str, ...] = ('markdown',),
-) -> EnvelopeFormatter:
+) -> DeltaFormat:
     """
-    Create an envelope formatter using HTML details blocks and one-line operations.
+    Create a delta format using HTML details blocks and one-line operations.
 
-    This formatter handles:
+    This format handles:
     - File listings: <details><summary>File: path</summary>```content```</details>
     - Diff listings: <details><summary>Diff: path</summary>```diff```</details>
     - Removals: Removed: `path/to/file.py`
@@ -183,10 +183,10 @@ def details_envelopes(*,
         quad_backticks: Languages requiring 4+ backticks (e.g., when content has markdown)
 
     Returns:
-        EnvelopeFormatter instance
+        DeltaFormat instance
     """
-    class DetailsEnvelopeFormatter(EnvelopeFormatter):
-        def format(self, delta: DocumentDelta) -> str | None:
+    class DetailsDeltaFormat(DeltaFormat):
+        def render(self, delta: DocumentDelta) -> str | None:
             # Handle removals
             if delta.removed:
                 return f"Removed: `{delta.path}`"
@@ -240,15 +240,15 @@ def details_envelopes(*,
 
             return None
 
-    return DetailsEnvelopeFormatter()
+    return DetailsDeltaFormat()
 
 @cache
-def standard_envelopes() -> EnvelopeFormatter:
-    """Get the standard envelope formatter instance."""
-    return details_envelopes()
+def standard_delta_format() -> DeltaFormat:
+    """Get the standard delta format instance."""
+    return details_delta_format()
 
 __all__ = [
-    'EnvelopeFormatter',
-    'details_envelopes',
-    'standard_envelopes',
+    'DeltaFormat',
+    'details_delta_format',
+    'standard_delta_format',
 ]

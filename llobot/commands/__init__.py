@@ -10,8 +10,6 @@ Submodules
 
 chains
     Command chains.
-mentions
-    Parser for @command mentions in chat messages.
 projects
     Command to select a project.
 retrievals
@@ -90,7 +88,7 @@ class Command:
             chat: The chat branch to process.
             env: The environment to manipulate.
         """
-        from llobot.commands.mentions import parse_mentions
+        from llobot.formats.mentions import parse_mentions
 
         processed_chat = binarize_chat(chat)
 

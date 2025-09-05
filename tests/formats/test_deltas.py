@@ -1,17 +1,17 @@
 from textwrap import dedent
 from pathlib import Path
-from llobot.formatters.envelopes import details_envelopes, standard_envelopes
+from llobot.formats.deltas import details_delta_format, standard_delta_format
 from llobot.knowledge.deltas import DocumentDelta, KnowledgeDelta
 from llobot.chats.messages import ChatMessage
 from llobot.chats.branches import ChatBranch
 from llobot.chats.intents import ChatIntent
 from llobot.knowledge.subsets import match_suffix
 
-def test_format_file():
-    formatter = standard_envelopes()
+def test_render_file():
+    formatter = standard_delta_format()
     delta = DocumentDelta(Path('test.py'), 'def hello():\n    return "world"')
 
-    result = formatter.format(delta)
+    result = formatter.render(delta)
 
     assert '<details>' in result
     assert '<summary>File: test.py</summary>' in result
@@ -19,11 +19,11 @@ def test_format_file():
     assert 'def hello():' in result
     assert '</details>' in result
 
-def test_format_diff():
-    formatter = standard_envelopes()
+def test_render_diff():
+    formatter = standard_delta_format()
     delta = DocumentDelta(Path('test.py'), '@@ -1,2 +1,3 @@\n def test():\n+    # comment\n     pass', diff=True)
 
-    result = formatter.format(delta)
+    result = formatter.render(delta)
 
     assert '<details>' in result
     assert '<summary>Diff: test.py</summary>' in result
@@ -31,38 +31,38 @@ def test_format_diff():
     assert '@@' in result
     assert '</details>' in result
 
-def test_format_removal():
-    formatter = standard_envelopes()
+def test_render_removal():
+    formatter = standard_delta_format()
     delta = DocumentDelta(Path('test.py'), None, removed=True)
 
-    result = formatter.format(delta)
+    result = formatter.render(delta)
 
     assert result == 'Removed: `test.py`'
 
-def test_format_move():
-    formatter = standard_envelopes()
+def test_render_move():
+    formatter = standard_delta_format()
     delta = DocumentDelta(Path('new.py'), None, moved_from=Path('old.py'))
 
-    result = formatter.format(delta)
+    result = formatter.render(delta)
 
     assert result == 'Moved: `old.py` => `new.py`'
 
-def test_format_all():
-    formatter = standard_envelopes()
+def test_render_all():
+    formatter = standard_delta_format()
     deltas = KnowledgeDelta([
         DocumentDelta(Path('file1.py'), 'content1'),
         DocumentDelta(Path('file2.py'), None, removed=True),
         DocumentDelta(Path('file3.py'), None, moved_from=Path('old3.py'))
     ])
 
-    result = formatter.format_all(deltas)
+    result = formatter.render_all(deltas)
 
     assert 'File: file1.py' in result
     assert 'Removed: `file2.py`' in result
     assert 'Moved: `old3.py` => `file3.py`' in result
 
 def test_find_file_listing():
-    formatter = standard_envelopes()
+    formatter = standard_delta_format()
     message = dedent("""
         Here is a file:
 
@@ -85,7 +85,7 @@ def test_find_file_listing():
     assert 'File: test.py' in matches[0]
 
 def test_find_removal():
-    formatter = standard_envelopes()
+    formatter = standard_delta_format()
     message = dedent("""
         Some text.
 
@@ -100,7 +100,7 @@ def test_find_removal():
     assert matches[0] == 'Removed: `old_file.py`'
 
 def test_find_move():
-    formatter = standard_envelopes()
+    formatter = standard_delta_format()
     message = dedent("""
         Some text.
 
@@ -115,7 +115,7 @@ def test_find_move():
     assert matches[0] == 'Moved: `old/path.py` => `new/path.py`'
 
 def test_parse_file():
-    formatter = standard_envelopes()
+    formatter = standard_delta_format()
     formatted = dedent("""
         <details>
         <summary>File: test.py</summary>
@@ -138,7 +138,7 @@ def test_parse_file():
     assert not delta.moved
 
 def test_parse_diff():
-    formatter = standard_envelopes()
+    formatter = standard_delta_format()
     formatted = dedent("""
         <details>
         <summary>Diff: test.py</summary>
@@ -163,7 +163,7 @@ def test_parse_diff():
     assert not delta.moved
 
 def test_parse_removal():
-    formatter = standard_envelopes()
+    formatter = standard_delta_format()
     formatted = 'Removed: `test.py`'
 
     delta = formatter.parse(formatted)
@@ -176,7 +176,7 @@ def test_parse_removal():
     assert not delta.moved
 
 def test_parse_move():
-    formatter = standard_envelopes()
+    formatter = standard_delta_format()
     formatted = 'Moved: `old/test.py` => `new/test.py`'
 
     delta = formatter.parse(formatted)
@@ -189,7 +189,7 @@ def test_parse_move():
     assert not delta.diff
 
 def test_parse_message():
-    formatter = standard_envelopes()
+    formatter = standard_delta_format()
     message = dedent("""
         Here are some changes:
 
@@ -225,7 +225,7 @@ def test_parse_message():
     assert moved_delta.moved_from == Path('src/old.py')
 
 def test_parse_chat():
-    formatter = standard_envelopes()
+    formatter = standard_delta_format()
     chat = ChatBranch([
         ChatMessage(ChatIntent.PROMPT, "Please make some changes."),
         ChatMessage(ChatIntent.RESPONSE, dedent("""
@@ -259,46 +259,46 @@ def test_parse_chat():
     assert removed_delta.path == Path('unused.py')
 
 def test_or_operator():
-    formatter1 = details_envelopes()
-    formatter2 = details_envelopes()
+    formatter1 = details_delta_format()
+    formatter2 = details_delta_format()
 
     combined = formatter1 | formatter2
     delta = DocumentDelta(Path('test.py'), 'content')
 
-    result = combined.format(delta)
+    result = combined.render(delta)
     assert result is not None
 
 def test_and_operator():
-    formatter = details_envelopes()
+    formatter = details_delta_format()
     filtered = formatter & match_suffix('.py')
 
     # Should format .py files
     py_delta = DocumentDelta(Path('test.py'), 'content')
-    result = filtered.format(py_delta)
+    result = filtered.render(py_delta)
     assert result is not None
 
     # Should not format .txt files
     txt_delta = DocumentDelta(Path('test.txt'), 'content')
-    result = filtered.format(txt_delta)
+    result = filtered.render(txt_delta)
     assert result is None
 
 def test_quad_backticks():
-    formatter = details_envelopes(quad_backticks=('markdown',))
+    formatter = details_delta_format(quad_backticks=('markdown',))
     delta = DocumentDelta(Path('README.md'), '# Title\n\n```python\ncode\n```')
 
-    result = formatter.format(delta)
+    result = formatter.render(delta)
 
     # Should use 4 backticks for markdown content
     assert '````markdown' in result
     assert '````' in result.split('````markdown')[1]
 
 def test_round_trip():
-    """Test that formatting and then parsing returns equivalent delta."""
-    formatter = standard_envelopes()
+    """Test that rendering and then parsing returns equivalent delta."""
+    formatter = standard_delta_format()
     original = DocumentDelta(Path('test.py'), 'def test():\n    pass')
 
-    formatted = formatter.format(original)
-    parsed = formatter.parse(formatted)
+    rendered = formatter.render(original)
+    parsed = formatter.parse(rendered)
 
     assert parsed.path == original.path
     assert parsed.content.strip() == original.content.strip()

@@ -10,10 +10,10 @@ from llobot.environments import Environment
 from llobot.environments.cutoffs import CutoffEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.session_messages import SessionMessageEnv
-from llobot.formatters.prompts import (
-    PromptFormatter,
-    reminder_prompt_formatter,
-    standard_prompt_formatter,
+from llobot.formats.prompts import (
+    PromptFormat,
+    reminder_prompt_format,
+    standard_prompt_format,
 )
 from llobot.models import Model
 from llobot.models.streams import ModelStream
@@ -24,23 +24,23 @@ from llobot.roles import Role
 class Assistant(Role):
     _system: str
     _crammer: ExampleCrammer
-    _prompt_formatter: PromptFormatter
-    _reminder_formatter: PromptFormatter
+    _prompt_format: PromptFormat
+    _reminder_format: PromptFormat
     _command_chain: CommandChain
 
     def __init__(self, name: str, model: Model, *,
         prompt: str | Prompt = '',
         projects: list[Project] | None = None,
         crammer: ExampleCrammer = standard_example_crammer(),
-        prompt_formatter: PromptFormatter = standard_prompt_formatter(),
-        reminder_formatter: PromptFormatter = reminder_prompt_formatter(),
+        prompt_format: PromptFormat = standard_prompt_format(),
+        reminder_format: PromptFormat = reminder_prompt_format(),
         **kwargs,
     ):
         super().__init__(name, model, **kwargs)
         self._system = str(prompt)
         self._crammer = crammer
-        self._prompt_formatter = prompt_formatter
-        self._reminder_formatter = reminder_formatter
+        self._prompt_format = prompt_format
+        self._reminder_format = reminder_format
         self._command_chain = CommandChain(ProjectCommand(projects), CutoffCommand())
 
     def chat(self, prompt: ChatBranch) -> ModelStream:
@@ -52,11 +52,11 @@ class Assistant(Role):
         budget = self.model.context_budget
         builder = ChatBuilder()
 
-        system_chat = self._prompt_formatter(self._system)
+        system_chat = self._prompt_format(self._system)
         builder.add(system_chat)
         budget -= system_chat.cost
 
-        reminder_chat = self._reminder_formatter(self._system)
+        reminder_chat = self._reminder_format(self._system)
         budget -= reminder_chat.cost
 
         recent_examples = self.recent_examples(project, cutoff)

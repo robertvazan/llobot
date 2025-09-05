@@ -7,21 +7,21 @@ from llobot.chats.branches import ChatBranch
 from llobot.chats.messages import ChatMessage
 from llobot.prompts import Prompt
 
-class PromptFormatter:
+class PromptFormat:
     def render(self, prompt: str) -> ChatBranch:
         return ChatBranch()
 
     def __call__(self, prompt: str | Prompt) -> ChatBranch:
         return self.render(str(prompt))
 
-def create_prompt_formatter(function: Callable[[str], ChatBranch]) -> PromptFormatter:
-    class LambdaPromptFormatter(PromptFormatter):
+def create_prompt_format(function: Callable[[str], ChatBranch]) -> PromptFormat:
+    class LambdaPromptFormat(PromptFormat):
         def render(self, prompt: str) -> ChatBranch:
             return function(prompt)
-    return LambdaPromptFormatter()
+    return LambdaPromptFormat()
 
 @cache
-def plain_prompt_formatter(affirmation: str = 'Okay.') -> PromptFormatter:
+def plain_prompt_format(affirmation: str = 'Okay.') -> PromptFormat:
     def render(prompt: str) -> ChatBranch:
         if not prompt:
             return ChatBranch()
@@ -29,14 +29,14 @@ def plain_prompt_formatter(affirmation: str = 'Okay.') -> PromptFormatter:
         chat.add(ChatMessage(ChatIntent.SYSTEM, prompt))
         chat.add(ChatMessage(ChatIntent.AFFIRMATION, affirmation))
         return chat.build()
-    return create_prompt_formatter(render)
+    return create_prompt_format(render)
 
 @cache
-def reminder_prompt_formatter(
+def reminder_prompt_format(
     pattern: str = r'^- IMPORTANT:\s*(.+)$',
     header: str = 'Reminder:',
     affirmation: str = 'Okay.'
-) -> PromptFormatter:
+) -> PromptFormat:
     def render(prompt: str) -> ChatBranch:
         matches = re.findall(pattern, prompt, re.MULTILINE)
         if not matches:
@@ -56,16 +56,16 @@ def reminder_prompt_formatter(
         chat.add(ChatMessage(ChatIntent.AFFIRMATION, affirmation))
         return chat.build()
 
-    return create_prompt_formatter(render)
+    return create_prompt_format(render)
 
 @cache
-def standard_prompt_formatter() -> PromptFormatter:
-    return plain_prompt_formatter()
+def standard_prompt_format() -> PromptFormat:
+    return plain_prompt_format()
 
 __all__ = [
-    'PromptFormatter',
-    'create_prompt_formatter',
-    'plain_prompt_formatter',
-    'reminder_prompt_formatter',
-    'standard_prompt_formatter',
+    'PromptFormat',
+    'create_prompt_format',
+    'plain_prompt_format',
+    'reminder_prompt_format',
+    'standard_prompt_format',
 ]

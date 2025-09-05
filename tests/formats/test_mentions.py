@@ -1,4 +1,4 @@
-from llobot.commands.mentions import parse_mentions
+from llobot.formats.mentions import parse_mentions
 from llobot.chats.messages import ChatMessage
 from llobot.chats.branches import ChatBranch
 from llobot.chats.intents import ChatIntent

@@ -3,20 +3,20 @@ from textwrap import dedent
 from llobot.chats.branches import ChatBranch
 from llobot.chats.messages import ChatMessage
 from llobot.chats.intents import ChatIntent
-from llobot.formatters.submessages import standard_submessage_formatter
+from llobot.formats.submessages import standard_submessage_format
 
-formatter = standard_submessage_formatter()
+formatter = standard_submessage_format()
 
-def test_format_empty():
+def test_render_empty():
     chat = ChatBranch()
-    content = formatter.format(chat)
+    content = formatter.render(chat)
     assert content == ""
 
-def test_format_single_message():
+def test_render_single_message():
     chat = ChatBranch([
         ChatMessage(ChatIntent.SYSTEM, "System prompt content.")
     ])
-    content = formatter.format(chat)
+    content = formatter.render(chat)
     expected = dedent("""
         <details>
         <summary>Nested message: System</summary>
@@ -28,13 +28,13 @@ def test_format_single_message():
     """).strip()
     assert content == expected
 
-def test_format_multiple_messages():
+def test_render_multiple_messages():
     chat = ChatBranch([
         ChatMessage(ChatIntent.SYSTEM, "System prompt content."),
         ChatMessage(ChatIntent.AFFIRMATION, "Okay."),
         ChatMessage(ChatIntent.PROMPT, "User prompt.")
     ])
-    content = formatter.format(chat)
+    content = formatter.render(chat)
     expected = dedent("""
         <details>
         <summary>Nested message: System</summary>
@@ -62,13 +62,13 @@ def test_format_multiple_messages():
     """).strip()
     assert content == expected
 
-def test_format_with_response():
+def test_render_with_response():
     chat = ChatBranch([
         ChatMessage(ChatIntent.RESPONSE, "This is a response."),
         ChatMessage(ChatIntent.SYSTEM, "System prompt content."),
         ChatMessage(ChatIntent.RESPONSE, "Another response.")
     ])
-    content = formatter.format(chat)
+    content = formatter.render(chat)
     expected = dedent("""
         This is a response.
 
@@ -277,8 +277,8 @@ def test_roundtrip():
         ChatMessage(ChatIntent.PROMPT, "User prompt with\nnewlines and\n\nstuff."),
         ChatMessage(ChatIntent.RESPONSE, "Another response.")
     ])
-    formatted = formatter.format(chat)
-    parsed = formatter.parse(formatted)
+    rendered = formatter.render(chat)
+    parsed = formatter.parse(rendered)
     assert parsed == chat
 
 def test_roundtrip_empty_content():
@@ -287,24 +287,24 @@ def test_roundtrip_empty_content():
         ChatMessage(ChatIntent.AFFIRMATION, ""),
         ChatMessage(ChatIntent.PROMPT, "User prompt.")
     ])
-    formatted = formatter.format(chat)
-    parsed = formatter.parse(formatted)
+    rendered = formatter.render(chat)
+    parsed = formatter.parse(rendered)
     assert parsed == chat
 
-def test_format_stream_empty():
+def test_render_stream_empty():
     stream = []
-    result = "".join(formatter.format_stream(stream))
+    result = "".join(formatter.render_stream(stream))
     assert result == ""
 
-def test_format_stream_single_message_strings_only():
+def test_render_stream_single_message_strings_only():
     from llobot.models.streams import text_stream
     stream = text_stream("Hello world.")
-    result = "".join(formatter.format_stream(stream))
+    result = "".join(formatter.render_stream(stream))
     assert result == "Hello world."
 
-def test_format_stream_single_message_with_intent():
+def test_render_stream_single_message_with_intent():
     stream = [ChatIntent.SYSTEM, "System message."]
-    result = "".join(formatter.format_stream(stream))
+    result = "".join(formatter.render_stream(stream))
     expected = dedent("""
         <details>
         <summary>Nested message: System</summary>
@@ -316,13 +316,13 @@ def test_format_stream_single_message_with_intent():
     """).strip()
     assert result == expected
 
-def test_format_stream_multiple_messages():
+def test_render_stream_multiple_messages():
     stream = [
         "Response part 1.", " Response part 2.",
         ChatIntent.SYSTEM, "System message.",
         ChatIntent.PROMPT, "Prompt message."
     ]
-    result = "".join(formatter.format_stream(stream))
+    result = "".join(formatter.render_stream(stream))
     expected = dedent("""
         Response part 1. Response part 2.
 
@@ -344,7 +344,7 @@ def test_format_stream_multiple_messages():
     """).strip()
     assert result == expected
 
-def test_format_stream_empty_messages():
+def test_render_stream_empty_messages():
     stream = [
         ChatIntent.SYSTEM,
         "System message.",
@@ -352,7 +352,7 @@ def test_format_stream_empty_messages():
         ChatIntent.RESPONSE,
         "Response here."
     ]
-    result = "".join(formatter.format_stream(stream))
+    result = "".join(formatter.render_stream(stream))
     expected = dedent("""
         <details>
         <summary>Nested message: System</summary>
@@ -374,9 +374,9 @@ def test_format_stream_empty_messages():
     """).strip()
     assert result == expected
 
-def test_format_stream_ends_with_intent():
+def test_render_stream_ends_with_intent():
     stream = ["A message.", ChatIntent.SYSTEM]
-    result = "".join(formatter.format_stream(stream))
+    result = "".join(formatter.render_stream(stream))
     expected = dedent("""
         A message.
 

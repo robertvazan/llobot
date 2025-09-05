@@ -4,24 +4,24 @@ from llobot.chats.branches import ChatBranch
 from llobot.models import Model
 from llobot.models.streams import ModelStream, exception_stream
 from llobot.roles import Role
-from llobot.formatters.submessages import SubmessageFormatter, standard_submessage_formatter
+from llobot.formats.submessages import SubmessageFormat, standard_submessage_format
 
 _logger = logging.getLogger(__name__)
 
 class RoleModel(Model):
     _role: Role
-    _formatter: SubmessageFormatter
+    _format: SubmessageFormat
 
-    def __init__(self, role: Role, formatter: SubmessageFormatter | None = None):
+    def __init__(self, role: Role, *, submessage_format: SubmessageFormat | None = None):
         """
         Initializes the RoleModel.
 
         Args:
             role: The role to wrap.
-            formatter: The submessage formatter to use. Defaults to the standard one.
+            submessage_format: The submessage format to use. Defaults to the standard one.
         """
         self._role = role
-        self._formatter = formatter or standard_submessage_formatter()
+        self._format = submessage_format or standard_submessage_format()
 
     @property
     def name(self) -> str:
@@ -35,7 +35,7 @@ class RoleModel(Model):
         during both the initial call to `role.chat()` and during the streaming of the response.
         Exceptions are logged, and an error is streamed to the client.
 
-        It parses submessages in the incoming prompt and formats the outgoing stream
+        It parses submessages in the incoming prompt and renders the outgoing stream
         into submessages. This allows roles to work with structured multi-message
         conversations while presenting a single-message interface.
 
@@ -46,9 +46,9 @@ class RoleModel(Model):
             A model stream with the generated response
         """
         try:
-            parsed_prompt = self._formatter.parse_chat(prompt)
+            parsed_prompt = self._format.parse_chat(prompt)
             stream = self._role.chat(parsed_prompt)
-            yield from self._formatter.format_stream(stream)
+            yield from self._format.render_stream(stream)
         except Exception as ex:
             _logger.error(f'Exception in {self._role.name} role.', exc_info=True)
             yield from exception_stream(ex)
