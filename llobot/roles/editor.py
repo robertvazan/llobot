@@ -23,7 +23,7 @@ from llobot.environments.projects import ProjectEnv
 from llobot.environments.replay import ReplayEnv
 from llobot.environments.retrievals import RetrievalsEnv
 from llobot.environments.session_messages import SessionMessageEnv
-from llobot.formats.deltas import DeltaFormat, standard_delta_format
+from llobot.formats.documents import DocumentFormat, standard_document_format
 from llobot.formats.knowledge import KnowledgeFormat, standard_knowledge_format
 from llobot.formats.mentions import parse_mentions
 from llobot.formats.prompts import (
@@ -76,8 +76,8 @@ class Editor(Role):
     _knowledge_crammer: KnowledgeCrammer
     _edit_crammer: EditCrammer
     _index_crammer: IndexCrammer
-    _delta_format: DeltaFormat
-    _retrieval_format: KnowledgeFormat
+    _document_format: DocumentFormat
+    _knowledge_format: KnowledgeFormat
     _prompt_format: PromptFormat
     _reminder_format: PromptFormat
     _example_share: float
@@ -93,8 +93,7 @@ class Editor(Role):
         knowledge_crammer: KnowledgeCrammer = standard_knowledge_crammer(),
         edit_crammer: EditCrammer = standard_edit_crammer(),
         index_crammer: IndexCrammer = standard_index_crammer(),
-        delta_format: DeltaFormat = standard_delta_format(),
-        retrieval_format: KnowledgeFormat = standard_knowledge_format(),
+        knowledge_format: KnowledgeFormat = standard_knowledge_format(),
         prompt_format: PromptFormat = standard_prompt_format(),
         reminder_format: PromptFormat = reminder_prompt_format(),
         # Share of the context dedicated to examples and associated knowledge updates.
@@ -116,8 +115,8 @@ class Editor(Role):
         self._knowledge_crammer = knowledge_crammer
         self._edit_crammer = edit_crammer
         self._index_crammer = index_crammer
-        self._delta_format = delta_format
-        self._retrieval_format = retrieval_format
+        self._knowledge_format = knowledge_format
+        self._document_format = knowledge_format.document_format
         self._prompt_format = prompt_format
         self._reminder_format = reminder_format
         self._example_share = example_share
@@ -182,7 +181,7 @@ class Editor(Role):
         # Retrievals
         retrieved_paths = env[RetrievalsEnv].get()
         retrieved_knowledge = (knowledge & retrieved_paths) - (knowledge_paths | history_paths)
-        retrievals_chat = self._retrieval_format.render_fresh(retrieved_knowledge, ranking)
+        retrievals_chat = self._knowledge_format.render_fresh(retrieved_knowledge, ranking)
 
         builder = ChatBuilder()
         builder.add(system_chat)
@@ -211,7 +210,7 @@ class Editor(Role):
     #         self.save_example(chat, None)
     #         return
 
-    #     edit_delta = self._delta_format.parse_chat(chat[1:])
+    #     edit_delta = self._document_format.parse_chat(chat[1:])
     #     if not edit_delta:
     #         self.save_example(chat, project)
     #         return
@@ -222,7 +221,7 @@ class Editor(Role):
     #     delta = knowledge_delta_between(initial_knowledge, current_knowledge, move_hints=edit_delta.moves)
 
     #     compressed_delta = diff_compress_knowledge(initial_knowledge, delta)
-    #     response_content = self._delta_format.render_all(compressed_delta)
+    #     response_content = self._document_format.render_all(compressed_delta)
     #     synthetic_response = ChatMessage(ChatIntent.RESPONSE, response_content)
     #     example_chat = chat[0].branch() + synthetic_response
 

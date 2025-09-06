@@ -1,6 +1,6 @@
 from textwrap import dedent
 from pathlib import Path
-from llobot.formats.deltas import details_delta_format, standard_delta_format
+from llobot.formats.documents import details_document_format, standard_document_format
 from llobot.knowledge.deltas import DocumentDelta, KnowledgeDelta
 from llobot.chats.messages import ChatMessage
 from llobot.chats.branches import ChatBranch
@@ -8,7 +8,7 @@ from llobot.chats.intents import ChatIntent
 from llobot.knowledge.subsets import match_suffix
 
 def test_render_file():
-    formatter = standard_delta_format()
+    formatter = standard_document_format()
     delta = DocumentDelta(Path('test.py'), 'def hello():\n    return "world"')
 
     result = formatter.render(delta)
@@ -19,8 +19,18 @@ def test_render_file():
     assert 'def hello():' in result
     assert '</details>' in result
 
+def test_render_fresh():
+    formatter = standard_document_format()
+    result = formatter.render_fresh(Path('test.py'), 'def hello():\n    return "world"')
+
+    assert '<details>' in result
+    assert '<summary>File: test.py</summary>' in result
+    assert '```python' in result
+    assert 'def hello():' in result
+    assert '</details>' in result
+
 def test_render_diff():
-    formatter = standard_delta_format()
+    formatter = standard_document_format()
     delta = DocumentDelta(Path('test.py'), '@@ -1,2 +1,3 @@\n def test():\n+    # comment\n     pass', diff=True)
 
     result = formatter.render(delta)
@@ -32,7 +42,7 @@ def test_render_diff():
     assert '</details>' in result
 
 def test_render_removal():
-    formatter = standard_delta_format()
+    formatter = standard_document_format()
     delta = DocumentDelta(Path('test.py'), None, removed=True)
 
     result = formatter.render(delta)
@@ -40,7 +50,7 @@ def test_render_removal():
     assert result == 'Removed: `test.py`'
 
 def test_render_move():
-    formatter = standard_delta_format()
+    formatter = standard_document_format()
     delta = DocumentDelta(Path('new.py'), None, moved_from=Path('old.py'))
 
     result = formatter.render(delta)
@@ -48,7 +58,7 @@ def test_render_move():
     assert result == 'Moved: `old.py` => `new.py`'
 
 def test_render_all():
-    formatter = standard_delta_format()
+    formatter = standard_document_format()
     deltas = KnowledgeDelta([
         DocumentDelta(Path('file1.py'), 'content1'),
         DocumentDelta(Path('file2.py'), None, removed=True),
@@ -62,7 +72,7 @@ def test_render_all():
     assert 'Moved: `old3.py` => `file3.py`' in result
 
 def test_find_file_listing():
-    formatter = standard_delta_format()
+    formatter = standard_document_format()
     message = dedent("""
         Here is a file:
 
@@ -85,7 +95,7 @@ def test_find_file_listing():
     assert 'File: test.py' in matches[0]
 
 def test_find_removal():
-    formatter = standard_delta_format()
+    formatter = standard_document_format()
     message = dedent("""
         Some text.
 
@@ -100,7 +110,7 @@ def test_find_removal():
     assert matches[0] == 'Removed: `old_file.py`'
 
 def test_find_move():
-    formatter = standard_delta_format()
+    formatter = standard_document_format()
     message = dedent("""
         Some text.
 
@@ -115,7 +125,7 @@ def test_find_move():
     assert matches[0] == 'Moved: `old/path.py` => `new/path.py`'
 
 def test_parse_file():
-    formatter = standard_delta_format()
+    formatter = standard_document_format()
     formatted = dedent("""
         <details>
         <summary>File: test.py</summary>
@@ -138,7 +148,7 @@ def test_parse_file():
     assert not delta.moved
 
 def test_parse_diff():
-    formatter = standard_delta_format()
+    formatter = standard_document_format()
     formatted = dedent("""
         <details>
         <summary>Diff: test.py</summary>
@@ -163,7 +173,7 @@ def test_parse_diff():
     assert not delta.moved
 
 def test_parse_removal():
-    formatter = standard_delta_format()
+    formatter = standard_document_format()
     formatted = 'Removed: `test.py`'
 
     delta = formatter.parse(formatted)
@@ -176,7 +186,7 @@ def test_parse_removal():
     assert not delta.moved
 
 def test_parse_move():
-    formatter = standard_delta_format()
+    formatter = standard_document_format()
     formatted = 'Moved: `old/test.py` => `new/test.py`'
 
     delta = formatter.parse(formatted)
@@ -189,7 +199,7 @@ def test_parse_move():
     assert not delta.diff
 
 def test_parse_message():
-    formatter = standard_delta_format()
+    formatter = standard_document_format()
     message = dedent("""
         Here are some changes:
 
@@ -225,7 +235,7 @@ def test_parse_message():
     assert moved_delta.moved_from == Path('src/old.py')
 
 def test_parse_chat():
-    formatter = standard_delta_format()
+    formatter = standard_document_format()
     chat = ChatBranch([
         ChatMessage(ChatIntent.PROMPT, "Please make some changes."),
         ChatMessage(ChatIntent.RESPONSE, dedent("""
@@ -259,8 +269,8 @@ def test_parse_chat():
     assert removed_delta.path == Path('unused.py')
 
 def test_or_operator():
-    formatter1 = details_delta_format()
-    formatter2 = details_delta_format()
+    formatter1 = details_document_format()
+    formatter2 = details_document_format()
 
     combined = formatter1 | formatter2
     delta = DocumentDelta(Path('test.py'), 'content')
@@ -269,7 +279,7 @@ def test_or_operator():
     assert result is not None
 
 def test_and_operator():
-    formatter = details_delta_format()
+    formatter = details_document_format()
     filtered = formatter & match_suffix('.py')
 
     # Should format .py files
@@ -283,7 +293,7 @@ def test_and_operator():
     assert result is None
 
 def test_quad_backticks():
-    formatter = details_delta_format(quad_backticks=('markdown',))
+    formatter = details_document_format(quad_backticks=('markdown',))
     delta = DocumentDelta(Path('README.md'), '# Title\n\n```python\ncode\n```')
 
     result = formatter.render(delta)
@@ -294,7 +304,7 @@ def test_quad_backticks():
 
 def test_round_trip():
     """Test that rendering and then parsing returns equivalent delta."""
-    formatter = standard_delta_format()
+    formatter = standard_document_format()
     original = DocumentDelta(Path('test.py'), 'def test():\n    pass')
 
     rendered = formatter.render(original)

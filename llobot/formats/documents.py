@@ -1,5 +1,5 @@
 """
-Delta formats for knowledge deltas.
+Document formats for knowledge deltas.
 
 This module provides formats that can serialize DocumentDelta objects into
 readable text formats and parse them back. The primary format uses HTML
@@ -9,18 +9,18 @@ like removals and moves.
 Classes
 -------
 
-DeltaFormat
-    Abstract base for delta formats with render/parse capabilities
+DocumentFormat
+    Abstract base for document formats with render/parse capabilities
 
 Functions
 ---------
 
-details_delta_format()
+details_document_format()
     Creates format using HTML details blocks and one-line operations
-standard_delta_format()
-    Default delta format instance
+standard_document_format()
+    Default document format instance
 
-The delta format system supports:
+The document format system supports:
 - File listings with complete content in details blocks
 - One-line removals in format: Removed: `path/to/file.py`
 - One-line moves in format: Moved: `old/path.py` => `new/path.py`
@@ -39,11 +39,11 @@ from llobot.chats.messages import ChatMessage
 from llobot.chats.branches import ChatBranch
 from llobot.text import concat_documents, markdown_code_details, normalize_document
 
-class DeltaFormat:
+class DocumentFormat:
     """
-    Base class for delta formats that handle DocumentDelta serialization.
+    Base class for document formats that handle DocumentDelta serialization.
 
-    Delta formats can convert DocumentDelta objects to formatted strings
+    Document formats can convert DocumentDelta objects to formatted strings
     and parse formatted text back into DocumentDelta objects. They support
     combining via | (union) and & (filtering) operators.
     """
@@ -59,6 +59,10 @@ class DeltaFormat:
             Formatted string or None if this format cannot handle the delta.
         """
         return None
+
+    def render_fresh(self, path: Path, content: str) -> str | None:
+        """Renders a fresh document (new or modified)."""
+        return self.render(DocumentDelta(path, content))
 
     def __call__(self, delta: DocumentDelta) -> str | None:
         return self.render(delta)
@@ -110,10 +114,10 @@ class DeltaFormat:
             builder.add(self.parse_message(message.content))
         return builder.build()
 
-    def __or__(self, other: DeltaFormat) -> DeltaFormat:
+    def __or__(self, other: DocumentFormat) -> DocumentFormat:
         """Combines formats with union semantics (try first, then second)."""
         myself = self
-        class OrDeltaFormat(DeltaFormat):
+        class OrDocumentFormat(DocumentFormat):
             def render(self, delta: DocumentDelta) -> str | None:
                 return myself.render(delta) or other.render(delta)
             def find(self, message: str) -> list[str]:
@@ -123,13 +127,13 @@ class DeltaFormat:
                 if delta:
                     return delta
                 return other.parse(formatted)
-        return OrDeltaFormat()
+        return OrDocumentFormat()
 
-    def __and__(self, whitelist: KnowledgeSubset | str) -> DeltaFormat:
+    def __and__(self, whitelist: KnowledgeSubset | str) -> DocumentFormat:
         """Filters format to only handle paths in the whitelist."""
         myself = self
         whitelist = coerce_subset(whitelist)
-        class AndDeltaFormat(DeltaFormat):
+        class AndDocumentFormat(DocumentFormat):
             def render(self, delta: DocumentDelta) -> str | None:
                 return myself.render(delta) if delta.path in whitelist else None
             def find(self, message: str) -> list[str]:
@@ -139,7 +143,7 @@ class DeltaFormat:
                 if delta and delta.path not in whitelist:
                     return None
                 return delta
-        return AndDeltaFormat()
+        return AndDocumentFormat()
 
 # Build regex for multi-backtick code blocks (3-10 backticks)
 _CODE_BLOCK_PATTERN = '|'.join(rf'{"`" * i}[^`\n]*\n.*?^{"`" * i}' for i in range(3, 11))
@@ -165,12 +169,12 @@ _REMOVED_RE = re.compile(_REMOVED_PATTERN, re.MULTILINE)
 _MOVED_RE = re.compile(_MOVED_PATTERN, re.MULTILINE)
 
 @lru_cache
-def details_delta_format(*,
+def details_document_format(*,
     guesser: LanguageGuesser = standard_language_guesser(),
     quad_backticks: tuple[str, ...] = ('markdown',),
-) -> DeltaFormat:
+) -> DocumentFormat:
     """
-    Create a delta format using HTML details blocks and one-line operations.
+    Create a document format using HTML details blocks and one-line operations.
 
     This format handles:
     - File listings: <details><summary>File: path</summary>```content```</details>
@@ -183,9 +187,9 @@ def details_delta_format(*,
         quad_backticks: Languages requiring 4+ backticks (e.g., when content has markdown)
 
     Returns:
-        DeltaFormat instance
+        DocumentFormat instance
     """
-    class DetailsDeltaFormat(DeltaFormat):
+    class DetailsDocumentFormat(DocumentFormat):
         def render(self, delta: DocumentDelta) -> str | None:
             # Handle removals
             if delta.removed:
@@ -240,15 +244,15 @@ def details_delta_format(*,
 
             return None
 
-    return DetailsDeltaFormat()
+    return DetailsDocumentFormat()
 
 @cache
-def standard_delta_format() -> DeltaFormat:
-    """Get the standard delta format instance."""
-    return details_delta_format()
+def standard_document_format() -> DocumentFormat:
+    """Get the standard document format instance."""
+    return details_document_format()
 
 __all__ = [
-    'DeltaFormat',
-    'details_delta_format',
-    'standard_delta_format',
+    'DocumentFormat',
+    'details_document_format',
+    'standard_document_format',
 ]

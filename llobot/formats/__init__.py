@@ -8,8 +8,8 @@ for inclusion in LLM prompts and processing of LLM responses.
 Submodules
 ----------
 
-deltas
-    Delta formats for rendering and parsing DocumentDelta objects.
+documents
+    Document formats for rendering and parsing DocumentDelta objects.
     Supports file listings, removals, moves, and diff compression.
 knowledge
     Knowledge formats for rendering Knowledge objects and deltas.

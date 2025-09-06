@@ -6,7 +6,6 @@ from llobot.chats.builders import ChatBuilder
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.deltas import DocumentDelta, KnowledgeDeltaBuilder
-from llobot.formats.deltas import DeltaFormat, standard_delta_format
 from llobot.formats.knowledge import KnowledgeFormat, standard_knowledge_format
 
 class EditCrammer:
@@ -27,7 +26,6 @@ def create_edit_crammer(function: Callable[[Iterable[ChatBranch], Knowledge, int
 
 @lru_cache
 def greedy_edit_crammer(
-    delta_format: DeltaFormat = standard_delta_format(),
     knowledge_format: KnowledgeFormat = standard_knowledge_format(),
     # Overscan depth to prevent single large example from clogging the stream and leaving large unused budget.
     depth: int = 10,
@@ -43,6 +41,7 @@ def greedy_edit_crammer(
     in the example are identical to their fresh version.
     """
     def cram(examples: Iterable[ChatBranch], knowledge: Knowledge, budget: int) -> tuple[ChatBranch, KnowledgeIndex]:
+        document_format = knowledge_format.document_format
         chunks = []
         seen_prompts = set()
         updated_paths = set()
@@ -56,7 +55,7 @@ def greedy_edit_crammer(
                 continue
             seen_prompts.add(example[0].content)
 
-            example_delta = delta_format.parse_chat(example)
+            example_delta = document_format.parse_chat(example)
             example_full = example_delta.full
 
             update_builder = KnowledgeDeltaBuilder()
