@@ -20,7 +20,7 @@ class ProjectEnv:
         Raises:
             ValueError: If a different project is already set.
         """
-        if self._project is not None and self._project is not project:
+        if self._project is not None and self._project.name != project.name:
             raise ValueError(f"Project already set to {self._project.name}, cannot change to {project.name}")
         self._project = project
 

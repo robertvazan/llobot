@@ -23,6 +23,8 @@ knowledge
     A comprehensive system for managing plaintext knowledge bases.
 models
     Integrations with various LLM backends (Ollama, OpenAI, etc.).
+projects
+    Defines `Project` classes for managing knowledge bases.
 prompts
     Reusable sections for building system prompts.
 roles
@@ -33,8 +35,6 @@ scrapers
 Modules
 -------
 
-projects
-    Defines the `Project` class for managing knowledge bases.
 text
     Provides text manipulation utilities.
 time

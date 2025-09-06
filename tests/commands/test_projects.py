@@ -1,15 +1,12 @@
 from llobot.commands.projects import ProjectCommand
 from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
-from llobot.projects import Project
-from unittest.mock import Mock
+from llobot.projects.dummy import DummyProject
 import pytest
 
 def test_project_command():
-    project1 = Mock(spec=Project)
-    project1.name = "proj1"
-    project2 = Mock(spec=Project)
-    project2.name = "proj2"
+    project1 = DummyProject("proj1")
+    project2 = DummyProject("proj2")
 
     command = ProjectCommand([project1, project2])
     env = Environment()

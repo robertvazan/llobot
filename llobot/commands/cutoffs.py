@@ -9,6 +9,7 @@ from llobot.environments.cutoffs import CutoffEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.replay import ReplayEnv
 from llobot.environments.session_messages import SessionMessageEnv
+from llobot.knowledge.archives import KnowledgeArchive
 
 class CutoffCommand(Command):
     """
@@ -36,19 +37,31 @@ class ImplicitCutoffCommand(Command):
     A command that sets the knowledge cutoff to the current time if it's not
     already set.
     """
+    _archive: KnowledgeArchive | None
+
+    def __init__(self, archive: KnowledgeArchive | None = None):
+        """
+        Initializes the command.
+
+        Args:
+            archive: The knowledge archive to refresh, if any.
+        """
+        self._archive = archive
+
     def process(self, env: Environment):
         """
         If no cutoff is set and recording is active, this method refreshes the
-        current project, sets the cutoff to the current time, and adds a
-        session message.
+        current project (if an archive is provided), sets the cutoff to the
+        current time, and adds a session message.
 
         Args:
             env: The environment.
         """
         if env[ReplayEnv].recording() and env[CutoffEnv].get() is None:
             project = env[ProjectEnv].get()
-            if project:
-                project.refresh()
+            if project and self._archive:
+                knowledge = project.load()
+                self._archive.refresh(project.name, knowledge)
             cutoff = current_time()
             env[CutoffEnv].set(cutoff)
             env[SessionMessageEnv].append(f"Cutoff: @{format_time(cutoff)}")

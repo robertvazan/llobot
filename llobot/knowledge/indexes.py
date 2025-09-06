@@ -3,10 +3,6 @@ from pathlib import Path
 from llobot.knowledge.subsets import (
     KnowledgeSubset,
     coerce_subset,
-    whitelist_subset,
-    blacklist_subset,
-    match_nothing,
-    match_everything,
 )
 
 class KnowledgeIndex:
@@ -85,37 +81,7 @@ def coerce_index(what: KnowledgeIndex | 'Knowledge' | 'KnowledgeRanking' | 'Know
         return what.keys()
     raise TypeError
 
-def _walk(root: Path, directory: Path, whitelist: KnowledgeSubset, blacklist: KnowledgeSubset) -> Iterable[Path]:
-    for path in directory.iterdir():
-        relative = path.relative_to(root)
-        if relative in blacklist:
-            continue
-        if path.is_dir():
-            yield from _walk(root, path, whitelist, blacklist)
-        elif relative in whitelist:
-            yield relative
-
-# Blacklist is separate, because it is applied to whole directories in addition to files whereas whitelist is applied only to individual files.
-def directory_index(
-    root: Path | str,
-    whitelist: KnowledgeSubset | str | Path | KnowledgeIndex | 'KnowledgeRanking' | None = whitelist_subset(),
-    blacklist: KnowledgeSubset | str | Path | KnowledgeIndex | 'KnowledgeRanking' | None = blacklist_subset(),
-) -> KnowledgeIndex:
-    from llobot.knowledge.rankings import KnowledgeRanking
-    root = Path(root)
-    if not root.exists():
-        return KnowledgeIndex()
-    blacklist = coerce_subset(blacklist or match_nothing())
-    # Special-case concrete whitelist, so that we don't recurse into potentially large directories unnecessarily.
-    if isinstance(whitelist, (Path, KnowledgeIndex, KnowledgeRanking)):
-        whitelist = coerce_index(whitelist)
-        return KnowledgeIndex([path for path in whitelist if (root/path).is_file() and path not in blacklist])
-    whitelist = coerce_subset(whitelist or match_everything())
-    # Carefully walk the tree recursively, so that we can blacklist entire directories.
-    return KnowledgeIndex(_walk(root, root, whitelist, blacklist))
-
 __all__ = [
     'KnowledgeIndex',
     'coerce_index',
-    'directory_index',
 ]

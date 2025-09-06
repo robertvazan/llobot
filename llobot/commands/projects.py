@@ -2,6 +2,7 @@
 Command to select a project.
 """
 from __future__ import annotations
+from typing import Iterable
 from llobot.commands import Command
 from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
@@ -17,14 +18,14 @@ class ProjectCommand(Command):
     """
     _projects: dict[str, Project]
 
-    def __init__(self, projects: list[Project] | None = None):
+    def __init__(self, projects: Iterable[Project] = ()):
         """
         Initializes the ProjectCommand.
 
         Args:
             projects: A list of available projects.
         """
-        self._projects = {p.name: p for p in projects} if projects else {}
+        self._projects = {p.name: p for p in projects}
 
     def handle(self, text: str, env: Environment) -> bool:
         """

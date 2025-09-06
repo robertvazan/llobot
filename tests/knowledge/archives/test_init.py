@@ -1,6 +1,7 @@
 from pathlib import Path
+from unittest.mock import Mock
 from llobot.knowledge import Knowledge
-from llobot.knowledge.archives import standard_knowledge_archive, coerce_knowledge_archive
+from llobot.knowledge.archives import KnowledgeArchive, standard_knowledge_archive, coerce_knowledge_archive
 from llobot.text import normalize_document
 from llobot.time import current_time
 
@@ -23,3 +24,27 @@ def test_standard_and_coerce(tmp_path):
     # Test coerce from archive instance
     coerced_from_archive = coerce_knowledge_archive(archive)
     assert coerced_from_archive is archive
+
+def test_refresh():
+    archive = KnowledgeArchive()
+    k1 = Knowledge({'a': '1'})
+    k2 = Knowledge({'a': '2'})
+
+    archive.add = Mock()
+
+    # First time, should add
+    archive.last = Mock(return_value=Knowledge())
+    archive.refresh('zone1', k1)
+    archive.add.assert_called_once()
+    archive.add.reset_mock()
+
+    # Unchanged, should not add
+    archive.last = Mock(return_value=k1)
+    archive.refresh('zone1', k1)
+    archive.add.assert_not_called()
+    archive.add.reset_mock()
+
+    # Changed, should add
+    archive.last = Mock(return_value=k1)
+    archive.refresh('zone1', k2)
+    archive.add.assert_called_once()

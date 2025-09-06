@@ -7,12 +7,24 @@ from llobot.environments import Environment
 from llobot.environments.cutoffs import CutoffEnv
 from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.projects import ProjectEnv
+from llobot.knowledge.archives import KnowledgeArchive
 
 class LoadKnowledgeCommand(Command):
     """
     A command that loads the knowledge for the selected project at the
-    selected cutoff time.
+    selected cutoff time from a knowledge archive.
     """
+    _archive: KnowledgeArchive
+
+    def __init__(self, archive: KnowledgeArchive):
+        """
+        Initializes the command.
+
+        Args:
+            archive: The archive to load knowledge from.
+        """
+        self._archive = archive
+
     def process(self, env: Environment):
         """
         Loads knowledge from the project in `ProjectEnv` at the time specified
@@ -25,7 +37,7 @@ class LoadKnowledgeCommand(Command):
         project = env[ProjectEnv].get()
         if project:
             cutoff = env[CutoffEnv].get()
-            knowledge = project.knowledge(cutoff)
+            knowledge = self._archive.last(project.name, cutoff)
             env[KnowledgeEnv].set(knowledge)
 
 __all__ = [

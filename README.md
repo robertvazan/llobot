@@ -32,8 +32,7 @@ from llobot.models.catalogs import ModelCatalog
 from llobot.models.ollama import ollama_model
 from llobot.models.gemini import gemini_model
 from llobot.models.anthropic import anthropic_model
-from llobot.projects import create_project
-from llobot.knowledge.sources import directory_knowledge_source
+from llobot.projects.directory import DirectoryProject
 from llobot.roles.coder import Coder
 from llobot.roles.models import RoleModel
 from llobot.models.ollama.listeners import ollama_listener
@@ -61,10 +60,8 @@ models = ModelCatalog(
 
 # Projects that will be used as knowledge bases
 projects = [
-    create_project('llobot',
-        directory_knowledge_source(Path.home() / 'Sources' / 'llobot')),
-    create_project('myproject',
-        directory_knowledge_source(Path.home() / 'Sources' / 'myproject')),
+    DirectoryProject(Path.home() / 'Sources' / 'llobot'),
+    DirectoryProject(Path.home() / 'Sources' / 'myproject'),
 ]
 
 # Roles determine what goes in the context.

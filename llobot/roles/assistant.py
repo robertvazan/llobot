@@ -1,5 +1,5 @@
 from __future__ import annotations
-from datetime import datetime
+from typing import Iterable
 from llobot.chats.branches import ChatBranch
 from llobot.chats.builders import ChatBuilder
 from llobot.chats.intents import ChatIntent
@@ -23,6 +23,7 @@ from llobot.formats.prompts import (
 from llobot.models import Model
 from llobot.models.streams import ModelStream
 from llobot.projects import Project
+from llobot.projects.dummy import DummyProject
 from llobot.prompts import Prompt
 from llobot.roles import Role
 
@@ -35,7 +36,7 @@ class Assistant(Role):
 
     def __init__(self, name: str, model: Model, *,
         prompt: str | Prompt = '',
-        projects: list[Project] | None = None,
+        projects: Iterable[str | Project] = (),
         crammer: ExampleCrammer = standard_example_crammer(),
         prompt_format: PromptFormat = standard_prompt_format(),
         reminder_format: PromptFormat = reminder_prompt_format(),
@@ -46,8 +47,9 @@ class Assistant(Role):
         self._crammer = crammer
         self._prompt_format = prompt_format
         self._reminder_format = reminder_format
+        project_list = [DummyProject(p.name if isinstance(p, Project) else p) for p in projects]
         self._command_chain = CommandChain(
-            ProjectCommand(projects),
+            ProjectCommand(project_list),
             CutoffCommand(),
             ImplicitCutoffCommand(),
             UnrecognizedCommand(),

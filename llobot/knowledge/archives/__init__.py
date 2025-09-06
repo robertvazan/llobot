@@ -22,10 +22,14 @@ tgz
 from __future__ import annotations
 from datetime import datetime
 from functools import lru_cache
+import logging
 from pathlib import Path
 from llobot.fs.zones import Zoning
 from llobot.fs import data_home
 from llobot.knowledge import Knowledge
+from llobot.time import current_time
+
+_logger = logging.getLogger(__name__)
 
 class KnowledgeArchive:
     """
@@ -66,6 +70,21 @@ class KnowledgeArchive:
             The most recent Knowledge object, or an empty one if none are found.
         """
         return Knowledge()
+
+    def refresh(self, zone: str, knowledge: Knowledge):
+        """
+        Checks for updates from the source and archives a new snapshot if changes are found.
+
+        Args:
+            zone: The zone to store the snapshot in.
+            knowledge: The current state of the knowledge.
+        """
+        fresh = knowledge
+        if fresh != self.last(zone):
+            self.add(zone, current_time(), fresh)
+            _logger.info(f"Refreshed: {zone}")
+        else:
+            _logger.info(f"Refreshed (no change): {zone}")
 
 @lru_cache
 def standard_knowledge_archive(location: Zoning | Path | str = data_home()/'llobot/knowledge') -> KnowledgeArchive:

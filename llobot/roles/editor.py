@@ -1,6 +1,7 @@
 from __future__ import annotations
 from datetime import datetime
 from functools import cache
+from typing import Iterable
 from llobot.chats.branches import ChatBranch
 from llobot.chats.builders import ChatBuilder
 from llobot.chats.intents import ChatIntent
@@ -31,6 +32,7 @@ from llobot.formats.prompts import (
     standard_prompt_format,
 )
 from llobot.knowledge import Knowledge
+from llobot.knowledge.archives import KnowledgeArchive, standard_knowledge_archive
 from llobot.knowledge.deltas import diff_compress_knowledge, knowledge_delta_between
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.rankers import KnowledgeRanker, standard_ranker
@@ -67,6 +69,7 @@ def editor_system_prompt() -> SystemPrompt:
 
 class Editor(Role):
     _system: str
+    _knowledge_archive: KnowledgeArchive
     _relevance_scorer: KnowledgeScorer
     _graph_scorer: KnowledgeScorer
     _ranker: KnowledgeRanker
@@ -82,7 +85,8 @@ class Editor(Role):
 
     def __init__(self, name: str, model: Model, *,
         prompt: str | Prompt = editor_system_prompt(),
-        projects: list[Project] | None = None,
+        projects: Iterable[Project] = (),
+        knowledge_archive: KnowledgeArchive = standard_knowledge_archive(),
         relevance_scorer: KnowledgeScorer | KnowledgeSubset = irrelevant_subset_scorer(),
         graph_scorer: KnowledgeScorer = standard_scorer(),
         ranker: KnowledgeRanker = standard_ranker(),
@@ -102,6 +106,7 @@ class Editor(Role):
         """
         super().__init__(name, model, **kwargs)
         self._system = str(prompt)
+        self._knowledge_archive = knowledge_archive
         if isinstance(relevance_scorer, KnowledgeSubset):
             self._relevance_scorer = relevant_subset_scorer(relevance_scorer)
         else:
@@ -117,10 +122,10 @@ class Editor(Role):
         self._reminder_format = reminder_format
         self._example_share = example_share
         self._command_chain = CommandChain(
-            ProjectCommand(projects),
+            ProjectCommand(list(projects)),
             CutoffCommand(),
-            ImplicitCutoffCommand(),
-            LoadKnowledgeCommand(),
+            ImplicitCutoffCommand(self._knowledge_archive),
+            LoadKnowledgeCommand(self._knowledge_archive),
             RetrievalCommand(),
             UnrecognizedCommand(),
         )
@@ -211,9 +216,9 @@ class Editor(Role):
     #         self.save_example(chat, project)
     #         return
 
-    #     project.refresh()
-    #     initial_knowledge = project.knowledge(cutoff)
-    #     current_knowledge = project.knowledge()
+    #     self._knowledge_archive.refresh(project.name, project)
+    #     initial_knowledge = self._knowledge_archive.last(project.name, cutoff)
+    #     current_knowledge = self._knowledge_archive.last(project.name)
     #     delta = knowledge_delta_between(initial_knowledge, current_knowledge, move_hints=edit_delta.moves)
 
     #     compressed_delta = diff_compress_knowledge(initial_knowledge, delta)

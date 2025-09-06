@@ -22,24 +22,15 @@ subsets/
     Pattern-based filtering and selection with KnowledgeSubset
 deltas/
     Change tracking with DocumentDelta and KnowledgeDelta
-sources
-    Knowledge sources
 archives/
     Historical knowledge storage
 rankers
     Ranking algorithm implementations
 scorers
     Knowledge scoring implementations
-
-Functions
----------
-
-load_directory_knowledge()
-    Load knowledge from filesystem directory with filtering options
 """
 from __future__ import annotations
 from pathlib import Path
-from llobot.chats.branches import ChatBranch
 from llobot.fs import read_document
 
 class Knowledge:
@@ -109,33 +100,6 @@ class Knowledge:
         subtree = Path(subtree)
         return Knowledge({path.relative_to(subtree): content for path, content in self if path.is_relative_to(subtree)})
 
-_default_subset = object()
-
-def load_directory_knowledge(
-    directory: Path | str,
-    whitelist: 'KnowledgeSubset' | str | Path | 'KnowledgeIndex' | 'KnowledgeRanking' | None | object = _default_subset,
-    blacklist: 'KnowledgeSubset' | str | Path | 'KnowledgeIndex' | 'KnowledgeRanking' | None | object = _default_subset,
-) -> Knowledge:
-    from llobot.knowledge.indexes import KnowledgeIndex, directory_index, coerce_index
-    from llobot.knowledge.rankings import KnowledgeRanking
-    from llobot.knowledge.subsets import coerce_subset, whitelist_subset, blacklist_subset, match_nothing, match_everything
-    directory = Path(directory)
-    if whitelist is _default_subset:
-        whitelist = whitelist_subset()
-    if blacklist is _default_subset:
-        blacklist = blacklist_subset()
-    blacklist = coerce_subset(blacklist or match_nothing())
-    # Special-case concrete whitelist, so that we don't recurse into potentially large directories unnecessarily.
-    if isinstance(whitelist, (Path, KnowledgeIndex, KnowledgeRanking)):
-        whitelist = coerce_index(whitelist)
-        knowledge = Knowledge({path: read_document(directory/path) for path in whitelist if (directory/path).is_file() and path not in blacklist})
-    else:
-        whitelist = coerce_subset(whitelist or match_everything())
-        index = directory_index(directory, whitelist, blacklist)
-        knowledge = Knowledge({path: read_document(directory/path) for path in index})
-    return knowledge
-
 __all__ = [
     'Knowledge',
-    'load_directory_knowledge',
 ]
