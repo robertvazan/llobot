@@ -1,5 +1,4 @@
 from __future__ import annotations
-from llobot.chats.intents import ChatIntent
 from llobot.chats.messages import ChatMessage
 from llobot.chats.branches import ChatBranch
 
@@ -40,15 +39,13 @@ class ChatBuilder:
             return ChatBranch(self._messages[key])
         return self._messages[key]
 
-    def add(self, what: ChatIntent | str | ChatMessage | ChatBranch | None):
+    def add(self, what: ChatMessage | ChatBranch | None):
         """
         Adds content to the chat.
 
         - A `ChatBranch` adds all its messages.
         - A `ChatMessage` is appended. If its intent matches the last message,
           their content is merged.
-        - A `ChatIntent` starts a new, empty message with that intent.
-        - A `str` is appended to the content of the last message.
         - `None` is ignored.
 
         Args:
@@ -58,32 +55,7 @@ class ChatBuilder:
             for message in what:
                 self.add(message)
         elif isinstance(what, ChatMessage):
-            if self and self[-1].intent == what.intent:
-                self._messages[-1] = self[-1].with_postscript(what.content)
-            else:
-                self._messages.append(what)
-        elif isinstance(what, ChatIntent):
-            self._messages.append(ChatMessage(what, ''))
-        elif isinstance(what, str):
-            self._messages[-1] = self[-1].with_postscript(what)
-        elif what is None:
-            pass
-        else:
-            raise TypeError(what)
-
-    def prepend(self, what: ChatMessage | ChatBranch | None):
-        """
-        Prepends messages to the beginning of the chat.
-
-        Unlike `add`, this method does not merge messages.
-
-        Args:
-            what: The message or branch to prepend.
-        """
-        if isinstance(what, ChatBranch):
-            self._messages = what.messages + self._messages
-        elif isinstance(what, ChatMessage):
-            self._messages.insert(0, what)
+            self._messages.append(what)
         elif what is None:
             pass
         else:

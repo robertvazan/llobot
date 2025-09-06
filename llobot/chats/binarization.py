@@ -23,7 +23,7 @@ def binarize_message(message: ChatMessage) -> ChatMessage:
     """
     Returns a new message with binarized intent (PROMPT or RESPONSE).
     """
-    return message.with_intent(binarize_intent(message.intent))
+    return ChatMessage(binarize_intent(message.intent), message.content)
 
 def binarize_chat(chat: ChatBranch, *, last: ChatIntent | None = None) -> ChatBranch:
     """

@@ -27,23 +27,6 @@ def test_contains():
     assert "world" in msg
     assert "foo" not in msg
 
-def test_branch():
-    """Tests converting a message to a branch."""
-    from llobot.chats.branches import ChatBranch
-    msg = ChatMessage(ChatIntent.PROMPT, "Hello")
-    branch = msg.branch()
-    assert isinstance(branch, ChatBranch)
-    assert len(branch) == 1
-    assert branch[0] == msg
-
-def test_with_intent():
-    """Tests changing the intent of a message."""
-    msg = ChatMessage(ChatIntent.PROMPT, "Hello")
-    new_msg = msg.with_intent(ChatIntent.RESPONSE)
-    assert new_msg.intent == ChatIntent.RESPONSE
-    assert new_msg.content == "Hello"
-    assert msg.intent == ChatIntent.PROMPT # Original is unchanged
-
 def test_as_example():
     """Tests converting a message to an example message."""
     prompt = ChatMessage(ChatIntent.PROMPT, "Question")
@@ -60,28 +43,3 @@ def test_monolithic():
     """Tests the monolithic string representation."""
     msg = ChatMessage(ChatIntent.PROMPT, "Hello")
     assert msg.monolithic() == "**Prompt:**\n\nHello"
-
-def test_with_content():
-    """Tests changing the content of a message."""
-    msg = ChatMessage(ChatIntent.PROMPT, "Hello")
-    new_msg = msg.with_content("World")
-    assert new_msg.intent == ChatIntent.PROMPT
-    assert new_msg.content == "World"
-    assert msg.content == "Hello" # Original is unchanged
-
-def test_with_postscript():
-    """Tests appending a postscript to the message content."""
-    msg = ChatMessage(ChatIntent.PROMPT, "Hello")
-
-    # Postscript on non-empty content
-    with_ps = msg.with_postscript("World")
-    assert with_ps.content == "Hello\n\nWorld"
-
-    # Empty postscript
-    with_empty_ps = msg.with_postscript("")
-    assert with_empty_ps.content == "Hello"
-
-    # Postscript on empty content
-    empty_msg = ChatMessage(ChatIntent.PROMPT, "")
-    with_ps_on_empty = empty_msg.with_postscript("World")
-    assert with_ps_on_empty.content == "World"

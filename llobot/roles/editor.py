@@ -223,7 +223,7 @@ class Editor(Role):
     #     compressed_delta = diff_compress_knowledge(initial_knowledge, delta)
     #     response_content = self._document_format.render_all(compressed_delta)
     #     synthetic_response = ChatMessage(ChatIntent.RESPONSE, response_content)
-    #     example_chat = chat[0].branch() + synthetic_response
+    #     example_chat = ChatBranch([chat[0]]) + synthetic_response
 
     #     self.save_example(example_chat, project)
 

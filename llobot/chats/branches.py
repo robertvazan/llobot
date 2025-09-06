@@ -53,15 +53,6 @@ class ChatBranch:
         """The total estimated cost of all messages in the branch."""
         return sum([message.cost for message in self], 0)
 
-    @property
-    def pretty_cost(self) -> str:
-        """A human-readable string representing the cost of the branch."""
-        cost = self.cost
-        kb = cost / 1000
-        if kb < 10:
-            return f"{kb:.1f} KB"
-        return f"{kb:.0f} KB"
-
     def __getitem__(self, key: int | slice) -> ChatMessage | ChatBranch:
         if isinstance(key, slice):
             return ChatBranch(self._messages[key])
@@ -80,7 +71,7 @@ class ChatBranch:
         if suffix is None:
             return self
         if isinstance(suffix, ChatMessage):
-            suffix = suffix.branch()
+            suffix = ChatBranch([suffix])
         return ChatBranch(self._messages + suffix._messages)
 
     def to_builder(self) -> 'ChatBuilder':

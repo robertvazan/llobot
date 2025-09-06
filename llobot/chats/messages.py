@@ -58,41 +58,15 @@ class ChatMessage:
     def __contains__(self, text: str) -> bool:
         return text in self.content
 
-    def branch(self) -> 'ChatBranch':
-        """Converts this message into a ChatBranch containing only this message."""
-        from llobot.chats.branches import ChatBranch
-        return ChatBranch([self])
-
-    def with_intent(self, intent: ChatIntent) -> ChatMessage:
-        """Creates a new message with the same content but a different intent."""
-        return ChatMessage(intent, self.content)
-
     def as_example(self) -> ChatMessage:
         """Converts this message to its corresponding example version."""
-        return self.with_intent(self.intent.as_example())
+        return ChatMessage(self.intent.as_example(), self.content)
 
     def monolithic(self) -> str:
         """
         Returns a single-string representation of the message, including its intent.
         """
         return concat_documents(f'**{self.intent}:**', self.content)
-
-    def with_content(self, content: str) -> ChatMessage:
-        """Creates a new message with the same intent but different content."""
-        return ChatMessage(self.intent, content)
-
-    def with_postscript(self, postscript: str) -> ChatMessage:
-        """
-        Appends a postscript to the message content.
-
-        If the message has no content, the postscript becomes the content.
-        Otherwise, it's appended after a double newline.
-        """
-        if not postscript:
-            return self
-        if not self.content:
-            return self.with_content(postscript)
-        return self.with_content(concat_documents(self.content, postscript))
 
 __all__ = [
     'ChatMessage',
