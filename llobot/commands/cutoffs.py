@@ -1,9 +1,9 @@
 """
-Command to set knowledge cutoff.
+Command and step to set knowledge cutoff.
 """
 from __future__ import annotations
 from llobot.time import try_parse_time, current_time, format_time
-from llobot.commands import Command
+from llobot.commands import Command, Step
 from llobot.environments import Environment
 from llobot.environments.cutoffs import CutoffEnv
 from llobot.environments.projects import ProjectEnv
@@ -32,16 +32,16 @@ class CutoffCommand(Command):
             return True
         return False
 
-class ImplicitCutoffCommand(Command):
+class ImplicitCutoffStep(Step):
     """
-    A command that sets the knowledge cutoff to the current time if it's not
+    A step that sets the knowledge cutoff to the current time if it's not
     already set.
     """
     _archive: KnowledgeArchive | None
 
     def __init__(self, archive: KnowledgeArchive | None = None):
         """
-        Initializes the command.
+        Initializes the step.
 
         Args:
             archive: The knowledge archive to refresh, if any.
@@ -68,5 +68,5 @@ class ImplicitCutoffCommand(Command):
 
 __all__ = [
     'CutoffCommand',
-    'ImplicitCutoffCommand',
+    'ImplicitCutoffStep',
 ]

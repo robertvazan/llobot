@@ -3,8 +3,8 @@ from typing import Iterable
 from llobot.chats.branches import ChatBranch
 from llobot.chats.builders import ChatBuilder
 from llobot.chats.intents import ChatIntent
-from llobot.commands.chains import CommandChain
-from llobot.commands.cutoffs import CutoffCommand, ImplicitCutoffCommand
+from llobot.commands.chains import StepChain
+from llobot.commands.cutoffs import CutoffCommand, ImplicitCutoffStep
 from llobot.commands.projects import ProjectCommand
 from llobot.commands.unrecognized import UnrecognizedCommand
 from llobot.crammers.examples import ExampleCrammer, standard_example_crammer
@@ -32,7 +32,7 @@ class Assistant(Role):
     _crammer: ExampleCrammer
     _prompt_format: PromptFormat
     _reminder_format: PromptFormat
-    _command_chain: CommandChain
+    _step_chain: StepChain
 
     def __init__(self, name: str, model: Model, *,
         prompt: str | Prompt = '',
@@ -48,10 +48,10 @@ class Assistant(Role):
         self._prompt_format = prompt_format
         self._reminder_format = reminder_format
         project_list = [DummyProject(p.name if isinstance(p, Project) else p) for p in projects]
-        self._command_chain = CommandChain(
+        self._step_chain = StepChain(
             ProjectCommand(project_list),
             CutoffCommand(),
-            ImplicitCutoffCommand(),
+            ImplicitCutoffStep(),
             UnrecognizedCommand(),
         )
 
@@ -66,7 +66,7 @@ class Assistant(Role):
                 queue.add(parse_mentions(prompt[i + 1]))
             if message.intent == ChatIntent.PROMPT:
                 queue.add(parse_mentions(message))
-            self._command_chain.handle_pending(env)
+            self._step_chain.process(env)
 
         project = env[ProjectEnv].get()
         cutoff = env[CutoffEnv].get()
@@ -100,7 +100,7 @@ class Assistant(Role):
 
     # def handle_ok(self, chat: ChatBranch, cutoff: datetime):
     #     env = Environment()
-    #     self._command_chain.handle_chat(chat, env)
+    #     self._step_chain.process_chat(chat, env)
     #     project = env[ProjectEnv].get()
     #     self.save_example(chat, project)
 

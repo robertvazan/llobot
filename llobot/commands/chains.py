@@ -1,38 +1,38 @@
 """
-Command chain implementation for combining multiple commands.
+Step chain implementation for combining multiple commands and other steps.
 """
 from __future__ import annotations
 from llobot.environments import Environment
-from llobot.commands import Command
+from llobot.commands import Step
 
-class CommandChain:
+class StepChain:
     """
-    A class that processes a sequence of commands in order.
+    A class that processes a sequence of steps in order.
 
-    The chain calls `handle_pending` on each of its constituent commands.
-    This allows for ordered execution of different command types.
+    The chain calls `process` on each of its constituent steps.
+    This allows for ordered execution of different command types and other steps.
     """
-    _commands: tuple[Command, ...]
+    _steps: tuple[Step, ...]
 
-    def __init__(self, *commands: Command):
+    def __init__(self, *steps: Step):
         """
-        Creates a new command chain.
+        Creates a new step chain.
 
         Args:
-            *commands: A sequence of commands to process in order.
+            *steps: A sequence of steps to process in order.
         """
-        self._commands = commands
+        self._steps = steps
 
-    def handle_pending(self, env: Environment):
+    def process(self, env: Environment):
         """
-        Calls `handle_pending` on each command in the chain.
+        Calls `process` on each step in the chain.
 
         Args:
             env: The environment to manipulate.
         """
-        for command in self._commands:
-            command.handle_pending(env)
+        for step in self._steps:
+            step.process(env)
 
 __all__ = [
-    'CommandChain',
+    'StepChain',
 ]

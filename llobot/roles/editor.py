@@ -6,9 +6,9 @@ from llobot.chats.branches import ChatBranch
 from llobot.chats.builders import ChatBuilder
 from llobot.chats.intents import ChatIntent
 from llobot.chats.messages import ChatMessage
-from llobot.commands.chains import CommandChain
-from llobot.commands.cutoffs import CutoffCommand, ImplicitCutoffCommand
-from llobot.commands.knowledge import LoadKnowledgeCommand
+from llobot.commands.chains import StepChain
+from llobot.commands.cutoffs import CutoffCommand, ImplicitCutoffStep
+from llobot.commands.knowledge import ProjectKnowledgeStep
 from llobot.commands.projects import ProjectCommand
 from llobot.commands.retrievals import RetrievalCommand
 from llobot.commands.unrecognized import UnrecognizedCommand
@@ -81,7 +81,7 @@ class Editor(Role):
     _prompt_format: PromptFormat
     _reminder_format: PromptFormat
     _example_share: float
-    _command_chain: CommandChain
+    _step_chain: StepChain
 
     def __init__(self, name: str, model: Model, *,
         prompt: str | Prompt = editor_system_prompt(),
@@ -120,11 +120,11 @@ class Editor(Role):
         self._prompt_format = prompt_format
         self._reminder_format = reminder_format
         self._example_share = example_share
-        self._command_chain = CommandChain(
+        self._step_chain = StepChain(
             ProjectCommand(list(projects)),
             CutoffCommand(),
-            ImplicitCutoffCommand(self._knowledge_archive),
-            LoadKnowledgeCommand(self._knowledge_archive),
+            ImplicitCutoffStep(self._knowledge_archive),
+            ProjectKnowledgeStep(self._knowledge_archive),
             RetrievalCommand(),
             UnrecognizedCommand(),
         )
@@ -140,7 +140,7 @@ class Editor(Role):
                 queue.add(parse_mentions(prompt[i + 1]))
             if message.intent == ChatIntent.PROMPT:
                 queue.add(parse_mentions(message))
-            self._command_chain.handle_pending(env)
+            self._step_chain.process(env)
 
         project = env[ProjectEnv].get()
         knowledge = env[KnowledgeEnv].get()
@@ -203,7 +203,7 @@ class Editor(Role):
 
     # def handle_ok(self, chat: ChatBranch, cutoff: datetime):
     #     env = Environment()
-    #     self._command_chain.handle_chat(chat, env)
+    #     self._step_chain.process_chat(chat, env)
     #     project = env[ProjectEnv].get()
 
     #     if not project:

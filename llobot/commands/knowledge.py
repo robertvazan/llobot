@@ -1,24 +1,24 @@
 """
-Command to load project knowledge.
+Step to load project knowledge.
 """
 from __future__ import annotations
-from llobot.commands import Command
+from llobot.commands import Step
 from llobot.environments import Environment
 from llobot.environments.cutoffs import CutoffEnv
 from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.knowledge.archives import KnowledgeArchive
 
-class LoadKnowledgeCommand(Command):
+class ProjectKnowledgeStep(Step):
     """
-    A command that loads the knowledge for the selected project at the
+    A step that loads the knowledge for the selected project at the
     selected cutoff time from a knowledge archive.
     """
     _archive: KnowledgeArchive
 
     def __init__(self, archive: KnowledgeArchive):
         """
-        Initializes the command.
+        Initializes the step.
 
         Args:
             archive: The archive to load knowledge from.
@@ -41,5 +41,5 @@ class LoadKnowledgeCommand(Command):
             env[KnowledgeEnv].set(knowledge)
 
 __all__ = [
-    'LoadKnowledgeCommand',
+    'ProjectKnowledgeStep',
 ]

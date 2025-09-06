@@ -1,7 +1,7 @@
 from datetime import datetime, UTC
 from unittest.mock import Mock, patch
 import pytest
-from llobot.commands.cutoffs import CutoffCommand, ImplicitCutoffCommand
+from llobot.commands.cutoffs import CutoffCommand, ImplicitCutoffStep
 from llobot.environments import Environment
 from llobot.environments.cutoffs import CutoffEnv
 from llobot.environments.projects import ProjectEnv
@@ -29,9 +29,9 @@ def test_cutoff_command():
     with pytest.raises(ValueError):
         command.handle("20240102-120000", env)
 
-def test_implicit_cutoff_command_no_cutoff_recording():
+def test_implicit_cutoff_step_no_cutoff_recording():
     archive = Mock(spec=KnowledgeArchive)
-    command = ImplicitCutoffCommand(archive)
+    step = ImplicitCutoffStep(archive)
     env = Environment()
     project = Mock(spec=Project)
     project.name = "test-project"
@@ -44,16 +44,16 @@ def test_implicit_cutoff_command_no_cutoff_recording():
 
     now = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
     with patch('llobot.commands.cutoffs.current_time', return_value=now):
-        command.process(env)
+        step.process(env)
 
     project.load.assert_called_once()
     archive.refresh.assert_called_once_with(project.name, mock_knowledge)
     assert cutoff_env.get() == now
     assert session_env.content() == f"Cutoff: @{format_time(now)}"
 
-def test_implicit_cutoff_command_no_cutoff_replaying():
+def test_implicit_cutoff_step_no_cutoff_replaying():
     archive = Mock(spec=KnowledgeArchive)
-    command = ImplicitCutoffCommand(archive)
+    step = ImplicitCutoffStep(archive)
     env = Environment()
     project = Mock(spec=Project)
     env[ProjectEnv].set(project)
@@ -62,16 +62,16 @@ def test_implicit_cutoff_command_no_cutoff_replaying():
 
     now = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
     with patch('llobot.commands.cutoffs.current_time', return_value=now):
-        command.process(env) # not recording, should do nothing
+        step.process(env) # not recording, should do nothing
 
     project.load.assert_not_called()
     archive.refresh.assert_not_called()
     assert cutoff_env.get() is None
     assert not session_env.content()
 
-def test_implicit_cutoff_command_with_cutoff():
+def test_implicit_cutoff_step_with_cutoff():
     archive = Mock(spec=KnowledgeArchive)
-    command = ImplicitCutoffCommand(archive)
+    step = ImplicitCutoffStep(archive)
     env = Environment()
     project = Mock(spec=Project)
     env[ProjectEnv].set(project)
@@ -84,29 +84,29 @@ def test_implicit_cutoff_command_with_cutoff():
 
     now = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
     with patch('llobot.commands.cutoffs.current_time', return_value=now):
-        command.process(env)
+        step.process(env)
 
     project.load.assert_not_called()
     archive.refresh.assert_not_called()
     assert cutoff_env.get() == existing_cutoff
     assert not session_env.content()
 
-def test_implicit_cutoff_command_no_project():
+def test_implicit_cutoff_step_no_project():
     archive = Mock(spec=KnowledgeArchive)
-    command = ImplicitCutoffCommand(archive)
+    step = ImplicitCutoffStep(archive)
     env = Environment()
     env[ReplayEnv].start_recording()
     cutoff_env = env[CutoffEnv]
 
     now = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
     with patch('llobot.commands.cutoffs.current_time', return_value=now):
-        command.process(env)
+        step.process(env)
 
     archive.refresh.assert_not_called()
     assert cutoff_env.get() == now
 
-def test_implicit_cutoff_command_no_archive():
-    command = ImplicitCutoffCommand()
+def test_implicit_cutoff_step_no_archive():
+    step = ImplicitCutoffStep()
     env = Environment()
     project = Mock(spec=Project)
     project.name = "test-project"
@@ -117,7 +117,7 @@ def test_implicit_cutoff_command_no_archive():
 
     now = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
     with patch('llobot.commands.cutoffs.current_time', return_value=now):
-        command.process(env)
+        step.process(env)
 
     project.load.assert_not_called()
     assert cutoff_env.get() == now

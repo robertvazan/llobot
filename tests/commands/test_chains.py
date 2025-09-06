@@ -1,38 +1,47 @@
 import pytest
 from llobot.environments import Environment
 from llobot.environments.command_queue import CommandQueueEnv
-from llobot.commands import Command
-from llobot.commands.chains import CommandChain
+from llobot.commands import Step, Command
+from llobot.commands.chains import StepChain
+
+class MockStep(Step):
+    def __init__(self):
+        self.process_called = False
+
+    def process(self, env: Environment):
+        self.process_called = True
 
 class MockCommand(Command):
     def __init__(self, texts_to_handle: list[str] | None = None):
         self.texts_to_handle = set(texts_to_handle or [])
-        self.handle_pending_called = False
+        self.process_called = False
 
     def handle(self, text: str, env: Environment) -> bool:
         return text in self.texts_to_handle
 
-    def handle_pending(self, env: Environment):
-        # Override to just record call, for simplicity in chain tests
-        self.handle_pending_called = True
+    def process(self, env: Environment):
+        super().process(env)
+        self.process_called = True
 
-def test_command_chain_empty():
-    """Tests that an empty CommandChain does nothing."""
-    chain = CommandChain()
+def test_step_chain_empty():
+    """Tests that an empty StepChain does nothing."""
+    chain = StepChain()
     env = Environment()
-    chain.handle_pending(env) # Should not raise
+    chain.process(env) # Should not raise
 
-def test_command_chain_calls_all():
-    """Tests that CommandChain calls handle_pending on all its commands."""
+def test_step_chain_calls_all():
+    """Tests that StepChain calls process on all its steps."""
+    step1 = MockStep()
     cmd1 = MockCommand()
-    cmd2 = MockCommand()
-    chain = CommandChain(cmd1, cmd2)
+    step2 = MockStep()
+    chain = StepChain(step1, cmd1, step2)
     env = Environment()
-    chain.handle_pending(env)
-    assert cmd1.handle_pending_called
-    assert cmd2.handle_pending_called
+    chain.process(env)
+    assert step1.process_called
+    assert cmd1.process_called
+    assert step2.process_called
 
-def test_command_chain_integration():
+def test_step_chain_integration():
     """Tests a more realistic scenario with command consumption."""
     class ConsumingMockCommand(Command):
         def __init__(self, texts_to_handle: list[str]):
@@ -43,15 +52,17 @@ def test_command_chain_integration():
 
     cmd1 = ConsumingMockCommand(["cmd1", "cmd2"])
     cmd2 = ConsumingMockCommand(["cmd3"])
+    step = MockStep()
 
-    chain = CommandChain(cmd1, cmd2)
+    chain = StepChain(cmd1, cmd2, step)
     env = Environment()
     queue = env[CommandQueueEnv]
     queue.add(["cmd1", "cmd2", "cmd3", "cmd4"])
 
-    chain.handle_pending(env)
+    chain.process(env)
 
     # cmd1 should consume cmd1 and cmd2.
     # cmd2 should consume cmd3.
     # cmd4 should remain.
     assert queue.get() == ["cmd4"]
+    assert step.process_called
