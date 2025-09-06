@@ -2,6 +2,7 @@ from __future__ import annotations
 from datetime import datetime
 from llobot.chats.branches import ChatBranch
 from llobot.chats.builders import ChatBuilder
+from llobot.chats.intents import ChatIntent
 from llobot.commands.chains import CommandChain
 from llobot.commands.cutoffs import CutoffCommand
 from llobot.commands.projects import ProjectCommand
@@ -9,7 +10,9 @@ from llobot.crammers.examples import ExampleCrammer, standard_example_crammer
 from llobot.environments import Environment
 from llobot.environments.cutoffs import CutoffEnv
 from llobot.environments.projects import ProjectEnv
+from llobot.environments.replay import ReplayEnv
 from llobot.environments.session_messages import SessionMessageEnv
+from llobot.formats.mentions import parse_mentions
 from llobot.formats.prompts import (
     PromptFormat,
     reminder_prompt_format,
@@ -45,7 +48,17 @@ class Assistant(Role):
 
     def chat(self, prompt: ChatBranch) -> ModelStream:
         env = Environment()
-        self._command_chain.handle_chat(prompt, env)
+
+        for i, message in enumerate(prompt):
+            commands = []
+            if i + 1 == len(prompt):
+                env[ReplayEnv].start_recording()
+            if i + 1 < len(prompt) and prompt[i + 1].intent == ChatIntent.SESSION:
+                commands.extend(parse_mentions(prompt[i + 1]))
+            if message.intent == ChatIntent.PROMPT:
+                commands.extend(parse_mentions(message))
+            self._command_chain.handle_all(commands, env)
+
         project = env[ProjectEnv].get()
         cutoff = env[CutoffEnv].get()
 
@@ -68,14 +81,19 @@ class Assistant(Role):
 
         context = builder.build()
         assembled_prompt = context + prompt
+
         yield from env[SessionMessageEnv].stream()
+        session_message = env[SessionMessageEnv].message()
+        if session_message:
+            assembled_prompt = assembled_prompt + session_message
+
         yield from self.model.generate(assembled_prompt)
 
-    def handle_ok(self, chat: ChatBranch, cutoff: datetime):
-        env = Environment()
-        self._command_chain.handle_chat(chat, env)
-        project = env[ProjectEnv].get()
-        self.save_example(chat, project)
+    # def handle_ok(self, chat: ChatBranch, cutoff: datetime):
+    #     env = Environment()
+    #     self._command_chain.handle_chat(chat, env)
+    #     project = env[ProjectEnv].get()
+    #     self.save_example(chat, project)
 
 __all__ = [
     'Assistant',

@@ -21,8 +21,6 @@ from __future__ import annotations
 from llobot.chats.branches import ChatBranch
 from llobot.chats.intents import ChatIntent
 from llobot.environments import Environment
-from llobot.environments.replay import ReplayEnv
-from llobot.chats.binarization import binarize_chat
 
 class Command:
     """
@@ -75,28 +73,6 @@ class Command:
         """
         for text in texts:
             self.handle_or_fail(text, env)
-
-    def handle_chat(self, chat: ChatBranch, env: Environment):
-        """
-        Parses and executes commands from all messages in a chat.
-
-        Session recording is enabled for the last message in the chat.
-        The chat is normalized to an alternating sequence of prompts and responses
-        before processing. This includes reordering of prompt-session message pairs.
-
-        Args:
-            chat: The chat branch to process.
-            env: The environment to manipulate.
-        """
-        from llobot.formats.mentions import parse_mentions
-
-        processed_chat = binarize_chat(chat)
-
-        for i, message in enumerate(processed_chat):
-            if i == len(processed_chat) - 1:
-                env[ReplayEnv].start_recording()
-            commands = parse_mentions(message)
-            self.handle_all(commands, env)
 
 __all__ = [
     'Command',

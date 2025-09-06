@@ -16,10 +16,12 @@ from llobot.environments import Environment
 from llobot.environments.cutoffs import CutoffEnv
 from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.projects import ProjectEnv
+from llobot.environments.replay import ReplayEnv
 from llobot.environments.retrievals import RetrievalsEnv
 from llobot.environments.session_messages import SessionMessageEnv
 from llobot.formats.deltas import DeltaFormat, standard_delta_format
 from llobot.formats.knowledge import KnowledgeFormat, standard_knowledge_format
+from llobot.formats.mentions import parse_mentions
 from llobot.formats.prompts import (
     PromptFormat,
     reminder_prompt_format,
@@ -115,7 +117,17 @@ class Editor(Role):
 
     def chat(self, prompt: ChatBranch) -> ModelStream:
         env = Environment()
-        self._command_chain.handle_chat(prompt, env)
+
+        for i, message in enumerate(prompt):
+            commands = []
+            if i + 1 == len(prompt):
+                env[ReplayEnv].start_recording()
+            if i + 1 < len(prompt) and prompt[i + 1].intent == ChatIntent.SESSION:
+                commands.extend(parse_mentions(prompt[i + 1]))
+            if message.intent == ChatIntent.PROMPT:
+                commands.extend(parse_mentions(message))
+            self._command_chain.handle_all(commands, env)
+
         project = env[ProjectEnv].get()
         knowledge = env[KnowledgeEnv].get()
         cutoff = env[CutoffEnv].get()
@@ -167,34 +179,39 @@ class Editor(Role):
 
         context = builder.build()
         assembled_prompt = context + prompt
+
         yield from env[SessionMessageEnv].stream()
+        session_message = env[SessionMessageEnv].message()
+        if session_message:
+            assembled_prompt = assembled_prompt + session_message
+
         yield from self.model.generate(assembled_prompt)
 
-    def handle_ok(self, chat: ChatBranch, cutoff: datetime):
-        env = Environment()
-        self._command_chain.handle_chat(chat, env)
-        project = env[ProjectEnv].get()
+    # def handle_ok(self, chat: ChatBranch, cutoff: datetime):
+    #     env = Environment()
+    #     self._command_chain.handle_chat(chat, env)
+    #     project = env[ProjectEnv].get()
 
-        if not project:
-            self.save_example(chat, None)
-            return
+    #     if not project:
+    #         self.save_example(chat, None)
+    #         return
 
-        edit_delta = self._delta_format.parse_chat(chat[1:])
-        if not edit_delta:
-            self.save_example(chat, project)
-            return
+    #     edit_delta = self._delta_format.parse_chat(chat[1:])
+    #     if not edit_delta:
+    #         self.save_example(chat, project)
+    #         return
 
-        project.refresh()
-        initial_knowledge = project.knowledge(cutoff)
-        current_knowledge = project.knowledge()
-        delta = knowledge_delta_between(initial_knowledge, current_knowledge, move_hints=edit_delta.moves)
+    #     project.refresh()
+    #     initial_knowledge = project.knowledge(cutoff)
+    #     current_knowledge = project.knowledge()
+    #     delta = knowledge_delta_between(initial_knowledge, current_knowledge, move_hints=edit_delta.moves)
 
-        compressed_delta = diff_compress_knowledge(initial_knowledge, delta)
-        response_content = self._delta_format.render_all(compressed_delta)
-        synthetic_response = ChatMessage(ChatIntent.RESPONSE, response_content)
-        example_chat = chat[0].branch() + synthetic_response
+    #     compressed_delta = diff_compress_knowledge(initial_knowledge, delta)
+    #     response_content = self._delta_format.render_all(compressed_delta)
+    #     synthetic_response = ChatMessage(ChatIntent.RESPONSE, response_content)
+    #     example_chat = chat[0].branch() + synthetic_response
 
-        self.save_example(example_chat, project)
+    #     self.save_example(example_chat, project)
 
 __all__ = [
     'editor_system_prompt',
