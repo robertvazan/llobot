@@ -9,10 +9,12 @@ from llobot.commands.chains import CommandChain
 from llobot.commands.cutoffs import CutoffCommand
 from llobot.commands.projects import ProjectCommand
 from llobot.commands.retrievals import RetrievalCommand
+from llobot.commands.unrecognized import UnrecognizedCommand
 from llobot.crammers.edits import EditCrammer, standard_edit_crammer
 from llobot.crammers.indexes import IndexCrammer, standard_index_crammer
 from llobot.crammers.knowledge import KnowledgeCrammer, standard_knowledge_crammer
 from llobot.environments import Environment
+from llobot.environments.command_queue import CommandQueueEnv
 from llobot.environments.cutoffs import CutoffEnv
 from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.projects import ProjectEnv
@@ -113,20 +115,25 @@ class Editor(Role):
         self._prompt_format = prompt_format
         self._reminder_format = reminder_format
         self._example_share = example_share
-        self._command_chain = CommandChain(ProjectCommand(projects), RetrievalCommand(), CutoffCommand())
+        self._command_chain = CommandChain(
+            ProjectCommand(projects),
+            CutoffCommand(),
+            RetrievalCommand(),
+            UnrecognizedCommand(),
+        )
 
     def chat(self, prompt: ChatBranch) -> ModelStream:
         env = Environment()
+        queue = env[CommandQueueEnv]
 
         for i, message in enumerate(prompt):
-            commands = []
             if i + 1 == len(prompt):
                 env[ReplayEnv].start_recording()
             if i + 1 < len(prompt) and prompt[i + 1].intent == ChatIntent.SESSION:
-                commands.extend(parse_mentions(prompt[i + 1]))
+                queue.add(parse_mentions(prompt[i + 1]))
             if message.intent == ChatIntent.PROMPT:
-                commands.extend(parse_mentions(message))
-            self._command_chain.handle_all(commands, env)
+                queue.add(parse_mentions(message))
+            self._command_chain.handle_pending(env)
 
         project = env[ProjectEnv].get()
         knowledge = env[KnowledgeEnv].get()

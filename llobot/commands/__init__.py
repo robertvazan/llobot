@@ -16,11 +16,12 @@ retrievals
     Command to retrieve a document.
 cutoffs
     Command to set knowledge cutoff.
+unrecognized
+    Command to handle unrecognized commands.
 """
 from __future__ import annotations
-from llobot.chats.branches import ChatBranch
-from llobot.chats.intents import ChatIntent
 from llobot.environments import Environment
+from llobot.environments.command_queue import CommandQueueEnv
 
 class Command:
     """
@@ -46,33 +47,35 @@ class Command:
         """
         return False
 
-    def handle_or_fail(self, text: str, env: Environment):
+    def process(self, env: Environment):
         """
-        Executes the command or raises an exception if it is not recognized.
+        Perform processing after all commands of this type have been handled.
+
+        This method is called once by `handle_pending` after attempting to
+        handle all commands in the queue. Subclasses can override it to
+        perform actions that depend on the complete set of handled commands.
 
         Args:
-            text: The unparsed command string.
-            env: The environment to manipulate.
-
-        Raises:
-            ValueError: If the command is not handled.
+            env: The environment.
         """
-        if not self.handle(text, env):
-            raise ValueError(f'Unrecognized: {text}')
+        pass
 
-    def handle_all(self, texts: list[str], env: Environment):
+    def handle_pending(self, env: Environment):
         """
-        Executes a list of commands.
+        Handles all pending commands in the queue that this command recognizes.
+
+        It iterates through all commands in `CommandQueueEnv`, calls `handle()` on
+        each, and if `handle()` returns `True`, the command is consumed from
+        the queue. After checking all commands, `process()` is called.
 
         Args:
-            texts: A list of unparsed command strings.
             env: The environment to manipulate.
-
-        Raises:
-            ValueError: If any command is not handled.
         """
-        for text in texts:
-            self.handle_or_fail(text, env)
+        queue = env[CommandQueueEnv]
+        for command in queue.get():
+            if self.handle(command, env):
+                queue.consume(command)
+        self.process(env)
 
 __all__ = [
     'Command',

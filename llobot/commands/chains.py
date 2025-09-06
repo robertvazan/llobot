@@ -5,12 +5,12 @@ from __future__ import annotations
 from llobot.environments import Environment
 from llobot.commands import Command
 
-class CommandChain(Command):
+class CommandChain:
     """
-    A command that tries a sequence of other commands in order.
+    A class that processes a sequence of commands in order.
 
-    The chain handles a command if any of its constituent commands handle it.
-    The first command to handle the command stops the processing.
+    The chain calls `handle_pending` on each of its constituent commands.
+    This allows for ordered execution of different command types.
     """
     _commands: tuple[Command, ...]
 
@@ -19,25 +19,19 @@ class CommandChain(Command):
         Creates a new command chain.
 
         Args:
-            *commands: A sequence of commands to try in order.
+            *commands: A sequence of commands to process in order.
         """
         self._commands = commands
 
-    def handle(self, text: str, env: Environment) -> bool:
+    def handle_pending(self, env: Environment):
         """
-        Tries to handle the command with each command in the chain.
+        Calls `handle_pending` on each command in the chain.
 
         Args:
-            text: The unparsed command string.
             env: The environment to manipulate.
-
-        Returns:
-            `True` if any command in the chain handled the command, `False` otherwise.
         """
         for command in self._commands:
-            if command.handle(text, env):
-                return True
-        return False
+            command.handle_pending(env)
 
 __all__ = [
     'CommandChain',

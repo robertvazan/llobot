@@ -1,52 +1,57 @@
 import pytest
 from llobot.environments import Environment
+from llobot.environments.command_queue import CommandQueueEnv
 from llobot.commands import Command
 from llobot.commands.chains import CommandChain
 
 class MockCommand(Command):
-    def __init__(self, handles_command: bool, text_to_handle: str = "test"):
-        self.handles_command = handles_command
-        self.text_to_handle = text_to_handle
-        self.was_called = False
+    def __init__(self, texts_to_handle: list[str] | None = None):
+        self.texts_to_handle = set(texts_to_handle or [])
+        self.handle_pending_called = False
 
     def handle(self, text: str, env: Environment) -> bool:
-        self.was_called = True
-        if self.handles_command and text == self.text_to_handle:
-            return True
-        return False
+        return text in self.texts_to_handle
+
+    def handle_pending(self, env: Environment):
+        # Override to just record call, for simplicity in chain tests
+        self.handle_pending_called = True
 
 def test_command_chain_empty():
-    """Tests that an empty CommandChain handles nothing."""
+    """Tests that an empty CommandChain does nothing."""
     chain = CommandChain()
     env = Environment()
-    assert not chain.handle("test", env)
+    chain.handle_pending(env) # Should not raise
 
-def test_command_chain_no_handler():
-    """Tests that CommandChain returns False when no command handles the text."""
-    cmd1 = MockCommand(False)
-    cmd2 = MockCommand(False)
+def test_command_chain_calls_all():
+    """Tests that CommandChain calls handle_pending on all its commands."""
+    cmd1 = MockCommand()
+    cmd2 = MockCommand()
     chain = CommandChain(cmd1, cmd2)
     env = Environment()
-    assert not chain.handle("test", env)
-    assert cmd1.was_called
-    assert cmd2.was_called
+    chain.handle_pending(env)
+    assert cmd1.handle_pending_called
+    assert cmd2.handle_pending_called
 
-def test_command_chain_first_handles():
-    """Tests that CommandChain stops at the first handler."""
-    cmd1 = MockCommand(True)
-    cmd2 = MockCommand(True)
+def test_command_chain_integration():
+    """Tests a more realistic scenario with command consumption."""
+    class ConsumingMockCommand(Command):
+        def __init__(self, texts_to_handle: list[str]):
+            self.texts_to_handle = texts_to_handle
+
+        def handle(self, text: str, env: Environment) -> bool:
+            return text in self.texts_to_handle
+
+    cmd1 = ConsumingMockCommand(["cmd1", "cmd2"])
+    cmd2 = ConsumingMockCommand(["cmd3"])
+
     chain = CommandChain(cmd1, cmd2)
     env = Environment()
-    assert chain.handle("test", env)
-    assert cmd1.was_called
-    assert not cmd2.was_called
+    queue = env[CommandQueueEnv]
+    queue.add(["cmd1", "cmd2", "cmd3", "cmd4"])
 
-def test_command_chain_second_handles():
-    """Tests that CommandChain continues until a handler is found."""
-    cmd1 = MockCommand(False)
-    cmd2 = MockCommand(True)
-    chain = CommandChain(cmd1, cmd2)
-    env = Environment()
-    assert chain.handle("test", env)
-    assert cmd1.was_called
-    assert cmd2.was_called
+    chain.handle_pending(env)
+
+    # cmd1 should consume cmd1 and cmd2.
+    # cmd2 should consume cmd3.
+    # cmd4 should remain.
+    assert queue.get() == ["cmd4"]

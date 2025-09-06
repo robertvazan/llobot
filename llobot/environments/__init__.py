@@ -19,6 +19,8 @@ replay
     Replay controls.
 cutoffs
     Knowledge cutoff timestamp.
+command_queue
+    Unprocessed command queue.
 """
 from __future__ import annotations
 import weakref

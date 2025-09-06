@@ -6,8 +6,10 @@ from llobot.chats.intents import ChatIntent
 from llobot.commands.chains import CommandChain
 from llobot.commands.cutoffs import CutoffCommand
 from llobot.commands.projects import ProjectCommand
+from llobot.commands.unrecognized import UnrecognizedCommand
 from llobot.crammers.examples import ExampleCrammer, standard_example_crammer
 from llobot.environments import Environment
+from llobot.environments.command_queue import CommandQueueEnv
 from llobot.environments.cutoffs import CutoffEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.replay import ReplayEnv
@@ -44,20 +46,24 @@ class Assistant(Role):
         self._crammer = crammer
         self._prompt_format = prompt_format
         self._reminder_format = reminder_format
-        self._command_chain = CommandChain(ProjectCommand(projects), CutoffCommand())
+        self._command_chain = CommandChain(
+            ProjectCommand(projects),
+            CutoffCommand(),
+            UnrecognizedCommand(),
+        )
 
     def chat(self, prompt: ChatBranch) -> ModelStream:
         env = Environment()
+        queue = env[CommandQueueEnv]
 
         for i, message in enumerate(prompt):
-            commands = []
             if i + 1 == len(prompt):
                 env[ReplayEnv].start_recording()
             if i + 1 < len(prompt) and prompt[i + 1].intent == ChatIntent.SESSION:
-                commands.extend(parse_mentions(prompt[i + 1]))
+                queue.add(parse_mentions(prompt[i + 1]))
             if message.intent == ChatIntent.PROMPT:
-                commands.extend(parse_mentions(message))
-            self._command_chain.handle_all(commands, env)
+                queue.add(parse_mentions(message))
+            self._command_chain.handle_pending(env)
 
         project = env[ProjectEnv].get()
         cutoff = env[CutoffEnv].get()

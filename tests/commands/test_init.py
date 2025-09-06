@@ -1,11 +1,27 @@
 import pytest
 from llobot.environments import Environment
-from llobot.environments.replay import ReplayEnv
-from llobot.environments.session_messages import SessionMessageEnv
+from llobot.environments.command_queue import CommandQueueEnv
 from llobot.commands import Command
-from llobot.chats.branches import ChatBranch
-from llobot.chats.messages import ChatMessage
-from llobot.chats.intents import ChatIntent
+
+class MockCommand(Command):
+    def __init__(self, text_to_handle: str | list[str] | None = None):
+        if text_to_handle is None:
+            self.texts_to_handle = set()
+        elif isinstance(text_to_handle, str):
+            self.texts_to_handle = {text_to_handle}
+        else:
+            self.texts_to_handle = set(text_to_handle)
+        self.handled_commands = []
+        self.process_called = False
+
+    def handle(self, text: str, env: Environment) -> bool:
+        if text in self.texts_to_handle:
+            self.handled_commands.append(text)
+            return True
+        return False
+
+    def process(self, env: Environment):
+        self.process_called = True
 
 def test_command_handle_default():
     """Tests that Command.handle returns False by default."""
@@ -13,32 +29,35 @@ def test_command_handle_default():
     env = Environment()
     assert not cmd.handle("some command", env)
 
-def test_command_handle_or_fail_unhandled():
-    """Tests that Command.handle_or_fail raises ValueError for unhandled commands."""
+def test_command_process_default():
+    """Tests that Command.process does nothing by default."""
     cmd = Command()
     env = Environment()
-    with pytest.raises(ValueError, match="Unrecognized: some command"):
-        cmd.handle_or_fail("some command", env)
+    cmd.process(env) # Should not raise
 
-def test_command_handle_or_fail_handled():
-    """Tests that Command.handle_or_fail does not raise for handled commands."""
-    class HandledCommand(Command):
-        def handle(self, text: str, env: Environment) -> bool:
-            return True
-
-    cmd = HandledCommand()
+def test_command_handle_pending():
+    """Tests Command.handle_pending."""
+    cmd = MockCommand(["cmd1", "cmd3"])
     env = Environment()
-    cmd.handle_or_fail("some command", env)  # Should not raise
+    queue = env[CommandQueueEnv]
+    queue.add(["cmd1", "cmd2", "cmd3"])
 
-def test_command_handle_all():
-    """Tests Command.handle_all with multiple commands."""
-    handled_commands = []
-    class RecordingCommand(Command):
-        def handle(self, text: str, env: Environment) -> bool:
-            handled_commands.append(text)
-            return True
+    cmd.handle_pending(env)
 
-    cmd = RecordingCommand()
+    # Check that correct commands were handled
+    assert sorted(cmd.handled_commands) == ["cmd1", "cmd3"]
+    # Check that handled commands were consumed from the queue
+    assert queue.get() == ["cmd2"]
+    # Check that process was called
+    assert cmd.process_called
+
+def test_command_handle_pending_empty_queue():
+    """Tests Command.handle_pending with an empty queue."""
+    cmd = MockCommand("cmd1")
     env = Environment()
-    cmd.handle_all(["cmd1", "cmd2"], env)
-    assert handled_commands == ["cmd1", "cmd2"]
+
+    cmd.handle_pending(env)
+
+    assert cmd.handled_commands == []
+    assert env[CommandQueueEnv].get() == []
+    assert cmd.process_called
