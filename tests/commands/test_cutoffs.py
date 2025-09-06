@@ -1,50 +1,93 @@
-from llobot.commands.projects import ProjectCommand
-from llobot.environments import Environment
-from llobot.environments.projects import ProjectEnv
-from llobot.projects import Project
-from unittest.mock import Mock
+from datetime import datetime, UTC
+from unittest.mock import Mock, patch
 import pytest
+from llobot.commands.cutoffs import CutoffCommand, ImplicitCutoffCommand
+from llobot.environments import Environment
+from llobot.environments.cutoffs import CutoffEnv
+from llobot.environments.projects import ProjectEnv
+from llobot.environments.replay import ReplayEnv
+from llobot.environments.session_messages import SessionMessageEnv
+from llobot.projects import Project
+from llobot.time import parse_time, format_time
 
-def test_project_command_selection():
-    project1 = Mock(spec=Project)
-    project1.name = "proj1"
-    command = ProjectCommand([project1])
+def test_cutoff_command():
+    command = CutoffCommand()
     env = Environment()
-    project_env = env[ProjectEnv]
+    cutoff_env = env[CutoffEnv]
 
-    assert command.handle("proj1", env) is True
-    assert project_env._project is project1
+    # Valid timestamp
+    assert command.handle("20240101-120000", env) is True
+    assert cutoff_env.get() == parse_time("20240101-120000")
 
-def test_project_command_unknown():
-    project1 = Mock(spec=Project)
-    project1.name = "proj1"
-    command = ProjectCommand([project1])
+    # Invalid timestamp
+    assert command.handle("not-a-timestamp", env) is False
+    assert cutoff_env.get() == parse_time("20240101-120000") # Unchanged
+
+    # Setting another valid one fails
+    with pytest.raises(ValueError):
+        command.handle("20240102-120000", env)
+
+def test_implicit_cutoff_command_no_cutoff_recording():
+    command = ImplicitCutoffCommand()
     env = Environment()
-    project_env = env[ProjectEnv]
+    project = Mock(spec=Project)
+    env[ProjectEnv].set(project)
+    env[ReplayEnv].start_recording()
+    cutoff_env = env[CutoffEnv]
+    session_env = env[SessionMessageEnv]
 
-    assert command.handle("unknown", env) is False
-    assert project_env._project is None
+    now = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
+    with patch('llobot.commands.cutoffs.current_time', return_value=now):
+        command.process(env)
 
-def test_project_command_change_fails():
-    project1 = Mock(spec=Project)
-    project1.name = "proj1"
-    project2 = Mock(spec=Project)
-    project2.name = "proj2"
-    command = ProjectCommand([project1, project2])
+    project.refresh.assert_called_once()
+    assert cutoff_env.get() == now
+    assert session_env.content() == f"Cutoff: @{format_time(now)}"
+
+def test_implicit_cutoff_command_no_cutoff_replaying():
+    command = ImplicitCutoffCommand()
     env = Environment()
+    project = Mock(spec=Project)
+    env[ProjectEnv].set(project)
+    cutoff_env = env[CutoffEnv]
+    session_env = env[SessionMessageEnv]
 
-    command.handle("proj1", env)
-    with pytest.raises(ValueError, match="Project already set"):
-        command.handle("proj2", env)
+    now = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
+    with patch('llobot.commands.cutoffs.current_time', return_value=now):
+        command.process(env) # not recording, should do nothing
 
-def test_project_command_frozen_fails():
-    project1 = Mock(spec=Project)
-    project1.name = "proj1"
-    command = ProjectCommand([project1])
+    project.refresh.assert_not_called()
+    assert cutoff_env.get() is None
+    assert not session_env.content()
+
+def test_implicit_cutoff_command_with_cutoff():
+    command = ImplicitCutoffCommand()
     env = Environment()
-    project_env = env[ProjectEnv]
+    project = Mock(spec=Project)
+    env[ProjectEnv].set(project)
+    env[ReplayEnv].start_recording()
+    cutoff_env = env[CutoffEnv]
+    session_env = env[SessionMessageEnv]
 
-    command.handle("proj1", env)
-    project_env.get() # freeze
-    with pytest.raises(ValueError, match="Project selection is frozen"):
-        command.handle("proj1", env)
+    existing_cutoff = parse_time("20230101-000000")
+    cutoff_env.set(existing_cutoff)
+
+    now = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
+    with patch('llobot.commands.cutoffs.current_time', return_value=now):
+        command.process(env)
+
+    project.refresh.assert_not_called()
+    assert cutoff_env.get() == existing_cutoff
+    assert not session_env.content()
+
+def test_implicit_cutoff_command_no_project():
+    command = ImplicitCutoffCommand()
+    env = Environment()
+    env[ReplayEnv].start_recording()
+    cutoff_env = env[CutoffEnv]
+
+    now = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
+    with patch('llobot.commands.cutoffs.current_time', return_value=now):
+        command.process(env)
+
+    assert cutoff_env.get() == now

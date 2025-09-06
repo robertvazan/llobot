@@ -2,9 +2,8 @@
 Replay/record state of the environment.
 """
 from __future__ import annotations
-from llobot.environments import EnvBase
 
-class ReplayEnv(EnvBase):
+class ReplayEnv:
     """
     An environment component that indicates whether the environment is in replay or recording state.
     """

@@ -6,7 +6,8 @@ from llobot.chats.builders import ChatBuilder
 from llobot.chats.intents import ChatIntent
 from llobot.chats.messages import ChatMessage
 from llobot.commands.chains import CommandChain
-from llobot.commands.cutoffs import CutoffCommand
+from llobot.commands.cutoffs import CutoffCommand, ImplicitCutoffCommand
+from llobot.commands.knowledge import LoadKnowledgeCommand
 from llobot.commands.projects import ProjectCommand
 from llobot.commands.retrievals import RetrievalCommand
 from llobot.commands.unrecognized import UnrecognizedCommand
@@ -118,6 +119,8 @@ class Editor(Role):
         self._command_chain = CommandChain(
             ProjectCommand(projects),
             CutoffCommand(),
+            ImplicitCutoffCommand(),
+            LoadKnowledgeCommand(),
             RetrievalCommand(),
             UnrecognizedCommand(),
         )

@@ -4,7 +4,7 @@ from llobot.chats.branches import ChatBranch
 from llobot.chats.builders import ChatBuilder
 from llobot.chats.intents import ChatIntent
 from llobot.commands.chains import CommandChain
-from llobot.commands.cutoffs import CutoffCommand
+from llobot.commands.cutoffs import CutoffCommand, ImplicitCutoffCommand
 from llobot.commands.projects import ProjectCommand
 from llobot.commands.unrecognized import UnrecognizedCommand
 from llobot.crammers.examples import ExampleCrammer, standard_example_crammer
@@ -49,6 +49,7 @@ class Assistant(Role):
         self._command_chain = CommandChain(
             ProjectCommand(projects),
             CutoffCommand(),
+            ImplicitCutoffCommand(),
             UnrecognizedCommand(),
         )
 

@@ -3,17 +3,15 @@ Document retrievals.
 """
 from __future__ import annotations
 from pathlib import Path
-from llobot.environments import EnvBase
 from llobot.knowledge.indexes import KnowledgeIndex
 
-class RetrievalsEnv(EnvBase):
+class RetrievalsEnv:
     """
     An environment component that holds a set of paths for documents to be retrieved.
     """
     _paths: set[Path]
 
     def __init__(self):
-        super().__init__()
         self._paths = set()
 
     def add(self, path: Path):

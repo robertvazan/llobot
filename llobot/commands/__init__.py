@@ -12,6 +12,8 @@ chains
     Command chains.
 projects
     Command to select a project.
+knowledge
+    Command to load project knowledge.
 retrievals
     Command to retrieve a document.
 cutoffs

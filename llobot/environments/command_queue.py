@@ -3,16 +3,14 @@ Command queue environment component.
 """
 from __future__ import annotations
 from typing import Iterable
-from llobot.environments import EnvBase
 
-class CommandQueueEnv(EnvBase):
+class CommandQueueEnv:
     """
     An environment component that holds a set of unprocessed command strings.
     """
     _commands: set[str]
 
     def __init__(self):
-        super().__init__()
         self._commands = set()
 
     def add(self, commands: str | Iterable[str]):

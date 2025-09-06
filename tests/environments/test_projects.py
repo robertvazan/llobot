@@ -6,9 +6,11 @@ import pytest
 def test_project_env_no_project():
     env = ProjectEnv()
     assert env.get() is None
-    # after first get(), it's frozen
-    with pytest.raises(ValueError, match="Project selection is frozen"):
-        env.set(Mock(spec=Project))
+    # Can set project even after get
+    project = Mock(spec=Project)
+    project.name = 'proj'
+    env.set(project)
+    assert env.get() is project
 
 def test_project_env_set_then_get():
     env = ProjectEnv()
@@ -16,26 +18,19 @@ def test_project_env_set_then_get():
     project1.name = "proj1"
     env.set(project1)
 
-    # get freezes it
+    assert env.get() is project1
+    # can still set same project
+    env.set(project1)
     assert env.get() is project1
 
-    # cannot set after get
-    with pytest.raises(ValueError, match="Project selection is frozen"):
-        env.set(project1)
-
-def test_project_env_set_multiple():
+def test_project_env_set_multiple_fails():
     env = ProjectEnv()
     project1 = Mock(spec=Project)
     project1.name = "proj1"
-
-    env.set(project1)
-    # Setting same project is ok before get()
     env.set(project1)
 
     project2 = Mock(spec=Project)
     project2.name = "proj2"
-
     with pytest.raises(ValueError, match="Project already set"):
         env.set(project2)
-
     assert env.get() is project1

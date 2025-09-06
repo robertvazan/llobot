@@ -3,32 +3,32 @@ Knowledge base for selected project.
 """
 from __future__ import annotations
 from functools import cached_property
-from llobot.environments import EnvBase
-from llobot.environments.projects import ProjectEnv
-from llobot.environments.cutoffs import CutoffEnv
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 
-class KnowledgeEnv(EnvBase):
+class KnowledgeEnv:
     """
     An environment component that holds the project's knowledge.
     """
-    @cached_property
-    def _knowledge(self) -> Knowledge:
-        project = self.env[ProjectEnv].get()
-        if project:
-            cutoff = self.env[CutoffEnv].get()
-            return project.knowledge(cutoff)
-        return Knowledge()
+    _knowledge: Knowledge | None = None
+
+    def set(self, knowledge: Knowledge):
+        """
+        Sets the project's knowledge.
+        """
+        self._knowledge = knowledge
+        # Bust the index cache if it exists.
+        if hasattr(self, '_index'):
+            del self._index
 
     def get(self) -> Knowledge:
         """
-        Gets the project's knowledge at the configured cutoff.
+        Gets the project's knowledge.
 
         Returns:
-            The project's knowledge, or empty knowledge if no project is selected.
+            The project's knowledge, or empty knowledge if not set.
         """
-        return self._knowledge
+        return self._knowledge or Knowledge()
 
     @cached_property
     def _index(self) -> KnowledgeIndex:

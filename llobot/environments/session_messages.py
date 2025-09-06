@@ -5,27 +5,24 @@ from __future__ import annotations
 from llobot.text import concat_documents
 from llobot.chats.intents import ChatIntent
 from llobot.chats.messages import ChatMessage
-from llobot.environments import EnvBase
-from llobot.environments.replay import ReplayEnv
 from llobot.models.streams import ModelStream, message_stream
 
-class SessionMessageEnv(EnvBase):
+class SessionMessageEnv:
     """
     An environment component that accumulates session messages from commands.
     """
     _fragments: list[str]
 
     def __init__(self):
-        super().__init__()
         self._fragments = []
 
     def append(self, text: str | None):
         """
         Appends a Markdown fragment to the session message.
 
-        The fragment is ignored if recording is off or if the text is empty.
+        The fragment is ignored if the text is empty.
         """
-        if self.env[ReplayEnv].recording() and text:
+        if text:
             self._fragments.append(text)
 
     def content(self) -> str:
