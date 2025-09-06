@@ -8,5 +8,9 @@
 - Do not delete any content from edited files unless asked to do so
 - Match the style of existing project files
 - Do not leave trailing whitespace or blank (whitespace-only) lines
+
+### Followup edits
+
 - If the user provides feedback on your edits, implement it in a followup response
-- IMPORTANT: Formulate followup edits relative to your previously performed edits
+- Assume all the changes you have made in your previous response have been accepted
+- IMPORTANT: In a followup response, assume your previous edits have been accepted and include only new changes
