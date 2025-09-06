@@ -15,11 +15,13 @@ projects
 knowledge
     Step to load project knowledge.
 retrievals
-    Command to retrieve a document.
+    Commands and steps for document retrieval.
 cutoffs
     Command and step to set knowledge cutoff.
 unrecognized
     Command to handle unrecognized commands.
+custom
+    Step for executing arbitrary callables.
 """
 from __future__ import annotations
 from llobot.environments import Environment

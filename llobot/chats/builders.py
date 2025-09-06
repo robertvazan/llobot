@@ -44,8 +44,7 @@ class ChatBuilder:
         Adds content to the chat.
 
         - A `ChatBranch` adds all its messages.
-        - A `ChatMessage` is appended. If its intent matches the last message,
-          their content is merged.
+        - A `ChatMessage` is appended.
         - `None` is ignored.
 
         Args:

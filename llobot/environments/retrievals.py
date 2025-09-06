@@ -32,6 +32,12 @@ class RetrievalsEnv:
         """
         return KnowledgeIndex(self._paths)
 
+    def clear(self):
+        """
+        Clears all paths from the set of retrieved documents.
+        """
+        self._paths.clear()
+
 __all__ = [
     'RetrievalsEnv',
 ]

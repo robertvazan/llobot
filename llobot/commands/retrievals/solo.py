@@ -11,7 +11,7 @@ from llobot.knowledge.subsets import match_glob
 
 _PATH_RE = re.compile(r'^[a-zA-Z0-9_./-]+$')
 
-class RetrievalCommand(Command):
+class SoloRetrievalCommand(Command):
     """
     A command that retrieves a document from the knowledge base by its path.
 
@@ -49,5 +49,5 @@ class RetrievalCommand(Command):
         return False
 
 __all__ = [
-    'RetrievalCommand',
+    'SoloRetrievalCommand',
 ]

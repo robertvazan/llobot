@@ -3,27 +3,27 @@ from datetime import datetime
 from functools import cache
 from typing import Iterable
 from llobot.chats.branches import ChatBranch
-from llobot.chats.builders import ChatBuilder
 from llobot.chats.intents import ChatIntent
-from llobot.chats.messages import ChatMessage
 from llobot.commands.chains import StepChain
+from llobot.commands.custom import CustomStep
 from llobot.commands.cutoffs import CutoffCommand, ImplicitCutoffStep
 from llobot.commands.knowledge import ProjectKnowledgeStep
 from llobot.commands.projects import ProjectCommand
-from llobot.commands.retrievals import RetrievalCommand
+from llobot.commands.retrievals import RetrievalStep
+from llobot.commands.retrievals.solo import SoloRetrievalCommand
 from llobot.commands.unrecognized import UnrecognizedCommand
 from llobot.crammers.edits import EditCrammer, standard_edit_crammer
 from llobot.crammers.indexes import IndexCrammer, standard_index_crammer
 from llobot.crammers.knowledge import KnowledgeCrammer, standard_knowledge_crammer
 from llobot.environments import Environment
 from llobot.environments.command_queue import CommandQueueEnv
+from llobot.environments.context import ContextEnv
 from llobot.environments.cutoffs import CutoffEnv
 from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.replay import ReplayEnv
-from llobot.environments.retrievals import RetrievalsEnv
 from llobot.environments.session_messages import SessionMessageEnv
-from llobot.formats.documents import DocumentFormat, standard_document_format
+from llobot.formats.documents import DocumentFormat
 from llobot.formats.knowledge import KnowledgeFormat, standard_knowledge_format
 from llobot.formats.mentions import parse_mentions
 from llobot.formats.prompts import (
@@ -31,10 +31,7 @@ from llobot.formats.prompts import (
     reminder_prompt_format,
     standard_prompt_format,
 )
-from llobot.knowledge import Knowledge
 from llobot.knowledge.archives import KnowledgeArchive, standard_knowledge_archive
-from llobot.knowledge.deltas import diff_compress_knowledge, knowledge_delta_between
-from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.rankers import KnowledgeRanker, standard_ranker
 from llobot.knowledge.scorers import (
     KnowledgeScorer,
@@ -125,22 +122,22 @@ class Editor(Role):
             CutoffCommand(),
             ImplicitCutoffStep(self._knowledge_archive),
             ProjectKnowledgeStep(self._knowledge_archive),
-            RetrievalCommand(),
+            CustomStep(self.stuff),
+            SoloRetrievalCommand(),
+            RetrievalStep(self._knowledge_format),
             UnrecognizedCommand(),
         )
 
-    def chat(self, prompt: ChatBranch) -> ModelStream:
-        env = Environment()
-        queue = env[CommandQueueEnv]
+    def stuff(self, env: Environment):
+        """
+        Populates the context with system prompt, knowledge, and examples.
 
-        for i, message in enumerate(prompt):
-            if i + 1 == len(prompt):
-                env[ReplayEnv].start_recording()
-            if i + 1 < len(prompt) and prompt[i + 1].intent == ChatIntent.SESSION:
-                queue.add(parse_mentions(prompt[i + 1]))
-            if message.intent == ChatIntent.PROMPT:
-                queue.add(parse_mentions(message))
-            self._step_chain.process(env)
+        Args:
+            env: The environment to populate.
+        """
+        context = env[ContextEnv]
+        if context.messages:
+            return
 
         project = env[ProjectEnv].get()
         knowledge = env[KnowledgeEnv].get()
@@ -149,11 +146,8 @@ class Editor(Role):
 
         # System prompt
         system_chat = self._prompt_format(self._system)
+        context.add(system_chat)
         budget -= system_chat.cost
-
-        # Reminder
-        reminder_chat = self._reminder_format(self._system)
-        budget -= reminder_chat.cost
 
         # Examples with associated updates
         history_budget = int(budget * self._example_share)
@@ -176,29 +170,38 @@ class Editor(Role):
         # Knowledge
         knowledge_budget = index_budget - index_chat.cost
         ranking = self._ranker(knowledge)
-        knowledge_chat, knowledge_paths = self._knowledge_crammer(knowledge, knowledge_budget, scores, ranking)
+        knowledge_chat, _ = self._knowledge_crammer(knowledge, knowledge_budget, scores, ranking)
 
-        # Retrievals
-        retrieved_paths = env[RetrievalsEnv].get()
-        retrieved_knowledge = (knowledge & retrieved_paths) - (knowledge_paths | history_paths)
-        retrievals_chat = self._knowledge_format.render_fresh(retrieved_knowledge, ranking)
+        context.add(index_chat)
+        context.add(knowledge_chat)
+        context.add(history_chat)
 
-        builder = ChatBuilder()
-        builder.add(system_chat)
-        builder.add(index_chat)
-        builder.add(knowledge_chat)
-        builder.add(history_chat)
-        builder.add(retrievals_chat)
-        builder.add(reminder_chat)
+    def chat(self, prompt: ChatBranch) -> ModelStream:
+        env = Environment()
+        context = env[ContextEnv]
+        queue = env[CommandQueueEnv]
 
-        context = builder.build()
-        assembled_prompt = context + prompt
+        for i, message in enumerate(prompt):
+            if i + 1 == len(prompt):
+                env[ReplayEnv].start_recording()
+
+            if message.intent == ChatIntent.PROMPT:
+                if i + 1 < len(prompt) and prompt[i + 1].intent == ChatIntent.SESSION:
+                    queue.add(parse_mentions(prompt[i + 1]))
+                queue.add(parse_mentions(message))
+                self._step_chain.process(env)
+
+            if i == 0:
+                context.add(self._reminder_format(self._system))
+
+            context.add(message)
 
         yield from env[SessionMessageEnv].stream()
         session_message = env[SessionMessageEnv].message()
         if session_message:
-            assembled_prompt = assembled_prompt + session_message
+            context.add(session_message)
 
+        assembled_prompt = context.build()
         yield from self.model.generate(assembled_prompt)
 
     # def handle_ok(self, chat: ChatBranch, cutoff: datetime):

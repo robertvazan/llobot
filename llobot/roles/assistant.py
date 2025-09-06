@@ -1,15 +1,16 @@
 from __future__ import annotations
 from typing import Iterable
 from llobot.chats.branches import ChatBranch
-from llobot.chats.builders import ChatBuilder
 from llobot.chats.intents import ChatIntent
 from llobot.commands.chains import StepChain
+from llobot.commands.custom import CustomStep
 from llobot.commands.cutoffs import CutoffCommand, ImplicitCutoffStep
 from llobot.commands.projects import ProjectCommand
 from llobot.commands.unrecognized import UnrecognizedCommand
 from llobot.crammers.examples import ExampleCrammer, standard_example_crammer
 from llobot.environments import Environment
 from llobot.environments.command_queue import CommandQueueEnv
+from llobot.environments.context import ContextEnv
 from llobot.environments.cutoffs import CutoffEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.replay import ReplayEnv
@@ -52,30 +53,27 @@ class Assistant(Role):
             ProjectCommand(project_list),
             CutoffCommand(),
             ImplicitCutoffStep(),
+            CustomStep(self.stuff),
             UnrecognizedCommand(),
         )
 
-    def chat(self, prompt: ChatBranch) -> ModelStream:
-        env = Environment()
-        queue = env[CommandQueueEnv]
+    def stuff(self, env: Environment):
+        """
+        Populates the context with system prompt, examples, and reminders.
 
-        for i, message in enumerate(prompt):
-            if i + 1 == len(prompt):
-                env[ReplayEnv].start_recording()
-            if i + 1 < len(prompt) and prompt[i + 1].intent == ChatIntent.SESSION:
-                queue.add(parse_mentions(prompt[i + 1]))
-            if message.intent == ChatIntent.PROMPT:
-                queue.add(parse_mentions(message))
-            self._step_chain.process(env)
+        Args:
+            env: The environment to populate.
+        """
+        context = env[ContextEnv]
+        if context.messages:
+            return
 
         project = env[ProjectEnv].get()
         cutoff = env[CutoffEnv].get()
-
         budget = self.model.context_budget
-        builder = ChatBuilder()
 
         system_chat = self._prompt_format(self._system)
-        builder.add(system_chat)
+        context.add(system_chat)
         budget -= system_chat.cost
 
         reminder_chat = self._reminder_format(self._system)
@@ -83,19 +81,33 @@ class Assistant(Role):
 
         recent_examples = self.recent_examples(project, cutoff)
         examples = self._crammer(recent_examples, budget)
-        builder.add(examples)
+        context.add(examples)
 
-        # Add reminder at the end
-        builder.add(reminder_chat)
+        context.add(reminder_chat)
 
-        context = builder.build()
-        assembled_prompt = context + prompt
+    def chat(self, prompt: ChatBranch) -> ModelStream:
+        env = Environment()
+        context = env[ContextEnv]
+        queue = env[CommandQueueEnv]
+
+        for i, message in enumerate(prompt):
+            if i + 1 == len(prompt):
+                env[ReplayEnv].start_recording()
+
+            if message.intent == ChatIntent.PROMPT:
+                if i + 1 < len(prompt) and prompt[i + 1].intent == ChatIntent.SESSION:
+                    queue.add(parse_mentions(prompt[i + 1]))
+                queue.add(parse_mentions(message))
+                self._step_chain.process(env)
+
+            context.add(message)
 
         yield from env[SessionMessageEnv].stream()
         session_message = env[SessionMessageEnv].message()
         if session_message:
-            assembled_prompt = assembled_prompt + session_message
+            context.add(session_message)
 
+        assembled_prompt = context.build()
         yield from self.model.generate(assembled_prompt)
 
     # def handle_ok(self, chat: ChatBranch, cutoff: datetime):
