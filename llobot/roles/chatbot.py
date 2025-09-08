@@ -12,13 +12,14 @@ class Chatbot(Role):
     """
     A simple role that prepends a system prompt to the user's prompt.
     """
+    _name: str
+    _model: Model
     _system: str
     _prompt_format: PromptFormat
 
     def __init__(self, name: str, model: Model, *,
         prompt: str | Prompt = '',
         prompt_format: PromptFormat = standard_prompt_format(),
-        **kwargs,
     ):
         """
         Initializes the Chatbot role.
@@ -29,9 +30,14 @@ class Chatbot(Role):
             prompt: The system prompt to use. Defaults to empty.
             prompt_format: The format for the system prompt.
         """
-        super().__init__(name, model, **kwargs)
+        self._name = name
+        self._model = model
         self._system = str(prompt)
         self._prompt_format = prompt_format
+
+    @property
+    def name(self) -> str:
+        return self._name
 
     def chat(self, prompt: ChatBranch) -> ModelStream:
         """
@@ -49,7 +55,7 @@ class Chatbot(Role):
         system_chat = self._prompt_format(self._system)
         builder.add(system_chat)
         builder.add(prompt)
-        return self.model.generate(builder.build())
+        return self._model.generate(builder.build())
 
 __all__ = [
     'Chatbot',

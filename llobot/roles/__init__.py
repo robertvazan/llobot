@@ -26,31 +26,13 @@ prompts for the respective roles.
 
 from __future__ import annotations
 from llobot.chats.branches import ChatBranch
-from llobot.models import Model
 from llobot.models.streams import ModelStream
 
 class Role:
-    _name: str
-    _model: Model
-
-    def __init__(self, name: str, model: Model):
-        """
-        Initializes the Role.
-
-        Args:
-            name: The name of the role.
-            model: The language model to use.
-        """
-        self._name = name
-        self._model = model
-
     @property
     def name(self) -> str:
-        return self._name
-
-    @property
-    def model(self) -> Model:
-        return self._model
+        """The name of the role."""
+        raise NotImplementedError
 
     def __str__(self) -> str:
         return self.name

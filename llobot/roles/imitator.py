@@ -35,6 +35,8 @@ from llobot.prompts import Prompt
 from llobot.roles import Role
 
 class Imitator(Role):
+    _name: str
+    _model: Model
     _system: str
     _crammer: ExampleCrammer
     _prompt_format: PromptFormat
@@ -50,7 +52,8 @@ class Imitator(Role):
         prompt_format: PromptFormat = standard_prompt_format(),
         reminder_format: PromptFormat = reminder_prompt_format(),
     ):
-        super().__init__(name, model)
+        self._name = name
+        self._model = model
         self._examples = ExampleMemory(name, archive=example_archive)
         self._system = str(prompt)
         self._crammer = crammer
@@ -65,6 +68,10 @@ class Imitator(Role):
             UnrecognizedCommand(),
         )
 
+    @property
+    def name(self) -> str:
+        return self._name
+
     def stuff(self, env: Environment):
         """
         Populates the context with system prompt, examples, and reminders.
@@ -76,7 +83,7 @@ class Imitator(Role):
         if context.messages:
             return
 
-        budget = self.model.context_budget
+        budget = self._model.context_budget
 
         system_chat = self._prompt_format(self._system)
         context.add(system_chat)
@@ -113,7 +120,7 @@ class Imitator(Role):
         context.add(session_env.message())
 
         assembled_prompt = context.build()
-        yield from self.model.generate(assembled_prompt)
+        yield from self._model.generate(assembled_prompt)
 
     # def handle_ok(self, chat: ChatBranch, cutoff: datetime):
     #     env = Environment()

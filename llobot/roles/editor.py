@@ -70,6 +70,8 @@ def editor_system_prompt() -> SystemPrompt:
     )
 
 class Editor(Role):
+    _name: str
+    _model: Model
     _system: str
     _knowledge_archive: KnowledgeArchive
     _relevance_scorer: KnowledgeScorer
@@ -106,7 +108,8 @@ class Editor(Role):
         """
         Creates a new editor role.
         """
-        super().__init__(name, model)
+        self._name = name
+        self._model = model
         self._examples = ExampleMemory(name, archive=example_archive)
         self._system = str(prompt)
         self._knowledge_archive = knowledge_archive
@@ -135,6 +138,10 @@ class Editor(Role):
             UnrecognizedCommand(),
         )
 
+    @property
+    def name(self) -> str:
+        return self._name
+
     def stuff(self, env: Environment):
         """
         Populates the context with system prompt, knowledge, and examples.
@@ -147,7 +154,7 @@ class Editor(Role):
             return
 
         knowledge = env[KnowledgeEnv].get()
-        budget = self.model.context_budget
+        budget = self._model.context_budget
 
         # System prompt
         system_chat = self._prompt_format(self._system)
@@ -206,7 +213,7 @@ class Editor(Role):
         context.add(session_env.message())
 
         assembled_prompt = context.build()
-        yield from self.model.generate(assembled_prompt)
+        yield from self._model.generate(assembled_prompt)
 
     # def handle_ok(self, chat: ChatBranch, cutoff: datetime):
     #     env = Environment()
