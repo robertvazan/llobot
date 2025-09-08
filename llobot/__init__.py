@@ -21,6 +21,8 @@ fs
     Filesystem utilities for data and cache management.
 knowledge
     A comprehensive system for managing plaintext knowledge bases.
+memories
+    Memory components for roles.
 models
     Integrations with various LLM backends (Ollama, OpenAI, etc.).
 projects

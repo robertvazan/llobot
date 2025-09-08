@@ -1,5 +1,8 @@
 from __future__ import annotations
+from datetime import datetime
+from pathlib import Path
 from typing import Iterable
+from llobot.chats.archives import ChatArchive, standard_chat_archive
 from llobot.chats.branches import ChatBranch
 from llobot.chats.intents import ChatIntent
 from llobot.commands.chain import StepChain
@@ -21,6 +24,9 @@ from llobot.formats.prompts import (
     reminder_prompt_format,
     standard_prompt_format,
 )
+from llobot.fs import data_home
+from llobot.fs.zones import Zoning
+from llobot.memories.examples import ExampleMemory
 from llobot.models import Model
 from llobot.models.streams import ModelStream
 from llobot.projects import Project
@@ -34,16 +40,18 @@ class Imitator(Role):
     _prompt_format: PromptFormat
     _reminder_format: PromptFormat
     _step_chain: StepChain
+    _examples: ExampleMemory
 
     def __init__(self, name: str, model: Model, *,
         prompt: str | Prompt = '',
         projects: Iterable[str | Project] = (),
+        example_archive: ChatArchive | Zoning | Path | str = standard_chat_archive(data_home()/'llobot/examples'),
         crammer: ExampleCrammer = standard_example_crammer(),
         prompt_format: PromptFormat = standard_prompt_format(),
         reminder_format: PromptFormat = reminder_prompt_format(),
-        **kwargs,
     ):
-        super().__init__(name, model, **kwargs)
+        super().__init__(name, model)
+        self._examples = ExampleMemory(name, archive=example_archive)
         self._system = str(prompt)
         self._crammer = crammer
         self._prompt_format = prompt_format
@@ -68,8 +76,6 @@ class Imitator(Role):
         if context.messages:
             return
 
-        project = env[ProjectEnv].get()
-        cutoff = env[CutoffEnv].get()
         budget = self.model.context_budget
 
         system_chat = self._prompt_format(self._system)
@@ -79,7 +85,7 @@ class Imitator(Role):
         reminder_chat = self._reminder_format(self._system)
         budget -= reminder_chat.cost
 
-        recent_examples = self.recent_examples(project, cutoff)
+        recent_examples = self._examples.recent(env)
         examples = self._crammer(recent_examples, budget)
         context.add(examples)
 

@@ -1,7 +1,9 @@
 from __future__ import annotations
 from datetime import datetime
 from functools import cache
+from pathlib import Path
 from typing import Iterable
+from llobot.chats.archives import ChatArchive, standard_chat_archive
 from llobot.chats.branches import ChatBranch
 from llobot.chats.intents import ChatIntent
 from llobot.commands.chain import StepChain
@@ -31,6 +33,8 @@ from llobot.formats.prompts import (
     reminder_prompt_format,
     standard_prompt_format,
 )
+from llobot.fs import data_home
+from llobot.fs.zones import Zoning
 from llobot.knowledge.archives import KnowledgeArchive, standard_knowledge_archive
 from llobot.knowledge.rankers import KnowledgeRanker, standard_ranker
 from llobot.knowledge.scorers import (
@@ -41,6 +45,7 @@ from llobot.knowledge.scorers import (
 )
 from llobot.knowledge.scores import uniform_scores
 from llobot.knowledge.subsets import KnowledgeSubset
+from llobot.memories.examples import ExampleMemory
 from llobot.models import Model
 from llobot.models.streams import ModelStream
 from llobot.projects import Project
@@ -79,11 +84,13 @@ class Editor(Role):
     _reminder_format: PromptFormat
     _example_share: float
     _step_chain: StepChain
+    _examples: ExampleMemory
 
     def __init__(self, name: str, model: Model, *,
         prompt: str | Prompt = editor_system_prompt(),
         projects: Iterable[Project] = (),
         knowledge_archive: KnowledgeArchive = standard_knowledge_archive(),
+        example_archive: ChatArchive | Zoning | Path | str = standard_chat_archive(data_home()/'llobot/examples'),
         relevance_scorer: KnowledgeScorer | KnowledgeSubset = irrelevant_subset_scorer(),
         graph_scorer: KnowledgeScorer = standard_scorer(),
         ranker: KnowledgeRanker = standard_ranker(),
@@ -95,12 +102,12 @@ class Editor(Role):
         reminder_format: PromptFormat = reminder_prompt_format(),
         # Share of the context dedicated to examples and associated knowledge updates.
         example_share: float = 0.4,
-        **kwargs,
     ):
         """
         Creates a new editor role.
         """
-        super().__init__(name, model, **kwargs)
+        super().__init__(name, model)
+        self._examples = ExampleMemory(name, archive=example_archive)
         self._system = str(prompt)
         self._knowledge_archive = knowledge_archive
         if isinstance(relevance_scorer, KnowledgeSubset):
@@ -139,9 +146,7 @@ class Editor(Role):
         if context.messages:
             return
 
-        project = env[ProjectEnv].get()
         knowledge = env[KnowledgeEnv].get()
-        cutoff = env[CutoffEnv].get()
         budget = self.model.context_budget
 
         # System prompt
@@ -151,7 +156,7 @@ class Editor(Role):
 
         # Examples with associated updates
         history_budget = int(budget * self._example_share)
-        recent_examples = self.recent_examples(project, cutoff)
+        recent_examples = self._examples.recent(env)
         history_chat, history_paths = self._edit_crammer(recent_examples, knowledge, history_budget)
 
         # Knowledge scores
