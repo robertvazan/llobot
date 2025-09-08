@@ -5,10 +5,10 @@ from __future__ import annotations
 from llobot.time import try_parse_time, current_time, format_time
 from llobot.commands import Command, Step
 from llobot.environments import Environment
-from llobot.environments.cutoffs import CutoffEnv
+from llobot.environments.cutoff import CutoffEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.replay import ReplayEnv
-from llobot.environments.session_messages import SessionMessageEnv
+from llobot.environments.session import SessionEnv
 from llobot.knowledge.archives import KnowledgeArchive
 
 class CutoffCommand(Command):
@@ -64,7 +64,7 @@ class ImplicitCutoffStep(Step):
                 self._archive.refresh(project.name, knowledge)
             cutoff = current_time()
             env[CutoffEnv].set(cutoff)
-            env[SessionMessageEnv].append(f"Cutoff: @{format_time(cutoff)}")
+            env[SessionEnv].append(f"Cutoff: @{format_time(cutoff)}")
 
 __all__ = [
     'CutoffCommand',

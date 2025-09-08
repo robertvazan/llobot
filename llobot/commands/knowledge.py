@@ -4,7 +4,7 @@ Step to load project knowledge.
 from __future__ import annotations
 from llobot.commands import Step
 from llobot.environments import Environment
-from llobot.environments.cutoffs import CutoffEnv
+from llobot.environments.cutoff import CutoffEnv
 from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.knowledge.archives import KnowledgeArchive

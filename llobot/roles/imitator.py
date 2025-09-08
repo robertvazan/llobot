@@ -2,19 +2,19 @@ from __future__ import annotations
 from typing import Iterable
 from llobot.chats.branches import ChatBranch
 from llobot.chats.intents import ChatIntent
-from llobot.commands.chains import StepChain
+from llobot.commands.chain import StepChain
 from llobot.commands.custom import CustomStep
-from llobot.commands.cutoffs import CutoffCommand, ImplicitCutoffStep
-from llobot.commands.projects import ProjectCommand
+from llobot.commands.cutoff import CutoffCommand, ImplicitCutoffStep
+from llobot.commands.project import ProjectCommand
 from llobot.commands.unrecognized import UnrecognizedCommand
 from llobot.crammers.examples import ExampleCrammer, standard_example_crammer
 from llobot.environments import Environment
-from llobot.environments.command_queue import CommandQueueEnv
+from llobot.environments.commands import CommandsEnv
 from llobot.environments.context import ContextEnv
-from llobot.environments.cutoffs import CutoffEnv
+from llobot.environments.cutoff import CutoffEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.replay import ReplayEnv
-from llobot.environments.session_messages import SessionMessageEnv
+from llobot.environments.session import SessionEnv
 from llobot.formats.mentions import parse_mentions
 from llobot.formats.prompts import (
     PromptFormat,
@@ -88,7 +88,7 @@ class Imitator(Role):
     def chat(self, prompt: ChatBranch) -> ModelStream:
         env = Environment()
         context = env[ContextEnv]
-        queue = env[CommandQueueEnv]
+        queue = env[CommandsEnv]
 
         for i, message in enumerate(prompt):
             if i + 1 == len(prompt):
@@ -102,10 +102,9 @@ class Imitator(Role):
 
             context.add(message)
 
-        yield from env[SessionMessageEnv].stream()
-        session_message = env[SessionMessageEnv].message()
-        if session_message:
-            context.add(session_message)
+        session_env = env[SessionEnv]
+        yield from session_env.stream()
+        context.add(session_env.message())
 
         assembled_prompt = context.build()
         yield from self.model.generate(assembled_prompt)

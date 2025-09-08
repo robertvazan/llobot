@@ -4,7 +4,7 @@ Command queue environment component.
 from __future__ import annotations
 from typing import Iterable
 
-class CommandQueueEnv:
+class CommandsEnv:
     """
     An environment component that holds a set of unprocessed command strings.
     """
@@ -44,5 +44,5 @@ class CommandQueueEnv:
         self._commands.discard(command)
 
 __all__ = [
-    'CommandQueueEnv',
+    'CommandsEnv',
 ]

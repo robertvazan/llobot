@@ -1,6 +1,6 @@
 import pytest
 from llobot.environments import Environment
-from llobot.environments.command_queue import CommandQueueEnv
+from llobot.environments.commands import CommandsEnv
 from llobot.commands import Command, Step
 
 def test_step_process_default():
@@ -35,7 +35,7 @@ def test_command_process():
     """Tests Command.process."""
     cmd = MockCommand(["cmd1", "cmd3"])
     env = Environment()
-    queue = env[CommandQueueEnv]
+    queue = env[CommandsEnv]
     queue.add(["cmd1", "cmd2", "cmd3"])
 
     cmd.process(env)
@@ -53,4 +53,4 @@ def test_command_process_empty_queue():
     cmd.process(env)
 
     assert cmd.handled_commands == []
-    assert env[CommandQueueEnv].get() == []
+    assert env[CommandsEnv].get() == []

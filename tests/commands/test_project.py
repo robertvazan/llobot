@@ -1,4 +1,4 @@
-from llobot.commands.projects import ProjectCommand
+from llobot.commands.project import ProjectCommand
 from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
 from llobot.projects.dummy import DummyProject

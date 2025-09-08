@@ -1,8 +1,8 @@
 import pytest
 from llobot.environments import Environment
-from llobot.environments.command_queue import CommandQueueEnv
+from llobot.environments.commands import CommandsEnv
 from llobot.commands import Step, Command
-from llobot.commands.chains import StepChain
+from llobot.commands.chain import StepChain
 
 class MockStep(Step):
     def __init__(self):
@@ -56,7 +56,7 @@ def test_step_chain_integration():
 
     chain = StepChain(cmd1, cmd2, step)
     env = Environment()
-    queue = env[CommandQueueEnv]
+    queue = env[CommandsEnv]
     queue.add(["cmd1", "cmd2", "cmd3", "cmd4"])
 
     chain.process(env)

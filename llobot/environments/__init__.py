@@ -13,13 +13,13 @@ knowledge
     Knowledge base for selected project.
 retrievals
     Document retrievals.
-session_messages
+session
     Session messages.
 replay
     Replay controls.
-cutoffs
+cutoff
     Knowledge cutoff timestamp.
-command_queue
+commands
     Unprocessed command queue.
 context
     LLM context accumulator.

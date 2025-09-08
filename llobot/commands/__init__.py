@@ -8,15 +8,15 @@ extracted from prompts.
 Submodules
 ----------
 
-chains
+chain
     Step chains.
-projects
+project
     Command to select a project.
 knowledge
     Step to load project knowledge.
 retrievals
     Commands and steps for document retrieval.
-cutoffs
+cutoff
     Command and step to set knowledge cutoff.
 unrecognized
     Command to handle unrecognized commands.
@@ -25,7 +25,7 @@ custom
 """
 from __future__ import annotations
 from llobot.environments import Environment
-from llobot.environments.command_queue import CommandQueueEnv
+from llobot.environments.commands import CommandsEnv
 
 class Step:
     """
@@ -68,14 +68,14 @@ class Command(Step):
         """
         Handles all pending commands in the queue that this command recognizes.
 
-        It iterates through all commands in `CommandQueueEnv`, calls `handle()` on
+        It iterates through all commands in `CommandsEnv`, calls `handle()` on
         each, and if `handle()` returns `True`, the command is consumed from
         the queue.
 
         Args:
             env: The environment to manipulate.
         """
-        queue = env[CommandQueueEnv]
+        queue = env[CommandsEnv]
         for command in queue.get():
             if self.handle(command, env):
                 queue.consume(command)

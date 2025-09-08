@@ -7,7 +7,7 @@ from llobot.chats.intents import ChatIntent
 from llobot.chats.messages import ChatMessage
 from llobot.models.streams import ModelStream, message_stream
 
-class SessionMessageEnv:
+class SessionEnv:
     """
     An environment component that accumulates session messages from commands.
     """
@@ -24,6 +24,13 @@ class SessionMessageEnv:
         """
         if text:
             self._fragments.append(text)
+
+    @property
+    def populated(self) -> bool:
+        """
+        Checks if any session fragments have been added.
+        """
+        return bool(self._fragments)
 
     def content(self) -> str:
         """
@@ -56,5 +63,5 @@ class SessionMessageEnv:
             yield from message_stream(msg)
 
 __all__ = [
-    'SessionMessageEnv',
+    'SessionEnv',
 ]
