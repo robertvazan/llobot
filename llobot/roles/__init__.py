@@ -9,8 +9,10 @@ and examples.
 Submodules
 ----------
 
-assistant
-    A general-purpose assistant role.
+chatbot
+    A simple chatbot role.
+imitator
+    An imitator role that learns from examples.
 coder
     A role specialized for software development tasks.
 editor

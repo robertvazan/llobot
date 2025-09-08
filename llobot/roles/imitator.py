@@ -28,7 +28,7 @@ from llobot.projects.dummy import DummyProject
 from llobot.prompts import Prompt
 from llobot.roles import Role
 
-class Assistant(Role):
+class Imitator(Role):
     _system: str
     _crammer: ExampleCrammer
     _prompt_format: PromptFormat
@@ -117,5 +117,5 @@ class Assistant(Role):
     #     self.save_example(chat, project)
 
 __all__ = [
-    'Assistant',
+    'Imitator',
 ]
