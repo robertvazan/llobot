@@ -213,15 +213,10 @@ class Editor(Role):
     #         self.save_example(chat, None)
     #         return
 
-    #     edit_delta = self._document_format.parse_chat(chat[1:])
-    #     if not edit_delta:
-    #         self.save_example(chat, project)
-    #         return
-
     #     self._knowledge_archive.refresh(project.name, project)
     #     initial_knowledge = self._knowledge_archive.last(project.name, cutoff)
     #     current_knowledge = self._knowledge_archive.last(project.name)
-    #     delta = knowledge_delta_between(initial_knowledge, current_knowledge, move_hints=edit_delta.moves)
+    #     delta = knowledge_delta_between(initial_knowledge, current_knowledge)
 
     #     compressed_delta = diff_compress_knowledge(initial_knowledge, delta)
     #     response_content = self._document_format.render_all(compressed_delta)

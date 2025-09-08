@@ -24,9 +24,9 @@ knowledge_delta_between()
 diff_compress_knowledge()
     Compress deltas using unified diff format when beneficial
 
-The delta system supports move detection and various derived properties like
-touched/present/removed path sets. All DocumentDeltas are valid by construction,
-with invalid parameter combinations raising exceptions.
+The delta system supports various derived properties like touched/present/removed
+path sets. All DocumentDeltas are valid by construction, with invalid parameter
+combinations raising exceptions.
 
 Developer Notes
 ---------------
@@ -54,28 +54,16 @@ def fresh_knowledge_delta(knowledge: Knowledge, ranking: KnowledgeRanking | None
         ranking = rank_in_standard_order(knowledge)
     return KnowledgeDelta([DocumentDelta(path, knowledge[path]) for path in ranking if path in knowledge])
 
-def knowledge_delta_between(before: Knowledge, after: Knowledge, *, move_hints: dict[Path, Path] = {}) -> KnowledgeDelta:
+def knowledge_delta_between(before: Knowledge, after: Knowledge) -> KnowledgeDelta:
     builder = KnowledgeDeltaBuilder()
     before_paths = before.keys()
     after_paths = after.keys()
-    moved = set()
-
-    for path in (after_paths - before_paths).sorted():
-        if path in move_hints and move_hints[path] in before_paths and move_hints[path] not in moved:
-            source = move_hints[path]
-            if before[source] == after[path]:
-                builder.add(DocumentDelta(path, None, moved_from=source))
-            else:
-                # For move with modification, create two separate deltas
-                builder.add(DocumentDelta(path, None, moved_from=source))
-                builder.add(DocumentDelta(path, after[path]))
-            moved.add(source)
-        else:
-            builder.add(DocumentDelta(path, after[path]))
 
     for path in (before_paths - after_paths).sorted():
-        if path not in moved:
-            builder.add(DocumentDelta(path, None, removed=True))
+        builder.add(DocumentDelta(path, None, removed=True))
+
+    for path in (after_paths - before_paths).sorted():
+        builder.add(DocumentDelta(path, after[path]))
 
     for path in (before_paths & after_paths).sorted():
         if before[path] != after[path]:

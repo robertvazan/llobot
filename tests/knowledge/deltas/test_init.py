@@ -52,49 +52,15 @@ def test_between_with_removal():
     ])
     assert delta == expected
 
-def test_between_with_move_hints():
+def test_between_with_move():
     before = Knowledge({Path('old.txt'): 'content'})
     after = Knowledge({Path('new.txt'): 'content'})
-    move_hints = {Path('new.txt'): Path('old.txt')}
 
-    delta = knowledge_delta_between(before, after, move_hints=move_hints)
-
-    expected = KnowledgeDelta([
-        DocumentDelta(Path('new.txt'), None, moved_from=Path('old.txt'))
-    ])
-    assert delta == expected
-
-def test_between_with_move_and_modification():
-    before = Knowledge({Path('old.txt'): 'old content'})
-    after = Knowledge({Path('new.txt'): 'new content'})
-    move_hints = {Path('new.txt'): Path('old.txt')}
-
-    delta = knowledge_delta_between(before, after, move_hints=move_hints)
+    delta = knowledge_delta_between(before, after)
 
     expected = KnowledgeDelta([
-        DocumentDelta(Path('new.txt'), None, moved_from=Path('old.txt')),
-        DocumentDelta(Path('new.txt'), 'new content')
-    ])
-    assert delta == expected
-
-def test_between_with_multiple_move_hints():
-    # Test that once a source is used for a move, it won't be used again
-    before = Knowledge({Path('old.txt'): 'content'})
-    after = Knowledge({
-        Path('new1.txt'): 'content',
-        Path('new2.txt'): 'content',
-    })
-    move_hints = {
-        Path('new1.txt'): Path('old.txt'),
-        Path('new2.txt'): Path('old.txt'),  # This should be ignored
-    }
-
-    delta = knowledge_delta_between(before, after, move_hints=move_hints)
-
-    # Only the first hint should be used for the move
-    expected = KnowledgeDelta([
-        DocumentDelta(Path('new1.txt'), None, moved_from=Path('old.txt')),
-        DocumentDelta(Path('new2.txt'), 'content')  # Regular addition
+        DocumentDelta(Path('old.txt'), None, removed=True),
+        DocumentDelta(Path('new.txt'), 'content'),
     ])
     assert delta == expected
 
