@@ -1,6 +1,6 @@
 from __future__ import annotations
-from ._documents import DocumentDelta
-from ._knowledge import KnowledgeDelta
+from llobot.knowledge.deltas.documents import DocumentDelta
+from llobot.knowledge.deltas.knowledge import KnowledgeDelta
 
 class KnowledgeDeltaBuilder:
     _deltas: list[DocumentDelta]

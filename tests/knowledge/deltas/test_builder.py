@@ -1,5 +1,7 @@
 from pathlib import Path
-from llobot.knowledge.deltas import DocumentDelta, KnowledgeDelta, KnowledgeDeltaBuilder
+from llobot.knowledge.deltas.documents import DocumentDelta
+from llobot.knowledge.deltas.knowledge import KnowledgeDelta
+from llobot.knowledge.deltas.builder import KnowledgeDeltaBuilder
 
 def test_init():
     builder = KnowledgeDeltaBuilder()

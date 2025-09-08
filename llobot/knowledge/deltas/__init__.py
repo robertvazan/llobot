@@ -1,126 +1,20 @@
 """
 Knowledge delta management for tracking changes between knowledge states.
 
-This module provides comprehensive change tracking for knowledge collections,
+This package provides comprehensive change tracking for knowledge collections,
 including document-level changes, batch operations, and diff compression.
 
-Classes
--------
+Submodules
+----------
 
-DocumentDelta
-    Individual file change representation with flags for removed/diff/moved_from
-KnowledgeDelta
-    Collections of document changes with derived properties
-KnowledgeDeltaBuilder
-    Builder pattern for constructing complex deltas
-
-Functions
----------
-
-fresh_knowledge_delta()
-    Create delta representing fresh knowledge state
-knowledge_delta_between()
-    Compute differences between two knowledge states
-diff_compress_knowledge()
-    Compress deltas using unified diff format when beneficial
-
-The delta system supports various derived properties like touched/present/removed
-path sets. All DocumentDeltas are valid by construction, with invalid parameter
-combinations raising exceptions.
-
-Developer Notes
----------------
-
-The implementation is split across private submodules:
-
-_documents
-    DocumentDelta class with validation and change flags
-_knowledge
-    KnowledgeDelta class with collection operations and derived properties
-_builder
-    KnowledgeDeltaBuilder class implementing the builder pattern
+documents
+    Defines `DocumentDelta` for individual file changes.
+knowledge
+    Defines `KnowledgeDelta` for collections of document changes.
+builder
+    Defines `KnowledgeDeltaBuilder` for constructing complex deltas.
+diffs
+    Provides functions for computing differences between knowledge states.
+compression
+    Provides functions for compressing knowledge deltas.
 """
-from __future__ import annotations
-from pathlib import Path
-import difflib
-from llobot.knowledge import Knowledge
-from llobot.knowledge.rankings import KnowledgeRanking, rank_in_standard_order
-from ._documents import DocumentDelta
-from ._knowledge import KnowledgeDelta
-from ._builder import KnowledgeDeltaBuilder
-
-def fresh_knowledge_delta(knowledge: Knowledge, ranking: KnowledgeRanking | None = None) -> KnowledgeDelta:
-    if ranking is None:
-        ranking = rank_in_standard_order(knowledge)
-    return KnowledgeDelta([DocumentDelta(path, knowledge[path]) for path in ranking if path in knowledge])
-
-def knowledge_delta_between(before: Knowledge, after: Knowledge) -> KnowledgeDelta:
-    builder = KnowledgeDeltaBuilder()
-    before_paths = before.keys()
-    after_paths = after.keys()
-
-    for path in (before_paths - after_paths).sorted():
-        builder.add(DocumentDelta(path, None, removed=True))
-
-    for path in (after_paths - before_paths).sorted():
-        builder.add(DocumentDelta(path, after[path]))
-
-    for path in (before_paths & after_paths).sorted():
-        if before[path] != after[path]:
-            builder.add(DocumentDelta(path, after[path]))
-
-    return builder.build()
-
-def diff_compress_knowledge(before: Knowledge, delta: KnowledgeDelta, *, threshold: float = 0.8) -> KnowledgeDelta:
-    builder = KnowledgeDeltaBuilder()
-    # At every step, this contains full file content for all paths where that is possible.
-    full = dict(before)
-
-    for document in delta:
-        # Read old document before we change anything
-        path = document.path
-        old_content = full.get(path, None)
-
-        # Attempt compression, but do not alter the original document variable
-        compressed = document
-        if document.content is not None and not document.diff and old_content is not None:
-            new_content = document.content
-            if old_content == new_content:
-                compressed = None
-            else:
-                diff_lines = list(difflib.unified_diff(
-                    old_content.splitlines(keepends=True),
-                    new_content.splitlines(keepends=True),
-                ))
-                diff_lines = diff_lines[2:] # Skip ---/+++ headers
-                diff_content = "".join(diff_lines)
-                if len(diff_content) < threshold * len(new_content):
-                    compressed = DocumentDelta(path, diff_content, diff=True)
-        if compressed:
-            builder.add(compressed)
-
-        # Update the current knowledge
-        if document.diff:
-            # Remove content for diff files since we cannot be sure about it
-            full.pop(document.path, None)
-            if document.moved:
-                full.pop(document.moved_from, None)
-            continue
-        if document.moved:
-            if document.moved_from in full:
-                full[document.path] = full.pop(document.moved_from)
-        if document.removed:
-            full.pop(document.path, None)
-        elif document.content is not None:
-            full[document.path] = document.content
-
-    return builder.build()
-
-__all__ = [
-    'DocumentDelta',
-    'KnowledgeDelta',
-    'KnowledgeDeltaBuilder',
-    'fresh_knowledge_delta',
-    'knowledge_delta_between',
-    'diff_compress_knowledge',
-]

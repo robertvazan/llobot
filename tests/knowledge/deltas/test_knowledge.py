@@ -1,6 +1,7 @@
 from pathlib import Path
 from llobot.knowledge import Knowledge
-from llobot.knowledge.deltas import DocumentDelta, KnowledgeDelta
+from llobot.knowledge.deltas.documents import DocumentDelta
+from llobot.knowledge.deltas.knowledge import KnowledgeDelta, fresh_knowledge_delta
 
 def test_init():
     deltas = [DocumentDelta(Path('file.txt'), 'content')]
@@ -179,3 +180,17 @@ def test_moves_chained():
         Path('c.txt'): Path('a.txt')  # Should trace back to ultimate source
     }
     assert moves == expected
+
+def test_fresh():
+    knowledge = Knowledge({
+        Path('file1.txt'): 'content1',
+        Path('file2.txt'): 'content2',
+    })
+
+    delta = fresh_knowledge_delta(knowledge)
+
+    expected = KnowledgeDelta([
+        DocumentDelta(Path('file1.txt'), 'content1'),
+        DocumentDelta(Path('file2.txt'), 'content2'),
+    ])
+    assert delta == expected

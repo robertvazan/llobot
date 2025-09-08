@@ -1,7 +1,8 @@
 from textwrap import dedent
 from pathlib import Path
 from llobot.formats.documents import details_document_format, standard_document_format
-from llobot.knowledge.deltas import DocumentDelta, KnowledgeDelta
+from llobot.knowledge.deltas.documents import DocumentDelta
+from llobot.knowledge.deltas.knowledge import KnowledgeDelta
 from llobot.chats.messages import ChatMessage
 from llobot.chats.branches import ChatBranch
 from llobot.chats.intents import ChatIntent

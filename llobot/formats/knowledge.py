@@ -5,7 +5,7 @@ from llobot.chats.builders import ChatBuilder
 from llobot.chats.branches import ChatBranch
 from llobot.chats.messages import ChatMessage
 from llobot.knowledge import Knowledge
-from llobot.knowledge.deltas import KnowledgeDelta, fresh_knowledge_delta
+from llobot.knowledge.deltas.knowledge import KnowledgeDelta, fresh_knowledge_delta
 from llobot.knowledge.rankings import KnowledgeRanking
 from llobot.formats.documents import DocumentFormat, standard_document_format
 from llobot.text import concat_documents

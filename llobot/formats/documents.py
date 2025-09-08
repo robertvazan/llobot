@@ -34,7 +34,9 @@ from pathlib import Path
 import re
 from llobot.knowledge.subsets import KnowledgeSubset, coerce_subset
 from llobot.formats.languages import LanguageGuesser, standard_language_guesser
-from llobot.knowledge.deltas import DocumentDelta, KnowledgeDelta, KnowledgeDeltaBuilder
+from llobot.knowledge.deltas.documents import DocumentDelta
+from llobot.knowledge.deltas.knowledge import KnowledgeDelta
+from llobot.knowledge.deltas.builder import KnowledgeDeltaBuilder
 from llobot.chats.messages import ChatMessage
 from llobot.chats.branches import ChatBranch
 from llobot.text import concat_documents, markdown_code_details, normalize_document

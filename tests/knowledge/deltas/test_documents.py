@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from llobot.knowledge.deltas import DocumentDelta
+from llobot.knowledge.deltas.documents import DocumentDelta
 
 def test_init():
     delta = DocumentDelta(Path('file.txt'), 'content')

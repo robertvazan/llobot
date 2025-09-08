@@ -5,7 +5,8 @@ from llobot.chats.branches import ChatBranch
 from llobot.chats.builders import ChatBuilder
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
-from llobot.knowledge.deltas import DocumentDelta, KnowledgeDeltaBuilder
+from llobot.knowledge.deltas.documents import DocumentDelta
+from llobot.knowledge.deltas.builder import KnowledgeDeltaBuilder
 from llobot.formats.knowledge import KnowledgeFormat, standard_knowledge_format
 
 class EditCrammer:
