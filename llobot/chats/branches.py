@@ -81,10 +81,6 @@ class ChatBranch:
         builder.add(self)
         return builder
 
-    def as_example(self) -> ChatBranch:
-        """Converts all messages in the branch to their example versions."""
-        return ChatBranch([message.as_example() for message in self])
-
     def monolithic(self) -> str:
         """
         Returns a single-string representation of the entire branch.

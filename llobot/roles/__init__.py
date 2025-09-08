@@ -28,6 +28,9 @@ from datetime import datetime
 from pathlib import Path
 from llobot.time import current_time
 from llobot.chats.branches import ChatBranch
+from llobot.chats.messages import ChatMessage
+from llobot.chats.intents import ChatIntent
+from llobot.chats.binarization import binarize_intent
 from llobot.chats.archives import ChatArchive, standard_chat_archive, coerce_chat_archive
 from llobot.projects import Project
 from llobot.fs.zones import Zoning
@@ -109,10 +112,21 @@ class Role:
     def handle_ok(self, chat: ChatBranch, cutoff: datetime):
         self.save_example(chat, None)
 
+    def _chat_as_example(self, chat: ChatBranch) -> ChatBranch:
+        """Converts all messages in a chat branch to their example versions."""
+        messages = []
+        for message in chat:
+            if binarize_intent(message.intent) == ChatIntent.RESPONSE:
+                example_intent = ChatIntent.EXAMPLE_RESPONSE
+            else:
+                example_intent = ChatIntent.EXAMPLE_PROMPT
+            messages.append(ChatMessage(example_intent, message.content))
+        return ChatBranch(messages)
+
     def recent_examples(self, project: Project | None, cutoff: datetime | None = None) -> Iterable[ChatBranch]:
         for zone in self.zone_names(project):
             for time, chat in self.example_archive.recent(zone, cutoff):
-                yield chat.as_example()
+                yield self._chat_as_example(chat)
 
 __all__ = [
     'Role',

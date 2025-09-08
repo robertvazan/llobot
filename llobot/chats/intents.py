@@ -67,22 +67,6 @@ class ChatIntent(Enum):
             return ChatIntent.RESPONSE
         raise ValueError(f'Unknown intent: {codename}')
 
-    def as_example(self) -> ChatIntent:
-        """
-        Converts this intent to its corresponding example intent.
-
-        Prompt-like intents are converted to `EXAMPLE_PROMPT`, and response-like
-        intents are converted to `EXAMPLE_RESPONSE`.
-
-        Returns:
-            The example version of the intent.
-        """
-        from llobot.chats.binarization import binarize_intent
-        if binarize_intent(self) == ChatIntent.RESPONSE:
-            return ChatIntent.EXAMPLE_RESPONSE
-        else:
-            return ChatIntent.EXAMPLE_PROMPT
-
 __all__ = [
     'ChatIntent',
 ]

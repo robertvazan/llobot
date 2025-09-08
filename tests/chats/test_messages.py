@@ -27,18 +27,6 @@ def test_contains():
     assert "world" in msg
     assert "foo" not in msg
 
-def test_as_example():
-    """Tests converting a message to an example message."""
-    prompt = ChatMessage(ChatIntent.PROMPT, "Question")
-    example_prompt = prompt.as_example()
-    assert example_prompt.intent == ChatIntent.EXAMPLE_PROMPT
-    assert example_prompt.content == "Question"
-
-    response = ChatMessage(ChatIntent.RESPONSE, "Answer")
-    example_response = response.as_example()
-    assert example_response.intent == ChatIntent.EXAMPLE_RESPONSE
-    assert example_response.content == "Answer"
-
 def test_monolithic():
     """Tests the monolithic string representation."""
     msg = ChatMessage(ChatIntent.PROMPT, "Hello")

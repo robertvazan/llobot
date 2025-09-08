@@ -58,10 +58,6 @@ class ChatMessage:
     def __contains__(self, text: str) -> bool:
         return text in self.content
 
-    def as_example(self) -> ChatMessage:
-        """Converts this message to its corresponding example version."""
-        return ChatMessage(self.intent.as_example(), self.content)
-
     def monolithic(self) -> str:
         """
         Returns a single-string representation of the message, including its intent.

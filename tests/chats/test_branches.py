@@ -70,17 +70,6 @@ def test_addition():
     combined_with_none = branch1 + None
     assert combined_with_none == branch1
 
-def test_as_example():
-    """Tests converting a branch to an example branch."""
-    msg1 = ChatMessage(ChatIntent.PROMPT, "p1")
-    msg2 = ChatMessage(ChatIntent.RESPONSE, "r1")
-    branch = ChatBranch([msg1, msg2])
-
-    example_branch = branch.as_example()
-    assert len(example_branch) == 2
-    assert example_branch[0].intent == ChatIntent.EXAMPLE_PROMPT
-    assert example_branch[1].intent == ChatIntent.EXAMPLE_RESPONSE
-
 def test_monolithic():
     """Tests monolithic string representation of a branch."""
     msg1 = ChatMessage(ChatIntent.PROMPT, "p1")
