@@ -89,6 +89,51 @@ def parse_mentions(source: str | ChatMessage | ChatBranch) -> list[str]:
 
     return mentions
 
+# Regex part for a single mention, used for stripping.
+_MENTION_STRIP_RE_PART = r"""
+@(?:
+    # A quoted mention with double backticks. It can contain single backticks.
+    ``(?:[^`]|`[^`])*?``
+    |
+    # A quoted mention with a single backtick. It cannot contain backticks or newlines.
+    `[^`\n]*?`
+    |
+    # A bare mention.
+    [a-zA-Z0-9-_/*?:=.]+
+)
+"""
+
+# Matches one or more mentions at the start of a string.
+_LEADING_MENTIONS_RE = re.compile(
+    r"^\s*(?:" + _MENTION_STRIP_RE_PART + r"\s*)+",
+    re.VERBOSE
+)
+# Matches one or more mentions at the end of a string.
+_TRAILING_MENTIONS_RE = re.compile(
+    r"(?:\s+" + _MENTION_STRIP_RE_PART + r")+\s*$",
+    re.VERBOSE
+)
+
+def strip_mentions(text: str) -> str:
+    """
+    Strips leading and trailing @mentions from a string.
+
+    This function removes mentions from the beginning and end of a string,
+    along with any surrounding whitespace. Stripping stops when any
+    non-mention, non-whitespace content is encountered.
+
+    Args:
+        text: The input string.
+
+    Returns:
+        The string with leading and trailing mentions removed, or an empty string
+        if the input consists only of mentions and whitespace.
+    """
+    stripped_leading = _LEADING_MENTIONS_RE.sub('', text, count=1)
+    stripped_both = _TRAILING_MENTIONS_RE.sub('', stripped_leading, count=1)
+    return stripped_both.strip()
+
 __all__ = [
     'parse_mentions',
+    'strip_mentions',
 ]

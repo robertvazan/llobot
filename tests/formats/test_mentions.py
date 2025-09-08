@@ -1,4 +1,4 @@
-from llobot.formats.mentions import parse_mentions
+from llobot.formats.mentions import parse_mentions, strip_mentions
 from llobot.chats.messages import ChatMessage
 from llobot.chats.branches import ChatBranch
 from llobot.chats.intents import ChatIntent
@@ -74,3 +74,35 @@ def test_chat_branch_input():
         ChatMessage(ChatIntent.RESPONSE, 'second message with @`two`'),
     ])
     assert parse_mentions(branch) == ['one', 'two']
+
+def test_strip_empty():
+    assert strip_mentions('') == ''
+
+def test_strip_no_mentions():
+    assert strip_mentions('this is a test') == 'this is a test'
+    assert strip_mentions('  padded with spaces  ') == 'padded with spaces'
+
+def test_strip_leading():
+    assert strip_mentions('@m1 message') == 'message'
+    assert strip_mentions('  @m1  @`m2` message  ') == 'message'
+    assert strip_mentions('@m1') == ''
+    assert strip_mentions('  @m1 @m2  ') == ''
+
+def test_strip_trailing():
+    assert strip_mentions('message @m1') == 'message'
+    assert strip_mentions('  message @m1 @`m2`  ') == 'message'
+    assert strip_mentions('message@m1') == 'message@m1'
+
+def test_strip_both():
+    assert strip_mentions('@m1 message @m2') == 'message'
+    assert strip_mentions(' @m1 @`m2` message @m3 @``m4`` ') == 'message'
+
+def test_strip_middle_untouched():
+    assert strip_mentions('message1 @m1 message2') == 'message1 @m1 message2'
+    assert strip_mentions('  message1 @m1 message2  ') == 'message1 @m1 message2'
+
+def test_strip_real_world_cases():
+    assert strip_mentions('@project command') == 'command'
+    assert strip_mentions('do something @project') == 'do something'
+    assert strip_mentions('@project do something @llobot') == 'do something'
+    assert strip_mentions('  @project @llobot do something  ') == 'do something'
