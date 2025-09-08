@@ -8,6 +8,8 @@ for inclusion in LLM prompts and processing of LLM responses.
 Submodules
 ----------
 
+affirmations
+    Utilities for creating standard affirmation messages.
 documents
     Document formats for rendering and parsing DocumentDelta objects.
     Supports file listings, removals, moves, and diff compression.

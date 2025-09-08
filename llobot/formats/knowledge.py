@@ -8,6 +8,7 @@ from llobot.knowledge import Knowledge
 from llobot.knowledge.deltas.knowledge import KnowledgeDelta, fresh_knowledge_delta
 from llobot.knowledge.rankings import KnowledgeRanking
 from llobot.formats.documents import DocumentFormat, standard_document_format
+from llobot.formats.affirmations import affirmation_turn
 from llobot.text import concat_documents
 
 class KnowledgeFormat:
@@ -26,11 +27,10 @@ class KnowledgeFormat:
         return self.render(delta)
 
 @lru_cache
-def granular_knowledge_format(document_format: DocumentFormat = standard_document_format(), affirmation: str = 'I see.') -> KnowledgeFormat:
+def granular_knowledge_format(document_format: DocumentFormat = standard_document_format()) -> KnowledgeFormat:
     class GranularKnowledgeFormat(KnowledgeFormat):
-        def __init__(self, document_format: DocumentFormat, affirmation: str):
+        def __init__(self, document_format: DocumentFormat):
             self._document_format = document_format
-            self._affirmation = affirmation
 
         @property
         def document_format(self) -> DocumentFormat:
@@ -41,22 +41,19 @@ def granular_knowledge_format(document_format: DocumentFormat = standard_documen
             for document in delta:
                 formatted = self.document_format(document)
                 if formatted is not None:
-                    chat.add(ChatMessage(ChatIntent.SYSTEM, formatted))
-                    chat.add(ChatMessage(ChatIntent.AFFIRMATION, self._affirmation))
+                    chat.add(affirmation_turn(ChatMessage(ChatIntent.SYSTEM, formatted)))
             return chat.build()
 
-    return GranularKnowledgeFormat(document_format, affirmation)
+    return GranularKnowledgeFormat(document_format)
 
 @lru_cache
 def chunked_knowledge_format(
     document_format: DocumentFormat = standard_document_format(),
-    affirmation: str = 'I see.',
     min_size: int = 10000
 ) -> KnowledgeFormat:
     class ChunkedKnowledgeFormat(KnowledgeFormat):
-        def __init__(self, document_format: DocumentFormat, affirmation: str, min_size: int):
+        def __init__(self, document_format: DocumentFormat, min_size: int):
             self._document_format = document_format
-            self._affirmation = affirmation
             self._min_size = min_size
 
         @property
@@ -77,20 +74,18 @@ def chunked_knowledge_format(
                     # If we've reached the minimum chunk size, emit the chunk
                     if size >= self._min_size:
                         chunk = concat_documents(*buffer)
-                        chat.add(ChatMessage(ChatIntent.SYSTEM, chunk))
-                        chat.add(ChatMessage(ChatIntent.AFFIRMATION, self._affirmation))
+                        chat.add(affirmation_turn(ChatMessage(ChatIntent.SYSTEM, chunk)))
                         buffer = []
                         size = 0
 
             # Handle any remaining items in the last chunk
             if buffer:
                 chunk = concat_documents(*buffer)
-                chat.add(ChatMessage(ChatIntent.SYSTEM, chunk))
-                chat.add(ChatMessage(ChatIntent.AFFIRMATION, self._affirmation))
+                chat.add(affirmation_turn(ChatMessage(ChatIntent.SYSTEM, chunk)))
 
             return chat.build()
 
-    return ChunkedKnowledgeFormat(document_format, affirmation, min_size)
+    return ChunkedKnowledgeFormat(document_format, min_size)
 
 @cache
 def standard_knowledge_format() -> KnowledgeFormat:

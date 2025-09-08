@@ -31,7 +31,7 @@ def test_render_single_message():
 def test_render_multiple_messages():
     chat = ChatBranch([
         ChatMessage(ChatIntent.SYSTEM, "System prompt content."),
-        ChatMessage(ChatIntent.AFFIRMATION, "Okay."),
+        ChatMessage(ChatIntent.AFFIRMATION, "Okay"),
         ChatMessage(ChatIntent.PROMPT, "User prompt.")
     ])
     content = formatter.render(chat)
@@ -47,7 +47,7 @@ def test_render_multiple_messages():
         <details>
         <summary>Nested message: Affirmation</summary>
 
-        Okay.
+        Okay
 
         [//]: # (end of nested message)
         </details>
@@ -115,7 +115,7 @@ def test_parse_multiple_messages():
         <details>
         <summary>Nested message: Affirmation</summary>
 
-        Okay.
+        Okay
 
         [//]: # (end of nested message)
         </details>
@@ -131,7 +131,7 @@ def test_parse_multiple_messages():
     chat = formatter.parse(text)
     expected = ChatBranch([
         ChatMessage(ChatIntent.SYSTEM, "System prompt content."),
-        ChatMessage(ChatIntent.AFFIRMATION, "Okay."),
+        ChatMessage(ChatIntent.AFFIRMATION, "Okay"),
         ChatMessage(ChatIntent.PROMPT, "User prompt.")
     ])
     assert chat == expected
@@ -273,7 +273,7 @@ def test_roundtrip():
     chat = ChatBranch([
         ChatMessage(ChatIntent.RESPONSE, "Response message."),
         ChatMessage(ChatIntent.SYSTEM, "System prompt content."),
-        ChatMessage(ChatIntent.AFFIRMATION, "Okay."),
+        ChatMessage(ChatIntent.AFFIRMATION, "Okay"),
         ChatMessage(ChatIntent.PROMPT, "User prompt with\nnewlines and\n\nstuff."),
         ChatMessage(ChatIntent.RESPONSE, "Another response.")
     ])
@@ -435,7 +435,7 @@ def test_parse_chat_multiple_responses():
         <details>
         <summary>Nested message: Affirmation</summary>
 
-        OK.
+        Okay
 
         [//]: # (end of nested message)
         </details>
@@ -464,7 +464,7 @@ def test_parse_chat_multiple_responses():
 
     expected = ChatBranch([
         ChatMessage(ChatIntent.PROMPT, "Prompt."),
-        ChatMessage(ChatIntent.AFFIRMATION, "OK."),
+        ChatMessage(ChatIntent.AFFIRMATION, "Okay"),
         ChatMessage(ChatIntent.RESPONSE, "Just a simple response."),
         ChatMessage(ChatIntent.PROMPT, "Another prompt."),
         ChatMessage(ChatIntent.RESPONSE, "Response part 1."),

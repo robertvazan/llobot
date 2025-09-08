@@ -43,6 +43,9 @@ def binarize_chat(chat: ChatBranch, *, last: ChatIntent | None = None) -> ChatBr
     Returns:
         A new, normalized ChatBranch.
     """
+    # Use local import to avoid circular dependency
+    from llobot.formats.affirmations import affirmation_message
+
     # Reorder prompt-session pairs
     reordered = []
     i = 0
@@ -71,7 +74,7 @@ def binarize_chat(chat: ChatBranch, *, last: ChatIntent | None = None) -> ChatBr
 
             if prev_msg.intent == curr_msg.intent:
                 if curr_msg.intent == ChatIntent.PROMPT:
-                    final_messages.append(ChatMessage(ChatIntent.RESPONSE, "Okay"))
+                    final_messages.append(binarize_message(affirmation_message()))
                 else:  # RESPONSE
                     final_messages.append(ChatMessage(ChatIntent.PROMPT, "Go on"))
 
@@ -83,7 +86,7 @@ def binarize_chat(chat: ChatBranch, *, last: ChatIntent | None = None) -> ChatBr
             if last == ChatIntent.PROMPT:
                 final_messages.append(ChatMessage(ChatIntent.PROMPT, "Go on"))
             else:  # RESPONSE
-                final_messages.append(ChatMessage(ChatIntent.RESPONSE, "Okay"))
+                final_messages.append(binarize_message(affirmation_message()))
 
     return ChatBranch(final_messages)
 

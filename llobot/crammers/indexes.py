@@ -1,12 +1,13 @@
 from __future__ import annotations
 from functools import cache, lru_cache
+from typing import Callable
 from llobot.chats.branches import ChatBranch
-from llobot.chats.builders import ChatBuilder
 from llobot.chats.intents import ChatIntent
 from llobot.chats.messages import ChatMessage
 from llobot.knowledge.scores import KnowledgeScores
-from llobot.knowledge.trees import KnowledgeTree, standard_tree
+from llobot.knowledge.trees import standard_tree
 from llobot.formats.trees import TreeFormat, standard_tree_format
+from llobot.formats.affirmations import affirmation_turn
 
 class IndexCrammer:
     """
@@ -50,7 +51,6 @@ def create_index_crammer(function: Callable[[KnowledgeScores, int], ChatBranch])
 @lru_cache
 def optional_index_crammer(
     tree_format: TreeFormat = standard_tree_format("Project files"),
-    affirmation: str = 'I see.',
 ) -> IndexCrammer:
     """
     Creates an index crammer that includes the full tree or nothing.
@@ -79,10 +79,7 @@ def optional_index_crammer(
             return ChatBranch()
 
         # Check if it fits in budget
-        chat = ChatBuilder()
-        chat.add(ChatMessage(ChatIntent.SYSTEM, formatted_content))
-        chat.add(ChatMessage(ChatIntent.AFFIRMATION, affirmation))
-        result = chat.build()
+        result = affirmation_turn(ChatMessage(ChatIntent.SYSTEM, formatted_content))
 
         if result.cost <= budget:
             return result
