@@ -6,6 +6,7 @@ from typing import Iterable
 from llobot.chats.archives import ChatArchive, standard_chat_archive
 from llobot.chats.branches import ChatBranch
 from llobot.chats.intents import ChatIntent
+from llobot.commands.approve import ApproveCommand
 from llobot.commands.chain import StepChain
 from llobot.commands.custom import CustomStep
 from llobot.commands.cutoff import CutoffCommand, ImplicitCutoffStep
@@ -13,6 +14,7 @@ from llobot.commands.knowledge import ProjectKnowledgeStep
 from llobot.commands.project import ProjectCommand
 from llobot.commands.retrievals import RetrievalStep
 from llobot.commands.retrievals.solo import SoloRetrievalCommand
+from llobot.commands.squash import SquashCommand
 from llobot.commands.unrecognized import UnrecognizedCommand
 from llobot.crammers.edits import EditCrammer, standard_edit_crammer
 from llobot.crammers.indexes import IndexCrammer, standard_index_crammer
@@ -23,8 +25,10 @@ from llobot.environments.context import ContextEnv
 from llobot.environments.cutoff import CutoffEnv
 from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.projects import ProjectEnv
+from llobot.environments.prompt import PromptEnv
 from llobot.environments.replay import ReplayEnv
 from llobot.environments.session import SessionEnv
+from llobot.environments.status import StatusEnv
 from llobot.formats.documents import DocumentFormat
 from llobot.formats.knowledge import KnowledgeFormat, standard_knowledge_format
 from llobot.formats.mentions import parse_mentions
@@ -135,6 +139,8 @@ class Editor(Role):
             CustomStep(self.stuff),
             SoloRetrievalCommand(),
             RetrievalStep(self._knowledge_format),
+            ApproveCommand(self._examples),
+            SquashCommand(self._examples, self._document_format),
             UnrecognizedCommand(),
         )
 
@@ -192,12 +198,15 @@ class Editor(Role):
         env = Environment()
         context = env[ContextEnv]
         queue = env[CommandsEnv]
+        prompt_env = env[PromptEnv]
+        status_env = env[StatusEnv]
 
         for i, message in enumerate(prompt):
             if i + 1 == len(prompt):
                 env[ReplayEnv].start_recording()
 
             if message.intent == ChatIntent.PROMPT:
+                prompt_env.set(message.content)
                 if i + 1 < len(prompt) and prompt[i + 1].intent == ChatIntent.SESSION:
                     queue.add(parse_mentions(prompt[i + 1]))
                 queue.add(parse_mentions(message))
@@ -208,33 +217,16 @@ class Editor(Role):
 
             context.add(message)
 
+        if status_env.populated:
+            yield from status_env.stream()
+            return
+
         session_env = env[SessionEnv]
         yield from session_env.stream()
         context.add(session_env.message())
 
         assembled_prompt = context.build()
         yield from self._model.generate(assembled_prompt)
-
-    # def handle_ok(self, chat: ChatBranch, cutoff: datetime):
-    #     env = Environment()
-    #     self._step_chain.process_chat(chat, env)
-    #     project = env[ProjectEnv].get()
-
-    #     if not project:
-    #         self.save_example(chat, None)
-    #         return
-
-    #     self._knowledge_archive.refresh(project.name, project)
-    #     initial_knowledge = self._knowledge_archive.last(project.name, cutoff)
-    #     current_knowledge = self._knowledge_archive.last(project.name)
-    #     delta = knowledge_delta_between(initial_knowledge, current_knowledge)
-
-    #     compressed_delta = diff_compress_knowledge(initial_knowledge, delta)
-    #     response_content = self._document_format.render_all(compressed_delta)
-    #     synthetic_response = ChatMessage(ChatIntent.RESPONSE, response_content)
-    #     example_chat = ChatBranch([chat[0]]) + synthetic_response
-
-    #     self.save_example(example_chat, project)
 
 __all__ = [
     'editor_system_prompt',

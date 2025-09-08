@@ -23,6 +23,10 @@ commands
     Unprocessed command queue.
 context
     LLM context accumulator.
+prompt
+    Current prompt message.
+status
+    Status messages.
 """
 from __future__ import annotations
 from typing import Any, Type, TypeVar

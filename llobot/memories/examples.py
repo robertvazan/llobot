@@ -101,7 +101,7 @@ class ExampleMemory:
         Retrieves recent examples.
 
         Examples are retrieved from zones determined by the project and role in
-        the environment.
+        the environment. Duplicates are removed.
 
         Args:
             env: The environment containing project and cutoff time.
@@ -110,9 +110,12 @@ class ExampleMemory:
             An iterable of recent example chat branches.
         """
         cutoff = env[CutoffEnv].get()
+        seen = set()
         for zone in self._zones(env):
             for time, chat in self._archive.recent(zone, cutoff):
-                yield self._as_example(chat)
+                if chat not in seen:
+                    seen.add(chat)
+                    yield self._as_example(chat)
 
 __all__ = [
     'ExampleMemory',

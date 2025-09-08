@@ -41,8 +41,8 @@ def test_save_and_recent_with_project_and_role(tmp_path: Path):
     assert (tmp_path / 'test_role').exists()
 
     recent_examples = list(memory.recent(env))
-    # It will read from both zones, which are hardlinked, yielding two identical examples.
-    assert len(recent_examples) == 2
+    # Duplicates are filtered, so only one example is returned.
+    assert len(recent_examples) == 1
 
     env_no_project = Environment()
     recent_no_project = list(memory.recent(env_no_project))

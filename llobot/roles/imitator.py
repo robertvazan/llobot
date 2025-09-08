@@ -5,6 +5,7 @@ from typing import Iterable
 from llobot.chats.archives import ChatArchive, standard_chat_archive
 from llobot.chats.branches import ChatBranch
 from llobot.chats.intents import ChatIntent
+from llobot.commands.approve import ApproveCommand
 from llobot.commands.chain import StepChain
 from llobot.commands.custom import CustomStep
 from llobot.commands.cutoff import CutoffCommand, ImplicitCutoffStep
@@ -16,8 +17,10 @@ from llobot.environments.commands import CommandsEnv
 from llobot.environments.context import ContextEnv
 from llobot.environments.cutoff import CutoffEnv
 from llobot.environments.projects import ProjectEnv
+from llobot.environments.prompt import PromptEnv
 from llobot.environments.replay import ReplayEnv
 from llobot.environments.session import SessionEnv
+from llobot.environments.status import StatusEnv
 from llobot.formats.mentions import parse_mentions
 from llobot.formats.prompts import (
     PromptFormat,
@@ -65,6 +68,7 @@ class Imitator(Role):
             CutoffCommand(),
             ImplicitCutoffStep(),
             CustomStep(self.stuff),
+            ApproveCommand(self._examples),
             UnrecognizedCommand(),
         )
 
@@ -102,12 +106,15 @@ class Imitator(Role):
         env = Environment()
         context = env[ContextEnv]
         queue = env[CommandsEnv]
+        prompt_env = env[PromptEnv]
+        status_env = env[StatusEnv]
 
         for i, message in enumerate(prompt):
             if i + 1 == len(prompt):
                 env[ReplayEnv].start_recording()
 
             if message.intent == ChatIntent.PROMPT:
+                prompt_env.set(message.content)
                 if i + 1 < len(prompt) and prompt[i + 1].intent == ChatIntent.SESSION:
                     queue.add(parse_mentions(prompt[i + 1]))
                 queue.add(parse_mentions(message))
@@ -115,18 +122,16 @@ class Imitator(Role):
 
             context.add(message)
 
+        if status_env.populated:
+            yield from status_env.stream()
+            return
+
         session_env = env[SessionEnv]
         yield from session_env.stream()
         context.add(session_env.message())
 
         assembled_prompt = context.build()
         yield from self._model.generate(assembled_prompt)
-
-    # def handle_ok(self, chat: ChatBranch, cutoff: datetime):
-    #     env = Environment()
-    #     self._step_chain.process_chat(chat, env)
-    #     project = env[ProjectEnv].get()
-    #     self.save_example(chat, project)
 
 __all__ = [
     'Imitator',
