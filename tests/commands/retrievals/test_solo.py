@@ -24,8 +24,13 @@ def test_no_match():
     assert not env[RetrievalsEnv].get()
 
 def test_multiple_matches():
-    env = create_env()
-    assert not COMMAND.handle('a/*.txt', env)
+    knowledge = Knowledge({
+        Path('a/b.txt'): 'content',
+        Path('x/b.txt'): 'another content',
+    })
+    env = Environment()
+    env[KnowledgeEnv].set(knowledge)
+    assert not COMMAND.handle('b.txt', env)
     assert not env[RetrievalsEnv].get()
 
 def test_not_a_path():
@@ -33,7 +38,22 @@ def test_not_a_path():
     assert not COMMAND.handle('hello world', env)
     assert not env[RetrievalsEnv].get()
 
+def test_invalid_characters():
+    env = create_env()
+    assert not COMMAND.handle('d.txt$', env)
+    assert not env[RetrievalsEnv].get()
+
 def test_exact_match():
     env = create_env()
     assert COMMAND.handle('d.txt', env)
     assert env[RetrievalsEnv].get() == KnowledgeIndex([Path('d.txt')])
+
+def test_absolute_path_match():
+    env = create_env()
+    assert COMMAND.handle('/a/b.txt', env)
+    assert env[RetrievalsEnv].get() == KnowledgeIndex([Path('a/b.txt')])
+
+def test_wildcard_is_ignored():
+    env = create_env()
+    assert not COMMAND.handle('a/*.txt', env)
+    assert not env[RetrievalsEnv].get()

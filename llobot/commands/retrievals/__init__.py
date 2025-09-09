@@ -8,9 +8,12 @@ Submodules
 ----------
 solo
     Command to retrieve a single document by its path pattern.
+wildcard
+    Command to retrieve documents using wildcard patterns.
 """
 from __future__ import annotations
 from llobot.commands import Step
+from llobot.commands.chain import StepChain
 from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
 from llobot.environments.knowledge import KnowledgeEnv
@@ -64,6 +67,21 @@ class RetrievalStep(Step):
         retrievals.clear()
 
 
+def standard_retrieval_commands() -> StepChain:
+    """
+    Returns a step chain with standard retrieval commands.
+
+    This includes solo and wildcard retrieval.
+    """
+    from llobot.commands.retrievals.solo import SoloRetrievalCommand
+    from llobot.commands.retrievals.wildcard import WildcardRetrievalCommand
+    return StepChain(
+        SoloRetrievalCommand(),
+        WildcardRetrievalCommand(),
+    )
+
+
 __all__ = [
     'RetrievalStep',
+    'standard_retrieval_commands',
 ]

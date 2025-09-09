@@ -12,8 +12,7 @@ from llobot.commands.custom import CustomStep
 from llobot.commands.cutoff import CutoffCommand, ImplicitCutoffStep
 from llobot.commands.knowledge import ProjectKnowledgeStep
 from llobot.commands.project import ProjectCommand
-from llobot.commands.retrievals import RetrievalStep
-from llobot.commands.retrievals.solo import SoloRetrievalCommand
+from llobot.commands.retrievals import RetrievalStep, standard_retrieval_commands
 from llobot.commands.squash import SquashCommand
 from llobot.commands.unrecognized import UnrecognizedCommand
 from llobot.crammers.edits import EditCrammer, standard_edit_crammer
@@ -137,7 +136,7 @@ class Editor(Role):
             ImplicitCutoffStep(self._knowledge_archive),
             ProjectKnowledgeStep(self._knowledge_archive),
             CustomStep(self.stuff),
-            SoloRetrievalCommand(),
+            standard_retrieval_commands(),
             RetrievalStep(self._knowledge_format),
             ApproveCommand(self._examples),
             SquashCommand(self._examples, self._document_format),

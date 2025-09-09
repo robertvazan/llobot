@@ -9,7 +9,7 @@ from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.retrievals import RetrievalsEnv
 from llobot.knowledge.subsets import match_glob
 
-_PATH_RE = re.compile(r'^[a-zA-Z0-9_./-]+$')
+_PATH_RE = re.compile(r'^/?(?:[a-zA-Z0-9_.-]+/)*[a-zA-Z0-9_.-]+$')
 
 class SoloRetrievalCommand(Command):
     """
@@ -17,6 +17,8 @@ class SoloRetrievalCommand(Command):
 
     The command text is treated as a path pattern. If it matches a single
     document in the knowledge base, that document is added to the retrievals.
+    The pattern can be relative or absolute (starting with '/'). It cannot
+    contain wildcards.
     """
     def handle(self, text: str, env: Environment) -> bool:
         """
@@ -36,9 +38,6 @@ class SoloRetrievalCommand(Command):
             return False
 
         knowledge_index = env[KnowledgeEnv].index()
-        if not knowledge_index:
-            return False
-
         subset = match_glob(text)
         matches = list(knowledge_index & subset)
 
