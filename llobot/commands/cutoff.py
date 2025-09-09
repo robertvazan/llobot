@@ -2,7 +2,6 @@
 Command and step to set knowledge cutoff.
 """
 from __future__ import annotations
-from llobot.time import try_parse_time, current_time, format_time
 from llobot.commands import Command, Step
 from llobot.environments import Environment
 from llobot.environments.cutoff import CutoffEnv
@@ -10,6 +9,8 @@ from llobot.environments.projects import ProjectEnv
 from llobot.environments.replay import ReplayEnv
 from llobot.environments.session import SessionEnv
 from llobot.knowledge.archives import KnowledgeArchive
+from llobot.projects.none import NoProject
+from llobot.time import current_time, format_time, try_parse_time
 
 class CutoffCommand(Command):
     """
@@ -50,21 +51,19 @@ class ImplicitCutoffStep(Step):
 
     def process(self, env: Environment):
         """
-        If no cutoff is set and recording is active, this method refreshes the
-        current project (if an archive is provided), sets the cutoff to the
+        If no cutoff is set and recording is active, this method refreshes all
+        current projects (if an archive is provided), sets the cutoff to the
         current time, and adds a session message.
 
         Args:
             env: The environment.
         """
         if env[ReplayEnv].recording() and env[CutoffEnv].get() is None:
-            project = env[ProjectEnv].get()
-            if project and self._archive:
-                knowledge = project.load()
-                self._archive.refresh(project.name, knowledge)
+            if self._archive:
+                env[ProjectEnv].union.refresh(self._archive)
             cutoff = current_time()
             env[CutoffEnv].set(cutoff)
-            env[SessionEnv].append(f"Cutoff: @{format_time(cutoff)}")
+            env[SessionEnv].append(f"Data cutoff: @{format_time(cutoff)}")
 
 __all__ = [
     'CutoffCommand',

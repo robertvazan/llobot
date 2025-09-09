@@ -15,6 +15,7 @@ from llobot.environments.status import StatusEnv
 from llobot.formats.documents import DocumentFormat
 from llobot.knowledge.deltas.diffs import knowledge_delta_between
 from llobot.memories.examples import ExampleMemory
+from llobot.projects.none import NoProject
 
 class SquashCommand(Command):
     """
@@ -34,8 +35,8 @@ class SquashCommand(Command):
         if env[ReplayEnv].replaying():
             return True
 
-        project = env[ProjectEnv].get()
-        if not project:
+        union = env[ProjectEnv].union
+        if isinstance(union, NoProject):
             raise ValueError("Cannot squash without a project.")
 
         user_prompt_message = next((m for m in env[ContextEnv].messages if m.intent == ChatIntent.PROMPT), None)
@@ -43,7 +44,7 @@ class SquashCommand(Command):
             raise ValueError("Cannot squash an empty conversation.")
 
         initial_knowledge = env[KnowledgeEnv].get()
-        current_knowledge = project.load()
+        current_knowledge = union.load()
 
         delta = knowledge_delta_between(initial_knowledge, current_knowledge)
         if not delta:

@@ -10,12 +10,18 @@ dummy
     A dummy project that has a name but no content.
 directory
     A project that sources its content from a filesystem directory.
+none
+    A project that represents the absence of a project.
+union
+    A project that is a union of multiple projects.
 """
 from __future__ import annotations
+from datetime import datetime
 from pathlib import Path
 from llobot.knowledge import Knowledge
+from llobot.knowledge.archives import KnowledgeArchive
 from llobot.knowledge.indexes import KnowledgeIndex
-from llobot.knowledge.subsets import KnowledgeSubset, whitelist_subset, blacklist_subset
+from llobot.knowledge.subsets import KnowledgeSubset, blacklist_subset, whitelist_subset
 
 
 class Project:
@@ -91,6 +97,35 @@ class Project:
             if content is not None:
                 docs[path] = content
         return Knowledge(docs)
+
+    def refresh(self, archive: KnowledgeArchive):
+        """
+        Checks for updates from the source and archives a new snapshot if changes are found.
+
+        Args:
+            archive: The knowledge archive to refresh.
+        """
+        archive.refresh(self.name, self.load())
+
+    def last(self, archive: KnowledgeArchive, cutoff: datetime | None = None) -> Knowledge:
+        """
+        Retrieves the most recent snapshot from the archive for this project.
+
+        Args:
+            archive: The knowledge archive to retrieve from.
+            cutoff: If provided, only snapshots at or before this time are considered.
+
+        Returns:
+            The most recent Knowledge object, or an empty one if none are found.
+        """
+        return archive.last(self.name, cutoff)
+
+    def __or__(self, other: Project) -> Project:
+        """
+        Creates a union of this project and another project.
+        """
+        from llobot.projects.union import union_project
+        return union_project(self, other)
 
 __all__ = [
     'Project',

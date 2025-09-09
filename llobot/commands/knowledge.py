@@ -11,7 +11,7 @@ from llobot.knowledge.archives import KnowledgeArchive
 
 class ProjectKnowledgeStep(Step):
     """
-    A step that loads the knowledge for the selected project at the
+    A step that loads the knowledge for the selected projects at the
     selected cutoff time from a knowledge archive.
     """
     _archive: KnowledgeArchive
@@ -27,18 +27,16 @@ class ProjectKnowledgeStep(Step):
 
     def process(self, env: Environment):
         """
-        Loads knowledge from the project in `ProjectEnv` at the time specified
-        in `CutoffEnv` and stores it in `KnowledgeEnv`. If no project is set,
-        it does nothing.
+        Loads knowledge from the projects in `ProjectEnv` at the time specified
+        in `CutoffEnv` and stores the combined knowledge in `KnowledgeEnv`.
 
         Args:
             env: The environment.
         """
-        project = env[ProjectEnv].get()
-        if project:
-            cutoff = env[CutoffEnv].get()
-            knowledge = self._archive.last(project.name, cutoff)
-            env[KnowledgeEnv].set(knowledge)
+        union = env[ProjectEnv].union
+        cutoff = env[CutoffEnv].get()
+        knowledge = union.last(self._archive, cutoff)
+        env[KnowledgeEnv].set(knowledge)
 
 __all__ = [
     'ProjectKnowledgeStep',

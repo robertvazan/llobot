@@ -10,10 +10,10 @@ from llobot.projects import Project
 
 class ProjectCommand(Command):
     """
-    A command that selects a project to be used as a knowledge base.
+    A command that selects one or more projects to be used as a knowledge base.
 
     The command handler expects the command text to be the name of a project.
-    If a matching project is found, it is set in the `ProjectEnv` of the
+    If a matching project is found, it is added to the `ProjectEnv` of the
     environment.
     """
     _projects: dict[str, Project]
@@ -31,7 +31,7 @@ class ProjectCommand(Command):
         """
         Handles the project selection command.
 
-        If `text` matches a known project name, the project is set in the
+        If `text` matches a known project name, the project is added to the
         environment's `ProjectEnv`.
 
         Args:
@@ -43,7 +43,7 @@ class ProjectCommand(Command):
         """
         if text in self._projects:
             project = self._projects[text]
-            env[ProjectEnv].set(project)
+            env[ProjectEnv].add(project)
             return True
         return False
 

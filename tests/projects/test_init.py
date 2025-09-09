@@ -1,78 +1,23 @@
 from pathlib import Path
-from llobot.projects import Project
+from llobot.projects.directory import DirectoryProject
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
-from llobot.knowledge.subsets import KnowledgeSubset, match_filename, match_suffix
+from llobot.knowledge.subsets import match_filename, match_suffix
 
-class MockProject(Project):
-    def __init__(self, files: dict[str, str | dict]):
-        self._files = files
-        self._whitelist = super().whitelist
-        self._blacklist = super().blacklist
-
-    @property
-    def name(self) -> str:
-        return "mock"
-
-    @property
-    def whitelist(self) -> KnowledgeSubset:
-        return self._whitelist
-
-    @whitelist.setter
-    def whitelist(self, value: KnowledgeSubset):
-        self._whitelist = value
-
-    @property
-    def blacklist(self) -> KnowledgeSubset:
-        return self._blacklist
-
-    @blacklist.setter
-    def blacklist(self, value: KnowledgeSubset):
-        self._blacklist = value
-
-    def _get_at(self, path: Path):
-        node = self._files
-        try:
-            for part in path.parts:
-                if part != '.':
-                    node = node[part]
-        except (KeyError, TypeError):
-            return None
-        return node
-
-    def list_files(self, path: Path) -> list[str]:
-        node = self._get_at(path)
-        if isinstance(node, dict):
-            return [name for name, content in node.items() if isinstance(content, str)]
-        return []
-
-    def list_subdirs(self, path: Path) -> list[str]:
-        node = self._get_at(path)
-        if isinstance(node, dict):
-            return [name for name, content in node.items() if isinstance(content, dict)]
-        return []
-
-    def read(self, path: Path) -> str | None:
-        content = self._get_at(path)
-        return content if isinstance(content, str) else None
-
-
-def test_project_enumerate_and_load():
-    files = {
-        "file1.txt": "content1",
-        "file2.py": "content2",
-        "subdir": {
-            "file3.txt": "content3",
-            "nested": {
-                "file4.py": "content4"
-            }
-        },
-        "blacklisted.txt": "blacklisted"
-    }
-
-    project = MockProject(files)
-    project.blacklist = match_filename("blacklisted.txt")
-    project.whitelist = match_suffix(".txt")
+def test_project_enumerate_and_load(tmp_path: Path):
+    (tmp_path / "subdir" / "nested").mkdir(parents=True)
+    (tmp_path / "file1.txt").write_text("content1")
+    (tmp_path / "file2.py").write_text("content2")
+    (tmp_path / "subdir" / "file3.txt").write_text("content3")
+    (tmp_path / "subdir" / "nested" / "file4.py").write_text("content4")
+    (tmp_path / "blacklisted.txt").write_text("blacklisted")
+    
+    project = DirectoryProject(
+        tmp_path,
+        blacklist=match_filename("blacklisted.txt"),
+        whitelist=match_suffix(".txt"),
+        prefix=Path('.')
+    )
 
     expected_index = KnowledgeIndex([
         Path("file1.txt"),
@@ -81,7 +26,11 @@ def test_project_enumerate_and_load():
     assert project.enumerate() == expected_index
 
     expected_knowledge = Knowledge({
-        Path("file1.txt"): "content1",
-        Path("subdir/file3.txt"): "content3",
+        Path("file1.txt"): "content1\n",
+        Path("subdir/file3.txt"): "content3\n",
     })
-    assert project.load() == expected_knowledge
+    # read_document normalizes newlines
+    loaded = project.load()
+    assert loaded.keys() == expected_knowledge.keys()
+    assert loaded[Path("file1.txt")] == "content1\n"
+    assert loaded[Path("subdir/file3.txt")] == "content3\n"

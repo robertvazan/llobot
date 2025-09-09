@@ -17,10 +17,14 @@ from llobot.projects.directory import DirectoryProject
 
 def test_squash_command(tmp_path: Path):
     # Project setup
-    project_dir = tmp_path / 'project'
-    project_dir.mkdir()
-    (project_dir / 'file1.txt').write_text('initial content')
-    project = DirectoryProject(project_dir)
+    p1_dir = tmp_path / 'p1'
+    p1_dir.mkdir()
+    (p1_dir / 'file1.txt').write_text('initial content')
+    p1 = DirectoryProject(p1_dir, name="p1", prefix=Path("p1"))
+
+    p2_dir = tmp_path / 'p2'
+    p2_dir.mkdir()
+    p2 = DirectoryProject(p2_dir, name="p2", prefix=Path("p2"))
 
     # Archive setup
     archive = standard_chat_archive(tmp_path / 'archive')
@@ -29,14 +33,15 @@ def test_squash_command(tmp_path: Path):
     env = Environment()
 
     # Environment setup
-    env[ProjectEnv].set(project)
+    env[ProjectEnv].add(p1)
+    env[ProjectEnv].add(p2)
     env[ContextEnv].add(ChatMessage(ChatIntent.PROMPT, "User prompt"))
-    env[KnowledgeEnv].set(project.load())
-    
-    # Modify project
-    (project_dir / 'file1.txt').write_text('new content')
-    (project_dir / 'file2.txt').write_text('new file')
-    
+    env[KnowledgeEnv].set(env[ProjectEnv].union.load())
+
+    # Modify projects
+    (p1_dir / 'file1.txt').write_text('new content')
+    (p2_dir / 'file2.txt').write_text('new file')
+
     env[ReplayEnv].start_recording()
 
     # Handle
@@ -55,11 +60,11 @@ def test_squash_command(tmp_path: Path):
     assert example[0].intent == ChatIntent.EXAMPLE_PROMPT
     assert example[0].content == "User prompt"
     assert example[1].intent == ChatIntent.EXAMPLE_RESPONSE
-    
+
     response_content = example[1].content
-    assert 'File: project/file1.txt' in response_content
+    assert 'File: p1/file1.txt' in response_content
     assert 'new content' in response_content
-    assert 'File: project/file2.txt' in response_content
+    assert 'File: p2/file2.txt' in response_content
     assert 'new file' in response_content
     assert 'Removed:' not in response_content
 
@@ -74,9 +79,9 @@ def test_squash_no_changes(tmp_path: Path):
     command = SquashCommand(examples, standard_document_format())
     env = Environment()
 
-    env[ProjectEnv].set(project)
+    env[ProjectEnv].add(project)
     env[ContextEnv].add(ChatMessage(ChatIntent.PROMPT, "User prompt"))
-    env[KnowledgeEnv].set(project.load())
+    env[KnowledgeEnv].set(env[ProjectEnv].union.load())
 
     env[ReplayEnv].start_recording()
 
@@ -94,7 +99,7 @@ def test_squash_replay(tmp_path: Path):
     env = Environment()
     env[ReplayEnv] # initialize
 
-    env[ProjectEnv].set(project)
+    env[ProjectEnv].add(project)
     env[ContextEnv].add(ChatMessage(ChatIntent.PROMPT, "User prompt"))
     env[KnowledgeEnv].set(Knowledge())
 

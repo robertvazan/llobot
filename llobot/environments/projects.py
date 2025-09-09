@@ -2,36 +2,53 @@
 Project selection environment component.
 """
 from __future__ import annotations
+from functools import cached_property
 from llobot.projects import Project
+from llobot.projects.union import union_project
 
 class ProjectEnv:
     """
-    An environment component that holds the currently selected project.
+    An environment component that holds the currently selected projects.
     """
-    _project: Project | None = None
+    _projects: dict[str, Project]
 
-    def set(self, project: Project):
+    def __init__(self):
+        self._projects = {}
+
+    def add(self, project: Project):
         """
-        Sets the project for the environment.
+        Adds a project to the environment.
+
+        If a project with the same name already exists, it is replaced.
 
         Args:
-            project: The project to set.
-
-        Raises:
-            ValueError: If a different project is already set.
+            project: The project to add.
         """
-        if self._project is not None and self._project.name != project.name:
-            raise ValueError(f"Project already set to {self._project.name}, cannot change to {project.name}")
-        self._project = project
+        self._projects[project.name] = project
+        if 'union' in self.__dict__:
+            del self.union
 
-    def get(self) -> Project | None:
+    @property
+    def selected(self) -> list[Project]:
         """
-        Gets the currently selected project.
+        Gets the list of all selected projects, sorted by name for consistency.
 
         Returns:
-            The selected project, or None if no project is selected.
+            A sorted list of `Project` instances.
         """
-        return self._project
+        return sorted(self._projects.values(), key=lambda p: p.name)
+
+    @cached_property
+    def union(self) -> Project:
+        """
+        Gets a union of all selected projects.
+
+        Returns:
+            A `Project` instance representing the union. This will be `NoProject`
+            if no projects are selected, or the project itself if only one is
+            selected.
+        """
+        return union_project(*self.selected)
 
 __all__ = [
     'ProjectEnv',

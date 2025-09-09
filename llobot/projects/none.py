@@ -4,27 +4,28 @@ from llobot.knowledge import Knowledge
 from llobot.knowledge.archives import KnowledgeArchive
 from llobot.projects import Project
 
-class DummyProject(Project):
+class NoProject(Project):
     """
-    A project that has a name but no content.
+    A project that represents the absence of a project.
     """
-    _name: str
-
-    def __init__(self, name: str):
-        self._name = name
-
     @property
     def name(self) -> str:
-        return self._name
+        """
+        The name of the project. Throws, as no-project is unnamed.
+        """
+        raise NotImplementedError("No project is selected")
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, NoProject)
 
     def refresh(self, archive: KnowledgeArchive):
-        """A no-op refresh for a dummy project."""
+        """A no-op refresh for no project."""
         pass
 
     def last(self, archive: KnowledgeArchive, cutoff: datetime | None = None) -> Knowledge:
-        """Returns empty knowledge for a dummy project."""
+        """Returns empty knowledge for no project."""
         return Knowledge()
 
 __all__ = [
-    'DummyProject',
+    'NoProject',
 ]

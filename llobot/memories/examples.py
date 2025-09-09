@@ -3,6 +3,8 @@ import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Iterable
+from heapq import merge
+from itertools import chain
 from llobot.chats.archives import ChatArchive, standard_chat_archive, coerce_chat_archive
 from llobot.chats.binarization import binarize_intent
 from llobot.chats.branches import ChatBranch
@@ -47,14 +49,15 @@ class ExampleMemory:
         """
         Determines the zone names based on the current environment.
         """
-        project = env[ProjectEnv].get()
+        projects = env[ProjectEnv].selected
         zones = []
         if self._role_name:
-            if project:
+            for project in projects:
                 zones.append(f'{project.name}-{self._role_name}')
             zones.append(self._role_name)
-        elif project:
-            zones.append(project.name)
+        else:
+            for project in projects:
+                zones.append(project.name)
         return zones
 
     def save(self, chat: ChatBranch, env: Environment):
@@ -100,22 +103,38 @@ class ExampleMemory:
         """
         Retrieves recent examples.
 
-        Examples are retrieved from zones determined by the project and role in
-        the environment. Duplicates are removed.
+        Examples are retrieved from zones determined by the projects and role in
+        the environment. Examples from project-specific zones are merged and
+        yielded first in reverse chronological order, followed by examples from
+        the role-only zone. Duplicates are removed.
 
         Args:
-            env: The environment containing project and cutoff time.
+            env: The environment containing projects and cutoff time.
 
         Returns:
             An iterable of recent example chat branches.
         """
         cutoff = env[CutoffEnv].get()
         seen = set()
-        for zone in self._zones(env):
-            for time, chat in self._archive.recent(zone, cutoff):
-                if chat not in seen:
-                    seen.add(chat)
-                    yield self._as_example(chat)
+
+        all_zones = self._zones(env)
+        project_zones = all_zones[:]
+        role_zone_iter = []
+
+        if self._role_name in project_zones:
+            project_zones.remove(self._role_name)
+            role_zone_iter = self._archive.recent(self._role_name, cutoff)
+
+        # Merge examples from all project zones, sorted by time descending.
+        project_iters = [self._archive.recent(zone, cutoff) for zone in project_zones]
+        merged_project_examples = merge(*project_iters, key=lambda item: item[0], reverse=True)
+
+        all_examples = chain(merged_project_examples, role_zone_iter)
+
+        for _, chat in all_examples:
+            if chat not in seen:
+                seen.add(chat)
+                yield self._as_example(chat)
 
 __all__ = [
     'ExampleMemory',
