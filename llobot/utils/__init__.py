@@ -4,8 +4,8 @@ Core utilities for Llobot.
 This package contains miscellaneous utility modules that are used throughout
 the Llobot core library.
 
-Submodules
-----------
+Subpackages and submodules
+--------------------------
 text
     Provides text manipulation utilities.
 time
