@@ -15,6 +15,4 @@ builder
     Defines `KnowledgeDeltaBuilder` for constructing complex deltas.
 diffs
     Provides functions for computing differences between knowledge states.
-compression
-    Provides functions for compressing knowledge deltas.
 """

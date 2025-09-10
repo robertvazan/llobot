@@ -13,9 +13,7 @@ from llobot.commands.cutoff import CutoffCommand, ImplicitCutoffStep
 from llobot.commands.knowledge import ProjectKnowledgeStep
 from llobot.commands.project import ProjectCommand
 from llobot.commands.retrievals import RetrievalStep, standard_retrieval_commands
-from llobot.commands.squash import SquashCommand
 from llobot.commands.unrecognized import UnrecognizedCommand
-from llobot.crammers.edits import EditCrammer, standard_edit_crammer
 from llobot.crammers.indexes import IndexCrammer, standard_index_crammer
 from llobot.crammers.knowledge import KnowledgeCrammer, standard_knowledge_crammer
 from llobot.environments import Environment
@@ -28,7 +26,6 @@ from llobot.environments.prompt import PromptEnv
 from llobot.environments.replay import ReplayEnv
 from llobot.environments.session import SessionEnv
 from llobot.environments.status import StatusEnv
-from llobot.formats.documents import DocumentFormat
 from llobot.formats.knowledge import KnowledgeFormat, standard_knowledge_format
 from llobot.formats.mentions import parse_mentions
 from llobot.formats.prompts import (
@@ -81,13 +78,10 @@ class Editor(Role):
     _graph_scorer: KnowledgeScorer
     _ranker: KnowledgeRanker
     _knowledge_crammer: KnowledgeCrammer
-    _edit_crammer: EditCrammer
     _index_crammer: IndexCrammer
-    _document_format: DocumentFormat
     _knowledge_format: KnowledgeFormat
     _prompt_format: PromptFormat
     _reminder_format: PromptFormat
-    _example_share: float
     _step_chain: StepChain
     _examples: ExampleMemory
 
@@ -100,13 +94,10 @@ class Editor(Role):
         graph_scorer: KnowledgeScorer = standard_scorer(),
         ranker: KnowledgeRanker = standard_ranker(),
         knowledge_crammer: KnowledgeCrammer = standard_knowledge_crammer(),
-        edit_crammer: EditCrammer = standard_edit_crammer(),
         index_crammer: IndexCrammer = standard_index_crammer(),
         knowledge_format: KnowledgeFormat = standard_knowledge_format(),
         prompt_format: PromptFormat = standard_prompt_format(),
         reminder_format: PromptFormat = reminder_prompt_format(),
-        # Share of the context dedicated to examples and associated knowledge updates.
-        example_share: float = 0.4,
     ):
         """
         Creates a new editor role.
@@ -123,13 +114,10 @@ class Editor(Role):
         self._graph_scorer = graph_scorer
         self._ranker = ranker
         self._knowledge_crammer = knowledge_crammer
-        self._edit_crammer = edit_crammer
         self._index_crammer = index_crammer
         self._knowledge_format = knowledge_format
-        self._document_format = knowledge_format.document_format
         self._prompt_format = prompt_format
         self._reminder_format = reminder_format
-        self._example_share = example_share
         self._step_chain = StepChain(
             ProjectCommand(list(projects)),
             CutoffCommand(),
@@ -139,7 +127,6 @@ class Editor(Role):
             standard_retrieval_commands(),
             RetrievalStep(self._knowledge_format),
             ApproveCommand(self._examples),
-            SquashCommand(self._examples, self._document_format),
             UnrecognizedCommand(),
         )
 
@@ -149,7 +136,7 @@ class Editor(Role):
 
     def stuff(self, env: Environment):
         """
-        Populates the context with system prompt, knowledge, and examples.
+        Populates the context with system prompt, knowledge, and index.
 
         Args:
             env: The environment to populate.
@@ -166,32 +153,23 @@ class Editor(Role):
         context.add(system_chat)
         budget -= system_chat.cost
 
-        # Examples with associated updates
-        history_budget = int(budget * self._example_share)
-        recent_examples = self._examples.recent(env)
-        history_chat, history_paths = self._edit_crammer(recent_examples, knowledge, history_budget)
-
         # Knowledge scores
         scores = self._relevance_scorer(knowledge)
         blacklist = knowledge.keys() - scores.keys()
         scores = self._graph_scorer.rescore(knowledge, scores)
-        scores -= history_paths
         scores -= blacklist
 
         # Index
-        index_budget = budget - history_chat.cost
         # Add background scores so nothing is omitted from index
         index_scores = scores | uniform_scores(knowledge.keys(), 0.001)
-        index_chat = self._index_crammer(index_scores, index_budget)
+        index_chat = self._index_crammer(index_scores, budget)
+        context.add(index_chat)
+        budget -= index_chat.cost
 
         # Knowledge
-        knowledge_budget = index_budget - index_chat.cost
         ranking = self._ranker(knowledge)
-        knowledge_chat, _ = self._knowledge_crammer(knowledge, knowledge_budget, scores, ranking)
-
-        context.add(index_chat)
+        knowledge_chat, _ = self._knowledge_crammer(knowledge, budget, scores, ranking)
         context.add(knowledge_chat)
-        context.add(history_chat)
 
     def chat(self, prompt: ChatBranch) -> ModelStream:
         env = Environment()

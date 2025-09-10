@@ -24,8 +24,6 @@ custom
     Step for executing arbitrary callables.
 approve
     Command to save an example.
-squash
-    Command to save knowledge delta as an example.
 """
 from __future__ import annotations
 from llobot.environments import Environment

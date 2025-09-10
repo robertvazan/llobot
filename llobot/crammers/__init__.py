@@ -7,8 +7,6 @@ to fit within a given context size budget for an LLM prompt.
 
 Crammers
 --------
-EditCrammer
-    Combines examples with updates of documents those examples touch.
 ExampleCrammer
     Selects a set of recent examples that fit within a budget.
 IndexCrammer
