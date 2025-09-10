@@ -3,7 +3,7 @@ Knowledge cutoff environment component.
 """
 from __future__ import annotations
 from datetime import datetime
-from llobot.time import format_time
+from llobot.utils.time import format_time
 
 class CutoffEnv:
     """

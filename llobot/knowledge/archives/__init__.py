@@ -24,10 +24,10 @@ from datetime import datetime
 from functools import lru_cache
 import logging
 from pathlib import Path
-from llobot.fs.zones import Zoning
-from llobot.fs import data_home
+from llobot.utils.zones import Zoning
+from llobot.utils.fs import data_home
 from llobot.knowledge import Knowledge
-from llobot.time import current_time
+from llobot.utils.time import current_time
 
 _logger = logging.getLogger(__name__)
 

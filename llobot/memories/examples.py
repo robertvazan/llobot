@@ -13,9 +13,9 @@ from llobot.chats.messages import ChatMessage
 from llobot.environments import Environment
 from llobot.environments.cutoff import CutoffEnv
 from llobot.environments.projects import ProjectEnv
-from llobot.fs import data_home
-from llobot.fs.zones import Zoning
-from llobot.time import current_time
+from llobot.utils.fs import data_home
+from llobot.utils.zones import Zoning
+from llobot.utils.time import current_time
 
 _logger = logging.getLogger(__name__)
 

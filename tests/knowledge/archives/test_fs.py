@@ -1,7 +1,7 @@
 from pathlib import Path
 from llobot.knowledge import Knowledge
 from llobot.knowledge.archives.fs import save_knowledge_directory, load_knowledge_directory
-from llobot.text import normalize_document
+from llobot.utils.text import normalize_document
 
 K1 = Knowledge({
     Path('a.txt'): normalize_document('content a'),

@@ -8,7 +8,7 @@ from llobot.environments.projects import ProjectEnv
 from llobot.knowledge import Knowledge
 from llobot.knowledge.archives import KnowledgeArchive
 from llobot.projects import Project
-from llobot.time import current_time
+from llobot.utils.time import current_time
 
 def test_project_knowledge_step():
     archive = Mock(spec=KnowledgeArchive)

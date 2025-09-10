@@ -8,8 +8,8 @@ from llobot.knowledge.archives.tgz import (
     save_knowledge_tgz,
     load_knowledge_tgz,
 )
-from llobot.text import normalize_document
-from llobot.time import current_time
+from llobot.utils.text import normalize_document
+from llobot.utils.time import current_time
 
 K1 = Knowledge({
     Path('a.txt'): normalize_document('content a'),

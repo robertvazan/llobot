@@ -9,29 +9,79 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 from typing import Iterable
-from llobot.time import format_time, parse_time, try_parse_time
-from llobot.fs import path_stem
+from llobot.utils.time import format_time, parse_time, try_parse_time
+from llobot.utils.fs import path_stem
 
 def format_archive_filename(time: datetime, suffix: str = '') -> Path:
-    """Creates a filename from a timestamp and an optional suffix."""
+    """
+    Creates a filename from a timestamp and an optional suffix.
+
+    Args:
+        time: The timestamp to use for the filename.
+        suffix: An optional file suffix (e.g., '.tar.gz').
+
+    Returns:
+        A `Path` object representing the filename.
+    """
     return Path(format_time(time) + suffix)
 
 def format_archive_path(directory: Path | str, time: datetime, suffix: str = '') -> Path:
-    """Creates a full path for an archive file in a given directory."""
+    """
+    Creates a full path for an archive file in a given directory.
+
+    Args:
+        directory: The directory where the archive file will be located.
+        time: The timestamp to use for the filename.
+        suffix: An optional file suffix.
+
+    Returns:
+        A `Path` object for the complete archive file path.
+    """
     return Path(directory)/format_archive_filename(time, suffix)
 
 def parse_archive_path(path: Path | str) -> datetime:
-    """Extracts the timestamp from an archive path."""
+    """
+    Extracts the timestamp from an archive path.
+
+    The timestamp is expected to be in the filename's stem.
+
+    Args:
+        path: The path to the archive file.
+
+    Returns:
+        The `datetime` object parsed from the filename.
+
+    Raises:
+        ValueError: If the filename stem is not a valid timestamp.
+    """
     return parse_time(path_stem(path))
 
 def try_parse_archive_path(path: Path | str) -> datetime | None:
     """
     Extracts the timestamp from an archive path, returning None on failure.
+
+    Args:
+        path: The path to the archive file.
+
+    Returns:
+        The parsed `datetime` object, or `None` if parsing fails.
     """
     return try_parse_time(path_stem(path))
 
 def iterate_archive(directory: Path | str, suffix: str = '') -> Iterable[Path]:
-    """Iterates over all valid archive paths in a directory."""
+    """
+    Iterates over all valid archive paths in a directory.
+
+    A path is considered a valid archive path if its stem can be parsed
+    as a timestamp and it has the correct suffix.
+
+    Args:
+        directory: The directory to scan for archive files.
+        suffix: The file suffix to match.
+
+    Returns:
+        An iterable of `Path` objects for valid archive files.
+    """
     directory = Path(directory)
     if not directory.exists():
         return iter(())

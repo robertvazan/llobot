@@ -6,7 +6,7 @@ from llobot.chats.branches import ChatBranch
 from llobot.chats.messages import ChatMessage
 from llobot.chats.intents import ChatIntent
 from llobot.chats.builders import ChatBuilder
-from llobot.text import concat_documents
+from llobot.utils.text import concat_documents
 
 class SubmessageFormat:
     """

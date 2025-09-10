@@ -3,10 +3,10 @@ import logging
 from pathlib import Path
 from datetime import datetime
 from typing import Iterable, Callable
-from llobot.fs.zones import Zoning, coerce_zoning
+from llobot.utils.zones import Zoning, coerce_zoning
 from llobot.chats.branches import ChatBranch
-from llobot.fs import create_parents
-from llobot.fs.archives import format_archive_path, parse_archive_path, recent_archive_paths
+from llobot.utils.fs import create_parents
+from llobot.utils.archives import format_archive_path, parse_archive_path, recent_archive_paths
 from llobot.chats.markdown import save_chat_as_markdown, load_chat_as_markdown
 
 _logger = logging.getLogger(__name__)

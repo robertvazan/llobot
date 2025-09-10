@@ -9,7 +9,7 @@ from llobot.knowledge.deltas.knowledge import KnowledgeDelta, fresh_knowledge_de
 from llobot.knowledge.rankings import KnowledgeRanking
 from llobot.formats.documents import DocumentFormat, standard_document_format
 from llobot.formats.affirmations import affirmation_turn
-from llobot.text import concat_documents
+from llobot.utils.text import concat_documents
 
 class KnowledgeFormat:
     @property

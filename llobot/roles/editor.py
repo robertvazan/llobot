@@ -32,8 +32,8 @@ from llobot.formats.prompts import (
     reminder_prompt_format,
     standard_prompt_format,
 )
-from llobot.fs import data_home
-from llobot.fs.zones import Zoning
+from llobot.utils.fs import data_home
+from llobot.utils.zones import Zoning
 from llobot.knowledge.archives import KnowledgeArchive, standard_knowledge_archive
 from llobot.knowledge.rankers import KnowledgeRanker, standard_ranker
 from llobot.knowledge.scorers import (

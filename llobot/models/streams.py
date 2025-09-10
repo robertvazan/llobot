@@ -22,7 +22,7 @@ from typing import Iterable
 from collections.abc import Callable
 import threading
 from queue import Queue
-from llobot.text import markdown_code_details
+from llobot.utils.text import markdown_code_details
 from llobot.chats.intents import ChatIntent
 from llobot.chats.messages import ChatMessage
 

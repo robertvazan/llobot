@@ -26,8 +26,8 @@ from llobot.formats.prompts import (
     reminder_prompt_format,
     standard_prompt_format,
 )
-from llobot.fs import data_home
-from llobot.fs.zones import Zoning
+from llobot.utils.fs import data_home
+from llobot.utils.zones import Zoning
 from llobot.memories.examples import ExampleMemory
 from llobot.models import Model
 from llobot.models.streams import ModelStream

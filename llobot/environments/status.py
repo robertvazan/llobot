@@ -2,7 +2,7 @@
 Status messages.
 """
 from __future__ import annotations
-from llobot.text import concat_documents
+from llobot.utils.text import concat_documents
 from llobot.chats.intents import ChatIntent
 from llobot.chats.messages import ChatMessage
 from llobot.models.streams import ModelStream, message_stream

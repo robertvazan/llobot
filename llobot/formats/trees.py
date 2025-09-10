@@ -6,7 +6,7 @@ from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.rankings import KnowledgeRanking
 from llobot.knowledge.trees import KnowledgeTree, coerce_tree
-from llobot.text import concat_documents, markdown_code_details
+from llobot.utils.text import concat_documents, markdown_code_details
 
 class TreeFormat:
     """

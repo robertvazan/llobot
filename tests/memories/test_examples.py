@@ -9,7 +9,7 @@ from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
 from llobot.memories.examples import ExampleMemory
 from llobot.projects.dummy import DummyProject
-from llobot.time import parse_time
+from llobot.utils.time import parse_time
 
 def test_save_and_recent_with_role_only(tmp_path: Path):
     archive = markdown_chat_archive(tmp_path)

@@ -1,5 +1,5 @@
 import pytest
-from llobot.text import terminate_document, normalize_document, join_documents, concat_documents, dashed_name, markdown_code_block, markdown_code_details
+from llobot.utils.text import terminate_document, normalize_document, join_documents, concat_documents, dashed_name, markdown_code_block, markdown_code_details
 
 
 def test_terminate_document():

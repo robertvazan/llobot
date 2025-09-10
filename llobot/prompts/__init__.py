@@ -2,7 +2,7 @@ from __future__ import annotations
 from functools import cache
 from importlib import resources
 import inspect
-from llobot.text import normalize_document, concat_documents
+from llobot.utils.text import normalize_document, concat_documents
 
 def read_prompt(filename: str, *, package: str | None = None) -> str:
     if package is None:

@@ -4,7 +4,7 @@ Utilities for saving and loading knowledge to/from a plain directory.
 from pathlib import Path
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
-from llobot.fs import read_document, write_text
+from llobot.utils.fs import read_document, write_text
 
 def save_knowledge_directory(directory: Path, knowledge: Knowledge):
     """

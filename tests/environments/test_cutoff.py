@@ -1,6 +1,6 @@
 from datetime import timedelta
 import pytest
-from llobot.time import current_time
+from llobot.utils.time import current_time
 from llobot.environments.cutoff import CutoffEnv
 
 def test_cutoff_env_get_default():

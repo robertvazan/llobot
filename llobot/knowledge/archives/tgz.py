@@ -7,12 +7,12 @@ from functools import lru_cache
 from pathlib import Path
 import io
 import tarfile
-from llobot.fs import write_bytes
-from llobot.fs.archives import format_archive_path, last_archive_path
-from llobot.fs.zones import Zoning, coerce_zoning
+from llobot.utils.fs import write_bytes
+from llobot.utils.archives import format_archive_path, last_archive_path
+from llobot.utils.zones import Zoning, coerce_zoning
 from llobot.knowledge import Knowledge
 from llobot.knowledge.archives import KnowledgeArchive
-from llobot.text import normalize_document
+from llobot.utils.text import normalize_document
 
 KNOWLEDGE_TGZ_SUFFIX = '.tar.gz'
 

@@ -4,7 +4,7 @@ from llobot.chats.intents import ChatIntent
 from llobot.chats.messages import ChatMessage
 from llobot.chats.branches import ChatBranch
 from llobot.chats.archives import markdown_chat_archive, rename_chat_archive
-from llobot.time import current_time, format_time
+from llobot.utils.time import current_time, format_time
 
 def create_test_chat(content: str) -> ChatBranch:
     """Helper to create a simple test chat branch."""

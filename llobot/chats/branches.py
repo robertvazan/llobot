@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Iterator
-from llobot.text import concat_documents
+from llobot.utils.text import concat_documents
 from llobot.chats.intents import ChatIntent
 from llobot.chats.messages import ChatMessage
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
-from llobot.fs import read_document
+from llobot.utils.fs import read_document
 from llobot.projects import Project
 from llobot.knowledge.subsets import KnowledgeSubset
 

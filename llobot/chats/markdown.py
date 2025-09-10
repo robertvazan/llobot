@@ -9,7 +9,7 @@ from llobot.chats.intents import ChatIntent
 from llobot.chats.branches import ChatBranch
 from llobot.chats.builders import ChatBuilder
 from llobot.chats.messages import ChatMessage
-from llobot.fs import read_text, write_text
+from llobot.utils.fs import read_text, write_text
 
 _INTENT_RE = re.compile('> ([A-Z][-A-Za-z]*)')
 

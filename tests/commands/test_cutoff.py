@@ -10,7 +10,7 @@ from llobot.environments.session import SessionEnv
 from llobot.knowledge import Knowledge
 from llobot.knowledge.archives import KnowledgeArchive
 from llobot.projects import Project
-from llobot.time import parse_time, format_time
+from llobot.utils.time import parse_time, format_time
 
 def test_cutoff_command():
     command = CutoffCommand()

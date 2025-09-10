@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Iterable
 from llobot.chats.branches import ChatBranch
-from llobot.text import dashed_name
+from llobot.utils.text import dashed_name
 
 class Model:
     # Name must be globally unique, something like ollama/model-name:tag.
