@@ -2,7 +2,8 @@ from pathlib import Path
 from llobot.projects.directory import DirectoryProject
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
-from llobot.knowledge.subsets import match_filename, match_suffix, create_subset
+from llobot.knowledge.subsets.suffix import SuffixSubset
+from llobot.knowledge.subsets.parsing import parse_pattern
 
 def test_directory_project_simple(tmp_path: Path):
     (tmp_path / "file1.txt").write_text("content1")
@@ -50,8 +51,8 @@ def test_directory_project_filtering(tmp_path: Path):
     project = DirectoryProject(
         tmp_path,
         prefix=Path('.'),
-        whitelist=match_suffix(".txt"),
-        blacklist=create_subset(lambda p: 'blacklisted' in str(p))
+        whitelist=SuffixSubset(".txt"),
+        blacklist=parse_pattern('*blacklisted*')
     )
 
     assert project.enumerate() == KnowledgeIndex([Path('file1.txt')])

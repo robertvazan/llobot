@@ -22,8 +22,7 @@ subsets/
     Pattern-based filtering and selection with KnowledgeSubset
 deltas/
     Change tracking for knowledge states. See `deltas.documents`,
-    `deltas.knowledge`, `deltas.builder`, `deltas.diffs`, and
-    `deltas.compression`.
+    `deltas.knowledge`, `deltas.builder`, and `deltas.diffs`.
 archives/
     Historical knowledge storage
 rankers

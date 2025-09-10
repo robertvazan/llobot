@@ -1,9 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
-from llobot.knowledge.subsets import (
-    KnowledgeSubset,
-    coerce_subset,
-)
+from llobot.knowledge.subsets import KnowledgeSubset, coerce_subset
 
 class KnowledgeIndex:
     _paths: set[Path]

@@ -4,7 +4,9 @@ from pathlib import Path
 from llobot.knowledge import Knowledge
 from llobot.knowledge.archives import KnowledgeArchive
 from llobot.knowledge.indexes import KnowledgeIndex
-from llobot.knowledge.subsets import KnowledgeSubset, match_everything, match_nothing
+from llobot.knowledge.subsets import KnowledgeSubset
+from llobot.knowledge.subsets.universal import UniversalSubset
+from llobot.knowledge.subsets.empty import EmptySubset
 from llobot.projects import Project
 
 class UnionProject(Project):
@@ -35,11 +37,11 @@ class UnionProject(Project):
 
     @property
     def whitelist(self) -> KnowledgeSubset:
-        return match_everything()
+        return UniversalSubset()
 
     @property
     def blacklist(self) -> KnowledgeSubset:
-        return match_nothing()
+        return EmptySubset()
 
     def list_files(self, path: Path) -> list[str]:
         results = set()

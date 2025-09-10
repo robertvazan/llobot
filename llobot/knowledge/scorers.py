@@ -1,7 +1,8 @@
 from __future__ import annotations
 from functools import cache, lru_cache
 from pathlib import Path
-from llobot.knowledge.subsets import KnowledgeSubset, coerce_subset, boilerplate_subset, ancillary_subset
+from llobot.knowledge.subsets import KnowledgeSubset, coerce_subset
+from llobot.knowledge.subsets.standard import boilerplate_subset, ancillary_subset
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.scrapers import GraphScraper, standard_scraper
 from llobot.knowledge.scores import (
@@ -45,8 +46,7 @@ class KnowledgeScorer:
 
     def __sub__(self, other: KnowledgeScorer | int | float | KnowledgeSubset | str) -> KnowledgeScorer:
         if isinstance(other, (KnowledgeSubset, str)):
-            other = coerce_subset(other)
-            return self & ~other
+            return self & ~coerce_subset(other)
         other = self._coerce_operand(other)
         return create_scorer(lambda knowledge: self(knowledge) - other(knowledge))
 

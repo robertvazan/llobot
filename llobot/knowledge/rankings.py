@@ -43,7 +43,8 @@ class KnowledgeRanking:
         return KnowledgeRanking(reversed(self._paths))
 
     def __and__(self, whitelist: KnowledgeSubset | str | KnowledgeIndex) -> KnowledgeRanking:
-        return KnowledgeRanking(filter(coerce_subset(whitelist), self))
+        whitelist = coerce_subset(whitelist)
+        return KnowledgeRanking(path for path in self if path in whitelist)
 
     def __sub__(self, blacklist: KnowledgeSubset | str | KnowledgeIndex | Path) -> KnowledgeRanking:
         return self & ~coerce_subset(blacklist)

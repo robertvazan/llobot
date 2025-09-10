@@ -3,7 +3,8 @@ from pathlib import Path
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.rankings import KnowledgeRanking, rank_lexicographically
-from llobot.knowledge.subsets import KnowledgeSubset, overviews_subset
+from llobot.knowledge.subsets import KnowledgeSubset
+from llobot.knowledge.subsets.standard import overviews_subset
 
 class KnowledgeTree:
     """

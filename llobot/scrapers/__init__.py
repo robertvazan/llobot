@@ -3,7 +3,8 @@ from functools import cache, lru_cache
 from pathlib import Path
 from llobot.knowledge import Knowledge
 from llobot.knowledge.graphs import KnowledgeGraph, KnowledgeGraphBuilder
-from llobot.knowledge.subsets import KnowledgeSubset, overviews_subset
+from llobot.knowledge.subsets import KnowledgeSubset
+from llobot.knowledge.subsets.standard import overviews_subset
 from llobot.knowledge.trees import lexicographical_tree
 
 class GraphScraper:

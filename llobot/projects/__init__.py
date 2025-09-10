@@ -21,7 +21,8 @@ from pathlib import Path
 from llobot.knowledge import Knowledge
 from llobot.knowledge.archives import KnowledgeArchive
 from llobot.knowledge.indexes import KnowledgeIndex
-from llobot.knowledge.subsets import KnowledgeSubset, blacklist_subset, whitelist_subset
+from llobot.knowledge.subsets import KnowledgeSubset
+from llobot.knowledge.subsets.standard import blacklist_subset, whitelist_subset
 
 
 class Project:

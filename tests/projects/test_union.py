@@ -5,7 +5,9 @@ import pytest
 from llobot.knowledge import Knowledge
 from llobot.knowledge.archives import KnowledgeArchive
 from llobot.knowledge.indexes import KnowledgeIndex
-from llobot.knowledge.subsets import KnowledgeSubset, match_filename, match_suffix
+from llobot.knowledge.subsets import KnowledgeSubset
+from llobot.knowledge.subsets.filename import FilenameSubset
+from llobot.knowledge.subsets.suffix import SuffixSubset
 from llobot.projects import Project
 from llobot.projects.directory import DirectoryProject
 from llobot.projects.none import NoProject
@@ -131,11 +133,11 @@ def test_union_project_flattening():
 
 def test_union_project_whitelist_blacklist():
     p1 = MockProject("p1", {"a.txt": "a", "b.py": "b", "c.txt": "c"})
-    p1.whitelist = match_suffix(".txt")
-    p1.blacklist = match_filename("c.txt")
+    p1.whitelist = SuffixSubset(".txt")
+    p1.blacklist = FilenameSubset("c.txt")
 
     p2 = MockProject("p2", {"d.txt": "d", "e.py": "e"})
-    p2.blacklist = match_filename("e.py")
+    p2.blacklist = FilenameSubset("e.py")
 
     union = union_project(p1, p2)
 

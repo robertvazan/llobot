@@ -2,7 +2,8 @@ from pathlib import Path
 from llobot.projects.directory import DirectoryProject
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
-from llobot.knowledge.subsets import match_filename, match_suffix
+from llobot.knowledge.subsets.filename import FilenameSubset
+from llobot.knowledge.subsets.suffix import SuffixSubset
 
 def test_project_enumerate_and_load(tmp_path: Path):
     (tmp_path / "subdir" / "nested").mkdir(parents=True)
@@ -11,11 +12,11 @@ def test_project_enumerate_and_load(tmp_path: Path):
     (tmp_path / "subdir" / "file3.txt").write_text("content3")
     (tmp_path / "subdir" / "nested" / "file4.py").write_text("content4")
     (tmp_path / "blacklisted.txt").write_text("blacklisted")
-    
+
     project = DirectoryProject(
         tmp_path,
-        blacklist=match_filename("blacklisted.txt"),
-        whitelist=match_suffix(".txt"),
+        blacklist=FilenameSubset("blacklisted.txt"),
+        whitelist=SuffixSubset(".txt"),
         prefix=Path('.')
     )
 

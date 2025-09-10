@@ -6,7 +6,7 @@ from llobot.knowledge.deltas.knowledge import KnowledgeDelta
 from llobot.chats.messages import ChatMessage
 from llobot.chats.branches import ChatBranch
 from llobot.chats.intents import ChatIntent
-from llobot.knowledge.subsets import match_suffix
+from llobot.knowledge.subsets.suffix import SuffixSubset
 
 def test_render_file():
     formatter = standard_document_format()
@@ -281,7 +281,7 @@ def test_or_operator():
 
 def test_and_operator():
     formatter = details_document_format()
-    filtered = formatter & match_suffix('.py')
+    filtered = formatter & SuffixSubset('.py')
 
     # Should format .py files
     py_delta = DocumentDelta(Path('test.py'), 'content')
