@@ -16,4 +16,6 @@ archives
     Utilities for handling timestamped file-based archives.
 zones
     Zoning system for mapping abstract zone names to filesystem paths.
+values
+    Provides ValueTypeMixin for creating value-like objects.
 """
