@@ -24,7 +24,6 @@ The document format system supports:
 - File listings with complete content in details blocks
 - One-line removals in format: Removed: `path/to/file.py`
 - One-line moves in format: Moved: `old/path.py` => `new/path.py`
-- Diff-compressed listings for space efficiency
 - Language detection for syntax highlighting
 - Combining multiple formats with | and & operators
 """
@@ -163,8 +162,8 @@ _DETECTION_REGEX = re.compile(
     re.MULTILINE | re.DOTALL
 )
 
-# Unified parsing regex for details blocks (handles both File: and Diff: summaries)
-_DETAILS_PARSING_RE = re.compile(rf'<details>\n<summary>(File|Diff): ([^\n]+?)</summary>\n\n```+[^\n]*\n(.*)^```+\n\n</details>', re.MULTILINE | re.DOTALL)
+# Unified parsing regex for details blocks
+_DETAILS_PARSING_RE = re.compile(rf'<details>\n<summary>File: ([^\n]+?)</summary>\n\n```+[^\n]*\n(.*)^```+\n\n</details>', re.MULTILINE | re.DOTALL)
 
 # Parsing regexes for one-line operations
 _REMOVED_RE = re.compile(_REMOVED_PATTERN, re.MULTILINE)
@@ -180,7 +179,6 @@ def details_document_format(*,
 
     This format handles:
     - File listings: <details><summary>File: path</summary>```content```</details>
-    - Diff listings: <details><summary>Diff: path</summary>```diff```</details>
     - Removals: Removed: `path/to/file.py`
     - Moves: Moved: `old/path.py` => `new/path.py`
 
@@ -201,14 +199,10 @@ def details_document_format(*,
             if delta.moved:
                 return f"Moved: `{delta.moved_from}` => `{delta.path}`"
 
-            # Handle file listings with content (regular files or diffs)
+            # Handle file listings with content
             content = delta.content
-            if delta.diff:
-                summary = f'Diff: {delta.path}'
-                lang = 'diff'
-            else:
-                summary = f'File: {delta.path}'
-                lang = guesser(delta.path, content)
+            summary = f'File: {delta.path}'
+            lang = guesser(delta.path, content)
 
             backtick_count = 4 if lang in quad_backticks else 3
             return markdown_code_details(summary, lang, content, backtick_count=backtick_count)
@@ -232,17 +226,13 @@ def details_document_format(*,
                 dest_path = Path(moved_match.group(2))
                 return DocumentDelta(dest_path, None, moved_from=source_path)
 
-            # Try parsing details block (File: or Diff:)
+            # Try parsing details block
             details_match = _DETAILS_PARSING_RE.fullmatch(formatted)
             if details_match:
-                block_type, path_str, content = details_match.groups()
+                path_str, content = details_match.groups()
                 path = Path(path_str.strip())
                 content = normalize_document(content)
-
-                if block_type == 'Diff':
-                    return DocumentDelta(path, content, diff=True)
-                else:  # File:
-                    return DocumentDelta(path, content)
+                return DocumentDelta(path, content)
 
             return None
 

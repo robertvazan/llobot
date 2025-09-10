@@ -12,7 +12,7 @@ affirmations
     Utilities for creating standard affirmation messages.
 documents
     Document formats for rendering and parsing DocumentDelta objects.
-    Supports file listings, removals, moves, and diff compression.
+    Supports file listings, removals, and moves.
 knowledge
     Knowledge formats for rendering Knowledge objects and deltas.
     Handles document ordering, filtering, and presentation.

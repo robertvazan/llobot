@@ -141,7 +141,6 @@ def test_full():
         DocumentDelta(Path('modified.txt'), 'modified content'),
         DocumentDelta(Path('removed.txt'), None, removed=True),
         DocumentDelta(Path('moved.txt'), None, moved_from=Path('old.txt')),
-        DocumentDelta(Path('diff.txt'), 'diff content', diff=True),
     ]
     delta = KnowledgeDelta(deltas)
 

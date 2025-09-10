@@ -81,14 +81,10 @@ class KnowledgeDelta:
     def full(self) -> Knowledge:
         """
         Returns the full content of all documents whose state is fully known after the delta.
-        Deltas that represent diffs or are removals do not contribute content.
+        Deltas that are removals do not contribute content.
         """
         docs = {}
         for delta in self:
-            if delta.diff:
-                # Remove content for diff deltas since we cannot be sure about full content
-                docs.pop(delta.path, None)
-                continue
             if delta.moved:
                 if delta.moved_from in docs:
                     docs[delta.path] = docs.pop(delta.moved_from)

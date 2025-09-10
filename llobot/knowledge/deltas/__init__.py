@@ -2,7 +2,7 @@
 Knowledge delta management for tracking changes between knowledge states.
 
 This package provides comprehensive change tracking for knowledge collections,
-including document-level changes, batch operations, and diff compression.
+including document-level changes and batch operations.
 
 Submodules
 ----------

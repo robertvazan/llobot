@@ -30,18 +30,6 @@ def test_render_fresh():
     assert 'def hello():' in result
     assert '</details>' in result
 
-def test_render_diff():
-    formatter = standard_document_format()
-    delta = DocumentDelta(Path('test.py'), '@@ -1,2 +1,3 @@\n def test():\n+    # comment\n     pass', diff=True)
-
-    result = formatter.render(delta)
-
-    assert '<details>' in result
-    assert '<summary>Diff: test.py</summary>' in result
-    assert '```diff' in result
-    assert '@@' in result
-    assert '</details>' in result
-
 def test_render_removal():
     formatter = standard_document_format()
     delta = DocumentDelta(Path('test.py'), None, removed=True)
@@ -144,32 +132,6 @@ def test_parse_file():
     assert delta is not None
     assert delta.path == Path('test.py')
     assert 'def hello():' in delta.content
-    assert not delta.diff
-    assert not delta.removed
-    assert not delta.moved
-
-def test_parse_diff():
-    formatter = standard_document_format()
-    formatted = dedent("""
-        <details>
-        <summary>Diff: test.py</summary>
-
-        ```diff
-        @@ -1,2 +1,3 @@
-         def test():
-        +    # comment
-             pass
-        ```
-
-        </details>
-        """).strip()
-
-    delta = formatter.parse(formatted)
-
-    assert delta is not None
-    assert delta.path == Path('test.py')
-    assert '@@' in delta.content
-    assert delta.diff
     assert not delta.removed
     assert not delta.moved
 
@@ -183,7 +145,6 @@ def test_parse_removal():
     assert delta.path == Path('test.py')
     assert delta.content is None
     assert delta.removed
-    assert not delta.diff
     assert not delta.moved
 
 def test_parse_move():
@@ -197,7 +158,6 @@ def test_parse_move():
     assert delta.moved_from == Path('old/test.py')
     assert delta.content is None
     assert not delta.removed
-    assert not delta.diff
 
 def test_parse_message():
     formatter = standard_document_format()
@@ -313,6 +273,5 @@ def test_round_trip():
 
     assert parsed.path == original.path
     assert parsed.content.strip() == original.content.strip()
-    assert parsed.diff == original.diff
     assert parsed.removed == original.removed
     assert parsed.moved_from == original.moved_from
