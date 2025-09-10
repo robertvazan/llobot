@@ -23,7 +23,6 @@ from llobot.environments.cutoff import CutoffEnv
 from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.prompt import PromptEnv
-from llobot.environments.replay import ReplayEnv
 from llobot.environments.session import SessionEnv
 from llobot.environments.status import StatusEnv
 from llobot.formats.knowledge import KnowledgeFormat, standard_knowledge_format
@@ -180,7 +179,7 @@ class Editor(Role):
 
         for i, message in enumerate(prompt):
             if i + 1 == len(prompt):
-                env[ReplayEnv].start_recording()
+                prompt_env.mark_last()
 
             if message.intent == ChatIntent.PROMPT:
                 prompt_env.set(message.content)

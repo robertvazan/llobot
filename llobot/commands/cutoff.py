@@ -6,7 +6,7 @@ from llobot.commands import Command, Step
 from llobot.environments import Environment
 from llobot.environments.cutoff import CutoffEnv
 from llobot.environments.projects import ProjectEnv
-from llobot.environments.replay import ReplayEnv
+from llobot.environments.prompt import PromptEnv
 from llobot.environments.session import SessionEnv
 from llobot.knowledge.archives import KnowledgeArchive
 from llobot.projects.none import NoProject
@@ -51,14 +51,14 @@ class ImplicitCutoffStep(Step):
 
     def process(self, env: Environment):
         """
-        If no cutoff is set and recording is active, this method refreshes all
-        current projects (if an archive is provided), sets the cutoff to the
-        current time, and adds a session message.
+        If no cutoff is set and this is the last prompt, this method refreshes
+        all current projects (if an archive is provided), sets the cutoff to
+        the current time, and adds a session message.
 
         Args:
             env: The environment.
         """
-        if env[ReplayEnv].recording() and env[CutoffEnv].get() is None:
+        if env[PromptEnv].is_last and env[CutoffEnv].get() is None:
             if self._archive:
                 env[ProjectEnv].union.refresh(self._archive)
             cutoff = current_time()

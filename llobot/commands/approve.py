@@ -9,7 +9,6 @@ from llobot.commands import Command
 from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
 from llobot.environments.prompt import PromptEnv
-from llobot.environments.replay import ReplayEnv
 from llobot.environments.status import StatusEnv
 from llobot.formats.mentions import strip_mentions
 from llobot.memories.examples import ExampleMemory
@@ -27,7 +26,7 @@ class ApproveCommand(Command):
         if text != 'approve':
             return False
 
-        if env[ReplayEnv].replaying():
+        if not env[PromptEnv].is_last:
             return True
 
         context = env[ContextEnv]

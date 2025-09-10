@@ -6,7 +6,6 @@ from llobot.commands.approve import ApproveCommand
 from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
 from llobot.environments.prompt import PromptEnv
-from llobot.environments.replay import ReplayEnv
 from llobot.environments.status import StatusEnv
 from llobot.memories.examples import ExampleMemory
 
@@ -24,7 +23,7 @@ def test_approve_command(tmp_path: Path):
     prompt_env = env[PromptEnv]
     prompt_env.set("Approved response. @approve")
 
-    env[ReplayEnv].start_recording()
+    prompt_env.mark_last()
 
     # Handle
     assert command.handle('approve', env)
@@ -56,7 +55,7 @@ def test_approve_command_full_chat(tmp_path: Path):
     context.add(ChatMessage(ChatIntent.RESPONSE, "Model response 1"))
     context.add(ChatMessage(ChatIntent.PROMPT, "User prompt 2"))
 
-    env[ReplayEnv].start_recording()
+    env[PromptEnv].mark_last()
 
     # Handle (no prompt in PromptEnv)
     assert command.handle('approve', env)
@@ -91,7 +90,7 @@ def test_approve_command_empty_stripped_prompt(tmp_path: Path):
     prompt_env = env[PromptEnv]
     prompt_env.set("@approve")
 
-    env[ReplayEnv].start_recording()
+    prompt_env.mark_last()
 
     # Handle
     assert command.handle('approve', env)
@@ -107,18 +106,18 @@ def test_approve_command_empty_stripped_prompt(tmp_path: Path):
     assert example[0].content == "User prompt 1"
     assert example[1].content == "Model response 1"
 
-def test_approve_command_replay(tmp_path: Path):
+def test_approve_command_not_last(tmp_path: Path):
     archive = standard_chat_archive(tmp_path)
     examples = ExampleMemory('test-role', archive=archive)
     command = ApproveCommand(examples)
     env = Environment()
-    env[ReplayEnv] # initialize to replaying
-    
+
     context = env[ContextEnv]
     context.add(ChatMessage(ChatIntent.PROMPT, "User prompt"))
     prompt_env = env[PromptEnv]
     prompt_env.set("Approved response. @approve")
 
+    assert not prompt_env.is_last
     assert command.handle('approve', env)
     assert not env[StatusEnv].populated
     assert not list(examples.recent(env))

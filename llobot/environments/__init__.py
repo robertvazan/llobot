@@ -15,8 +15,6 @@ retrievals
     Document retrievals.
 session
     Session messages.
-replay
-    Replay controls.
 cutoff
     Knowledge cutoff timestamp.
 commands
