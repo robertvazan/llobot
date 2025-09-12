@@ -5,4 +5,3 @@
 - Use machine-readable formats for documentation (e.g., Javadoc, docstrings)
 - Use informal comments to document design choices inside function bodies
 - Repair and expand deficient documentation in files you edit
-- Keep the documentation concise without excessive details or examples
