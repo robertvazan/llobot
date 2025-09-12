@@ -1,5 +1,10 @@
 """
-A knowledge archive implementation that uses compressed tarballs.
+A knowledge archive implementation that uses compressed tarballs (`.tar.gz`).
+
+This module provides `TgzKnowledgeArchive` which stores and retrieves
+timestamped knowledge snapshots as compressed tarballs. It also provides
+functions for serializing, deserializing, saving, and loading knowledge in
+this format.
 """
 from __future__ import annotations
 from datetime import datetime
@@ -13,8 +18,9 @@ from llobot.utils.zones import Zoning, coerce_zoning
 from llobot.knowledge import Knowledge
 from llobot.knowledge.archives import KnowledgeArchive
 from llobot.utils.text import normalize_document
+from llobot.utils.values import ValueTypeMixin
 
-KNOWLEDGE_TGZ_SUFFIX = '.tar.gz'
+_KNOWLEDGE_TGZ_SUFFIX = '.tar.gz'
 
 def serialize_knowledge_tgz(knowledge: Knowledge) -> bytes:
     """
@@ -79,37 +85,40 @@ def load_knowledge_tgz(path: Path) -> Knowledge:
     """
     return deserialize_knowledge_tgz(path.read_bytes())
 
-@lru_cache
-def tgz_knowledge_archive(location: Zoning | Path | str) -> KnowledgeArchive:
+class TgzKnowledgeArchive(KnowledgeArchive, ValueTypeMixin):
     """
-    Creates a knowledge archive that stores snapshots as compressed tarballs.
-
-    Args:
-        location: The root directory or zoning for the archive.
-
-    Returns:
-        A `KnowledgeArchive` instance that uses tgz files for storage.
+    A knowledge archive that stores snapshots as compressed tarballs.
     """
-    location = coerce_zoning(location)
-    class TgzKnowledgeArchive(KnowledgeArchive):
-        def _path(self, zone: str, time: datetime):
-            return format_archive_path(location[zone], time, KNOWLEDGE_TGZ_SUFFIX)
-        def add(self, zone: str, time: datetime, knowledge: Knowledge):
-            save_knowledge_tgz(self._path(zone, time), knowledge)
-            load_knowledge_tgz.cache_clear()
-        def remove(self, zone: str, time: datetime):
-            self._path(zone, time).unlink(missing_ok=True)
-            load_knowledge_tgz.cache_clear()
-        def last(self, zone: str, cutoff: datetime | None = None) -> Knowledge:
-            path = last_archive_path(location[zone], KNOWLEDGE_TGZ_SUFFIX, cutoff)
-            return load_knowledge_tgz(path) if path else Knowledge()
-    return TgzKnowledgeArchive()
+    _location: Zoning
+
+    def __init__(self, location: Zoning | Path | str):
+        """
+        Initializes the tgz knowledge archive.
+
+        Args:
+            location: The root directory or zoning for the archive.
+        """
+        self._location = coerce_zoning(location)
+
+    def _path(self, zone: str, time: datetime):
+        return format_archive_path(self._location[zone], time, _KNOWLEDGE_TGZ_SUFFIX)
+
+    def add(self, zone: str, time: datetime, knowledge: Knowledge):
+        save_knowledge_tgz(self._path(zone, time), knowledge)
+        load_knowledge_tgz.cache_clear()
+
+    def remove(self, zone: str, time: datetime):
+        self._path(zone, time).unlink(missing_ok=True)
+        load_knowledge_tgz.cache_clear()
+
+    def last(self, zone: str, cutoff: datetime | None = None) -> Knowledge:
+        path = last_archive_path(self._location[zone], _KNOWLEDGE_TGZ_SUFFIX, cutoff)
+        return load_knowledge_tgz(path) if path else Knowledge()
 
 __all__ = [
-    'KNOWLEDGE_TGZ_SUFFIX',
     'serialize_knowledge_tgz',
     'deserialize_knowledge_tgz',
     'save_knowledge_tgz',
     'load_knowledge_tgz',
-    'tgz_knowledge_archive',
+    'TgzKnowledgeArchive',
 ]

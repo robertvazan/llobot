@@ -1,7 +1,7 @@
 from __future__ import annotations
 from pathlib import Path
 import pytest
-from llobot.chats.archives import markdown_chat_archive
+from llobot.chats.archives.markdown import MarkdownChatArchive
 from llobot.chats.branches import ChatBranch
 from llobot.chats.intents import ChatIntent
 from llobot.chats.messages import ChatMessage
@@ -12,7 +12,7 @@ from llobot.projects.dummy import DummyProject
 from llobot.utils.time import parse_time
 
 def test_save_and_recent_with_role_only(tmp_path: Path):
-    archive = markdown_chat_archive(tmp_path)
+    archive = MarkdownChatArchive(tmp_path)
     memory = ExampleMemory('test_role', archive=archive)
     env = Environment()
     chat = ChatBranch([ChatMessage(ChatIntent.PROMPT, "Hello"), ChatMessage(ChatIntent.RESPONSE, "Hi")])
@@ -29,7 +29,7 @@ def test_save_and_recent_with_role_only(tmp_path: Path):
     assert example[1].content == "Hi"
 
 def test_save_and_recent_with_project_and_role(tmp_path: Path):
-    archive = markdown_chat_archive(tmp_path)
+    archive = MarkdownChatArchive(tmp_path)
     memory = ExampleMemory('test_role', archive=archive)
     env = Environment()
     env[ProjectEnv].add(DummyProject('test_project'))
@@ -50,7 +50,7 @@ def test_save_and_recent_with_project_and_role(tmp_path: Path):
     assert len(recent_no_project) == 1 # only from test_role zone
 
 def test_save_with_project_only(tmp_path: Path):
-    archive = markdown_chat_archive(tmp_path)
+    archive = MarkdownChatArchive(tmp_path)
     memory = ExampleMemory(archive=archive)
     env = Environment()
     env[ProjectEnv].add(DummyProject('test_project'))
@@ -63,7 +63,7 @@ def test_save_with_project_only(tmp_path: Path):
     assert (tmp_path / 'test_project').exists()
 
 def test_save_no_zone_fails(tmp_path: Path):
-    archive = markdown_chat_archive(tmp_path)
+    archive = MarkdownChatArchive(tmp_path)
     memory = ExampleMemory(archive=archive)
     env = Environment()
     chat = ChatBranch([ChatMessage(ChatIntent.PROMPT, "Empty")])
@@ -72,14 +72,14 @@ def test_save_no_zone_fails(tmp_path: Path):
         memory.save(chat, env)
 
 def test_recent_no_zone_is_empty(tmp_path: Path):
-    archive = markdown_chat_archive(tmp_path)
+    archive = MarkdownChatArchive(tmp_path)
     memory = ExampleMemory(archive=archive)
     env = Environment()
 
     assert not list(memory.recent(env))
 
 def test_save_replaces_last_example(tmp_path: Path):
-    archive = markdown_chat_archive(tmp_path)
+    archive = MarkdownChatArchive(tmp_path)
     memory = ExampleMemory('test_role', archive=archive)
     env = Environment()
 
@@ -94,7 +94,7 @@ def test_save_replaces_last_example(tmp_path: Path):
     assert recent_examples[0][1].content == "Response2"
 
 def test_recent_merges_examples(tmp_path: Path):
-    archive = markdown_chat_archive(tmp_path)
+    archive = MarkdownChatArchive(tmp_path)
     memory = ExampleMemory('test_role', archive=archive)
     env = Environment()
     env[ProjectEnv].add(DummyProject('p1'))

@@ -97,8 +97,8 @@ def standard_knowledge_archive(location: Zoning | Path | str = data_home()/'llob
     Returns:
         The standard knowledge archive.
     """
-    from llobot.knowledge.archives.tgz import tgz_knowledge_archive
-    return tgz_knowledge_archive(location)
+    from llobot.knowledge.archives.tgz import TgzKnowledgeArchive
+    return TgzKnowledgeArchive(location)
 
 def coerce_knowledge_archive(what: KnowledgeArchive | Zoning | Path | str) -> KnowledgeArchive:
     """

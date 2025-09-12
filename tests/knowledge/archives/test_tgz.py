@@ -2,7 +2,7 @@ from pathlib import Path
 from datetime import timedelta
 from llobot.knowledge import Knowledge
 from llobot.knowledge.archives.tgz import (
-    tgz_knowledge_archive,
+    TgzKnowledgeArchive,
     serialize_knowledge_tgz,
     deserialize_knowledge_tgz,
     save_knowledge_tgz,
@@ -32,7 +32,7 @@ def test_tgz_save_load(tmp_path):
     assert loaded == K1
 
 def test_tgz_knowledge_archive(tmp_path):
-    archive = tgz_knowledge_archive(tmp_path)
+    archive = TgzKnowledgeArchive(tmp_path)
 
     time1 = current_time()
     archive.add('zone1', time1, K1)

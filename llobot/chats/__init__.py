@@ -5,6 +5,11 @@ This package provides classes for representing chat messages, branches of conver
 and builders for constructing them. It also includes utilities for binarizing
 chats into a strict prompt/response sequence.
 
+Subpackages
+-----------
+archives
+    Manages storage of chat histories.
+
 Submodules
 ----------
 intents
@@ -17,8 +22,4 @@ builders
     Defines `ChatBuilder` for constructing chats.
 binarization
     Provides functions for chat binarization.
-archives
-    Manages storage of chat histories.
-markdown
-    Handles serialization of chats to/from Markdown format.
 """

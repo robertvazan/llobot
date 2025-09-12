@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta
 from pathlib import Path
+import pytest
 from llobot.chats.intents import ChatIntent
 from llobot.chats.messages import ChatMessage
 from llobot.chats.branches import ChatBranch
-from llobot.chats.archives import markdown_chat_archive, rename_chat_archive
+from llobot.chats.archives.markdown import MarkdownChatArchive, format_chat_as_markdown, parse_chat_as_markdown, save_chat_as_markdown, load_chat_as_markdown
 from llobot.utils.time import current_time, format_time
 
 def create_test_chat(content: str) -> ChatBranch:
@@ -12,7 +13,7 @@ def create_test_chat(content: str) -> ChatBranch:
 
 def test_add_read(tmp_path: Path):
     """Tests that a chat can be added and read back from the archive."""
-    archive = markdown_chat_archive(tmp_path)
+    archive = MarkdownChatArchive(tmp_path)
     now = current_time()
     chat = create_test_chat("Hello")
     archive.add("zone1", now, chat)
@@ -26,7 +27,7 @@ def test_add_read(tmp_path: Path):
 
 def test_contains(tmp_path: Path):
     """Tests the contains method to check for chat existence."""
-    archive = markdown_chat_archive(tmp_path)
+    archive = MarkdownChatArchive(tmp_path)
     now = current_time()
     chat = create_test_chat("Hello")
     archive.add("zone1", now, chat)
@@ -37,7 +38,7 @@ def test_contains(tmp_path: Path):
 
 def test_remove(tmp_path: Path):
     """Tests that a chat can be removed from the archive."""
-    archive = markdown_chat_archive(tmp_path)
+    archive = MarkdownChatArchive(tmp_path)
     now = current_time()
     chat = create_test_chat("Hello")
     archive.add("zone1", now, chat)
@@ -48,7 +49,7 @@ def test_remove(tmp_path: Path):
 
 def test_scatter(tmp_path: Path):
     """Tests scattering a chat to multiple zones."""
-    archive = markdown_chat_archive(tmp_path)
+    archive = MarkdownChatArchive(tmp_path)
     now = current_time()
     chat = create_test_chat("Scatter")
 
@@ -74,7 +75,7 @@ def test_scatter(tmp_path: Path):
 
 def test_recent(tmp_path: Path):
     """Tests retrieving recent chats in descending order of time."""
-    archive = markdown_chat_archive(tmp_path)
+    archive = MarkdownChatArchive(tmp_path)
     now = current_time()
 
     chat1 = create_test_chat("1")
@@ -98,7 +99,7 @@ def test_recent(tmp_path: Path):
 
 def test_recent_with_cutoff(tmp_path: Path):
     """Tests retrieving recent chats with a cutoff time."""
-    archive = markdown_chat_archive(tmp_path)
+    archive = MarkdownChatArchive(tmp_path)
     now = current_time()
 
     chat1 = create_test_chat("1")
@@ -120,7 +121,7 @@ def test_recent_with_cutoff(tmp_path: Path):
 
 def test_last(tmp_path: Path):
     """Tests retrieving the last chat from a zone."""
-    archive = markdown_chat_archive(tmp_path)
+    archive = MarkdownChatArchive(tmp_path)
     now = current_time()
 
     assert archive.last("zone") == (None, None)
@@ -137,7 +138,7 @@ def test_last(tmp_path: Path):
 
 def test_last_with_cutoff(tmp_path: Path):
     """Tests retrieving the last chat with a cutoff time."""
-    archive = markdown_chat_archive(tmp_path)
+    archive = MarkdownChatArchive(tmp_path)
     now = current_time()
 
     chat1 = create_test_chat("1")
@@ -151,22 +152,103 @@ def test_last_with_cutoff(tmp_path: Path):
     assert archive.last("zone", cutoff=time1) == (time1, chat1)
     assert archive.last("zone", cutoff=now - timedelta(seconds=2)) == (None, None)
 
-def test_rename_chat_archive(tmp_path: Path):
-    """Tests the rename_chat_archive wrapper."""
-    archive = markdown_chat_archive(tmp_path)
-    renamed_archive = rename_chat_archive(lambda z: f"prefix-{z}", archive)
+def test_format_parse_roundtrip_simple():
+    """Tests that a simple chat can be formatted and parsed back."""
+    branch = ChatBranch([
+        ChatMessage(ChatIntent.PROMPT, "Hello"),
+        ChatMessage(ChatIntent.RESPONSE, "Hi there"),
+    ])
+    formatted = format_chat_as_markdown(branch)
+    parsed = parse_chat_as_markdown(formatted)
+    assert parsed == branch
 
-    now = current_time()
-    chat = create_test_chat("Hello")
+def test_format_parse_roundtrip_multiline():
+    """Tests roundtrip with multiline messages."""
+    branch = ChatBranch([
+        ChatMessage(ChatIntent.PROMPT, "Line 1\nLine 2"),
+        ChatMessage(ChatIntent.RESPONSE, "Answer\n\nWith blank line."),
+    ])
+    formatted = format_chat_as_markdown(branch)
+    parsed = parse_chat_as_markdown(formatted)
+    assert parsed == branch
 
-    renamed_archive.add("zone", now, chat)
+def test_format_parse_roundtrip_empty_message():
+    """Tests roundtrip with empty messages."""
+    branch = ChatBranch([
+        ChatMessage(ChatIntent.PROMPT, ""),
+        ChatMessage(ChatIntent.RESPONSE, "Hi"),
+    ])
+    formatted = format_chat_as_markdown(branch)
+    parsed = parse_chat_as_markdown(formatted)
+    assert parsed == branch
 
-    assert not archive.contains("zone", now)
-    assert archive.contains("prefix-zone", now)
-    assert renamed_archive.contains("zone", now)
+def test_format_parse_roundtrip_trailing_newline():
+    """Tests roundtrip with content ending in a newline."""
+    branch = ChatBranch([
+        ChatMessage(ChatIntent.PROMPT, "Code:\n```\nfoo\n```\n"),
+    ])
+    formatted = format_chat_as_markdown(branch)
+    parsed = parse_chat_as_markdown(formatted)
+    assert parsed == branch
 
-    assert renamed_archive.read("zone", now) == chat
+def test_format_parse_roundtrip_empty_chat():
+    """Tests that an empty chat can be formatted and parsed back."""
+    branch = ChatBranch([])
+    formatted = format_chat_as_markdown(branch)
+    assert formatted == ""
+    parsed = parse_chat_as_markdown(formatted)
+    assert parsed == branch
 
-    renamed_archive.remove("zone", now)
-    assert not archive.contains("prefix-zone", now)
-    assert not renamed_archive.contains("zone", now)
+def test_format_parse_roundtrip_whitespace_content():
+    """Tests roundtrip with content containing only whitespace."""
+    branch = ChatBranch([
+        ChatMessage(ChatIntent.PROMPT, "  \n "),
+    ])
+    formatted = format_chat_as_markdown(branch)
+    parsed = parse_chat_as_markdown(formatted)
+    assert parsed == branch
+
+def test_save_load_roundtrip(tmp_path: Path):
+    """Tests that a chat can be saved to and loaded from a file."""
+    branch = ChatBranch([
+        ChatMessage(ChatIntent.SYSTEM, "System message"),
+        ChatMessage(ChatIntent.PROMPT, "User prompt"),
+        ChatMessage(ChatIntent.RESPONSE, "Model response"),
+    ])
+    file_path = tmp_path / "chat.md"
+
+    save_chat_as_markdown(file_path, branch)
+    loaded_branch = load_chat_as_markdown(file_path)
+
+    assert loaded_branch == branch
+
+def test_escape_intent_like_lines():
+    """Tests that lines resembling intent headers are escaped."""
+    branch = ChatBranch([
+        ChatMessage(ChatIntent.PROMPT, "A line\n> Prompt\nAnother line"),
+    ])
+    formatted = format_chat_as_markdown(branch)
+    assert "> Escaped-Prompt" in formatted
+    parsed = parse_chat_as_markdown(formatted)
+    assert parsed == branch
+
+def test_parse_with_leading_content():
+    """Tests that parsing tolerates content before the first message."""
+    text = "Some metadata\n\n> Prompt\n\nHello"
+    branch = parse_chat_as_markdown(text)
+    assert len(branch) == 1
+    assert branch[0] == ChatMessage(ChatIntent.PROMPT, "Hello")
+
+def test_parse_invalid_formats():
+    """Tests that parsing invalid markdown formats raises ValueError."""
+    # Test for `> Escaped-...` without a preceding message
+    with pytest.raises(ValueError):
+        parse_chat_as_markdown("> Escaped-Prompt\n\nsome content")
+
+    # Test for content after intent without blank lines
+    with pytest.raises(ValueError):
+        parse_chat_as_markdown("> Prompt\nHello")
+
+    # Test for content before the next intent without a trailing blank line
+    with pytest.raises(ValueError):
+        parse_chat_as_markdown("> Prompt\n\nHello\n> Response\n\nHi")
