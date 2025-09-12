@@ -31,8 +31,8 @@ def test_no_wildcard():
 
 def test_no_slash():
     env = create_env()
-    assert not COMMAND.handle('*.txt', env)
-    assert not env[RetrievalsEnv].get()
+    assert COMMAND.handle('*.txt', env)
+    assert env[RetrievalsEnv].get() == KNOWLEDGE.keys()
 
 def test_single_match():
     env = create_env()

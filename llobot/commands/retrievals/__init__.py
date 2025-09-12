@@ -6,6 +6,8 @@ context.
 
 Submodules
 ----------
+exact
+    Command to retrieve one or more documents by an exact path pattern.
 solo
     Command to retrieve a single document by its path pattern.
 wildcard
@@ -71,12 +73,12 @@ def standard_retrieval_commands() -> StepChain:
     """
     Returns a step chain with standard retrieval commands.
 
-    This includes solo and wildcard retrieval.
+    This includes exact and wildcard retrieval.
     """
-    from llobot.commands.retrievals.solo import SoloRetrievalCommand
+    from llobot.commands.retrievals.exact import ExactRetrievalCommand
     from llobot.commands.retrievals.wildcard import WildcardRetrievalCommand
     return StepChain(
-        SoloRetrievalCommand(),
+        ExactRetrievalCommand(),
         WildcardRetrievalCommand(),
     )
 

@@ -1,5 +1,5 @@
 """
-Command to retrieve documents by wildcard path pattern.
+Command to retrieve documents by an exact path pattern.
 """
 from __future__ import annotations
 import re
@@ -9,34 +9,32 @@ from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.retrievals import RetrievalsEnv
 from llobot.knowledge.subsets.parsing import parse_pattern
 
-_WILDCARD_PATH_RE = re.compile(r'^/?(?:[a-zA-Z0-9_.*?-]+/)*[a-zA-Z0-9_.*?-]+$')
+_PATH_RE = re.compile(r'^/?(?:[a-zA-Z0-9_.-]+/)*[a-zA-Z0-9_.-]+$')
 
-
-class WildcardRetrievalCommand(Command):
+class ExactRetrievalCommand(Command):
     """
-    A command that retrieves documents from the knowledge base by a wildcard path pattern.
+    A command that retrieves documents from the knowledge base by their path.
 
-    The command text is treated as a glob pattern. If it matches one or more
+    The command text is treated as a path pattern. If it matches one or more
     documents in the knowledge base, those documents are added to the retrievals.
+    The pattern can be relative or absolute (starting with '/'). It cannot
+    contain wildcards.
     """
     def handle(self, text: str, env: Environment) -> bool:
         """
-        Handles the wildcard retrieval command.
+        Handles the retrieval command.
 
-        The command is handled if the text contains a wildcard ('*' or '?') and
-        it matches at least one document in the current project's knowledge.
+        The command is handled if the text looks like a path and matches
+        at least one document in the current project's knowledge.
 
         Args:
-            text: The glob pattern to match.
+            text: The path pattern to match.
             env: The environment to manipulate.
 
         Returns:
             `True` if at least one document was retrieved, `False` otherwise.
         """
-        if not _WILDCARD_PATH_RE.fullmatch(text):
-            return False
-
-        if '*' not in text and '?' not in text:
+        if not _PATH_RE.fullmatch(text) or ('.' not in text and '/' not in text):
             return False
 
         knowledge_index = env[KnowledgeEnv].index()
@@ -51,5 +49,5 @@ class WildcardRetrievalCommand(Command):
         return False
 
 __all__ = [
-    'WildcardRetrievalCommand',
+    'ExactRetrievalCommand',
 ]
