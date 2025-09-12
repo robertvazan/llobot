@@ -6,7 +6,8 @@ class ValueTypeMixin:
     A mixin for value types that provides default __eq__, __hash__, and __repr__.
 
     This mixin implements these methods based on the instance's attributes,
-    excluding any fields marked as ephemeral.
+    excluding any fields marked as ephemeral. Leading underscores are stripped
+    from attribute names, allowing private fields to be part of the value.
     """
     def _ephemeral_fields(self) -> Iterable[str]:
         """
@@ -22,7 +23,8 @@ class ValueTypeMixin:
         Returns a dict of fields to be used in __eq__, __hash__, and __repr__.
         """
         ephemeral = set(self._ephemeral_fields())
-        return {k: v for k, v in vars(self).items() if k not in ephemeral}
+        # Strip leading underscores from private fields to make them part of the value.
+        return {k.lstrip('_'): v for k, v in vars(self).items() if k not in ephemeral}
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, self.__class__):

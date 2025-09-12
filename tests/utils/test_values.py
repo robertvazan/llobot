@@ -5,7 +5,7 @@ def test_value_type_mixin():
     class MyValue(ValueTypeMixin):
         def __init__(self, a, b, c=None):
             self.a = a
-            self.b = b
+            self._b = b # private field
             self.c = c
             self._cache = None # ephemeral
 
@@ -37,7 +37,7 @@ def test_value_type_mixin():
     assert repr(v1) == "MyValue(a=1, b='foo', c=None)"
     assert repr(v3) == "MyValue(a=2, b='foo', c=None)"
     assert repr(v5) == "MyValue(a=1, b='foo', c=3)"
-    
+
     # Test ephemeral field
     v1._cache = "some data"
     assert v1 == v2
@@ -48,7 +48,7 @@ def test_value_type_mixin():
     class AnotherValue(ValueTypeMixin):
          def __init__(self, a, b, c=None):
             self.a = a
-            self.b = b
+            self._b = b
             self.c = c
 
     v_other = AnotherValue(1, 'foo')
@@ -57,8 +57,8 @@ def test_value_type_mixin():
     # Test no ephemeral fields
     class SimpleValue(ValueTypeMixin):
         def __init__(self, x):
-            self.x = x
-    
+            self._x = x # private field
+
     s1 = SimpleValue(10)
     s2 = SimpleValue(10)
     s3 = SimpleValue(20)
