@@ -22,6 +22,7 @@
 *.cfg # Configuration
 *.config # Configuration
 *.properties # Java
+*.service # systemd
 
 # Source code - Systems languages
 *.c # C
