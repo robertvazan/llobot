@@ -9,6 +9,7 @@ from llobot.knowledge.rankings import (
     rank_descending,
     rank_shuffled,
 )
+from llobot.knowledge.scores.scorers import KnowledgeScorer
 
 class KnowledgeRanker:
     def rank(self, knowledge: Knowledge) -> KnowledgeRanking:
@@ -32,12 +33,12 @@ def overviews_first_ranker(overviews: KnowledgeSubset | None = None) -> Knowledg
     return create_ranker(lambda knowledge: rank_overviews_first(knowledge, overviews))
 
 @lru_cache
-def ascending_ranker(scorer: 'KnowledgeScorer') -> KnowledgeRanker:
-    return create_ranker(lambda knowledge: rank_ascending(scorer(knowledge)))
+def ascending_ranker(scorer: KnowledgeScorer) -> KnowledgeRanker:
+    return create_ranker(lambda knowledge: rank_ascending(scorer.score(knowledge)))
 
 @lru_cache
-def descending_ranker(scorer: 'KnowledgeScorer') -> KnowledgeRanker:
-    return create_ranker(lambda knowledge: rank_descending(scorer(knowledge)))
+def descending_ranker(scorer: KnowledgeScorer) -> KnowledgeRanker:
+    return create_ranker(lambda knowledge: rank_descending(scorer.score(knowledge)))
 
 @cache
 def shuffling_ranker() -> KnowledgeRanker:

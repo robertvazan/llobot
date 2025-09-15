@@ -36,13 +36,9 @@ from llobot.utils.fs import data_home
 from llobot.utils.zones import Zoning
 from llobot.knowledge.archives import KnowledgeArchive, standard_knowledge_archive
 from llobot.knowledge.rankers import KnowledgeRanker, standard_ranker
-from llobot.knowledge.scorers import (
-    KnowledgeScorer,
-    irrelevant_subset_scorer,
-    relevant_subset_scorer,
-    standard_scorer,
-)
-from llobot.knowledge.scores import uniform_scores
+from llobot.knowledge.scores.scorers import KnowledgeScorer, standard_scorer
+from llobot.knowledge.scores.relevance import NegativeRelevanceScorer, PositiveRelevanceScorer
+from llobot.knowledge.scores.uniform import uniform_scores
 from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.memories.examples import ExampleMemory
 from llobot.models import Model
@@ -89,7 +85,7 @@ class Editor(Role):
         projects: Iterable[Project] = (),
         knowledge_archive: KnowledgeArchive = standard_knowledge_archive(),
         example_archive: ChatArchive | Zoning | Path | str = standard_chat_archive(data_home()/'llobot/examples'),
-        relevance_scorer: KnowledgeScorer | KnowledgeSubset = irrelevant_subset_scorer(),
+        relevance_scorer: KnowledgeScorer | KnowledgeSubset = NegativeRelevanceScorer(),
         graph_scorer: KnowledgeScorer = standard_scorer(),
         ranker: KnowledgeRanker = standard_ranker(),
         knowledge_crammer: KnowledgeCrammer = standard_knowledge_crammer(),
@@ -107,7 +103,7 @@ class Editor(Role):
         self._system = str(prompt)
         self._knowledge_archive = knowledge_archive
         if isinstance(relevance_scorer, KnowledgeSubset):
-            self._relevance_scorer = relevant_subset_scorer(relevance_scorer)
+            self._relevance_scorer = PositiveRelevanceScorer(relevance_scorer)
         else:
             self._relevance_scorer = relevance_scorer
         self._graph_scorer = graph_scorer
@@ -153,7 +149,7 @@ class Editor(Role):
         budget -= system_chat.cost
 
         # Knowledge scores
-        scores = self._relevance_scorer(knowledge)
+        scores = self._relevance_scorer.score(knowledge)
         blacklist = knowledge.keys() - scores.keys()
         scores = self._graph_scorer.rescore(knowledge, scores)
         scores -= blacklist

@@ -12,8 +12,9 @@ indexes
     KnowledgeIndex for path-based indexing and set operations
 rankings
     KnowledgeRanking for ordered sequences of knowledge paths
-scores
-    KnowledgeScores for scoring and weighting knowledge items
+scores/
+    `KnowledgeScores` for scoring and weighting knowledge items and `KnowledgeScorer`
+    for implementing scoring strategies.
 graphs
     KnowledgeGraph for relationship graphs between knowledge items
 trees
@@ -27,8 +28,6 @@ archives/
     Historical knowledge storage
 rankers
     Ranking algorithm implementations
-scorers
-    Knowledge scoring implementations
 """
 from __future__ import annotations
 from pathlib import Path

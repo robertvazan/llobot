@@ -5,7 +5,9 @@ from llobot.chats.branches import ChatBranch
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.rankings import KnowledgeRanking, rank_descending
-from llobot.knowledge.scores import KnowledgeScores, score_length, uniform_scores
+from llobot.knowledge.scores import KnowledgeScores
+from llobot.knowledge.scores.length import score_length
+from llobot.knowledge.scores.uniform import uniform_scores
 from llobot.formats.knowledge import KnowledgeFormat, standard_knowledge_format
 
 class KnowledgeCrammer:

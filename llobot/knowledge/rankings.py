@@ -87,7 +87,7 @@ def rank_descending(scores: 'KnowledgeScores') -> KnowledgeRanking:
     return rank_ascending(-scores)
 
 def rank_shuffled(paths: KnowledgeIndex | KnowledgeRanking | 'Knowledge' | 'KnowledgeScores') -> KnowledgeRanking:
-    from llobot.knowledge.scores import random_scores
+    from llobot.knowledge.scores.random import random_scores
     return rank_descending(random_scores(paths))
 
 def rank_in_standard_order(index: KnowledgeIndex | KnowledgeRanking | 'Knowledge') -> KnowledgeRanking:
