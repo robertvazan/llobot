@@ -11,7 +11,7 @@ class KnowledgeRanking:
         self._paths = [Path(path) for path in paths]
         self._hash = None
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return str(self._paths)
 
     def __len__(self) -> int:

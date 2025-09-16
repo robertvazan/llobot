@@ -125,12 +125,20 @@ class KnowledgeScores:
         return sum(self._scores.values())
 
 def coerce_scores(what: KnowledgeScores | Knowledge | KnowledgeIndex | KnowledgeRanking) -> KnowledgeScores:
+    """
+    Coerces various objects into `KnowledgeScores`.
+
+    - `KnowledgeScores` are returned as is.
+    - `Knowledge` is scored using the standard scorer.
+    - `KnowledgeIndex` and `KnowledgeRanking` are converted to scores of 1.
+    """
     from llobot.knowledge.scores.constant import constant_scores
-    from llobot.knowledge.scores.length import score_length
     if isinstance(what, KnowledgeScores):
         return what
     if isinstance(what, Knowledge):
-        return score_length(what)
+        # Local import to avoid circular dependency: scores -> scorers -> scores
+        from llobot.knowledge.scores.scorers import standard_scorer
+        return standard_scorer().score(what)
     if isinstance(what, (KnowledgeIndex, KnowledgeRanking)):
         return constant_scores(what)
     raise TypeError(what)
