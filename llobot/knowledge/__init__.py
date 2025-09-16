@@ -13,8 +13,10 @@ indexes
 rankings
     KnowledgeRanking for ordered sequences of knowledge paths
 scores/
-    `KnowledgeScores` for scoring and weighting knowledge items and `KnowledgeScorer`
-    for implementing scoring strategies.
+    Provides `KnowledgeScores` for representing document scores and `KnowledgeScorer`
+    for implementing scoring strategies. Includes various scorer implementations
+    like PageRank, length-based, and relevance-based scoring, as well as
+    functions for score aggregation and normalization.
 graphs
     KnowledgeGraph for relationship graphs between knowledge items
 trees

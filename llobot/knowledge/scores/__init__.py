@@ -37,10 +37,24 @@ from llobot.knowledge.indexes import KnowledgeIndex, coerce_index
 from llobot.knowledge.rankings import KnowledgeRanking
 
 class KnowledgeScores:
+    """
+    A mapping from document paths to numerical scores.
+
+    This class behaves like a dictionary of floats, but provides additional
+    methods for arithmetic operations and filtering. Scores of zero and non-finite
+    scores are not stored. It is immutable.
+    """
     _scores: dict[Path, float]
     _hash: int | None
 
     def __init__(self, scores: dict[Path, float] = {}):
+        """
+        Initializes a `KnowledgeScores` object.
+
+        Args:
+            scores: A dictionary of paths and their corresponding scores.
+                    Scores that are zero or non-finite are filtered out.
+        """
         self._scores = {path: float(score) for path, score in scores.items() if math.isfinite(score) and score != 0}
         self._hash = None
 
@@ -48,6 +62,7 @@ class KnowledgeScores:
         return str(self._scores)
 
     def keys(self) -> KnowledgeIndex:
+        """Returns a `KnowledgeIndex` of all paths with non-zero scores."""
         return KnowledgeIndex(self._scores.keys())
 
     def __len__(self) -> int:
@@ -76,52 +91,103 @@ class KnowledgeScores:
         return iter(self._scores.items())
 
     def _coerce_operand(self, other: int | float | KnowledgeScores | Knowledge) -> KnowledgeScores:
+        """
+        Coerces an operand for arithmetic operations into `KnowledgeScores`.
+
+        - `int` or `float` becomes `KnowledgeScores` with a constant score for all paths in `self`.
+        - `Knowledge` is converted to `KnowledgeScores` using `coerce_scores`.
+        - `KnowledgeScores` is returned as is.
+
+        Args:
+            other: The operand to coerce.
+
+        Returns:
+            The coerced `KnowledgeScores`.
+        """
         from llobot.knowledge.scores.constant import constant_scores
         if isinstance(other, (int, float)):
             return constant_scores(self, other)
         return coerce_scores(other)
 
     def __add__(self, other: int | float | KnowledgeScores | Knowledge) -> KnowledgeScores:
+        """
+        Adds scores from another object to this one, path by path.
+
+        The resulting `KnowledgeScores` contains a union of paths from both operands.
+        """
         other = self._coerce_operand(other)
         return KnowledgeScores({path: self[path] + other[path] for path in self.keys() | other.keys()})
 
     def __radd__(self, other: int | float) -> KnowledgeScores:
+        """Reverse add. See `__add__`."""
         return self + other
 
     def __sub__(self, other: int | float | KnowledgeScores | Knowledge | KnowledgeSubset | str | KnowledgeIndex | KnowledgeRanking) -> KnowledgeScores:
+        """
+        Subtracts scores or filters paths.
+
+        If `other` is coercible to `KnowledgeScores`, performs element-wise
+        subtraction over the union of paths. If `other` is coercible to
+        `KnowledgeSubset`, it filters out paths in the subset.
+        """
         if isinstance(other, (KnowledgeSubset, str, KnowledgeIndex, KnowledgeRanking)):
             return self & ~coerce_subset(other)
         other = self._coerce_operand(other)
         return KnowledgeScores({path: self[path] - other[path] for path in self.keys() | other.keys()})
 
     def __rsub__(self, other: int | float) -> KnowledgeScores:
+        """Reverse subtract. See `__sub__`."""
         return self._coerce_operand(other) - self
 
     def __neg__(self) -> KnowledgeScores:
+        """Negates all scores."""
         return 0 - self
 
     def __mul__(self, other: int | float | KnowledgeScores | Knowledge) -> KnowledgeScores:
+        """
+        Multiplies scores with another object, path by path.
+
+        Only paths present in both operands are kept.
+        """
         other = self._coerce_operand(other)
         return KnowledgeScores({path: self[path] * other[path] for path in self.keys() & other.keys()})
 
     def __rmul__(self, other: int | float) -> KnowledgeScores:
+        """Reverse multiply. See `__mul__`."""
         return self * other
 
     def __truediv__(self, other: int | float | KnowledgeScores | Knowledge) -> KnowledgeScores:
+        """
+        Divides scores by another object, path by path.
+
+        Only paths present in both operands are kept.
+        """
         other = self._coerce_operand(other)
         return KnowledgeScores({path: self[path] / other[path] for path in self.keys() & other.keys()})
 
     def __rtruediv__(self, other: int | float) -> KnowledgeScores:
+        """Reverse divide. See `__truediv__`."""
         return self._coerce_operand(other) / self
 
     def __and__(self, subset: KnowledgeSubset | str | KnowledgeIndex | KnowledgeRanking | Knowledge) -> KnowledgeScores:
+        """
+        Filters scores, keeping only paths present in the given subset.
+
+        This is equivalent to set intersection on paths.
+        """
         subset = coerce_subset(subset)
         return KnowledgeScores({path: score for path, score in self if path in subset})
 
     def __or__(self, other: KnowledgeScores) -> KnowledgeScores:
+        """
+        Merges scores with another `KnowledgeScores` object.
+
+        If a path exists in both, the score from `other` is used.
+        """
         return KnowledgeScores(self._scores | other._scores)
 
     def total(self) -> float:
+        """Calculates the sum of all scores."""
         return sum(self._scores.values())
 
 def coerce_scores(what: KnowledgeScores | Knowledge | KnowledgeIndex | KnowledgeRanking) -> KnowledgeScores:

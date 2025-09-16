@@ -25,6 +25,17 @@ def pagerank_scores(
 ) -> KnowledgeScores:
     """
     Calculates PageRank scores for documents in a knowledge graph.
+
+    Args:
+        graph: The knowledge graph to run PageRank on.
+        nodes: An optional set of nodes to include, even if not in the graph.
+        initial: Initial scores to start with. If empty, uniform scores are used.
+        damping: The damping factor for PageRank.
+        iterations: The maximum number of iterations to run.
+        tolerance: The convergence tolerance.
+
+    Returns:
+        The calculated PageRank scores.
     """
     if not graph and not nodes:
         return KnowledgeScores()
@@ -75,15 +86,46 @@ class PageRankScorer(KnowledgeScorer, ValueTypeMixin):
         iterations: int = 100,
         tolerance: float = 1.0e-3
     ):
+        """
+        Initializes the PageRank scorer.
+
+        Args:
+            scraper: The scraper to use for building the knowledge graph.
+            damping: The damping factor for the PageRank algorithm.
+            iterations: The maximum number of iterations to perform.
+            tolerance: The tolerance for convergence.
+        """
         self._scraper = scraper
         self._damping = damping
         self._iterations = iterations
         self._tolerance = tolerance
 
     def score(self, knowledge: Knowledge) -> KnowledgeScores:
+        """
+        Calculates PageRank scores for the knowledge, starting from uniform initial scores.
+
+        Args:
+            knowledge: The knowledge base to score.
+
+        Returns:
+            The calculated PageRank scores.
+        """
         return self.rescore(knowledge, constant_scores(knowledge))
 
     def rescore(self, knowledge: Knowledge, initial: KnowledgeScores) -> KnowledgeScores:
+        """
+        Calculates PageRank scores, starting from a given set of initial scores.
+
+        It first scrapes the knowledge to build a graph, then runs the PageRank
+        algorithm on it.
+
+        Args:
+            knowledge: The knowledge base to score.
+            initial: The initial scores to use for the PageRank calculation.
+
+        Returns:
+            The calculated PageRank scores.
+        """
         graph = self._scraper.scrape(knowledge)
         return pagerank_scores(
             graph,
