@@ -36,8 +36,8 @@ class KnowledgeIndex:
         return iter(self._paths)
 
     def sorted(self) -> 'KnowledgeRanking':
-        import llobot.knowledge.rankings
-        return llobot.knowledge.rankings.rank_lexicographically(self)
+        from llobot.knowledge.ranking.lexicographical import rank_lexicographically
+        return rank_lexicographically(self)
 
     def reversed(self) -> 'KnowledgeRanking':
         return self.sorted().reversed()
@@ -70,7 +70,7 @@ def coerce_index(what: KnowledgeIndex | 'Knowledge' | 'KnowledgeRanking' | 'Know
     from llobot.knowledge import Knowledge
     if isinstance(what, Knowledge):
         return what.keys()
-    from llobot.knowledge.rankings import KnowledgeRanking
+    from llobot.knowledge.ranking import KnowledgeRanking
     if isinstance(what, KnowledgeRanking):
         return KnowledgeIndex(what)
     from llobot.knowledge.scores import KnowledgeScores

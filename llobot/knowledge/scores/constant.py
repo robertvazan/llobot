@@ -4,7 +4,7 @@ Scorers that assign a constant score.
 from __future__ import annotations
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex, coerce_index
-from llobot.knowledge.rankings import KnowledgeRanking
+from llobot.knowledge.ranking import KnowledgeRanking
 from llobot.knowledge.scores import KnowledgeScores
 from llobot.knowledge.scores.scorers import KnowledgeScorer
 from llobot.utils.values import ValueTypeMixin

@@ -1,9 +1,9 @@
 from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
-from llobot.knowledge.indexes import KnowledgeIndex, coerce_index
 from llobot.knowledge import Knowledge
-from llobot.knowledge.rankings import KnowledgeRanking
+from llobot.knowledge.indexes import KnowledgeIndex, coerce_index
+from llobot.knowledge.ranking import KnowledgeRanking
 from llobot.knowledge.scores import KnowledgeScores
 
 class ScrapingIndex:

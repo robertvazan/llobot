@@ -4,7 +4,8 @@ from functools import cache, lru_cache
 from llobot.chats.branches import ChatBranch
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
-from llobot.knowledge.rankings import KnowledgeRanking, rank_descending
+from llobot.knowledge.ranking import KnowledgeRanking
+from llobot.knowledge.ranking.sorting import rank_descending
 from llobot.knowledge.scores import KnowledgeScores
 from llobot.knowledge.scores.length import score_length
 from llobot.knowledge.scores.uniform import uniform_scores
@@ -41,14 +42,14 @@ def prioritized_knowledge_crammer(*,
                 overhead = formatted.cost - costs.total()
                 costs += uniform_scores(knowledge, overhead)
                 density = KnowledgeScores({path: scores[path] * (costs[path] ** -1.5) for path in knowledge.keys()})
-                density_ranking = list(rank_descending(density))
+                density_ranking = list(rank_descending(density, initial=ranking))
                 removed = []
                 while length > budget and density_ranking:
-                    path = density_ranking[-1]
-                    del density_ranking[-1]
+                    path = density_ranking.pop()
                     length -= costs[path]
                     removed.append(path)
                 knowledge -= KnowledgeIndex(removed)
+                ranking -= KnowledgeIndex(removed)
     return PrioritizedKnowledgeCrammer()
 
 @cache

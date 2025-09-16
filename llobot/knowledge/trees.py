@@ -2,9 +2,8 @@ from __future__ import annotations
 from pathlib import Path
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
-from llobot.knowledge.rankings import KnowledgeRanking, rank_lexicographically
+from llobot.knowledge.ranking import KnowledgeRanking
 from llobot.knowledge.subsets import KnowledgeSubset
-from llobot.knowledge.subsets.standard import overviews_subset
 
 class KnowledgeTree:
     """
@@ -137,10 +136,6 @@ class KnowledgeTree:
             result.extend(tree.file_paths)
         return result
 
-    @property
-    def ranking(self) -> KnowledgeRanking:
-        return KnowledgeRanking(self.all_paths)
-
 class KnowledgeTreeBuilder:
     """
     A builder for constructing KnowledgeTree instances by adding file paths incrementally.
@@ -242,6 +237,7 @@ def lexicographical_tree(index: KnowledgeIndex | KnowledgeRanking | Knowledge) -
 
 def overviews_first_tree(
     index: KnowledgeIndex | KnowledgeRanking | Knowledge,
+    *,
     overviews: KnowledgeSubset | None = None
 ) -> KnowledgeTree:
     """
@@ -254,21 +250,12 @@ def overviews_first_tree(
     Returns:
         A knowledge tree with overview files prioritized in each directory.
     """
-    if overviews is None:
-        overviews = overviews_subset()
-
-    # Start with lexicographical ordering
-    lexicographical = rank_lexicographically(index)
-
-    # Separate overview files from regular files
-    builder = KnowledgeTreeBuilder()
-    for path in lexicographical:
-        if path in overviews:
-            builder.add(path)
-    for path in lexicographical:
-        if path not in overviews:
-            builder.add(path)
-    return builder.build()
+    # Local import to avoid circular dependency.
+    from llobot.knowledge.ranking.lexicographical import rank_lexicographically
+    from llobot.knowledge.ranking.overviews import rank_overviews_before_siblings
+    initial = rank_lexicographically(index)
+    ranking = rank_overviews_before_siblings(initial, overviews=overviews)
+    return ranked_tree(ranking)
 
 def standard_tree(index: KnowledgeIndex | KnowledgeRanking | Knowledge) -> KnowledgeTree:
     return overviews_first_tree(index)

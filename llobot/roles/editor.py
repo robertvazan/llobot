@@ -35,7 +35,7 @@ from llobot.formats.prompts import (
 from llobot.utils.fs import data_home
 from llobot.utils.zones import Zoning
 from llobot.knowledge.archives import KnowledgeArchive, standard_knowledge_archive
-from llobot.knowledge.rankers import KnowledgeRanker, standard_ranker
+from llobot.knowledge.ranking.rankers import KnowledgeRanker, standard_ranker
 from llobot.knowledge.scores.scorers import KnowledgeScorer, standard_scorer
 from llobot.knowledge.scores.relevance import NegativeRelevanceScorer, PositiveRelevanceScorer
 from llobot.knowledge.scores.uniform import uniform_scores
@@ -162,7 +162,7 @@ class Editor(Role):
         budget -= index_chat.cost
 
         # Knowledge
-        ranking = self._ranker(knowledge)
+        ranking = self._ranker.rank(knowledge)
         knowledge_chat, _ = self._knowledge_crammer(knowledge, budget, scores, ranking)
         context.add(knowledge_chat)
 

@@ -15,8 +15,6 @@ uniform
     Scorers that distribute a total score budget uniformly.
 length
     Scorers based on document length.
-random
-    Scorers that assign random scores for shuffling.
 directory
     Functions to aggregate scores by directory.
 pagerank
@@ -32,9 +30,8 @@ from __future__ import annotations
 import math
 from pathlib import Path
 from llobot.knowledge import Knowledge
-from llobot.knowledge.subsets import KnowledgeSubset, coerce_subset
 from llobot.knowledge.indexes import KnowledgeIndex, coerce_index
-from llobot.knowledge.rankings import KnowledgeRanking
+from llobot.knowledge.subsets import KnowledgeSubset, coerce_subset
 
 class KnowledgeScores:
     """
@@ -122,7 +119,7 @@ class KnowledgeScores:
         """Reverse add. See `__add__`."""
         return self + other
 
-    def __sub__(self, other: int | float | KnowledgeScores | Knowledge | KnowledgeSubset | str | KnowledgeIndex | KnowledgeRanking) -> KnowledgeScores:
+    def __sub__(self, other: int | float | KnowledgeScores | Knowledge | KnowledgeSubset | str | KnowledgeIndex | 'KnowledgeRanking') -> KnowledgeScores:
         """
         Subtracts scores or filters paths.
 
@@ -130,6 +127,8 @@ class KnowledgeScores:
         subtraction over the union of paths. If `other` is coercible to
         `KnowledgeSubset`, it filters out paths in the subset.
         """
+        # Local import to avoid circular dependency.
+        from llobot.knowledge.ranking import KnowledgeRanking
         if isinstance(other, (KnowledgeSubset, str, KnowledgeIndex, KnowledgeRanking)):
             return self & ~coerce_subset(other)
         other = self._coerce_operand(other)
@@ -169,7 +168,7 @@ class KnowledgeScores:
         """Reverse divide. See `__truediv__`."""
         return self._coerce_operand(other) / self
 
-    def __and__(self, subset: KnowledgeSubset | str | KnowledgeIndex | KnowledgeRanking | Knowledge) -> KnowledgeScores:
+    def __and__(self, subset: KnowledgeSubset | str | KnowledgeIndex | 'KnowledgeRanking' | Knowledge) -> KnowledgeScores:
         """
         Filters scores, keeping only paths present in the given subset.
 
@@ -190,7 +189,7 @@ class KnowledgeScores:
         """Calculates the sum of all scores."""
         return sum(self._scores.values())
 
-def coerce_scores(what: KnowledgeScores | Knowledge | KnowledgeIndex | KnowledgeRanking) -> KnowledgeScores:
+def coerce_scores(what: KnowledgeScores | Knowledge | KnowledgeIndex | 'KnowledgeRanking') -> KnowledgeScores:
     """
     Coerces various objects into `KnowledgeScores`.
 
@@ -205,6 +204,8 @@ def coerce_scores(what: KnowledgeScores | Knowledge | KnowledgeIndex | Knowledge
         # Local import to avoid circular dependency: scores -> scorers -> scores
         from llobot.knowledge.scores.scorers import standard_scorer
         return standard_scorer().score(what)
+    # Local import to avoid circular dependency.
+    from llobot.knowledge.ranking import KnowledgeRanking
     if isinstance(what, (KnowledgeIndex, KnowledgeRanking)):
         return constant_scores(what)
     raise TypeError(what)

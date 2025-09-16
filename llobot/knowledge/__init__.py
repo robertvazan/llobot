@@ -10,7 +10,7 @@ Submodules and Subpackages
 
 indexes
     KnowledgeIndex for path-based indexing and set operations
-rankings
+ranking
     KnowledgeRanking for ordered sequences of knowledge paths
 scores/
     Provides `KnowledgeScores` for representing document scores and `KnowledgeScorer`
@@ -28,8 +28,6 @@ deltas/
     `deltas.knowledge`, `deltas.builder`, and `deltas.diffs`.
 archives/
     Historical knowledge storage
-rankers
-    Ranking algorithm implementations
 """
 from __future__ import annotations
 from pathlib import Path

@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
-from llobot.knowledge.rankings import KnowledgeRanking
+from llobot.knowledge.ranking import KnowledgeRanking
 from llobot.knowledge.scores import KnowledgeScores
 from llobot.knowledge.scores.constant import constant_scores
 

@@ -6,7 +6,7 @@ from functools import lru_cache
 from llobot.knowledge import Knowledge
 from llobot.knowledge.graphs import KnowledgeGraph
 from llobot.knowledge.indexes import KnowledgeIndex
-from llobot.knowledge.rankings import rank_lexicographically
+from llobot.knowledge.ranking.lexicographical import rank_lexicographically
 from llobot.knowledge.scores import KnowledgeScores
 from llobot.knowledge.scores.scorers import KnowledgeScorer
 from llobot.knowledge.scores.constant import constant_scores

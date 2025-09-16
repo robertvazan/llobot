@@ -2,7 +2,7 @@ from __future__ import annotations
 from pathlib import Path
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
-from llobot.knowledge.rankings import KnowledgeRanking, rank_in_standard_order
+from llobot.knowledge.ranking import KnowledgeRanking, standard_ranking
 from llobot.knowledge.deltas.documents import DocumentDelta
 
 class KnowledgeDelta:
@@ -111,7 +111,7 @@ class KnowledgeDelta:
 def fresh_knowledge_delta(knowledge: Knowledge, ranking: KnowledgeRanking | None = None) -> KnowledgeDelta:
     """Creates a delta representing a fresh knowledge state."""
     if ranking is None:
-        ranking = rank_in_standard_order(knowledge)
+        ranking = standard_ranking(knowledge)
     return KnowledgeDelta([DocumentDelta(path, knowledge[path]) for path in ranking if path in knowledge])
 
 __all__ = [
