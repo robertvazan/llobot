@@ -16,8 +16,8 @@ _CODE_BLOCK_RE = re.compile(r'(`{3,}).*?\1', re.DOTALL)
 # The order of alternatives is important to correctly identify tokens.
 _UNIFIED_RE = re.compile(
     r"""
-    # A mention must be preceded by whitespace or be at the start of a line.
-    (?:^|\s)@
+    # A mention must not be preceded by a word character (alphanumeric or underscore).
+    (?<!\w)@
     (?:
         # A quoted mention with double backticks. It can contain single backticks.
         ``(?P<quoted_double>(?:[^`]|`[^`])*?)``
@@ -46,6 +46,8 @@ def parse_mentions(source: str | ChatMessage | ChatBranch) -> list[str]:
     Parses @command mentions from a string, ChatMessage, or ChatBranch.
 
     It supports bare mentions (@command) and quoted mentions (@`command`).
+    A mention can be preceded by whitespace, punctuation, or be at the start
+    of a line, but not by a word character (e.g. in `email@domain.com`).
     Markdown code blocks are stripped before parsing. Inline code spans are
     also ignored, so a bare mention inside a code span will not be detected.
     Mentions are returned in the order of their appearance.
@@ -76,8 +78,8 @@ def parse_mentions(source: str | ChatMessage | ChatBranch) -> list[str]:
         elif match.group('quoted_single') is not None:
             command = match.group('quoted_single').strip()
         elif match.group('bare') is not None:
-            # For bare mentions, strip trailing dots and colons.
-            command = match.group('bare').rstrip('.:?')
+            # For bare mentions, strip trailing dots, colons, question marks, and slashes.
+            command = match.group('bare').rstrip('.:?/')
         else:
             # If it is a code span, we just ignore it. The regex consumes it
             # so its content is not available for subsequent bare mention matching.

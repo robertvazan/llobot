@@ -41,6 +41,19 @@ def test_parse_no_mention_without_space():
     assert parse_mentions('thisis@notamention') == []
     assert parse_mentions('email@example.com') == []
 
+def test_parse_preceded_by_symbols():
+    assert parse_mentions('(@mention)') == ['mention']
+    assert parse_mentions('(@mention1, @mention2)') == ['mention1', 'mention2']
+    assert parse_mentions('{@mention1,@mention2}') == ['mention1', 'mention2']
+    assert parse_mentions('[@mention1/@mention2]') == ['mention1', 'mention2']
+    assert parse_mentions(')@mention') == ['mention']
+    assert parse_mentions(']@mention') == ['mention']
+    assert parse_mentions('}@mention') == ['mention']
+    assert parse_mentions(',@mention') == ['mention']
+    assert parse_mentions('-@mention') == ['mention']
+    # Bare mentions can contain dots, so we need to test this case carefully.
+    assert parse_mentions('word.@mention') == ['mention']
+
 def test_strip_code_blocks():
     text = """
     This is a test.
