@@ -14,6 +14,8 @@ sorting
     Rankers that sort documents based on scores.
 overviews
     Rankers that prioritize overview documents.
+trees
+    Rankers that reorder documents based on their position in the directory tree.
 """
 from __future__ import annotations
 from pathlib import Path
@@ -117,6 +119,10 @@ def standard_ranking(index: KnowledgeRankingPrecursor) -> KnowledgeRanking:
     to appear before their siblings in the directory tree.
     """
     # Local import to avoid cycles.
+    from llobot.knowledge import Knowledge
+    from llobot.knowledge.ranking.rankers import standard_ranker
+    if isinstance(index, Knowledge):
+        return standard_ranker().rank(index)
     from llobot.knowledge.ranking.lexicographical import rank_lexicographically
     from llobot.knowledge.ranking.overviews import rank_overviews_before_siblings
     return rank_overviews_before_siblings(rank_lexicographically(index))

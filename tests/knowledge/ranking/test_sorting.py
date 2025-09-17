@@ -1,13 +1,21 @@
 from pathlib import Path
+from llobot.knowledge import Knowledge
 from llobot.knowledge.ranking import KnowledgeRanking
-from llobot.knowledge.ranking.sorting import rank_ascending, rank_descending
+from llobot.knowledge.ranking.sorting import AscendingRanker, DescendingRanker, rank_ascending, rank_descending
 from llobot.knowledge.scores import KnowledgeScores
+from llobot.knowledge.scores.scorers import KnowledgeScorer, standard_scorer
+from llobot.utils.values import ValueTypeMixin
 
 SCORES = KnowledgeScores({
     Path('a.txt'): 10,
     Path('b.txt'): 30,
     Path('c.txt'): 20,
 })
+KNOWLEDGE = Knowledge({p: '' for p in SCORES.keys()})
+
+class MockScorer(KnowledgeScorer, ValueTypeMixin):
+    def score(self, knowledge: Knowledge) -> KnowledgeScores:
+        return SCORES
 
 def test_rank_ascending_no_initial():
     ranking = rank_ascending(SCORES)
@@ -33,3 +41,23 @@ def test_rank_ascending_stable_sort():
     ranking = rank_ascending(scores, initial=initial)
     # c.txt comes before a.txt in initial, so it should be first among equals
     assert ranking == KnowledgeRanking([Path('c.txt'), Path('a.txt'), Path('b.txt')])
+
+def test_ascending_ranker():
+    ranker = AscendingRanker(scorer=MockScorer())
+    ranking = ranker.rank(KNOWLEDGE)
+    assert ranking == KnowledgeRanking([Path('a.txt'), Path('c.txt'), Path('b.txt')])
+    # Test value semantics
+    assert AscendingRanker(scorer=MockScorer()) == AscendingRanker(scorer=MockScorer())
+    assert hash(AscendingRanker(scorer=MockScorer())) == hash(AscendingRanker(scorer=MockScorer()))
+    # Test default scorer
+    assert AscendingRanker()._scorer == standard_scorer()
+
+def test_descending_ranker():
+    ranker = DescendingRanker(scorer=MockScorer())
+    ranking = ranker.rank(KNOWLEDGE)
+    assert ranking == KnowledgeRanking([Path('b.txt'), Path('c.txt'), Path('a.txt')])
+    # Test value semantics
+    assert DescendingRanker(scorer=MockScorer()) == DescendingRanker(scorer=MockScorer())
+    assert hash(DescendingRanker(scorer=MockScorer())) == hash(DescendingRanker(scorer=MockScorer()))
+    # Test default scorer
+    assert DescendingRanker()._scorer == standard_scorer()

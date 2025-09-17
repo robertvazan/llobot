@@ -1,5 +1,9 @@
 """
 Rankers that prioritize overview documents.
+
+This module provides rankers that reorder a knowledge ranking to prioritize
+overview files. For example, a ranker might move all overview files to the
+beginning of the list, or place them before other files in the same directory.
 """
 from __future__ import annotations
 from pathlib import Path
@@ -103,6 +107,42 @@ def rank_overviews_before_document(
 
     return KnowledgeRanking(result)
 
+class OverviewsBeforeEverythingRanker(KnowledgeRanker, ValueTypeMixin):
+    """
+    A ranker that places all overview files at the beginning of the ranking.
+    """
+    _previous: KnowledgeRanker
+    _overviews: KnowledgeSubset
+
+    def __init__(self, *,
+        previous: KnowledgeRanker = LexicographicalRanker(),
+        overviews: KnowledgeSubset | None = None
+    ):
+        """
+        Creates a new `OverviewsBeforeEverythingRanker`.
+
+        Args:
+            previous: The ranker used to create the initial ordering before
+                      overview prioritization. Defaults to `LexicographicalRanker`.
+            overviews: The subset defining which files are overviews.
+                       Defaults to the standard one.
+        """
+        self._previous = previous
+        self._overviews = overviews if overviews is not None else overviews_subset()
+
+    def rank(self, knowledge: Knowledge) -> KnowledgeRanking:
+        """
+        Ranks the knowledge, moving all overviews to the front.
+
+        Args:
+            knowledge: The knowledge base to rank.
+
+        Returns:
+            The final, reordered ranking.
+        """
+        initial = self._previous.rank(knowledge)
+        return rank_overviews_before_everything(initial, overviews=self._overviews)
+
 class OverviewsBeforeSiblingsRanker(KnowledgeRanker, ValueTypeMixin):
     """
     A ranker that places overview files before their siblings in each directory.
@@ -139,9 +179,47 @@ class OverviewsBeforeSiblingsRanker(KnowledgeRanker, ValueTypeMixin):
         initial = self._previous.rank(knowledge)
         return rank_overviews_before_siblings(initial, overviews=self._overviews)
 
+class OverviewsBeforeDocumentRanker(KnowledgeRanker, ValueTypeMixin):
+    """
+    A ranker that ensures all ancestor overviews precede a document.
+    """
+    _previous: KnowledgeRanker
+    _overviews: KnowledgeSubset
+
+    def __init__(self, *,
+        previous: KnowledgeRanker = LexicographicalRanker(),
+        overviews: KnowledgeSubset | None = None
+    ):
+        """
+        Creates a new `OverviewsBeforeDocumentRanker`.
+
+        Args:
+            previous: The ranker used to create the initial ordering before
+                      overview prioritization. Defaults to `LexicographicalRanker`.
+            overviews: The subset defining which files are overviews.
+                       Defaults to the standard one.
+        """
+        self._previous = previous
+        self._overviews = overviews if overviews is not None else overviews_subset()
+
+    def rank(self, knowledge: Knowledge) -> KnowledgeRanking:
+        """
+        Ranks the knowledge, ensuring ancestor overviews are prepended.
+
+        Args:
+            knowledge: The knowledge base to rank.
+
+        Returns:
+            The final, reordered ranking.
+        """
+        initial = self._previous.rank(knowledge)
+        return rank_overviews_before_document(initial, overviews=self._overviews)
+
 __all__ = [
     'rank_overviews_before_everything',
     'rank_overviews_before_siblings',
     'rank_overviews_before_document',
+    'OverviewsBeforeEverythingRanker',
     'OverviewsBeforeSiblingsRanker',
+    'OverviewsBeforeDocumentRanker',
 ]

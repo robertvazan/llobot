@@ -30,8 +30,18 @@ def test_coerce_ranking_from_index():
     ranking = coerce_ranking(KNOWLEDGE_INDEX)
     assert ranking == KnowledgeRanking(sorted(PATHS))
 
-def test_standard_ranking():
+def test_standard_ranking_from_index():
     ranking = standard_ranking(KNOWLEDGE_INDEX)
+    assert ranking == KnowledgeRanking([
+        Path('README.md'),
+        Path('main.py'),
+        Path('a/README.md'),
+        Path('a/b/__init__.py'),
+        Path('a/b/c.txt'),
+    ])
+
+def test_standard_ranking_from_knowledge():
+    ranking = standard_ranking(KNOWLEDGE)
     assert ranking == KnowledgeRanking([
         Path('README.md'),
         Path('main.py'),

@@ -6,7 +6,6 @@ from functools import lru_cache
 from llobot.knowledge import Knowledge
 from llobot.knowledge.graphs import KnowledgeGraph
 from llobot.knowledge.indexes import KnowledgeIndex
-from llobot.knowledge.ranking.lexicographical import rank_lexicographically
 from llobot.knowledge.scores import KnowledgeScores
 from llobot.knowledge.scores.scorers import KnowledgeScorer
 from llobot.knowledge.scores.constant import constant_scores
@@ -43,7 +42,7 @@ def pagerank_scores(
     # because the neat version using our high-level classes was too slow.
     backlinks = graph.reverse()
     nodes = nodes | graph.keys() | backlinks.keys()
-    ranking = list(rank_lexicographically(nodes))
+    ranking = list(nodes.sorted())
     path_ids = {path: i for i, path in enumerate(ranking)}
     count = len(ranking)
     graph_table = [tuple(path_ids[target] for target in graph[source]) for source in ranking]

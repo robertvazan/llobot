@@ -232,6 +232,7 @@ def lexicographical_tree(index: KnowledgeIndex | KnowledgeRanking | Knowledge) -
     Returns:
         A knowledge tree with paths sorted lexicographically.
     """
+    from llobot.knowledge.ranking.lexicographical import rank_lexicographically
     ranking = rank_lexicographically(index)
     return ranked_tree(ranking)
 
