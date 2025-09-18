@@ -111,23 +111,23 @@ class OverviewsBeforeEverythingRanker(KnowledgeRanker, ValueTypeMixin):
     """
     A ranker that places all overview files at the beginning of the ranking.
     """
-    _previous: KnowledgeRanker
+    _tiebreaker: KnowledgeRanker
     _overviews: KnowledgeSubset
 
     def __init__(self, *,
-        previous: KnowledgeRanker = LexicographicalRanker(),
+        tiebreaker: KnowledgeRanker = LexicographicalRanker(),
         overviews: KnowledgeSubset | None = None
     ):
         """
         Creates a new `OverviewsBeforeEverythingRanker`.
 
         Args:
-            previous: The ranker used to create the initial ordering before
-                      overview prioritization. Defaults to `LexicographicalRanker`.
+            tiebreaker: The ranker used to create the initial ordering before
+                        overview prioritization. Defaults to `LexicographicalRanker`.
             overviews: The subset defining which files are overviews.
                        Defaults to the standard one.
         """
-        self._previous = previous
+        self._tiebreaker = tiebreaker
         self._overviews = overviews if overviews is not None else overviews_subset()
 
     def rank(self, knowledge: Knowledge) -> KnowledgeRanking:
@@ -140,30 +140,30 @@ class OverviewsBeforeEverythingRanker(KnowledgeRanker, ValueTypeMixin):
         Returns:
             The final, reordered ranking.
         """
-        initial = self._previous.rank(knowledge)
+        initial = self._tiebreaker.rank(knowledge)
         return rank_overviews_before_everything(initial, overviews=self._overviews)
 
 class OverviewsBeforeSiblingsRanker(KnowledgeRanker, ValueTypeMixin):
     """
     A ranker that places overview files before their siblings in each directory.
     """
-    _previous: KnowledgeRanker
+    _tiebreaker: KnowledgeRanker
     _overviews: KnowledgeSubset
 
     def __init__(self, *,
-        previous: KnowledgeRanker = LexicographicalRanker(),
+        tiebreaker: KnowledgeRanker = LexicographicalRanker(),
         overviews: KnowledgeSubset | None = None
     ):
         """
         Creates a new `OverviewsBeforeSiblingsRanker`.
 
         Args:
-            previous: The ranker used to create the initial ordering before
-                      overview prioritization. Defaults to `LexicographicalRanker`.
+            tiebreaker: The ranker used to create the initial ordering before
+                        overview prioritization. Defaults to `LexicographicalRanker`.
             overviews: The subset defining which files are overviews.
                        Defaults to the standard one.
         """
-        self._previous = previous
+        self._tiebreaker = tiebreaker
         self._overviews = overviews if overviews is not None else overviews_subset()
 
     def rank(self, knowledge: Knowledge) -> KnowledgeRanking:
@@ -176,30 +176,30 @@ class OverviewsBeforeSiblingsRanker(KnowledgeRanker, ValueTypeMixin):
         Returns:
             The final, reordered ranking.
         """
-        initial = self._previous.rank(knowledge)
+        initial = self._tiebreaker.rank(knowledge)
         return rank_overviews_before_siblings(initial, overviews=self._overviews)
 
 class OverviewsBeforeDocumentRanker(KnowledgeRanker, ValueTypeMixin):
     """
     A ranker that ensures all ancestor overviews precede a document.
     """
-    _previous: KnowledgeRanker
+    _tiebreaker: KnowledgeRanker
     _overviews: KnowledgeSubset
 
     def __init__(self, *,
-        previous: KnowledgeRanker = LexicographicalRanker(),
+        tiebreaker: KnowledgeRanker = LexicographicalRanker(),
         overviews: KnowledgeSubset | None = None
     ):
         """
         Creates a new `OverviewsBeforeDocumentRanker`.
 
         Args:
-            previous: The ranker used to create the initial ordering before
-                      overview prioritization. Defaults to `LexicographicalRanker`.
+            tiebreaker: The ranker used to create the initial ordering before
+                        overview prioritization. Defaults to `LexicographicalRanker`.
             overviews: The subset defining which files are overviews.
                        Defaults to the standard one.
         """
-        self._previous = previous
+        self._tiebreaker = tiebreaker
         self._overviews = overviews if overviews is not None else overviews_subset()
 
     def rank(self, knowledge: Knowledge) -> KnowledgeRanking:
@@ -212,7 +212,7 @@ class OverviewsBeforeDocumentRanker(KnowledgeRanker, ValueTypeMixin):
         Returns:
             The final, reordered ranking.
         """
-        initial = self._previous.rank(knowledge)
+        initial = self._tiebreaker.rank(knowledge)
         return rank_overviews_before_document(initial, overviews=self._overviews)
 
 __all__ = [

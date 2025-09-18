@@ -57,22 +57,23 @@ class AscendingRanker(KnowledgeRanker, ValueTypeMixin):
     A ranker that sorts documents in ascending order of their scores.
     """
     _scorer: KnowledgeScorer
-    _previous: KnowledgeRanker
+    _tiebreaker: KnowledgeRanker
 
     def __init__(self, *,
         scorer: KnowledgeScorer | None = None,
-        previous: KnowledgeRanker = LexicographicalRanker()
+        tiebreaker: KnowledgeRanker = LexicographicalRanker()
     ):
         """
         Creates a new `AscendingRanker`.
 
         Args:
             scorer: The scorer to use for ranking. Defaults to `standard_scorer`.
-            previous: The ranker used to create the initial ordering before
-                      sorting. Defaults to `LexicographicalRanker`.
+            tiebreaker: The ranker used for tie-breaking. It provides the
+                        initial ordering before sorting. Defaults to
+                        `LexicographicalRanker`.
         """
         self._scorer = scorer if scorer is not None else standard_scorer()
-        self._previous = previous
+        self._tiebreaker = tiebreaker
 
     def rank(self, knowledge: Knowledge) -> KnowledgeRanking:
         """
@@ -85,7 +86,7 @@ class AscendingRanker(KnowledgeRanker, ValueTypeMixin):
             A new ranking sorted by score in ascending order.
         """
         scores = self._scorer.score(knowledge)
-        initial = self._previous.rank(knowledge)
+        initial = self._tiebreaker.rank(knowledge)
         return rank_ascending(scores, initial=initial)
 
 class DescendingRanker(KnowledgeRanker, ValueTypeMixin):
@@ -93,22 +94,23 @@ class DescendingRanker(KnowledgeRanker, ValueTypeMixin):
     A ranker that sorts documents in descending order of their scores.
     """
     _scorer: KnowledgeScorer
-    _previous: KnowledgeRanker
+    _tiebreaker: KnowledgeRanker
 
     def __init__(self, *,
         scorer: KnowledgeScorer | None = None,
-        previous: KnowledgeRanker = LexicographicalRanker()
+        tiebreaker: KnowledgeRanker = LexicographicalRanker()
     ):
         """
         Creates a new `DescendingRanker`.
 
         Args:
             scorer: The scorer to use for ranking. Defaults to `standard_scorer`.
-            previous: The ranker used to create the initial ordering before
-                      sorting. Defaults to `LexicographicalRanker`.
+            tiebreaker: The ranker used for tie-breaking. It provides the
+                        initial ordering before sorting. Defaults to
+                        `LexicographicalRanker`.
         """
         self._scorer = scorer if scorer is not None else standard_scorer()
-        self._previous = previous
+        self._tiebreaker = tiebreaker
 
     def rank(self, knowledge: Knowledge) -> KnowledgeRanking:
         """
@@ -121,7 +123,7 @@ class DescendingRanker(KnowledgeRanker, ValueTypeMixin):
             A new ranking sorted by score in descending order.
         """
         scores = self._scorer.score(knowledge)
-        initial = self._previous.rank(knowledge)
+        initial = self._tiebreaker.rank(knowledge)
         return rank_descending(scores, initial=initial)
 
 __all__ = [

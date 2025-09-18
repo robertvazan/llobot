@@ -66,7 +66,7 @@ def test_rank_overviews_before_document_root_overview():
     assert ranking == KnowledgeRanking([Path('README.md'), Path('a/b/c.txt')])
 
 def test_overviews_before_everything_ranker():
-    ranker = OverviewsBeforeEverythingRanker(previous=LexicographicalRanker(), overviews=OVERVIEWS)
+    ranker = OverviewsBeforeEverythingRanker(tiebreaker=LexicographicalRanker(), overviews=OVERVIEWS)
     ranking = ranker.rank(KNOWLEDGE)
     assert ranking == KnowledgeRanking([
         Path('README.md'),
@@ -75,10 +75,10 @@ def test_overviews_before_everything_ranker():
         Path('a/b/script.py'),
         Path('a/doc.txt'),
     ])
-    assert ranker == OverviewsBeforeEverythingRanker(previous=LexicographicalRanker(), overviews=OVERVIEWS)
+    assert ranker == OverviewsBeforeEverythingRanker(tiebreaker=LexicographicalRanker(), overviews=OVERVIEWS)
 
 def test_overviews_before_siblings_ranker():
-    ranker = OverviewsBeforeSiblingsRanker(previous=LexicographicalRanker(), overviews=OVERVIEWS)
+    ranker = OverviewsBeforeSiblingsRanker(tiebreaker=LexicographicalRanker(), overviews=OVERVIEWS)
     ranking = ranker.rank(KNOWLEDGE)
     # Lexicographical order first, then overviews are moved.
     assert ranking == KnowledgeRanking([
@@ -89,15 +89,15 @@ def test_overviews_before_siblings_ranker():
         Path('a/b/script.py'),
     ])
     # Test value semantics
-    assert ranker == OverviewsBeforeSiblingsRanker(previous=LexicographicalRanker(), overviews=OVERVIEWS)
-    assert hash(ranker) == hash(OverviewsBeforeSiblingsRanker(previous=LexicographicalRanker(), overviews=OVERVIEWS))
-    assert ranker != OverviewsBeforeSiblingsRanker(previous=LexicographicalRanker())
+    assert ranker == OverviewsBeforeSiblingsRanker(tiebreaker=LexicographicalRanker(), overviews=OVERVIEWS)
+    assert hash(ranker) == hash(OverviewsBeforeSiblingsRanker(tiebreaker=LexicographicalRanker(), overviews=OVERVIEWS))
+    assert ranker != OverviewsBeforeSiblingsRanker(tiebreaker=LexicographicalRanker())
     # Test default overviews
     ranker_default = OverviewsBeforeSiblingsRanker()
     assert ranker_default._overviews == overviews_subset()
 
 def test_overviews_before_document_ranker():
-    ranker = OverviewsBeforeDocumentRanker(previous=LexicographicalRanker(), overviews=OVERVIEWS)
+    ranker = OverviewsBeforeDocumentRanker(tiebreaker=LexicographicalRanker(), overviews=OVERVIEWS)
     ranking = ranker.rank(KNOWLEDGE)
     assert ranking == KnowledgeRanking([
         Path('README.md'),
@@ -106,4 +106,4 @@ def test_overviews_before_document_ranker():
         Path('a/b/script.py'),
         Path('a/doc.txt'),
     ])
-    assert ranker == OverviewsBeforeDocumentRanker(previous=LexicographicalRanker(), overviews=OVERVIEWS)
+    assert ranker == OverviewsBeforeDocumentRanker(tiebreaker=LexicographicalRanker(), overviews=OVERVIEWS)

@@ -1,6 +1,7 @@
 from pathlib import Path
 from llobot.knowledge import Knowledge
 from llobot.knowledge.ranking import KnowledgeRanking
+from llobot.knowledge.ranking.lexicographical import LexicographicalRanker
 from llobot.knowledge.ranking.sorting import AscendingRanker, DescendingRanker, rank_ascending, rank_descending
 from llobot.knowledge.scores import KnowledgeScores
 from llobot.knowledge.scores.scorers import KnowledgeScorer, standard_scorer
@@ -43,21 +44,21 @@ def test_rank_ascending_stable_sort():
     assert ranking == KnowledgeRanking([Path('c.txt'), Path('a.txt'), Path('b.txt')])
 
 def test_ascending_ranker():
-    ranker = AscendingRanker(scorer=MockScorer())
+    ranker = AscendingRanker(scorer=MockScorer(), tiebreaker=LexicographicalRanker())
     ranking = ranker.rank(KNOWLEDGE)
     assert ranking == KnowledgeRanking([Path('a.txt'), Path('c.txt'), Path('b.txt')])
     # Test value semantics
-    assert AscendingRanker(scorer=MockScorer()) == AscendingRanker(scorer=MockScorer())
-    assert hash(AscendingRanker(scorer=MockScorer())) == hash(AscendingRanker(scorer=MockScorer()))
+    assert AscendingRanker(scorer=MockScorer()) == AscendingRanker(scorer=MockScorer(), tiebreaker=LexicographicalRanker())
+    assert hash(AscendingRanker(scorer=MockScorer())) == hash(AscendingRanker(scorer=MockScorer(), tiebreaker=LexicographicalRanker()))
     # Test default scorer
     assert AscendingRanker()._scorer == standard_scorer()
 
 def test_descending_ranker():
-    ranker = DescendingRanker(scorer=MockScorer())
+    ranker = DescendingRanker(scorer=MockScorer(), tiebreaker=LexicographicalRanker())
     ranking = ranker.rank(KNOWLEDGE)
     assert ranking == KnowledgeRanking([Path('b.txt'), Path('c.txt'), Path('a.txt')])
     # Test value semantics
-    assert DescendingRanker(scorer=MockScorer()) == DescendingRanker(scorer=MockScorer())
-    assert hash(DescendingRanker(scorer=MockScorer())) == hash(DescendingRanker(scorer=MockScorer()))
+    assert DescendingRanker(scorer=MockScorer()) == DescendingRanker(scorer=MockScorer(), tiebreaker=LexicographicalRanker())
+    assert hash(DescendingRanker(scorer=MockScorer())) == hash(DescendingRanker(scorer=MockScorer(), tiebreaker=LexicographicalRanker()))
     # Test default scorer
     assert DescendingRanker()._scorer == standard_scorer()

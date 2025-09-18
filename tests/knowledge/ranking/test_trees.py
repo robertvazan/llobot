@@ -41,7 +41,7 @@ def test_preorder_ranker():
         Path('d2/f3'): '',
     })
     # Initial ranking from LexicographicalRanker will be f1, d1/f2, d2/f3
-    ranker = PreorderRanker(previous=LexicographicalRanker())
+    ranker = PreorderRanker(tiebreaker=LexicographicalRanker())
     ranking = ranker.rank(knowledge)
     # The tree built from lex order is: f1, then d1 dir with f2, then d2 dir with f3.
     # Preorder traversal is f1, d1/f2, d2/f3.
@@ -51,7 +51,7 @@ def test_preorder_ranker():
         Path('d2/f3'),
     ])
 
-    # Test with a different previous ranker that reverses order.
+    # Test with a different tiebreaker ranker that reverses order.
     class ReversedLexRanker(KnowledgeRanker):
         def rank(self, knowledge: Knowledge) -> KnowledgeRanking:
             return LexicographicalRanker().rank(knowledge).reversed()
@@ -60,7 +60,7 @@ def test_preorder_ranker():
     # Tree: d2 dir with f3, then d1 dir with f2, then f1.
     # Tree files: ['f1']. Subdirs: ['d2', 'd1']. d2 has files ['f3']. d1 has files ['f2'].
     # Preorder traversal: f1, d2/f3, d1/f2.
-    ranker = PreorderRanker(previous=ReversedLexRanker())
+    ranker = PreorderRanker(tiebreaker=ReversedLexRanker())
     ranking = ranker.rank(knowledge)
     assert ranking == KnowledgeRanking([
         Path('f1'),

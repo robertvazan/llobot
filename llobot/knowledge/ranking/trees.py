@@ -32,17 +32,17 @@ class PreorderRanker(KnowledgeRanker, ValueTypeMixin):
     A ranker that creates a ranking by performing a pre-order traversal of a
     knowledge tree. The tree itself is built from an initial ranking.
     """
-    _previous: KnowledgeRanker
+    _tiebreaker: KnowledgeRanker
 
-    def __init__(self, *, previous: KnowledgeRanker = LexicographicalRanker()):
+    def __init__(self, *, tiebreaker: KnowledgeRanker = LexicographicalRanker()):
         """
         Creates a new `PreorderRanker`.
 
         Args:
-            previous: The ranker used to create the initial ordering from which
-                      the tree is built. Defaults to `LexicographicalRanker`.
+            tiebreaker: The ranker used to create the initial ordering from which
+                        the tree is built. Defaults to `LexicographicalRanker`.
         """
-        self._previous = previous
+        self._tiebreaker = tiebreaker
 
     def rank(self, knowledge: Knowledge) -> KnowledgeRanking:
         """
@@ -54,7 +54,7 @@ class PreorderRanker(KnowledgeRanker, ValueTypeMixin):
         Returns:
             A `KnowledgeRanking` of paths in pre-order.
         """
-        initial = self._previous.rank(knowledge)
+        initial = self._tiebreaker.rank(knowledge)
         return preorder_ranking(initial)
 
 __all__ = [
