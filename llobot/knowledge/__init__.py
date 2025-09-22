@@ -19,7 +19,7 @@ scores/
     functions for score aggregation and normalization.
 graphs
     KnowledgeGraph for relationship graphs between knowledge items
-trees
+trees/
     KnowledgeTree for hierarchical directory tree representations
 subsets/
     Pattern-based filtering and selection with KnowledgeSubset

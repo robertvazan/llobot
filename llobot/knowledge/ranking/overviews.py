@@ -14,7 +14,7 @@ from llobot.knowledge.ranking.rankers import KnowledgeRanker
 from llobot.knowledge.ranking.trees import preorder_ranking
 from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.knowledge.subsets.standard import overviews_subset
-from llobot.knowledge.trees import ranked_tree
+from llobot.knowledge.trees.ranked import ranked_tree
 from llobot.utils.values import ValueTypeMixin
 
 def rank_overviews_before_everything(

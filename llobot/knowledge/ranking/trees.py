@@ -7,14 +7,13 @@ before descending into its subdirectories.
 """
 from __future__ import annotations
 from llobot.knowledge import Knowledge
-from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.ranking import KnowledgeRanking
 from llobot.knowledge.ranking.lexicographical import LexicographicalRanker
 from llobot.knowledge.ranking.rankers import KnowledgeRanker
-from llobot.knowledge.trees import KnowledgeTree, coerce_tree
+from llobot.knowledge.trees import KnowledgeTree, KnowledgeTreePrecursor, coerce_tree
 from llobot.utils.values import ValueTypeMixin
 
-def preorder_ranking(tree: KnowledgeTree | KnowledgeRanking | KnowledgeIndex | Knowledge) -> KnowledgeRanking:
+def preorder_ranking(tree: KnowledgeTreePrecursor) -> KnowledgeRanking:
     """
     Creates a ranking by performing a pre-order traversal of a knowledge tree.
 

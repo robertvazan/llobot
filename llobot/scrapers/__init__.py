@@ -5,7 +5,7 @@ from llobot.knowledge import Knowledge
 from llobot.knowledge.graphs import KnowledgeGraph, KnowledgeGraphBuilder
 from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.knowledge.subsets.standard import overviews_subset
-from llobot.knowledge.trees import lexicographical_tree
+from llobot.knowledge.trees import coerce_tree
 
 class GraphScraper:
     def scrape(self, knowledge: Knowledge) -> KnowledgeGraph:
@@ -47,7 +47,7 @@ def overview_scraper(subset: KnowledgeSubset | None = None) -> GraphScraper:
 
     def scrape_overviews(knowledge: Knowledge) -> KnowledgeGraph:
         builder = KnowledgeGraphBuilder()
-        tree = lexicographical_tree(knowledge)
+        tree = coerce_tree(knowledge)
         seen = set()
 
         # Process subtrees in reverse order (deepest first) in order to link only to the nearest overviews

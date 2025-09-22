@@ -1,20 +1,41 @@
+"""
+Hierarchical directory tree representation of knowledge.
+
+This package defines `KnowledgeTree` for representing directory structures. It
+provides functions for creating trees from various knowledge representations and
+for converting them back into rankings.
+
+Submodules
+----------
+builder
+    `KnowledgeTreeBuilder` for incremental construction of trees.
+ranked
+    `ranked_tree` function for building a tree from a `KnowledgeRanking`.
+lexicographical
+    `lexicographical_tree` function for building a lexicographically sorted tree.
+overviews
+    `overviews_first_tree` for building a tree with overview files prioritized.
+"""
 from __future__ import annotations
 from pathlib import Path
+from typing import Iterable
+from llobot.utils.values import ValueTypeMixin
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
-from llobot.knowledge.ranking import KnowledgeRanking
+from llobot.knowledge.ranking import KnowledgeRanking, coerce_ranking
 from llobot.knowledge.subsets import KnowledgeSubset
 
-class KnowledgeTree:
+class KnowledgeTree(ValueTypeMixin):
     """
     Represents a hierarchical directory tree structure containing files and subdirectories.
 
     The tree is defined by a base path, a list of files in that directory, and a list of subtrees
     representing subdirectories. This structure preserves the original order of files and directories.
+    It is a value-like object.
     """
     _base: Path
-    _files: list[str]
-    _subtrees: list[KnowledgeTree]
+    _files: tuple[str, ...]
+    _subtrees: tuple[KnowledgeTree, ...]
     _subtrees_by_name: dict[str, KnowledgeTree]
 
     def __init__(self, base: Path | str = '.', files: list[str] = [], subtrees: list[KnowledgeTree] = []):
@@ -31,8 +52,8 @@ class KnowledgeTree:
                        and subtrees, or if subtree base paths are not one level below parent.
         """
         self._base = Path(base)
-        self._files = list(files)
-        self._subtrees = list(subtrees)
+        self._files = tuple(files)
+        self._subtrees = tuple(subtrees)
 
         # Check that base path is relative
         if self._base.is_absolute():
@@ -50,6 +71,9 @@ class KnowledgeTree:
 
         # Build subtrees lookup dict
         self._subtrees_by_name = {subtree.base.name: subtree for subtree in self._subtrees}
+
+    def _ephemeral_fields(self) -> Iterable[str]:
+        return ['_subtrees_by_name']
 
     @property
     def base(self) -> Path:
@@ -136,134 +160,23 @@ class KnowledgeTree:
             result.extend(tree.file_paths)
         return result
 
-class KnowledgeTreeBuilder:
+KnowledgeTreePrecursor = KnowledgeTree | KnowledgeRanking | KnowledgeIndex | Knowledge
+
+def standard_tree(index: KnowledgeTreePrecursor) -> KnowledgeTree:
     """
-    A builder for constructing KnowledgeTree instances by adding file paths incrementally.
+    Creates the standard knowledge tree.
 
-    The builder automatically creates the necessary directory structure as paths are added,
-    maintaining the order in which files and directories are first encountered.
+    The standard tree has overview files listed before their siblings.
     """
-    _base: Path
-    _files: list[str]
-    _file_names: set[str]
-    _subtree_builders: list[KnowledgeTreeBuilder]
-    _subtree_names: dict[str, KnowledgeTreeBuilder]
-
-    def __init__(self, base: Path | str = '.'):
-        """
-        Creates a new tree builder with the given base path.
-
-        Args:
-            base: Base path for the root of the tree being built.
-        """
-        self._base = Path(base)
-        self._files = []
-        self._file_names = set()
-        self._subtree_builders = []
-        self._subtree_names = {}
-
-    def add(self, path: Path | str) -> None:
-        """
-        Adds a file path to the tree, creating nested builders as necessary.
-
-        Args:
-            path: Full file path to add to the tree.
-
-        Raises:
-            ValueError: If the path is not relative to the base path.
-        """
-        path = Path(path)
-
-        # If path is not relative to our base, we need to find the right place for it
-        if not path.is_relative_to(self._base):
-            raise ValueError(f"Path {path} is not relative to base {self._base}")
-
-        relative = path.relative_to(self._base)
-
-        # If this is a direct file in our directory
-        if len(relative.parts) == 1:
-            filename = relative.name
-            if filename not in self._file_names:
-                self._files.append(filename)
-                self._file_names.add(filename)
-        else:
-            # This belongs in a subtree
-            first_part = relative.parts[0]
-            subtree_base = self._base / first_part
-
-            # Get or create subtree builder
-            if first_part not in self._subtree_names:
-                subtree_builder = KnowledgeTreeBuilder(subtree_base)
-                self._subtree_builders.append(subtree_builder)
-                self._subtree_names[first_part] = subtree_builder
-            else:
-                subtree_builder = self._subtree_names[first_part]
-
-            # Add to subtree
-            subtree_builder.add(path)
-
-    def build(self) -> KnowledgeTree:
-        """Constructs a KnowledgeTree from the current state of the builder."""
-        subtrees = [builder.build() for builder in self._subtree_builders]
-        return KnowledgeTree(self._base, self._files, subtrees)
-
-def ranked_tree(ranking: KnowledgeRanking) -> KnowledgeTree:
-    """
-    Creates a knowledge tree from a ranking by adding all paths in order.
-
-    Args:
-        ranking: A ranking of paths to organize into a tree structure.
-
-    Returns:
-        A knowledge tree containing all paths from the ranking.
-    """
-    builder = KnowledgeTreeBuilder()
-    for path in ranking:
-        builder.add(path)
-    return builder.build()
-
-def lexicographical_tree(index: KnowledgeIndex | KnowledgeRanking | Knowledge) -> KnowledgeTree:
-    """
-    Creates a knowledge tree from an index or index precursor, sorted lexicographically.
-
-    Args:
-        index: Knowledge index or its precursor to convert to a tree.
-
-    Returns:
-        A knowledge tree with paths sorted lexicographically.
-    """
-    from llobot.knowledge.ranking.lexicographical import rank_lexicographically
-    ranking = rank_lexicographically(index)
-    return ranked_tree(ranking)
-
-def overviews_first_tree(
-    index: KnowledgeIndex | KnowledgeRanking | Knowledge,
-    *,
-    overviews: KnowledgeSubset | None = None
-) -> KnowledgeTree:
-    """
-    Creates a knowledge tree with overview files listed first in each directory.
-
-    Args:
-        index: Knowledge index or its precursor to convert to a tree.
-        overviews: Subset defining overview files. Defaults to predefined overview subset.
-
-    Returns:
-        A knowledge tree with overview files prioritized in each directory.
-    """
-    # Local import to avoid circular dependency.
-    from llobot.knowledge.ranking.lexicographical import rank_lexicographically
-    from llobot.knowledge.ranking.overviews import rank_overviews_before_siblings
-    initial = rank_lexicographically(index)
-    ranking = rank_overviews_before_siblings(initial, overviews=overviews)
-    return ranked_tree(ranking)
-
-def standard_tree(index: KnowledgeIndex | KnowledgeRanking | Knowledge) -> KnowledgeTree:
+    from llobot.knowledge.trees.overviews import overviews_first_tree
     return overviews_first_tree(index)
 
-def coerce_tree(material: KnowledgeTree | KnowledgeRanking | KnowledgeIndex | Knowledge) -> KnowledgeTree:
+def coerce_tree(material: KnowledgeTreePrecursor) -> KnowledgeTree:
     """
     Converts various knowledge structures to a KnowledgeTree.
+
+    If the material is not already a `KnowledgeTree`, it will be converted
+    to a lexicographically sorted ranking and then into a tree.
 
     Args:
         material: The structure to convert. Can be a tree, ranking, index, or knowledge.
@@ -273,17 +186,14 @@ def coerce_tree(material: KnowledgeTree | KnowledgeRanking | KnowledgeIndex | Kn
     """
     if isinstance(material, KnowledgeTree):
         return material
-    if isinstance(material, KnowledgeRanking):
-        return ranked_tree(material)
-    # KnowledgeIndex or Knowledge
-    return standard_tree(material)
+    # Local import to avoid circular dependency
+    from llobot.knowledge.trees.ranked import ranked_tree
+    ranking = coerce_ranking(material)
+    return ranked_tree(ranking)
 
 __all__ = [
+    'KnowledgeTreePrecursor',
     'KnowledgeTree',
-    'KnowledgeTreeBuilder',
-    'ranked_tree',
-    'lexicographical_tree',
-    'overviews_first_tree',
     'standard_tree',
     'coerce_tree',
 ]
