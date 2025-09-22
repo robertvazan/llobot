@@ -115,8 +115,8 @@ def standard_ranking(index: KnowledgeRankingPrecursor) -> KnowledgeRanking:
     """
     Creates a knowledge ranking in the standard order.
 
-    The standard order is lexicographical, but with overview files prioritized
-    to appear before their siblings in the directory tree.
+    The standard order is lexicographical, but with ancestor overviews
+    prioritized to appear before the documents they describe.
     """
     # Local import to avoid cycles.
     from llobot.knowledge import Knowledge
@@ -124,8 +124,8 @@ def standard_ranking(index: KnowledgeRankingPrecursor) -> KnowledgeRanking:
     if isinstance(index, Knowledge):
         return standard_ranker().rank(index)
     from llobot.knowledge.ranking.lexicographical import rank_lexicographically
-    from llobot.knowledge.ranking.overviews import rank_overviews_before_siblings
-    return rank_overviews_before_siblings(rank_lexicographically(index))
+    from llobot.knowledge.ranking.overviews import rank_overviews_first
+    return rank_overviews_first(rank_lexicographically(index))
 
 __all__ = [
     'KnowledgeRanking',

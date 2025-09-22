@@ -19,9 +19,9 @@ def test_coerce_tree():
     ranking = KnowledgeRanking([Path('b.txt'), Path('a/c.txt')])
     index = KnowledgeIndex([Path('b.txt'), Path('a/c.txt')])
     tree = KnowledgeTree(files=['b.txt'], subtrees=[KnowledgeTree('a', files=['c.txt'])])
-    
+
     assert coerce_tree(tree) is tree
-    
+
     coerced_from_ranking = coerce_tree(ranking)
     assert coerced_from_ranking.files == ['b.txt']
     assert coerced_from_ranking.subtrees[0].base == Path('a')
@@ -31,15 +31,15 @@ def test_coerce_tree():
     # ranked_tree reorders them to b.txt, a/c.txt
     coerced_from_index = coerce_tree(index)
     assert coerced_from_index.all_paths == [Path('b.txt'), Path('a/c.txt')]
-    
+
     coerced_from_knowledge = coerce_tree(knowledge)
     assert coerced_from_knowledge.all_paths == [Path('b.txt'), Path('a/c.txt')]
 
 def test_standard_tree():
     knowledge = Knowledge({Path('a/z.txt'): '', Path('a/README.md'): ''})
     tree = standard_tree(knowledge)
-    # standard_tree -> overviews_first_tree -> rank_overviews_before_everything -> ranked_tree
+    # standard_tree -> overviews_first_tree -> rank_overviews_first -> ranked_tree
     # coerce_ranking gives lexicographical: a/README.md, a/z.txt
-    # rank_overviews_before_everything on this with overviews_subset (matching README.md)
+    # rank_overviews_first on this with overviews_subset (matching README.md)
     # results in the same order. Then ranked_tree.
     assert tree.all_paths == [Path('a/README.md'), Path('a/z.txt')]

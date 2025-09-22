@@ -27,12 +27,12 @@ def standard_ranker() -> KnowledgeRanker:
     """
     Returns the standard knowledge ranker.
 
-    The standard ranker sorts documents lexicographically, but prioritizes
-    overview files to appear before their siblings in each directory.
+    The standard ranker sorts documents lexicographically, but it ensures that
+    all ancestor overviews precede any given document.
     """
     # Local import to avoid circular dependency
-    from llobot.knowledge.ranking.overviews import OverviewsBeforeSiblingsRanker
-    return OverviewsBeforeSiblingsRanker()
+    from llobot.knowledge.ranking.overviews import OverviewsFirstRanker
+    return OverviewsFirstRanker()
 
 __all__ = [
     'KnowledgeRanker',
