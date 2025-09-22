@@ -97,8 +97,8 @@ def coerce_ranking(what: KnowledgeRankingPrecursor | Iterable[Path | str]) -> Kn
     Coerces various objects into a `KnowledgeRanking`.
 
     - `KnowledgeRanking` is returned as is.
-    - `KnowledgeIndex` and `Knowledge` are converted to a lexicographically
-      sorted ranking.
+    - `KnowledgeIndex` and `Knowledge` are converted to a pre-order
+      lexicographically sorted ranking.
     - An iterable of paths is converted to a `KnowledgeRanking`.
     """
     if isinstance(what, KnowledgeRanking):
@@ -106,26 +106,26 @@ def coerce_ranking(what: KnowledgeRankingPrecursor | Iterable[Path | str]) -> Kn
     # Local import to avoid cycles.
     from llobot.knowledge import Knowledge
     from llobot.knowledge.indexes import KnowledgeIndex
-    from llobot.knowledge.ranking.lexicographical import rank_lexicographically
+    from llobot.knowledge.ranking.trees import preorder_lexicographical_ranking
     if isinstance(what, (KnowledgeIndex, Knowledge)):
-        return rank_lexicographically(what)
+        return preorder_lexicographical_ranking(what)
     return KnowledgeRanking(what)
 
 def standard_ranking(index: KnowledgeRankingPrecursor) -> KnowledgeRanking:
     """
     Creates a knowledge ranking in the standard order.
 
-    The standard order is lexicographical, but with ancestor overviews
-    prioritized to appear before the documents they describe.
+    The standard order is pre-order lexicographical, but with ancestor
+    overviews prioritized to appear before the documents they describe.
     """
     # Local import to avoid cycles.
     from llobot.knowledge import Knowledge
     from llobot.knowledge.ranking.rankers import standard_ranker
     if isinstance(index, Knowledge):
         return standard_ranker().rank(index)
-    from llobot.knowledge.ranking.lexicographical import rank_lexicographically
+    from llobot.knowledge.ranking.trees import preorder_lexicographical_ranking
     from llobot.knowledge.ranking.overviews import rank_overviews_first
-    return rank_overviews_first(rank_lexicographically(index))
+    return rank_overviews_first(preorder_lexicographical_ranking(index))
 
 __all__ = [
     'KnowledgeRanking',

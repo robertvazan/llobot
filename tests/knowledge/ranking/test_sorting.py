@@ -3,6 +3,7 @@ from llobot.knowledge import Knowledge
 from llobot.knowledge.ranking import KnowledgeRanking
 from llobot.knowledge.ranking.lexicographical import LexicographicalRanker
 from llobot.knowledge.ranking.sorting import AscendingRanker, DescendingRanker, rank_ascending, rank_descending
+from llobot.knowledge.ranking.trees import PreorderRanker
 from llobot.knowledge.scores import KnowledgeScores
 from llobot.knowledge.scores.scorers import KnowledgeScorer, standard_scorer
 from llobot.utils.values import ValueTypeMixin
@@ -48,8 +49,9 @@ def test_ascending_ranker():
     ranking = ranker.rank(KNOWLEDGE)
     assert ranking == KnowledgeRanking([Path('a.txt'), Path('c.txt'), Path('b.txt')])
     # Test value semantics
-    assert AscendingRanker(scorer=MockScorer()) == AscendingRanker(scorer=MockScorer(), tiebreaker=LexicographicalRanker())
-    assert hash(AscendingRanker(scorer=MockScorer())) == hash(AscendingRanker(scorer=MockScorer(), tiebreaker=LexicographicalRanker()))
+    default_tiebreaker = PreorderRanker(tiebreaker=LexicographicalRanker())
+    assert AscendingRanker(scorer=MockScorer()) == AscendingRanker(scorer=MockScorer(), tiebreaker=default_tiebreaker)
+    assert hash(AscendingRanker(scorer=MockScorer())) == hash(AscendingRanker(scorer=MockScorer(), tiebreaker=default_tiebreaker))
     # Test default scorer
     assert AscendingRanker()._scorer == standard_scorer()
 
@@ -58,7 +60,8 @@ def test_descending_ranker():
     ranking = ranker.rank(KNOWLEDGE)
     assert ranking == KnowledgeRanking([Path('b.txt'), Path('c.txt'), Path('a.txt')])
     # Test value semantics
-    assert DescendingRanker(scorer=MockScorer()) == DescendingRanker(scorer=MockScorer(), tiebreaker=LexicographicalRanker())
-    assert hash(DescendingRanker(scorer=MockScorer())) == hash(DescendingRanker(scorer=MockScorer(), tiebreaker=LexicographicalRanker()))
+    default_tiebreaker = PreorderRanker(tiebreaker=LexicographicalRanker())
+    assert DescendingRanker(scorer=MockScorer()) == DescendingRanker(scorer=MockScorer(), tiebreaker=default_tiebreaker)
+    assert hash(DescendingRanker(scorer=MockScorer())) == hash(DescendingRanker(scorer=MockScorer(), tiebreaker=default_tiebreaker))
     # Test default scorer
     assert DescendingRanker()._scorer == standard_scorer()

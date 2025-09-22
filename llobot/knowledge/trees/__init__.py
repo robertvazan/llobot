@@ -176,7 +176,7 @@ def coerce_tree(material: KnowledgeTreePrecursor) -> KnowledgeTree:
     Converts various knowledge structures to a KnowledgeTree.
 
     If the material is not already a `KnowledgeTree`, it will be converted
-    to a lexicographically sorted ranking and then into a tree.
+    to a pre-order lexicographically sorted ranking and then into a tree.
 
     Args:
         material: The structure to convert. Can be a tree, ranking, index, or knowledge.

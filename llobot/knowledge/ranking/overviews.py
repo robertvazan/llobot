@@ -11,6 +11,7 @@ from llobot.knowledge import Knowledge
 from llobot.knowledge.ranking import KnowledgeRanking, KnowledgeRankingPrecursor, coerce_ranking
 from llobot.knowledge.ranking.lexicographical import LexicographicalRanker
 from llobot.knowledge.ranking.rankers import KnowledgeRanker
+from llobot.knowledge.ranking.trees import PreorderRanker
 from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.knowledge.subsets.standard import overviews_subset
 from llobot.knowledge.trees.ranked import ranked_tree
@@ -67,7 +68,7 @@ class OverviewsFirstRanker(KnowledgeRanker, ValueTypeMixin):
     _overviews: KnowledgeSubset
 
     def __init__(self, *,
-        tiebreaker: KnowledgeRanker = LexicographicalRanker(),
+        tiebreaker: KnowledgeRanker = PreorderRanker(tiebreaker=LexicographicalRanker()),
         overviews: KnowledgeSubset | None = None
     ):
         """
@@ -75,7 +76,8 @@ class OverviewsFirstRanker(KnowledgeRanker, ValueTypeMixin):
 
         Args:
             tiebreaker: The ranker used to create the initial ordering before
-                        overview prioritization. Defaults to `LexicographicalRanker`.
+                        overview prioritization. Defaults to a pre-order
+                        lexicographical ranker.
             overviews: The subset defining which files are overviews.
                        Defaults to the standard one.
         """

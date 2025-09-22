@@ -41,10 +41,10 @@ def test_standard_ranking_from_index():
     assert ranking == KnowledgeRanking(
         [
             Path("README.md"),
+            Path("main.py"),
             Path("a/README.md"),
             Path("a/b/__init__.py"),
             Path("a/b/c.txt"),
-            Path("main.py"),
         ]
     )
 
@@ -54,9 +54,9 @@ def test_standard_ranking_from_knowledge():
     assert ranking == KnowledgeRanking(
         [
             Path("README.md"),
+            Path("main.py"),
             Path("a/README.md"),
             Path("a/b/__init__.py"),
             Path("a/b/c.txt"),
-            Path("main.py"),
         ]
     )

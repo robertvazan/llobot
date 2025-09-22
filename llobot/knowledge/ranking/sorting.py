@@ -10,6 +10,7 @@ from llobot.knowledge import Knowledge
 from llobot.knowledge.ranking import KnowledgeRanking, KnowledgeRankingPrecursor, coerce_ranking
 from llobot.knowledge.ranking.lexicographical import LexicographicalRanker
 from llobot.knowledge.ranking.rankers import KnowledgeRanker
+from llobot.knowledge.ranking.trees import PreorderRanker
 from llobot.knowledge.scores import KnowledgeScores
 from llobot.knowledge.scores.scorers import KnowledgeScorer, standard_scorer
 from llobot.utils.values import ValueTypeMixin
@@ -19,7 +20,7 @@ def rank_ascending(scores: KnowledgeScores, *, initial: KnowledgeRankingPrecurso
     Sorts a ranking in ascending order of scores.
 
     If an initial ranking is provided, it is sorted. Otherwise, a new
-    lexicographically sorted ranking of the scored documents is created
+    ranking of the scored documents is created using the default ranking
     and then sorted by score.
 
     Args:
@@ -61,7 +62,7 @@ class AscendingRanker(KnowledgeRanker, ValueTypeMixin):
 
     def __init__(self, *,
         scorer: KnowledgeScorer | None = None,
-        tiebreaker: KnowledgeRanker = LexicographicalRanker()
+        tiebreaker: KnowledgeRanker = PreorderRanker(tiebreaker=LexicographicalRanker())
     ):
         """
         Creates a new `AscendingRanker`.
@@ -69,8 +70,8 @@ class AscendingRanker(KnowledgeRanker, ValueTypeMixin):
         Args:
             scorer: The scorer to use for ranking. Defaults to `standard_scorer`.
             tiebreaker: The ranker used for tie-breaking. It provides the
-                        initial ordering before sorting. Defaults to
-                        `LexicographicalRanker`.
+                        initial ordering before sorting. Defaults to a pre-order
+                        lexicographical ranker.
         """
         self._scorer = scorer if scorer is not None else standard_scorer()
         self._tiebreaker = tiebreaker
@@ -98,7 +99,7 @@ class DescendingRanker(KnowledgeRanker, ValueTypeMixin):
 
     def __init__(self, *,
         scorer: KnowledgeScorer | None = None,
-        tiebreaker: KnowledgeRanker = LexicographicalRanker()
+        tiebreaker: KnowledgeRanker = PreorderRanker(tiebreaker=LexicographicalRanker())
     ):
         """
         Creates a new `DescendingRanker`.
@@ -106,8 +107,8 @@ class DescendingRanker(KnowledgeRanker, ValueTypeMixin):
         Args:
             scorer: The scorer to use for ranking. Defaults to `standard_scorer`.
             tiebreaker: The ranker used for tie-breaking. It provides the
-                        initial ordering before sorting. Defaults to
-                        `LexicographicalRanker`.
+                        initial ordering before sorting. Defaults to a pre-order
+                        lexicographical ranker.
         """
         self._scorer = scorer if scorer is not None else standard_scorer()
         self._tiebreaker = tiebreaker

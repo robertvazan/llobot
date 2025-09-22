@@ -6,6 +6,7 @@ from llobot.knowledge.ranking.overviews import (
     OverviewsFirstRanker,
     rank_overviews_first,
 )
+from llobot.knowledge.ranking.trees import PreorderRanker
 from llobot.knowledge.subsets.filename import FilenameSubset
 from llobot.knowledge.subsets.standard import overviews_subset
 
@@ -53,9 +54,10 @@ def test_overviews_first_ranker():
         Path('a/doc.txt'),
     ])
     # Test value semantics
-    assert ranker == OverviewsFirstRanker(tiebreaker=LexicographicalRanker(), overviews=OVERVIEWS)
-    assert hash(ranker) == hash(OverviewsFirstRanker(tiebreaker=LexicographicalRanker(), overviews=OVERVIEWS))
-    assert ranker != OverviewsFirstRanker(tiebreaker=LexicographicalRanker())
+    default_tiebreaker = PreorderRanker(tiebreaker=LexicographicalRanker())
+    assert OverviewsFirstRanker(overviews=OVERVIEWS) == OverviewsFirstRanker(tiebreaker=default_tiebreaker, overviews=OVERVIEWS)
+    assert hash(OverviewsFirstRanker(overviews=OVERVIEWS)) == hash(OverviewsFirstRanker(tiebreaker=default_tiebreaker, overviews=OVERVIEWS))
+    assert OverviewsFirstRanker(overviews=OVERVIEWS) != OverviewsFirstRanker(tiebreaker=LexicographicalRanker(), overviews=OVERVIEWS)
     # Test default overviews
     ranker_default = OverviewsFirstRanker()
     assert ranker_default._overviews == overviews_subset()

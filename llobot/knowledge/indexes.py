@@ -36,8 +36,14 @@ class KnowledgeIndex:
         return iter(self._paths)
 
     def sorted(self) -> 'KnowledgeRanking':
-        from llobot.knowledge.ranking.lexicographical import rank_lexicographically
-        return rank_lexicographically(self)
+        """
+        Returns a default sorted ranking of the paths in this index.
+
+        The default sorting is pre-order traversal of a lexicographically
+        sorted tree.
+        """
+        from llobot.knowledge.ranking.trees import preorder_lexicographical_ranking
+        return preorder_lexicographical_ranking(self)
 
     def reversed(self) -> 'KnowledgeRanking':
         return self.sorted().reversed()

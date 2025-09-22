@@ -7,10 +7,11 @@ before descending into its subdirectories.
 """
 from __future__ import annotations
 from llobot.knowledge import Knowledge
-from llobot.knowledge.ranking import KnowledgeRanking
+from llobot.knowledge.ranking import KnowledgeRanking, KnowledgeRankingPrecursor
 from llobot.knowledge.ranking.lexicographical import LexicographicalRanker
 from llobot.knowledge.ranking.rankers import KnowledgeRanker
 from llobot.knowledge.trees import KnowledgeTree, KnowledgeTreePrecursor, coerce_tree
+from llobot.knowledge.trees.lexicographical import lexicographical_tree
 from llobot.utils.values import ValueTypeMixin
 
 def preorder_ranking(tree: KnowledgeTreePrecursor) -> KnowledgeRanking:
@@ -26,10 +27,24 @@ def preorder_ranking(tree: KnowledgeTreePrecursor) -> KnowledgeRanking:
     tree = coerce_tree(tree)
     return KnowledgeRanking(tree.all_paths)
 
+def preorder_lexicographical_ranking(index: KnowledgeRankingPrecursor) -> KnowledgeRanking:
+    """
+    Creates a ranking by performing a pre-order traversal of a lexicographically sorted knowledge tree.
+
+    Args:
+        index: The index or index precursor to build the tree from.
+
+    Returns:
+        A `KnowledgeRanking` of paths in pre-order from a lexicographically sorted tree.
+    """
+    tree = lexicographical_tree(index)
+    return KnowledgeRanking(tree.all_paths)
+
 class PreorderRanker(KnowledgeRanker, ValueTypeMixin):
     """
     A ranker that creates a ranking by performing a pre-order traversal of a
-    knowledge tree. The tree itself is built from an initial ranking.
+    knowledge tree. The tree itself is built from an initial ranking provided
+    by the tiebreaker ranker.
     """
     _tiebreaker: KnowledgeRanker
 
@@ -39,7 +54,9 @@ class PreorderRanker(KnowledgeRanker, ValueTypeMixin):
 
         Args:
             tiebreaker: The ranker used to create the initial ordering from which
-                        the tree is built. Defaults to `LexicographicalRanker`.
+                        the tree is built. Defaults to `LexicographicalRanker`,
+                        resulting in a pre-order traversal of a lexicographically
+                        sorted tree.
         """
         self._tiebreaker = tiebreaker
 
@@ -58,5 +75,6 @@ class PreorderRanker(KnowledgeRanker, ValueTypeMixin):
 
 __all__ = [
     'preorder_ranking',
+    'preorder_lexicographical_ranking',
     'PreorderRanker',
 ]
