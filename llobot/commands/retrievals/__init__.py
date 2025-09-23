@@ -20,7 +20,7 @@ from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
 from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.retrievals import RetrievalsEnv
-from llobot.formats.knowledge import KnowledgeFormat
+from llobot.formats.deltas.knowledge import KnowledgeDeltaFormat
 from llobot.knowledge.indexes import KnowledgeIndex
 
 
@@ -28,16 +28,16 @@ class RetrievalStep(Step):
     """
     A step that adds retrieved documents to the context if they are not already there.
     """
-    _knowledge_format: KnowledgeFormat
+    _knowledge_delta_format: KnowledgeDeltaFormat
 
-    def __init__(self, knowledge_format: KnowledgeFormat):
+    def __init__(self, knowledge_delta_format: KnowledgeDeltaFormat):
         """
         Initializes the retrieval step.
 
         Args:
-            knowledge_format: The format to use for rendering retrieved documents.
+            knowledge_delta_format: The format to use for rendering retrieved documents.
         """
-        self._knowledge_format = knowledge_format
+        self._knowledge_delta_format = knowledge_delta_format
 
     def process(self, env: Environment):
         """
@@ -56,14 +56,14 @@ class RetrievalStep(Step):
         paths_to_add = set()
         for path in retrieved_paths:
             if path in knowledge:
-                formatted = self._knowledge_format.document_format.render_fresh(path, knowledge[path])
+                formatted = self._knowledge_delta_format.document_delta_format.render_fresh(path, knowledge[path])
                 if formatted:
                     already_present = any(formatted in msg.content for msg in context_messages)
                     if not already_present:
                         paths_to_add.add(path)
 
         retrieved_knowledge = knowledge & KnowledgeIndex(paths_to_add)
-        retrievals_chat = self._knowledge_format.render_fresh(retrieved_knowledge)
+        retrievals_chat = self._knowledge_delta_format.render_fresh_chat(retrieved_knowledge)
         context.add(retrievals_chat)
 
         retrievals.clear()

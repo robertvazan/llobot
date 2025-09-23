@@ -21,11 +21,8 @@ from llobot.environments.prompt import PromptEnv
 from llobot.environments.session import SessionEnv
 from llobot.environments.status import StatusEnv
 from llobot.formats.mentions import parse_mentions
-from llobot.formats.prompts import (
-    PromptFormat,
-    reminder_prompt_format,
-    standard_prompt_format,
-)
+from llobot.formats.prompts import PromptFormat, standard_prompt_format
+from llobot.formats.prompts.reminder import ReminderPromptFormat
 from llobot.utils.fs import data_home
 from llobot.utils.zones import Zoning
 from llobot.memories.examples import ExampleMemory
@@ -52,7 +49,7 @@ class Imitator(Role):
         example_archive: ChatArchive | Zoning | Path | str = standard_chat_archive(data_home()/'llobot/examples'),
         crammer: ExampleCrammer = standard_example_crammer(),
         prompt_format: PromptFormat = standard_prompt_format(),
-        reminder_format: PromptFormat = reminder_prompt_format(),
+        reminder_format: PromptFormat = ReminderPromptFormat(),
     ):
         self._name = name
         self._model = model
@@ -88,11 +85,11 @@ class Imitator(Role):
 
         budget = self._model.context_budget
 
-        system_chat = self._prompt_format(self._system)
+        system_chat = self._prompt_format.render_chat(self._system)
         context.add(system_chat)
         budget -= system_chat.cost
 
-        reminder_chat = self._reminder_format(self._system)
+        reminder_chat = self._reminder_format.render_chat(self._system)
         budget -= reminder_chat.cost
 
         recent_examples = self._examples.recent(env)

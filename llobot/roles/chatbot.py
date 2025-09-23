@@ -52,7 +52,7 @@ class Chatbot(Role):
             A model stream with the generated response.
         """
         builder = ChatBuilder()
-        system_chat = self._prompt_format(self._system)
+        system_chat = self._prompt_format.render_chat(self._system)
         builder.add(system_chat)
         builder.add(prompt)
         return self._model.generate(builder.build())

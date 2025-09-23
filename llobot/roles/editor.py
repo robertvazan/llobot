@@ -25,13 +25,10 @@ from llobot.environments.projects import ProjectEnv
 from llobot.environments.prompt import PromptEnv
 from llobot.environments.session import SessionEnv
 from llobot.environments.status import StatusEnv
-from llobot.formats.knowledge import KnowledgeFormat, standard_knowledge_format
+from llobot.formats.deltas.knowledge import KnowledgeDeltaFormat, standard_knowledge_delta_format
 from llobot.formats.mentions import parse_mentions
-from llobot.formats.prompts import (
-    PromptFormat,
-    reminder_prompt_format,
-    standard_prompt_format,
-)
+from llobot.formats.prompts import PromptFormat, standard_prompt_format
+from llobot.formats.prompts.reminder import ReminderPromptFormat
 from llobot.utils.fs import data_home
 from llobot.utils.zones import Zoning
 from llobot.knowledge.archives import KnowledgeArchive, standard_knowledge_archive
@@ -74,7 +71,7 @@ class Editor(Role):
     _ranker: KnowledgeRanker
     _knowledge_crammer: KnowledgeCrammer
     _index_crammer: IndexCrammer
-    _knowledge_format: KnowledgeFormat
+    _knowledge_delta_format: KnowledgeDeltaFormat
     _prompt_format: PromptFormat
     _reminder_format: PromptFormat
     _step_chain: StepChain
@@ -90,9 +87,9 @@ class Editor(Role):
         ranker: KnowledgeRanker = standard_ranker(),
         knowledge_crammer: KnowledgeCrammer = standard_knowledge_crammer(),
         index_crammer: IndexCrammer = standard_index_crammer(),
-        knowledge_format: KnowledgeFormat = standard_knowledge_format(),
+        knowledge_delta_format: KnowledgeDeltaFormat = standard_knowledge_delta_format(),
         prompt_format: PromptFormat = standard_prompt_format(),
-        reminder_format: PromptFormat = reminder_prompt_format(),
+        reminder_format: PromptFormat = ReminderPromptFormat(),
     ):
         """
         Creates a new editor role.
@@ -110,7 +107,7 @@ class Editor(Role):
         self._ranker = ranker
         self._knowledge_crammer = knowledge_crammer
         self._index_crammer = index_crammer
-        self._knowledge_format = knowledge_format
+        self._knowledge_delta_format = knowledge_delta_format
         self._prompt_format = prompt_format
         self._reminder_format = reminder_format
         self._step_chain = StepChain(
@@ -120,7 +117,7 @@ class Editor(Role):
             ProjectKnowledgeStep(self._knowledge_archive),
             CustomStep(self.stuff),
             standard_retrieval_commands(),
-            RetrievalStep(self._knowledge_format),
+            RetrievalStep(self._knowledge_delta_format),
             ApproveCommand(self._examples),
             UnrecognizedCommand(),
         )
@@ -144,7 +141,7 @@ class Editor(Role):
         budget = self._model.context_budget
 
         # System prompt
-        system_chat = self._prompt_format(self._system)
+        system_chat = self._prompt_format.render_chat(self._system)
         context.add(system_chat)
         budget -= system_chat.cost
 
@@ -185,7 +182,7 @@ class Editor(Role):
                 self._step_chain.process(env)
 
             if i == 0:
-                context.add(self._reminder_format(self._system))
+                context.add(self._reminder_format.render_chat(self._system))
 
             context.add(message)
 

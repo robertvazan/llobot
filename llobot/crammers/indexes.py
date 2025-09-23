@@ -50,7 +50,7 @@ def create_index_crammer(function: Callable[[KnowledgeScores, int], ChatBranch])
 
 @lru_cache
 def optional_index_crammer(
-    tree_format: TreeFormat = standard_tree_format("Project files"),
+    tree_format: TreeFormat = standard_tree_format(),
 ) -> IndexCrammer:
     """
     Creates an index crammer that includes the full tree or nothing.
@@ -74,12 +74,12 @@ def optional_index_crammer(
         tree = standard_tree(index)
 
         # Format tree
-        formatted_content = tree_format(tree)
+        formatted_content = tree_format.render(tree)
         if not formatted_content:
             return ChatBranch()
 
         # Check if it fits in budget
-        result = affirmation_turn(ChatMessage(ChatIntent.SYSTEM, formatted_content))
+        result = affirmation_turn(formatted_content)
 
         if result.cost <= budget:
             return result

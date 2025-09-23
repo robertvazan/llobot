@@ -1,23 +1,10 @@
+"""
+Language mapping based on file extension.
+"""
 from __future__ import annotations
-from functools import cache
 from pathlib import Path
-
-class LanguageGuesser:
-    # Returns empty string if it cannot guess the language.
-    def guess(self, path: Path, content: str) -> str:
-        return ''
-
-    def __call__(self, path: Path, content: str) -> str:
-        return self.guess(path, content)
-
-    def __or__(self, other: LanguageGuesser) -> LanguageGuesser:
-        return create_language_guesser(lambda path, content: self(path, content) or other(path, content))
-
-def create_language_guesser(function: Callable[[Path, str], str]) -> LanguageGuesser:
-    class LambdaGuesser(LanguageGuesser):
-        def guess(self, path: Path, content: str) -> str:
-            return function(path, content)
-    return LambdaGuesser()
+from llobot.formats.languages import LanguageMapping
+from llobot.utils.values import ValueTypeMixin
 
 LANGUAGES_BY_EXTENSION = {
     # Documentation and markup
@@ -125,36 +112,35 @@ LANGUAGES_BY_EXTENSION = {
     '.docker': 'dockerfile',
 }
 
-@cache
-def extension_language_guesser(extensions: dict[str, str] | None = None) -> LanguageGuesser:
-    extensions = LANGUAGES_BY_EXTENSION if extensions is None else extensions
-    return create_language_guesser(lambda path, content: extensions.get(path.suffix, ''))
+class ExtensionLanguageMapping(LanguageMapping, ValueTypeMixin):
+    """
+    A language mapping based on file extensions.
+    """
+    _extensions: dict[str, str]
 
-LANGUAGES_BY_FILENAME = {
-    'Makefile': 'makefile',
-    'makefile': 'makefile',
-    'CMakeLists.txt': 'cmake',
-    'BUILD': 'python',
-    'WORKSPACE': 'python',
-    'Dockerfile': 'dockerfile',
-    'Containerfile': 'dockerfile',
-}
+    def __init__(self, extensions: dict[str, str] | None = None):
+        """
+        Creates a new extension-based language mapping.
 
-@cache
-def filename_language_guesser(filenames: dict[str, str] | None = None) -> LanguageGuesser:
-    filenames = LANGUAGES_BY_FILENAME if filenames is None else filenames
-    return create_language_guesser(lambda path, content: filenames.get(path.name, ''))
+        Args:
+            extensions: A dictionary mapping extensions to language names.
+                        Defaults to a standard set of extensions.
+        """
+        self._extensions = LANGUAGES_BY_EXTENSION if extensions is None else extensions
 
-@cache
-def standard_language_guesser() -> LanguageGuesser:
-    return filename_language_guesser() | extension_language_guesser()
+    def resolve(self, path: Path) -> str:
+        """
+        Resolves the language from the file's suffix.
+
+        Args:
+            path: The path of the file.
+
+        Returns:
+            The language name, or an empty string if the suffix is not found.
+        """
+        return self._extensions.get(path.suffix, '')
 
 __all__ = [
-    'LanguageGuesser',
-    'create_language_guesser',
     'LANGUAGES_BY_EXTENSION',
-    'extension_language_guesser',
-    'LANGUAGES_BY_FILENAME',
-    'filename_language_guesser',
-    'standard_language_guesser',
+    'ExtensionLanguageMapping',
 ]

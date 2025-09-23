@@ -5,9 +5,9 @@ from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.retrievals import RetrievalsEnv
 from llobot.environments.context import ContextEnv
 from llobot.knowledge import Knowledge
-from llobot.formats.knowledge import standard_knowledge_format
+from llobot.formats.deltas.knowledge import standard_knowledge_delta_format
 
-KNOWLEDGE_FORMAT = standard_knowledge_format()
+KNOWLEDGE_DELTA_FORMAT = standard_knowledge_delta_format()
 KNOWLEDGE = Knowledge({
     Path('a.txt'): 'content a',
     Path('b.txt'): 'content b',
@@ -21,14 +21,14 @@ def create_env() -> Environment:
 
 def test_no_retrievals():
     env = create_env()
-    step = RetrievalStep(KNOWLEDGE_FORMAT)
+    step = RetrievalStep(KNOWLEDGE_DELTA_FORMAT)
     step.process(env)
     assert not env[ContextEnv].messages
     assert not env[RetrievalsEnv].get()
 
 def test_one_retrieval():
     env = create_env()
-    step = RetrievalStep(KNOWLEDGE_FORMAT)
+    step = RetrievalStep(KNOWLEDGE_DELTA_FORMAT)
     env[RetrievalsEnv].add(Path('a.txt'))
     step.process(env)
     context = env[ContextEnv]
@@ -39,7 +39,7 @@ def test_one_retrieval():
 
 def test_multiple_retrievals():
     env = create_env()
-    step = RetrievalStep(KNOWLEDGE_FORMAT)
+    step = RetrievalStep(KNOWLEDGE_DELTA_FORMAT)
     env[RetrievalsEnv].add(Path('a.txt'))
     step.process(env)
     env[RetrievalsEnv].add(Path('b.txt'))
@@ -54,7 +54,7 @@ def test_multiple_retrievals():
 
 def test_duplicate_retrieval_prevention():
     env = create_env()
-    step = RetrievalStep(KNOWLEDGE_FORMAT)
+    step = RetrievalStep(KNOWLEDGE_DELTA_FORMAT)
     env[RetrievalsEnv].add(Path('a.txt'))
     step.process(env)
     context = env[ContextEnv]
