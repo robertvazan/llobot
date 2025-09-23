@@ -9,7 +9,6 @@ from __future__ import annotations
 from pathlib import Path
 from llobot.knowledge import Knowledge
 from llobot.knowledge.ranking import KnowledgeRanking, KnowledgeRankingPrecursor, coerce_ranking
-from llobot.knowledge.ranking.lexicographical import LexicographicalRanker
 from llobot.knowledge.ranking.rankers import KnowledgeRanker
 from llobot.knowledge.ranking.trees import PreorderRanker
 from llobot.knowledge.subsets import KnowledgeSubset
@@ -68,7 +67,7 @@ class OverviewsFirstRanker(KnowledgeRanker, ValueTypeMixin):
     _overviews: KnowledgeSubset
 
     def __init__(self, *,
-        tiebreaker: KnowledgeRanker = PreorderRanker(tiebreaker=LexicographicalRanker()),
+        tiebreaker: KnowledgeRanker = PreorderRanker(),
         overviews: KnowledgeSubset | None = None
     ):
         """

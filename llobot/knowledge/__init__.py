@@ -34,10 +34,23 @@ from pathlib import Path
 from llobot.utils.fs import read_document
 
 class Knowledge:
+    """
+    An immutable collection of documents, indexed by `pathlib.Path`.
+
+    Knowledge objects behave like a read-only dictionary mapping paths to
+    their string content. They support various operations for filtering,
+    transforming, and combining knowledge bases.
+    """
     _documents: dict[Path, str]
     _hash: int | None
 
     def __init__(self, documents: dict[Path, str] = {}):
+        """
+        Initializes a new Knowledge object.
+
+        Args:
+            documents: A dictionary of paths and their content.
+        """
         self._documents = dict(documents)
         self._hash = None
 
@@ -45,6 +58,7 @@ class Knowledge:
         return str(self.keys())
 
     def keys(self) -> 'KnowledgeIndex':
+        """Returns a `KnowledgeIndex` of all paths in the collection."""
         from llobot.knowledge.indexes import KnowledgeIndex
         return KnowledgeIndex(self._documents.keys())
 
@@ -53,6 +67,7 @@ class Knowledge:
 
     @property
     def cost(self) -> int:
+        """The total number of characters in all documents."""
         return sum(len(content) for content in self._documents.values())
 
     def __bool__(self) -> bool:
@@ -72,31 +87,54 @@ class Knowledge:
         return Path(path) in self._documents
 
     def __getitem__(self, path: Path) -> str:
+        """
+        Gets the content of a document. Returns an empty string if not found.
+        """
         return self._documents.get(path, '')
 
     def __iter__(self) -> Iterator[(Path, str)]:
         return iter(self._documents.items())
 
     def transform(self, operation: Callable[[Path, str], str]) -> Knowledge:
+        """
+        Creates a new `Knowledge` object by applying an operation to each document.
+        """
         return Knowledge({path: operation(path, content) for path, content in self})
 
     def __and__(self, subset: 'KnowledgeSubset' | str | Path | 'KnowledgeIndex' | 'KnowledgeRanking' | 'KnowledgeScores') -> Knowledge:
+        """
+        Filters the knowledge, keeping only documents in the given subset.
+        """
         from llobot.knowledge.subsets import coerce_subset
         subset = coerce_subset(subset)
         return Knowledge({path: content for path, content in self if path in subset})
 
     def __or__(self, addition: Knowledge) -> Knowledge:
+        """
+        Merges this knowledge with another, overwriting with new content.
+        """
         return Knowledge(self._documents | addition._documents)
 
     def __sub__(self, subset: 'KnowledgeSubset' | str | Path | 'KnowledgeIndex' | Path | 'KnowledgeRanking' | 'KnowledgeScores') -> Knowledge:
+        """
+        Filters the knowledge, removing documents in the given subset.
+        """
         from llobot.knowledge.subsets import coerce_subset
         return self & ~coerce_subset(subset)
 
     def __rtruediv__(self, prefix: Path | str) -> Knowledge:
+        """
+        Creates a new `Knowledge` with a prefix prepended to all paths.
+        """
         prefix = Path(prefix)
         return Knowledge({prefix/path: content for path, content in self})
 
     def __truediv__(self, subtree: Path | str) -> Knowledge:
+        """
+        Creates a new `Knowledge` with a prefix stripped from all paths.
+
+        Only paths within the `subtree` are kept.
+        """
         subtree = Path(subtree)
         return Knowledge({path.relative_to(subtree): content for path, content in self if path.is_relative_to(subtree)})
 

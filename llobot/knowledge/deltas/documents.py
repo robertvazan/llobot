@@ -72,7 +72,7 @@ class DocumentDelta:
             self._content == other._content
         )
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         flags = []
         if self.removed: flags.append('removed')
         if self.moved_from: flags.append(f"moved from {self.moved_from}")

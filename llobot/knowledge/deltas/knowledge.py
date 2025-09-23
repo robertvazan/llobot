@@ -30,7 +30,7 @@ class KnowledgeDelta:
             return NotImplemented
         return self._deltas == other._deltas
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return '[' + ', '.join(str(d) for d in self) + ']'
 
     def __add__(self, other: KnowledgeDelta) -> KnowledgeDelta:

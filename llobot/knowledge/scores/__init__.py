@@ -55,7 +55,7 @@ class KnowledgeScores:
         self._scores = {path: float(score) for path, score in scores.items() if math.isfinite(score) and score != 0}
         self._hash = None
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return str(self._scores)
 
     def keys(self) -> KnowledgeIndex:
