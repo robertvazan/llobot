@@ -136,6 +136,10 @@ def editing_prompt_section() -> PromptSection:
     return PromptSection(read_prompt('editing.md'), deltas_prompt_section())
 
 @cache
+def answering_prompt_section() -> PromptSection:
+    return PromptSection(read_prompt('answering.md'), knowledge_prompt_section())
+
+@cache
 def coding_prompt_section() -> PromptSection:
     return PromptSection(read_prompt('coding.md'), editing_prompt_section())
 
@@ -144,8 +148,8 @@ def documentation_prompt_section() -> PromptSection:
     return PromptSection(read_prompt('documentation.md'), coding_prompt_section())
 
 @cache
-def answering_prompt_section() -> PromptSection:
-    return PromptSection(read_prompt('answering.md'), knowledge_prompt_section())
+def unit_tests_prompt_section() -> PromptSection:
+    return PromptSection(read_prompt('unit_tests.md'), coding_prompt_section())
 
 __all__ = [
     'read_prompt',
@@ -158,7 +162,8 @@ __all__ = [
     'knowledge_prompt_section',
     'deltas_prompt_section',
     'editing_prompt_section',
+    'answering_prompt_section',
     'coding_prompt_section',
     'documentation_prompt_section',
-    'answering_prompt_section',
+    'unit_tests_prompt_section',
 ]
