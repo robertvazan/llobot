@@ -46,6 +46,7 @@ from llobot.prompts import (
     SystemPrompt,
     answering_prompt_section,
     editing_prompt_section,
+    overviews_prompt_section,
     read_prompt,
 )
 from llobot.roles import Role
@@ -59,6 +60,7 @@ def editor_system_prompt() -> SystemPrompt:
         read_prompt('editor.md'),
         editing_prompt_section(),
         answering_prompt_section(),
+        overviews_prompt_section(),
     )
 
 class Editor(Role):
