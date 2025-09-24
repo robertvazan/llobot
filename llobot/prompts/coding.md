@@ -18,3 +18,12 @@
 - When writing complex logic, consider several approaches and pick the best one
 - Think through complex logic to ensure correctness
 - Write well-structured and documented code that is obviously correct
+
+### Interface design
+
+- When the task does not fully specify API or UI, recognize that you have design freedom
+- Use design freedom to choose optimal interface design before the interface has time to ossify
+- Interfaces are important, so invest some effort into getting them right
+- Follow stated and inferred project conventions when designing interfaces
+- When naming things, consider several alternative names or naming schemes and choose the optimal one
+- Ideal name is short, accurate, semantically rich, conventional, and non-conflicting
