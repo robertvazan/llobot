@@ -19,6 +19,6 @@ prompts
     Prompt formats for assembling complete LLM prompts.
 submessages
     Submessage formats for rendering a chat branch into one message.
-trees
-    Tree formats for hierarchical knowledge presentation.
+indexes
+    Formats for hierarchical knowledge presentation.
 """

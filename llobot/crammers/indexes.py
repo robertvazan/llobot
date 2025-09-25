@@ -6,7 +6,7 @@ from llobot.chats.intents import ChatIntent
 from llobot.chats.messages import ChatMessage
 from llobot.knowledge.scores import KnowledgeScores
 from llobot.knowledge.trees import standard_tree
-from llobot.formats.trees import TreeFormat, standard_tree_format
+from llobot.formats.indexes import IndexFormat, standard_index_format
 from llobot.formats.affirmations import affirmation_turn
 
 class IndexCrammer:
@@ -50,17 +50,17 @@ def create_index_crammer(function: Callable[[KnowledgeScores, int], ChatBranch])
 
 @lru_cache
 def optional_index_crammer(
-    tree_format: TreeFormat = standard_tree_format(),
+    index_format: IndexFormat = standard_index_format(),
 ) -> IndexCrammer:
     """
-    Creates an index crammer that includes the full tree or nothing.
+    Creates an index crammer that includes the full index or nothing.
 
-    This crammer formats the entire index as a directory tree using the specified
-    tree format. If the formatted tree fits within the budget, it returns it
+    This crammer formats the entire index using the specified
+    index format. If the formatted index fits within the budget, it returns it
     wrapped in a ChatBranch. Otherwise, it returns an empty ChatBranch.
 
     Args:
-        tree_format: Formatter to use for rendering the directory tree.
+        index_format: Formatter to use for rendering the index.
 
     Returns:
         IndexCrammer that includes all files or none.
@@ -69,12 +69,11 @@ def optional_index_crammer(
         if not scores:
             return ChatBranch()
 
-        # Create tree from index
+        # Get index from scores
         index = scores.keys()
-        tree = standard_tree(index)
 
-        # Format tree
-        formatted_content = tree_format.render(tree)
+        # Format index
+        formatted_content = index_format.render(index)
         if not formatted_content:
             return ChatBranch()
 
@@ -94,7 +93,7 @@ def standard_index_crammer() -> IndexCrammer:
     Returns the standard index crammer.
 
     Returns:
-        The default IndexCrammer (currently optional with standard tree format).
+        The default IndexCrammer (currently optional with standard index format).
     """
     return optional_index_crammer()
 
