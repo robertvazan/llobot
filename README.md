@@ -1,3 +1,5 @@
+[![SWUbanner](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/banner2-direct.svg)](https://github.com/vshymanskyy/StandWithUkraine/blob/main/docs/README.md)
+
 # Llobot
 
 Llobot is a LLM library and a LLM tool that makes it easier to build simple conversational LLM applications or bots. To get started, define models, roles, and projects and then chat with them in any LLM frontend that supports OpenAI or Ollama protocol. Every role defines what the context looks like, including system prompt, knowledge (project files), and recent history. Recent history can be external (like git log), but llobot has special support for live examples, which are user-approved responses from previous conversations.
@@ -120,3 +122,11 @@ Here are some practical tips for using llobot:
 ## Status
 
 Experimental. Partially tested and documented. Unstable APIs. No release. Likely some bugs. But it works for me and I hope others might find it useful too.
+
+## Feedback
+
+Bug reports and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+This project is distributed under the [Apache License 2.0](LICENSE).
