@@ -73,12 +73,12 @@ class GeminiModel(Model, ValueTypeMixin):
             config = types.GenerateContentConfig()
             if self._thinking is not None:
                 config.thinking_config = types.ThinkingConfig(thinking_budget=self._thinking)
+            yield ChatIntent.RESPONSE
             stream = self._client.models.generate_content_stream(
                 model=self._model,
                 contents=contents,
                 config=config,
             )
-            yield ChatIntent.RESPONSE
             for chunk in stream:
                 if chunk.text:
                     yield chunk.text

@@ -59,9 +59,9 @@ class OllamaModel(Model, ValueTypeMixin):
         def _stream() -> ModelStream:
             sanitized_prompt = binarize_chat(prompt, last=ChatIntent.PROMPT)
             request = encode_request(self._model, {'num_ctx': self._num_ctx}, sanitized_prompt)
+            yield ChatIntent.RESPONSE
             with requests.post(self._endpoint + '/chat', stream=True, json=request) as http_response:
                 http_response.raise_for_status()
-                yield ChatIntent.RESPONSE
                 yield from parse_stream(http_response.iter_lines())
         return buffer_stream(_stream())
 

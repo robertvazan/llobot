@@ -77,13 +77,13 @@ class OpenAIModel(Model, ValueTypeMixin):
             )
             sanitized_prompt = binarize_chat(prompt, last=ChatIntent.PROMPT)
             messages = _encode_chat(sanitized_prompt)
+            yield ChatIntent.RESPONSE
             completion = client.chat.completions.create(
                 model=self._model,
                 messages=messages,
                 stream=True,
                 reasoning_effort=self._reasoning_effort,
             )
-            yield ChatIntent.RESPONSE
             for chunk in completion:
                 if chunk.choices:
                     content = chunk.choices[0].delta.content

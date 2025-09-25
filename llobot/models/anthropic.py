@@ -98,8 +98,8 @@ class AnthropicModel(Model, ValueTypeMixin):
                     "type": "enabled",
                     "budget_tokens": self._thinking
                 }
+            yield ChatIntent.RESPONSE
             with self._client.messages.stream(**parameters) as stream:
-                yield ChatIntent.RESPONSE
                 yield from stream.text_stream
         return buffer_stream(_stream())
 
