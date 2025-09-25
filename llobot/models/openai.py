@@ -35,11 +35,13 @@ class OpenAIModel(Model, ValueTypeMixin):
     _model: str
     _auth: str
     _context_budget: int
+    _reasoning_effort: str
 
     def __init__(self, name: str, *,
         auth: str,
         model: str = 'gpt-5',
         context_budget: int = 100_000,
+        reasoning_effort: str = 'medium',
     ):
         """
         Initializes the OpenAI model.
@@ -49,11 +51,13 @@ class OpenAIModel(Model, ValueTypeMixin):
             auth: The API key for OpenAI.
             model: The model ID to use with the API. Defaults to 'gpt-5'.
             context_budget: The character budget for context stuffing.
+            reasoning_effort: Reasoning effort for the model. Defaults to 'medium'.
         """
         self._name = name
         self._model = model
         self._auth = auth
         self._context_budget = context_budget
+        self._reasoning_effort = reasoning_effort
 
     def _ephemeral_fields(self) -> Iterable[str]:
         return ['_auth']
@@ -76,7 +80,8 @@ class OpenAIModel(Model, ValueTypeMixin):
             completion = client.chat.completions.create(
                 model=self._model,
                 messages=messages,
-                stream=True
+                stream=True,
+                reasoning_effort=self._reasoning_effort,
             )
             yield ChatIntent.RESPONSE
             for chunk in completion:
