@@ -1,9 +1,11 @@
 from __future__ import annotations
 from collections import defaultdict
 from pathlib import Path
+from typing import Iterator
+from llobot.utils.values import ValueTypeMixin
 from llobot.knowledge.indexes import KnowledgeIndex
 
-class KnowledgeGraph:
+class KnowledgeGraph(ValueTypeMixin):
     """
     An immutable directed graph where nodes are `pathlib.Path` objects.
 
@@ -11,7 +13,6 @@ class KnowledgeGraph:
     `KnowledgeIndex` of their target nodes.
     """
     _graph: dict[Path, KnowledgeIndex]
-    _hash: int | None
 
     def __init__(self, graph: dict[Path, KnowledgeIndex] = {}):
         """
@@ -21,7 +22,6 @@ class KnowledgeGraph:
             graph: A dictionary representing the graph's adjacency list.
         """
         self._graph = graph
-        self._hash = None
 
     def __repr__(self) -> str:
         return str(self._graph)
@@ -35,16 +35,6 @@ class KnowledgeGraph:
 
     def __bool__(self) -> bool:
         return bool(self._graph)
-
-    def __eq__(self, other) -> bool:
-        if not isinstance(other, KnowledgeGraph):
-            return NotImplemented
-        return self._graph == other._graph
-
-    def __hash__(self) -> int:
-        if self._hash is None:
-            self._hash = hash(frozenset(self._graph.items()))
-        return self._hash
 
     def __contains__(self, source: Path) -> bool:
         return source in self._graph

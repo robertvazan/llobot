@@ -1,15 +1,17 @@
 from __future__ import annotations
 from pathlib import Path
+from typing import Iterable, Iterator
+from llobot.utils.values import ValueTypeMixin
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.ranking import KnowledgeRanking, standard_ranking
 from llobot.knowledge.deltas.documents import DocumentDelta
 
-class KnowledgeDelta:
-    _deltas: list[DocumentDelta]
+class KnowledgeDelta(ValueTypeMixin):
+    _deltas: tuple[DocumentDelta, ...]
 
     def __init__(self, deltas: Iterable[DocumentDelta] = []):
-        self._deltas = list(deltas)
+        self._deltas = tuple(deltas)
 
     def __bool__(self) -> bool:
         return bool(self._deltas)
@@ -24,11 +26,6 @@ class KnowledgeDelta:
         if isinstance(key, slice):
             return KnowledgeDelta(self._deltas[key])
         return self._deltas[key]
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, KnowledgeDelta):
-            return NotImplemented
-        return self._deltas == other._deltas
 
     def __repr__(self) -> str:
         return '[' + ', '.join(str(d) for d in self) + ']'

@@ -1,11 +1,12 @@
 from __future__ import annotations
 from llobot.utils.text import concat_documents
+from llobot.utils.values import ValueTypeMixin
 from llobot.chats.intents import ChatIntent
 
 # Guesstimate of how many chars are consumed per message by typical chat format.
 MESSAGE_OVERHEAD: int = 10
 
-class ChatMessage:
+class ChatMessage(ValueTypeMixin):
     """
     Represents a single message in a chat conversation.
 
@@ -13,7 +14,6 @@ class ChatMessage:
     """
     _intent: ChatIntent
     _content: str
-    _hash: int | None
 
     def __init__(self, intent: ChatIntent, content: str):
         """
@@ -25,7 +25,6 @@ class ChatMessage:
         """
         self._intent = intent
         self._content = content
-        self._hash = None
 
     @property
     def intent(self) -> ChatIntent:
@@ -44,16 +43,6 @@ class ChatMessage:
 
     def __repr__(self) -> str:
         return f'{self.intent}: {self.content}'
-
-    def __eq__(self, other) -> bool:
-        if not isinstance(other, ChatMessage):
-            return NotImplemented
-        return self.intent == other.intent and self.content == other.content
-
-    def __hash__(self) -> int:
-        if self._hash is None:
-            self._hash = hash((self.intent, self.content))
-        return self._hash
 
     def __contains__(self, text: str) -> bool:
         return text in self.content

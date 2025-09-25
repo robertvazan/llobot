@@ -1,7 +1,8 @@
 from __future__ import annotations
 from pathlib import Path
+from llobot.utils.values import ValueTypeMixin
 
-class DocumentDelta:
+class DocumentDelta(ValueTypeMixin):
     _path: Path
     _content: str | None
     _removed: bool
@@ -61,16 +62,6 @@ class DocumentDelta:
     @property
     def content(self) -> str | None:
         return self._content
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, DocumentDelta):
-            return NotImplemented
-        return (
-            self._path == other._path and
-            self._removed == other._removed and
-            self._moved_from == other._moved_from and
-            self._content == other._content
-        )
 
     def __repr__(self) -> str:
         flags = []

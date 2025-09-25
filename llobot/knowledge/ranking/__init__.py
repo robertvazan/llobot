@@ -19,17 +19,17 @@ trees
 """
 from __future__ import annotations
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Iterator
+from llobot.utils.values import ValueTypeMixin
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.subsets import KnowledgeSubset, coerce_subset
 
-class KnowledgeRanking:
+class KnowledgeRanking(ValueTypeMixin):
     """
     Represents an immutable, ordered sequence of document paths.
     """
-    _paths: list[Path]
-    _hash: int | None
+    _paths: tuple[Path, ...]
 
     def __init__(self, paths: Iterable[Path | str] = []):
         """
@@ -38,27 +38,16 @@ class KnowledgeRanking:
         Args:
             paths: An iterable of paths or path strings.
         """
-        self._paths = [Path(path) for path in paths]
-        self._hash = None
+        self._paths = tuple(Path(path) for path in paths)
 
     def __repr__(self) -> str:
-        return str(self._paths)
+        return str(list(self._paths))
 
     def __len__(self) -> int:
         return len(self._paths)
 
     def __bool__(self) -> bool:
         return bool(self._paths)
-
-    def __eq__(self, other) -> bool:
-        if not isinstance(other, KnowledgeRanking):
-            return NotImplemented
-        return self._paths == other._paths
-
-    def __hash__(self) -> int:
-        if self._hash is None:
-            self._hash = hash(tuple(self._paths))
-        return self._hash
 
     def __contains__(self, path: Path | str) -> bool:
         return Path(path) in self._paths

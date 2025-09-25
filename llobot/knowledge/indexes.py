@@ -1,16 +1,17 @@
 from __future__ import annotations
 from pathlib import Path
+from typing import Iterable, Iterator
+from llobot.utils.values import ValueTypeMixin
 from llobot.knowledge.subsets import KnowledgeSubset, coerce_subset
 
-class KnowledgeIndex:
+class KnowledgeIndex(ValueTypeMixin):
     """
     An immutable, unordered collection of unique `pathlib.Path` objects.
 
     This class behaves like a read-only set of paths, providing set operations
     and path manipulation methods.
     """
-    _paths: set[Path]
-    _hash: int | None
+    _paths: frozenset[Path]
 
     def __init__(self, paths: Iterable[Path | str] = set()):
         """
@@ -19,8 +20,7 @@ class KnowledgeIndex:
         Args:
             paths: An iterable of paths or path strings.
         """
-        self._paths = set(Path(path) for path in paths)
-        self._hash = None
+        self._paths = frozenset(Path(path) for path in paths)
 
     def __repr__(self) -> str:
         return str(self.sorted())
@@ -30,16 +30,6 @@ class KnowledgeIndex:
 
     def __bool__(self) -> bool:
         return bool(self._paths)
-
-    def __eq__(self, other) -> bool:
-        if not isinstance(other, KnowledgeIndex):
-            return NotImplemented
-        return self._paths == other._paths
-
-    def __hash__(self) -> int:
-        if self._hash is None:
-            self._hash = hash(frozenset(self._paths))
-        return self._hash
 
     def __contains__(self, path: Path | str) -> bool:
         return Path(path) in self._paths

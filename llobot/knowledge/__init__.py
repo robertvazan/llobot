@@ -31,9 +31,11 @@ archives/
 """
 from __future__ import annotations
 from pathlib import Path
+from typing import Callable, Iterator
 from llobot.utils.fs import read_document
+from llobot.utils.values import ValueTypeMixin
 
-class Knowledge:
+class Knowledge(ValueTypeMixin):
     """
     An immutable collection of documents, indexed by `pathlib.Path`.
 
@@ -42,7 +44,6 @@ class Knowledge:
     transforming, and combining knowledge bases.
     """
     _documents: dict[Path, str]
-    _hash: int | None
 
     def __init__(self, documents: dict[Path, str] = {}):
         """
@@ -52,7 +53,6 @@ class Knowledge:
             documents: A dictionary of paths and their content.
         """
         self._documents = dict(documents)
-        self._hash = None
 
     def __repr__(self) -> str:
         return str(self.keys())
@@ -72,16 +72,6 @@ class Knowledge:
 
     def __bool__(self) -> bool:
         return bool(self._documents)
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Knowledge):
-            return NotImplemented
-        return self._documents == other._documents
-
-    def __hash__(self) -> int:
-        if self._hash is None:
-            self._hash = hash(frozenset(self._documents.items()))
-        return self._hash
 
     def __contains__(self, path: Path | str) -> bool:
         return Path(path) in self._documents

@@ -29,11 +29,13 @@ normal
 from __future__ import annotations
 import math
 from pathlib import Path
+from typing import Iterator
+from llobot.utils.values import ValueTypeMixin
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex, coerce_index
 from llobot.knowledge.subsets import KnowledgeSubset, coerce_subset
 
-class KnowledgeScores:
+class KnowledgeScores(ValueTypeMixin):
     """
     A mapping from document paths to numerical scores.
 
@@ -42,7 +44,6 @@ class KnowledgeScores:
     scores are not stored. It is immutable.
     """
     _scores: dict[Path, float]
-    _hash: int | None
 
     def __init__(self, scores: dict[Path, float] = {}):
         """
@@ -53,7 +54,6 @@ class KnowledgeScores:
                     Scores that are zero or non-finite are filtered out.
         """
         self._scores = {path: float(score) for path, score in scores.items() if math.isfinite(score) and score != 0}
-        self._hash = None
 
     def __repr__(self) -> str:
         return str(self._scores)
@@ -67,16 +67,6 @@ class KnowledgeScores:
 
     def __bool__(self) -> bool:
         return bool(self._scores)
-
-    def __eq__(self, other) -> bool:
-        if not isinstance(other, KnowledgeScores):
-            return NotImplemented
-        return self._scores == other._scores
-
-    def __hash__(self) -> int:
-        if self._hash is None:
-            self._hash = hash(frozenset(self._scores.items()))
-        return self._hash
 
     def __contains__(self, path: Path | str) -> bool:
         return Path(path) in self._scores

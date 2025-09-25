@@ -1,33 +1,32 @@
 from __future__ import annotations
-from typing import Iterator
+from typing import Iterator, Iterable
 from llobot.utils.text import concat_documents
+from llobot.utils.values import ValueTypeMixin
 from llobot.chats.intents import ChatIntent
 from llobot.chats.messages import ChatMessage
 
-class ChatBranch:
+class ChatBranch(ValueTypeMixin):
     """
     Represents an immutable sequence of chat messages.
 
     A ChatBranch is a list-like object that holds ChatMessage instances. It provides
     methods for accessing, combining, and transforming branches.
     """
-    _messages: list[ChatMessage]
-    _hash: int | None
+    _messages: tuple[ChatMessage, ...]
 
-    def __init__(self, messages: list[ChatMessage] = []):
+    def __init__(self, messages: Iterable[ChatMessage] = []):
         """
         Initializes a new ChatBranch.
 
         Args:
-            messages: A list of ChatMessage objects.
+            messages: An iterable of ChatMessage objects.
         """
-        self._messages = messages
-        self._hash = None
+        self._messages = tuple(messages)
 
     @property
     def messages(self) -> list[ChatMessage]:
         """A copy of the list of messages in this branch."""
-        return self._messages.copy()
+        return list(self._messages)
 
     def __repr__(self) -> str:
         return str(self._messages)
@@ -37,16 +36,6 @@ class ChatBranch:
 
     def __len__(self) -> int:
         return len(self._messages)
-
-    def __eq__(self, other) -> bool:
-        if not isinstance(other, ChatBranch):
-            return NotImplemented
-        return self._messages == other._messages
-
-    def __hash__(self) -> int:
-        if self._hash is None:
-            self._hash = hash(tuple(self._messages))
-        return self._hash
 
     @property
     def cost(self) -> int:
