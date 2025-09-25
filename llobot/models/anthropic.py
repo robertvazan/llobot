@@ -1,30 +1,51 @@
 from __future__ import annotations
+from typing import Iterable
 from anthropic import Anthropic
 from llobot.chats.intents import ChatIntent
 from llobot.chats.branches import ChatBranch
 from llobot.models import Model
 from llobot.models.streams import ModelStream, buffer_stream
 from llobot.chats.binarization import binarize_chat
+from llobot.utils.values import ValueTypeMixin
 
-class _AnthropicModel(Model):
-    _client: Anthropic
+class AnthropicModel(Model, ValueTypeMixin):
+    """
+    A model that uses the Anthropic API (e.g., Claude).
+    """
     _name: str
-    _aliases: list[str]
+    _model: str
+    _client: Anthropic
     _context_budget: int
     _max_tokens: int
     _cached: bool
     _thinking: int | None
 
     def __init__(self, name: str, *,
+        model: str = 'claude-sonnet-4-0',
         client: Anthropic | None = None,
         auth: str | None = None,
-        aliases: Iterable[str] = [],
         context_budget: int = 100_000,
         max_tokens: int = 8_000,
         # No caching by default. It costs extra and not everyone takes advantage of it.
         cached: bool = False,
         thinking: int | None = None,
     ):
+        """
+        Initializes the Anthropic model.
+
+        Args:
+            name: The name for this model instance in llobot.
+            model: The actual model ID to use with the Anthropic API. Defaults to 'claude-sonnet-4-0'.
+            client: An existing `Anthropic` client instance. If not provided, a new one is created.
+            auth: Your Anthropic API key. If not provided, the `ANTHROPIC_API_KEY` environment
+                  variable is used.
+            context_budget: The character budget for context stuffing.
+            max_tokens: The maximum number of tokens to generate.
+            cached: Whether to use Anthropic's caching feature.
+            thinking: The budget in tokens to allocate for "thinking" (prompt construction).
+        """
+        self._name = name
+        self._model = model
         if client:
             self._client = client
         elif auth:
@@ -32,47 +53,17 @@ class _AnthropicModel(Model):
         else:
             # API key is taken from ANTHROPIC_API_KEY environment variable.
             self._client = Anthropic()
-        self._name = name
-        self._aliases = list(aliases)
         self._context_budget = context_budget
         self._max_tokens = max_tokens
         self._cached = cached
         self._thinking = thinking
 
+    def _ephemeral_fields(self) -> Iterable[str]:
+        return ['_client']
+
     @property
     def name(self) -> str:
-        return f'anthropic/{self._name}'
-
-    @property
-    def aliases(self) -> Iterable[str]:
-        yield self._name
-        yield from self._aliases
-
-    @property
-    def options(self) -> dict:
-        options = {
-            'context_budget': self._context_budget,
-            'max_tokens': self._max_tokens,
-        }
-        if self._thinking is not None:
-            options['thinking'] = self._thinking
-        return options
-
-    def validate_options(self, options: dict):
-        allowed = {'context_budget', 'max_tokens', 'thinking'}
-        for unrecognized in set(options) - allowed:
-            raise ValueError(f"Unrecognized option: {unrecognized}")
-
-    def configure(self, options: dict) -> Model:
-        thinking_opt = options.get('thinking', self._thinking)
-        return _AnthropicModel(
-            self._name,
-            client=self._client,
-            context_budget=int(options.get('context_budget', self._context_budget)),
-            max_tokens=int(options.get('max_tokens', self._max_tokens)),
-            cached=self._cached,
-            thinking=int(thinking_opt) if thinking_opt is not None else None,
-        )
+        return self._name
 
     @property
     def context_budget(self) -> int:
@@ -98,7 +89,7 @@ class _AnthropicModel(Model):
                         messages[i]['content'] = [{'type': 'text', 'text': messages[i]['content'], 'cache_control': {'type': 'ephemeral'}}]
                         breakpoints.pop(0)
             parameters = {
-                'model': self._name,
+                'model': self._model,
                 'max_tokens': self._max_tokens,
                 'messages': messages,
             }
@@ -112,9 +103,6 @@ class _AnthropicModel(Model):
                 yield from stream.text_stream
         return buffer_stream(_stream())
 
-def anthropic_model(name: str, **kwargs) -> Model:
-    return _AnthropicModel(name, **kwargs)
-
 __all__ = [
-    'anthropic_model',
+    'AnthropicModel',
 ]

@@ -5,10 +5,17 @@ from llobot.models import Model
 from llobot.models.streams import ModelStream, exception_stream
 from llobot.roles import Role
 from llobot.formats.submessages import SubmessageFormat, standard_submessage_format
+from llobot.utils.values import ValueTypeMixin
 
 _logger = logging.getLogger(__name__)
 
-class RoleModel(Model):
+class RoleModel(Model, ValueTypeMixin):
+    """
+    A wrapper that exposes a `Role` as a `Model`.
+
+    This allows roles to be used in any context where a `Model` is expected,
+    such as in listeners that expose models via standard protocols.
+    """
     _role: Role
     _format: SubmessageFormat
 
@@ -25,7 +32,7 @@ class RoleModel(Model):
 
     @property
     def name(self) -> str:
-        return f'bot/{self._role.name}'
+        return self._role.name
 
     def generate(self, prompt: ChatBranch) -> ModelStream:
         """

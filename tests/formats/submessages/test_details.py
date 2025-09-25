@@ -4,6 +4,7 @@ from llobot.chats.branches import ChatBranch
 from llobot.chats.messages import ChatMessage
 from llobot.chats.intents import ChatIntent
 from llobot.formats.submessages.details import DetailsSubmessageFormat
+from llobot.models.streams import text_stream
 
 formatter = DetailsSubmessageFormat()
 
@@ -297,7 +298,6 @@ def test_render_stream_empty():
     assert result == ""
 
 def test_render_stream_single_message_strings_only():
-    from llobot.models.streams import text_stream
     stream = text_stream("Hello world.")
     result = "".join(formatter.render_stream(stream))
     assert result == "Hello world."

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from functools import cache
+from typing import Iterable
 import requests
 from llobot.chats.branches import ChatBranch
 from llobot.chats.intents import ChatIntent
@@ -7,57 +7,49 @@ from llobot.models import Model
 from llobot.models.streams import ModelStream, buffer_stream
 from llobot.chats.binarization import binarize_chat
 from llobot.models.openai.endpoints import proprietary_openai_endpoint
-from llobot.models.openai.encoding import encode_openai_request, parse_openai_stream
+from llobot.models.openai.encoding import encode_request, parse_stream
+from llobot.utils.values import ValueTypeMixin
 
-class _OpenAIModel(Model):
-    _namespace: str
+class OpenAIModel(Model, ValueTypeMixin):
+    """
+    A model that uses an OpenAI or OpenAI-compatible API.
+    """
     _name: str
-    _aliases: list[str]
+    _model: str
     _endpoint: str
     _auth: str
     _context_budget: int
 
     def __init__(self, name: str, *,
+        model: str = 'gpt-5',
         auth: str = '',
         endpoint: str | None = None,
-        namespace: str = 'openai',
-        aliases: list[str] = [],
         context_budget: int = 100_000,
     ):
-        self._namespace = namespace
+        """
+        Initializes the OpenAI model.
+
+        Args:
+            name: The name for this model instance in llobot.
+            model: The model ID to use with the API. Defaults to 'gpt-5'.
+            auth: The API key. For OpenAI, this is required. For other providers,
+                  it may be optional.
+            endpoint: The base URL of the API endpoint. Defaults to the
+                      official OpenAI API endpoint.
+            context_budget: The character budget for context stuffing.
+        """
         self._name = name
-        self._aliases = aliases
+        self._model = model
         self._endpoint = endpoint or proprietary_openai_endpoint()
         self._auth = auth
         self._context_budget = context_budget
 
+    def _ephemeral_fields(self) -> Iterable[str]:
+        return ['_auth']
+
     @property
     def name(self) -> str:
-        return f'{self._namespace}/{self._name}'
-
-    @property
-    def aliases(self) -> list[str]:
-        yield self._name
-        yield from self._aliases
-
-    @property
-    def options(self) -> dict:
-        options = { 'context_budget': self._context_budget }
-        return options
-
-    def validate_options(self, options: dict):
-        allowed = {'context_budget'}
-        for unrecognized in set(options) - allowed:
-            raise ValueError(f"Unrecognized option: {unrecognized}")
-
-    def configure(self, options: dict) -> Model:
-        return _OpenAIModel(self._name,
-            auth=self._auth,
-            endpoint=self._endpoint,
-            namespace=self._namespace,
-            aliases=self._aliases,
-            context_budget=int(options.get('context_budget', self._context_budget)),
-        )
+        return self._name
 
     @property
     def context_budget(self) -> int:
@@ -66,7 +58,7 @@ class _OpenAIModel(Model):
     def generate(self, prompt: ChatBranch) -> ModelStream:
         def _stream() -> ModelStream:
             sanitized_prompt = binarize_chat(prompt, last=ChatIntent.PROMPT)
-            request = encode_openai_request(self._name, self.options, sanitized_prompt)
+            request = encode_request(self._model, sanitized_prompt)
             headers = {}
             if self._auth:
                 headers['Authorization'] = f'Bearer {self._auth}'
@@ -75,16 +67,9 @@ class _OpenAIModel(Model):
                 if http_response.encoding is None:
                     http_response.encoding = 'utf-8'
                 yield ChatIntent.RESPONSE
-                yield from parse_openai_stream(http_response.iter_lines(decode_unicode=True))
+                yield from parse_stream(http_response.iter_lines(decode_unicode=True))
         return buffer_stream(_stream())
 
-def openai_model(name: str, auth: str, **kwargs) -> Model:
-    return _OpenAIModel(name, auth=auth, **kwargs)
-
-def openai_compatible_model(endpoint: str, namespace: str, name: str, **kwargs) -> Model:
-    return _OpenAIModel(name, endpoint=endpoint, namespace=namespace, **kwargs)
-
 __all__ = [
-    'openai_model',
-    'openai_compatible_model',
+    'OpenAIModel',
 ]

@@ -29,34 +29,31 @@ from pathlib import Path
 # Llobot is not in pip yet, so let's just add the repository to Python's module path.
 sys.path.insert(0, str(Path.home() / 'Sources' / 'llobot'))
 
-from llobot.models.catalogs import ModelCatalog
-from llobot.models.ollama import ollama_model
-from llobot.models.gemini import gemini_model
-from llobot.models.anthropic import anthropic_model
+from llobot.models.anthropic import AnthropicModel
+from llobot.models.gemini import GeminiModel
+from llobot.models.listeners.ollama import OllamaListener
+from llobot.models.ollama import OllamaModel
 from llobot.projects.directory import DirectoryProject
 from llobot.roles.coder import Coder
 from llobot.roles.models import RoleModel
-from llobot.models.ollama.listeners import ollama_listener
 
 # Backend models that respond to the assembled prompt
-models = ModelCatalog(
-    # This will use qwen2.5-coder:7b on localhost instance of Ollama.
-    ollama_model(
-        'qwen2.5-coder',
-        # Context size has to be always specified, because Ollama defaults are tiny.
-        24 * 1024,
-        aliases=['local']
-    ),
-    gemini_model(
-        'gemini-2.5-flash',
-        auth='YOUR_GOOGLE_API_KEY',
-        aliases=['cloud']
-    ),
-    anthropic_model(
-        'claude-sonnet-4-0',
-        auth='YOUR_ANTHROPIC_API_KEY',
-        aliases=['claude']
-    ),
+# This will use qwen2.5-coder:7b on localhost instance of Ollama.
+local_model = OllamaModel(
+    'local',
+    model='qwen2.5-coder',
+    # Context size has to be always specified, because Ollama defaults are tiny.
+    num_ctx=24 * 1024
+)
+cloud_model = GeminiModel(
+    'cloud',
+    model='gemini-2.5-flash',
+    auth='YOUR_GOOGLE_API_KEY'
+)
+claude_model = AnthropicModel(
+    'claude',
+    model='claude-sonnet-4-0',
+    auth='YOUR_ANTHROPIC_API_KEY'
 )
 
 # Projects that will be used as knowledge bases
@@ -68,14 +65,14 @@ projects = [
 # Roles determine what goes in the context.
 # Lets use some standard roles that come with llobot.
 roles = [
-    Coder('coder', models['local'], projects=projects),
+    Coder('coder', local_model, projects=projects),
 ]
 
 # Create virtual models for all roles.
-bots = ModelCatalog(*[RoleModel(role) for role in roles])
+role_models = [RoleModel(role) for role in roles]
 
 # Backend Ollama listens on 11434, so we will listen on 11435 to avoid conflicts.
-ollama_listener(bots, port=11435).listen()
+OllamaListener(*role_models, port=11435).listen()
 ```
 
 Run this script and add `localhost:11435` as an additional Ollama endpoint to your UI frontend (like Open WebUI, which is [no longer open source](https://github.com/open-webui/open-webui/issues/13579), so feel free to look for alternatives). You should now see the virtual model `coder` listed in the UI.
@@ -88,11 +85,11 @@ You should now be able to issue queries against the bots. Select `coder` bot and
 
 The `@llobot` mention is a command that tells the bot to use the `llobot` project as its knowledge base. If you wanted to work on `myproject`, you would write `@myproject`. The mention can be placed anywhere in the prompt. When you submit this prompt, you should get a response like this:
 
-> Use `remote_ollama_endpoint(host, port, path)` from `llobot.models.ollama.endpoints` module to get the endpoint URL, then pass it to `ollama_model()` in `llobot.models.ollama` as the `endpoint` argument. For example:
+> Use `remote_ollama_endpoint(host, port, path)` from `llobot.models.ollama.endpoints` module to get the endpoint URL, then pass it to the `OllamaModel` constructor as the `endpoint` argument. For example:
 >
 > ```python
 > endpoint = remote_ollama_endpoint('remote.host.com', 11434)
-> model = ollama_model('qwen2.5-coder', 24 * 1024, endpoint=endpoint)
+> model = OllamaModel('my-remote-model', model='qwen2:7b', num_ctx=24 * 1024, endpoint=endpoint)
 > ```
 
 NB: Response this informative relies on using a large model. For comparison, response from 'qwen2.5-coder'. It's close, but it's not quite there.
