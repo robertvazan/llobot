@@ -1,5 +1,6 @@
 from pathlib import Path
 from llobot.knowledge import Knowledge
+from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.scores import KnowledgeScores
 from llobot.knowledge.scores.directory import directory_max_scores, directory_sum_scores, directory_count_scores
 
@@ -52,3 +53,15 @@ def test_directory_count_scores_non_recursive():
     assert dir_scores[Path('a/b')] == 2
     assert dir_scores[Path('a')] == 1
     assert Path('.') not in dir_scores
+
+def test_directory_count_scores_from_index():
+    index = KnowledgeIndex([Path('a/b.txt'), Path('a/c.txt')])
+    dir_scores = directory_count_scores(index)
+    assert dir_scores[Path('a')] == 2
+
+def test_directory_count_scores_invalid_type():
+    try:
+        directory_count_scores(KnowledgeScores({Path('a.txt'): 1.0}))
+        assert False, "Should have raised TypeError"
+    except TypeError:
+        pass

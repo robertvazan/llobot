@@ -3,18 +3,17 @@ Scorers that assign a constant score.
 """
 from __future__ import annotations
 from llobot.knowledge import Knowledge
-from llobot.knowledge.indexes import KnowledgeIndex, coerce_index
-from llobot.knowledge.ranking import KnowledgeRanking
+from llobot.knowledge.indexes import KnowledgeIndex, KnowledgeIndexPrecursor, coerce_index
 from llobot.knowledge.scores import KnowledgeScores
 from llobot.knowledge.scores.scorers import KnowledgeScorer
 from llobot.utils.values import ValueTypeMixin
 
-def constant_scores(keys: KnowledgeIndex | KnowledgeRanking | Knowledge | KnowledgeScores, score: float = 1) -> KnowledgeScores:
+def constant_scores(keys: KnowledgeIndexPrecursor, score: float = 1) -> KnowledgeScores:
     """
     Assigns a constant score to each document.
 
     Args:
-        keys: The documents to score.
+        keys: The documents to score. Can be a `KnowledgeIndex`, `Knowledge`, or `KnowledgeRanking`.
         score: The constant score to assign.
 
     Returns:

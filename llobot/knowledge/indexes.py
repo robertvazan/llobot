@@ -92,13 +92,14 @@ class KnowledgeIndex(ValueTypeMixin):
         subtree = Path(subtree)
         return KnowledgeIndex(path.relative_to(subtree) for path in self if path.is_relative_to(subtree))
 
-def coerce_index(what: KnowledgeIndex | 'Knowledge' | 'KnowledgeRanking' | 'KnowledgeScores') -> KnowledgeIndex:
+type KnowledgeIndexPrecursor = KnowledgeIndex | 'Knowledge' | 'KnowledgeRanking'
+
+def coerce_index(what: KnowledgeIndexPrecursor) -> KnowledgeIndex:
     """
     Coerces various objects into a `KnowledgeIndex`.
 
     - `KnowledgeIndex` is returned as is.
-    - `Knowledge`, `KnowledgeRanking`, and `KnowledgeScores` are converted by
-      extracting their paths.
+    - `Knowledge` and `KnowledgeRanking` are converted by extracting their paths.
     """
     if isinstance(what, KnowledgeIndex):
         return what
@@ -108,12 +109,10 @@ def coerce_index(what: KnowledgeIndex | 'Knowledge' | 'KnowledgeRanking' | 'Know
     from llobot.knowledge.ranking import KnowledgeRanking
     if isinstance(what, KnowledgeRanking):
         return KnowledgeIndex(what)
-    from llobot.knowledge.scores import KnowledgeScores
-    if isinstance(what, KnowledgeScores):
-        return what.keys()
     raise TypeError
 
 __all__ = [
     'KnowledgeIndex',
+    'KnowledgeIndexPrecursor',
     'coerce_index',
 ]

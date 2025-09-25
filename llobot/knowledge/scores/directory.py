@@ -4,8 +4,7 @@ Functions to aggregate scores by directory.
 from __future__ import annotations
 from pathlib import Path
 from llobot.knowledge import Knowledge
-from llobot.knowledge.indexes import KnowledgeIndex
-from llobot.knowledge.ranking import KnowledgeRanking
+from llobot.knowledge.indexes import KnowledgeIndex, KnowledgeIndexPrecursor
 from llobot.knowledge.scores import KnowledgeScores
 from llobot.knowledge.scores.constant import constant_scores
 
@@ -64,12 +63,12 @@ def directory_sum_scores(scores: KnowledgeScores, *, recursive: bool = True) -> 
 
     return KnowledgeScores(directory_scores)
 
-def directory_count_scores(keys: KnowledgeIndex | KnowledgeRanking | Knowledge | KnowledgeScores, *, recursive: bool = True) -> KnowledgeScores:
+def directory_count_scores(keys: KnowledgeIndexPrecursor, *, recursive: bool = True) -> KnowledgeScores:
     """
     Assigns each directory the count of contained files.
 
     Args:
-        keys: Files to count by directory.
+        keys: Files to count by directory. Can be a `KnowledgeIndex`, `Knowledge`, or `KnowledgeRanking`.
         recursive: If True, includes files from subdirectories in counting.
 
     Returns:

@@ -119,7 +119,11 @@ def coerce_subset(material: KnowledgeSubset | str | Path | 'KnowledgeIndex' | 'K
     # Use local import to avoid circular dependency
     import llobot.knowledge.indexes
     from llobot.knowledge.subsets.paths import PathsSubset
-    index = llobot.knowledge.indexes.coerce_index(material)
+    from llobot.knowledge.scores import KnowledgeScores
+    if isinstance(material, KnowledgeScores):
+        index = material.keys()
+    else:
+        index = llobot.knowledge.indexes.coerce_index(material)
     return PathsSubset(index)
 
 

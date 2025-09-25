@@ -1,5 +1,6 @@
 from pathlib import Path
 from llobot.knowledge import Knowledge
+from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.scores.constant import constant_scores, ConstantScorer
 
 knowledge = Knowledge({
@@ -11,6 +12,13 @@ def test_constant_scores():
     scores = constant_scores(knowledge, 2.5)
     assert scores[Path('a.txt')] == 2.5
     assert scores[Path('b.txt')] == 2.5
+    assert Path('c.txt') not in scores
+
+def test_constant_scores_from_index():
+    index = KnowledgeIndex([Path('a.txt'), Path('b.txt')])
+    scores = constant_scores(index, 3.0)
+    assert scores[Path('a.txt')] == 3.0
+    assert scores[Path('b.txt')] == 3.0
     assert Path('c.txt') not in scores
 
 def test_constant_scorer():
@@ -25,3 +33,11 @@ def test_constant_scorer_default():
     scores = scorer.score(knowledge)
     assert scores[Path('a.txt')] == 1.0
     assert scores[Path('b.txt')] == 1.0
+
+def test_constant_scores_invalid_type():
+    from llobot.knowledge.scores import KnowledgeScores
+    try:
+        constant_scores(KnowledgeScores({Path('a.txt'): 1.0}))
+        assert False, "Should have raised TypeError"
+    except TypeError:
+        pass

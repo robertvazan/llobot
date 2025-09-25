@@ -63,3 +63,11 @@ def test_coerce_index():
     })
     assert coerce_index(knowledge) == INDEX
     assert coerce_index(KnowledgeRanking(['a.txt', 'b.txt'])) == KnowledgeIndex(['a.txt', 'b.txt'])
+
+def test_coerce_index_invalid_type():
+    from llobot.knowledge.scores import KnowledgeScores
+    try:
+        coerce_index(KnowledgeScores({Path('a.txt'): 1.0}))
+        assert False, "Should have raised TypeError"
+    except TypeError:
+        pass

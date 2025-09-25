@@ -93,7 +93,7 @@ class KnowledgeScores(ValueTypeMixin):
         """
         from llobot.knowledge.scores.constant import constant_scores
         if isinstance(other, (int, float)):
-            return constant_scores(self, other)
+            return constant_scores(self.keys(), other)
         return coerce_scores(other)
 
     def __add__(self, other: int | float | KnowledgeScores | Knowledge) -> KnowledgeScores:
