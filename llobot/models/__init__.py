@@ -13,8 +13,6 @@ listeners
     Servers that expose llobot models via standard protocols (Ollama, OpenAI).
 ollama
     Client for Ollama-compatible models.
-openai
-    Client for OpenAI-compatible models.
 
 Submodules
 ----------
@@ -24,6 +22,8 @@ echo
     An echo model for testing and debugging.
 gemini
     Client for Google Gemini models.
+openai
+    Client for OpenAI models.
 streams
     Defines `ModelStream` for streaming model responses.
 """

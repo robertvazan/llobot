@@ -1,29 +1,44 @@
+"""
+Client for OpenAI models.
+"""
 from __future__ import annotations
 from typing import Iterable
-import requests
+from openai import OpenAI
+from llobot.chats.binarization import binarize_chat, binarize_intent
 from llobot.chats.branches import ChatBranch
 from llobot.chats.intents import ChatIntent
+from llobot.chats.messages import ChatMessage
 from llobot.models import Model
 from llobot.models.streams import ModelStream, buffer_stream
-from llobot.chats.binarization import binarize_chat
-from llobot.models.openai.endpoints import proprietary_openai_endpoint
-from llobot.models.openai.encoding import encode_request, parse_stream
 from llobot.utils.values import ValueTypeMixin
+
+def _encode_role(intent: ChatIntent) -> str:
+    if binarize_intent(intent) == ChatIntent.RESPONSE:
+        return 'assistant'
+    else:
+        return 'user'
+
+def _encode_message(message: ChatMessage) -> dict[str, str]:
+    return {
+        'role': _encode_role(message.intent),
+        'content': message.content
+    }
+
+def _encode_chat(branch: ChatBranch) -> list[dict[str, str]]:
+    return [_encode_message(message) for message in branch]
 
 class OpenAIModel(Model, ValueTypeMixin):
     """
-    A model that uses an OpenAI or OpenAI-compatible API.
+    A model that uses the OpenAI API.
     """
     _name: str
     _model: str
-    _endpoint: str
     _auth: str
     _context_budget: int
 
     def __init__(self, name: str, *,
+        auth: str,
         model: str = 'gpt-5',
-        auth: str = '',
-        endpoint: str | None = None,
         context_budget: int = 100_000,
     ):
         """
@@ -31,16 +46,12 @@ class OpenAIModel(Model, ValueTypeMixin):
 
         Args:
             name: The name for this model instance in llobot.
+            auth: The API key for OpenAI.
             model: The model ID to use with the API. Defaults to 'gpt-5'.
-            auth: The API key. For OpenAI, this is required. For other providers,
-                  it may be optional.
-            endpoint: The base URL of the API endpoint. Defaults to the
-                      official OpenAI API endpoint.
             context_budget: The character budget for context stuffing.
         """
         self._name = name
         self._model = model
-        self._endpoint = endpoint or proprietary_openai_endpoint()
         self._auth = auth
         self._context_budget = context_budget
 
@@ -57,17 +68,22 @@ class OpenAIModel(Model, ValueTypeMixin):
 
     def generate(self, prompt: ChatBranch) -> ModelStream:
         def _stream() -> ModelStream:
+            client = OpenAI(
+                api_key=self._auth
+            )
             sanitized_prompt = binarize_chat(prompt, last=ChatIntent.PROMPT)
-            request = encode_request(self._model, sanitized_prompt)
-            headers = {}
-            if self._auth:
-                headers['Authorization'] = f'Bearer {self._auth}'
-            with requests.post(self._endpoint + '/chat/completions', stream=True, json=request, headers=headers) as http_response:
-                http_response.raise_for_status()
-                if http_response.encoding is None:
-                    http_response.encoding = 'utf-8'
-                yield ChatIntent.RESPONSE
-                yield from parse_stream(http_response.iter_lines(decode_unicode=True))
+            messages = _encode_chat(sanitized_prompt)
+            completion = client.chat.completions.create(
+                model=self._model,
+                messages=messages,
+                stream=True
+            )
+            yield ChatIntent.RESPONSE
+            for chunk in completion:
+                if chunk.choices:
+                    content = chunk.choices[0].delta.content
+                    if content:
+                        yield content
         return buffer_stream(_stream())
 
 __all__ = [

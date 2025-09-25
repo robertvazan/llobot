@@ -6,7 +6,7 @@ Llobot is a LLM library and a LLM tool that makes it easier to build simple conv
 
 Llobot also has some nice features:
 
-- **Protocol implementations**: Llobot can connect to local models (Ollama, OpenAI-compatible) as well as cloud models (OpenAI, Anthropic Claude, Google Gemini, OpenAI-compatible). It can also act as a server and expose virtual models via Ollama and OpenAI protocols.
+- **Protocol implementations**: Llobot can connect to local models (Ollama) as well as cloud models (OpenAI, Anthropic Claude, Google Gemini). It can also act as a server and expose virtual models via Ollama and OpenAI protocols.
 - **Context stuffing**: Instead of relying on the LLM to fetch the necessary files in an agentic loop, knowledge can be stuffed into the context proactively, which has [several advantages](https://blog.machinezoo.com/Why_context_stuffing) over agentic retrieval.
 - **Live examples**: When you approve a LLM response (or a user-provided correction), it will be included in future contexts as an example to leverage [in-context learning](https://arxiv.org/abs/2005.14165). Simple LLM applications (translations, conversions) can be built by just accumulating correct examples.
 - **Commands and mentions**: Every role can define a set of `@mention` commands that users can add to prompts. Llobot offers built-in commands for project selection (`@project`), file retrieval (`@path/to/file`), and example approval (`@approve`).
