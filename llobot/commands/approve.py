@@ -32,7 +32,7 @@ class ApproveCommand(Command):
         context = env[ContextEnv]
         prompt_env = env[PromptEnv]
 
-        user_prompt_message = next((m for m in context.messages if m.intent == ChatIntent.PROMPT), None)
+        user_prompt_message = next((m for m in context.build() if m.intent == ChatIntent.PROMPT), None)
         if user_prompt_message is None:
             raise ValueError("Cannot approve an empty conversation.")
 
@@ -43,7 +43,7 @@ class ApproveCommand(Command):
             example = ChatBranch([user_prompt_message, response_message])
         else:
             # Fallback if stripped response is empty or prompt was not set.
-            messages = [m for m in context.messages if m.intent in [ChatIntent.PROMPT, ChatIntent.RESPONSE]]
+            messages = [m for m in context.build() if m.intent in [ChatIntent.PROMPT, ChatIntent.RESPONSE]]
             example = ChatBranch(messages)
 
         self._examples.save(example, env)

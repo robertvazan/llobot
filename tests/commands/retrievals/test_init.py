@@ -23,7 +23,7 @@ def test_no_retrievals():
     env = create_env()
     step = RetrievalStep(KNOWLEDGE_DELTA_FORMAT)
     step.process(env)
-    assert not env[ContextEnv].messages
+    assert not env[ContextEnv].populated
     assert not env[RetrievalsEnv].get()
 
 def test_one_retrieval():
@@ -32,7 +32,7 @@ def test_one_retrieval():
     env[RetrievalsEnv].add(Path('a.txt'))
     step.process(env)
     context = env[ContextEnv]
-    assert len(context.messages) > 0
+    assert context.populated
     assert 'File: a.txt' in context.build().monolithic()
     assert 'content a' in context.build().monolithic()
     assert not env[RetrievalsEnv].get()
@@ -58,8 +58,8 @@ def test_duplicate_retrieval_prevention():
     env[RetrievalsEnv].add(Path('a.txt'))
     step.process(env)
     context = env[ContextEnv]
-    initial_messages_count = len(context.messages)
+    initial_messages_count = len(context.build())
     env[RetrievalsEnv].add(Path('a.txt'))
     step.process(env)
-    assert len(context.messages) == initial_messages_count
+    assert len(context.build()) == initial_messages_count
     assert not env[RetrievalsEnv].get()

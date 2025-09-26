@@ -13,13 +13,6 @@ class ContextEnv:
         self._builder = ChatBuilder()
 
     @property
-    def messages(self) -> list[ChatMessage]:
-        """
-        A copy of the list of messages currently in the context.
-        """
-        return self._builder.messages
-
-    @property
     def populated(self) -> bool:
         """
         Checks if any messages have been added to the context.

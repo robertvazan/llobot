@@ -52,13 +52,13 @@ class RetrievalStep(Step):
         context = env[ContextEnv]
 
         # Check what is already in context to avoid duplicates.
-        context_messages = context.messages
+        context_branch = context.build()
         paths_to_add = set()
         for path in retrieved_paths:
             if path in knowledge:
                 formatted = self._knowledge_delta_format.document_delta_format.render_fresh(path, knowledge[path])
                 if formatted:
-                    already_present = any(formatted in msg.content for msg in context_messages)
+                    already_present = any(formatted in msg.content for msg in context_branch)
                     if not already_present:
                         paths_to_add.add(path)
 

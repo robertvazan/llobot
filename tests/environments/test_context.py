@@ -5,18 +5,20 @@ from llobot.chats.branches import ChatBranch
 
 def test_context_env():
     env = ContextEnv()
-    assert not env.messages
+    assert not env.populated
+    assert not env.build()
 
     msg1 = ChatMessage(ChatIntent.PROMPT, "Hello")
     env.add(msg1)
-    assert len(env.messages) == 1
-    assert env.messages[0] == msg1
+    assert env.populated
+    assert len(env.build()) == 1
+    assert env.build()[0] == msg1
 
     msg2 = ChatMessage(ChatIntent.RESPONSE, "Hi")
     branch = ChatBranch([msg2])
     env.add(branch)
-    assert len(env.messages) == 2
-    assert env.messages[1] == msg2
+    assert len(env.build()) == 2
+    assert env.build()[1] == msg2
 
     built = env.build()
     assert isinstance(built, ChatBranch)
