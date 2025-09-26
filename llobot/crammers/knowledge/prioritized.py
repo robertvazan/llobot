@@ -8,9 +8,7 @@ from llobot.knowledge.ranking.rankers import KnowledgeRanker, standard_ranker
 from llobot.knowledge.ranking.sorting import rank_descending
 from llobot.knowledge.scores import KnowledgeScores
 from llobot.knowledge.scores.length import score_length
-from llobot.knowledge.scores.pagerank import PageRankScorer
-from llobot.knowledge.scores.relevance import NegativeRelevanceScorer
-from llobot.knowledge.scores.scorers import KnowledgeScorer
+from llobot.knowledge.scores.scorers import KnowledgeScorer, standard_scorer
 from llobot.knowledge.scores.uniform import uniform_scores
 from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.knowledge.subsets.standard import blacklist_subset
@@ -23,15 +21,13 @@ class PrioritizedKnowledgeCrammer(KnowledgeCrammer, ValueTypeMixin):
     It iteratively removes the least valuable documents from a candidate set
     until the formatted output fits within the builder's budget.
     """
-    _relevance_scorer: KnowledgeScorer
-    _graph_scorer: KnowledgeScorer
+    _scorer: KnowledgeScorer
     _ranker: KnowledgeRanker
     _blacklist: KnowledgeSubset
     _knowledge_delta_format: KnowledgeDeltaFormat
 
     def __init__(self, *,
-        relevance_scorer: KnowledgeScorer = NegativeRelevanceScorer(),
-        graph_scorer: KnowledgeScorer = PageRankScorer(),
+        scorer: KnowledgeScorer = standard_scorer(),
         ranker: KnowledgeRanker = standard_ranker(),
         blacklist: KnowledgeSubset = blacklist_subset(),
         knowledge_delta_format: KnowledgeDeltaFormat = standard_knowledge_delta_format(),
@@ -40,14 +36,12 @@ class PrioritizedKnowledgeCrammer(KnowledgeCrammer, ValueTypeMixin):
         Creates a new prioritized knowledge crammer.
 
         Args:
-            relevance_scorer: Scorer for initial relevance.
-            graph_scorer: Scorer for graph-based relevance (e.g., PageRank).
+            scorer: Scorer for document relevance.
             ranker: The ranker to establish the document order.
             blacklist: A subset of documents to exclude from the final context.
             knowledge_delta_format: The format for rendering knowledge.
         """
-        self._relevance_scorer = relevance_scorer
-        self._graph_scorer = graph_scorer
+        self._scorer = scorer
         self._ranker = ranker
         self._blacklist = blacklist
         self._knowledge_delta_format = knowledge_delta_format
@@ -60,8 +54,7 @@ class PrioritizedKnowledgeCrammer(KnowledgeCrammer, ValueTypeMixin):
             return KnowledgeIndex()
 
         # Score and rank the full knowledge base.
-        scores = self._relevance_scorer.score(knowledge)
-        scores = self._graph_scorer.rescore(knowledge, scores)
+        scores = self._scorer.score(knowledge)
         ranking = self._ranker.rank(knowledge)
 
         # Apply blacklist before iterative cramming.

@@ -4,7 +4,6 @@ from llobot.crammers.knowledge.prioritized import PrioritizedKnowledgeCrammer
 from llobot.knowledge import Knowledge
 from llobot.knowledge.ranking.lexicographical import LexicographicalRanker
 from llobot.knowledge.scores.constant import ConstantScorer
-from llobot.knowledge.scores.pagerank import PageRankScorer
 from llobot.knowledge.scores.relevance import NegativeRelevanceScorer
 from llobot.knowledge.subsets.empty import EmptySubset
 
@@ -15,8 +14,7 @@ def test_cram_all_fit():
         Path("b.txt"): "bbb",
     })
     crammer = PrioritizedKnowledgeCrammer(
-        relevance_scorer=ConstantScorer(),
-        graph_scorer=PageRankScorer(),
+        scorer=ConstantScorer(),
         ranker=LexicographicalRanker(),
         blacklist=EmptySubset()
     )
@@ -36,8 +34,7 @@ def test_cram_some_fit():
         Path("b.txt"): "b" * 50,
     })
     crammer = PrioritizedKnowledgeCrammer(
-        relevance_scorer=NegativeRelevanceScorer(),
-        graph_scorer=PageRankScorer(),
+        scorer=NegativeRelevanceScorer(),
         ranker=LexicographicalRanker(),
         blacklist=EmptySubset()
     )

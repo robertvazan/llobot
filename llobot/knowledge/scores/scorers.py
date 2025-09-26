@@ -14,7 +14,7 @@ class KnowledgeScorer:
     Base class for knowledge scoring strategies.
 
     A scorer defines a method to assign numerical scores to documents in a
-    `Knowledge` base.
+    `Knowledge` base. Scorers can be chained using the `|` operator.
     """
     def score(self, knowledge: Knowledge) -> KnowledgeScores:
         """
@@ -45,6 +45,19 @@ class KnowledgeScorer:
         """
         return initial * self.score(knowledge)
 
+    def __or__(self, other: KnowledgeScorer) -> KnowledgeScorer:
+        """
+        Chains this scorer with another one.
+
+        Args:
+            other: The scorer to append to the chain.
+
+        Returns:
+            A `KnowledgeScorerChain` of the two scorers.
+        """
+        from llobot.knowledge.scores.chain import KnowledgeScorerChain
+        return KnowledgeScorerChain(self, other)
+
 def coerce_scorer(material: KnowledgeScorer | KnowledgeSubset | str | Path | KnowledgeIndex) -> KnowledgeScorer:
     """
     Coerces various objects into a KnowledgeScorer.
@@ -62,9 +75,13 @@ def coerce_scorer(material: KnowledgeScorer | KnowledgeSubset | str | Path | Kno
 def standard_scorer() -> KnowledgeScorer:
     """
     Returns the standard knowledge scorer.
+
+    The standard scorer first applies negative relevance to down-weight ancillary
+    files, and then applies PageRank to propagate scores through the knowledge graph.
     """
     from llobot.knowledge.scores.pagerank import PageRankScorer
-    return PageRankScorer()
+    from llobot.knowledge.scores.relevance import NegativeRelevanceScorer
+    return NegativeRelevanceScorer() | PageRankScorer()
 
 __all__ = [
     'KnowledgeScorer',

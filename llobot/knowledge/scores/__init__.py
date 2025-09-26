@@ -9,6 +9,8 @@ Submodules
 ----------
 scorers
     Base `KnowledgeScorer` and standard scorer implementations.
+chain
+    A scorer that chains multiple scorers together.
 constant
     Scorers that assign a constant score.
 uniform
