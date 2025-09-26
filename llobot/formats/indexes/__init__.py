@@ -3,39 +3,39 @@ Formatting knowledge indexes.
 """
 from __future__ import annotations
 from llobot.chats.branches import ChatBranch
-from llobot.knowledge.indexes import KnowledgeIndexPrecursor
+from llobot.knowledge import Knowledge
 from llobot.formats.affirmations import affirmation_turn
 
 class IndexFormat:
     """
     Interface for formatting knowledge indexes as Markdown text.
 
-    Index formats take a KnowledgeIndexPrecursor and render it as a
+    Index formats take a Knowledge object and render it as a
     human-readable Markdown string. They are responsible for ranking.
     """
-    def render(self, index: KnowledgeIndexPrecursor) -> str:
+    def render(self, knowledge: Knowledge) -> str:
         """
         Renders a knowledge index as Markdown text.
 
         Args:
-            index: The knowledge index (or precursor) to render.
+            knowledge: The knowledge to render.
 
         Returns:
             Markdown representation of the index.
         """
         raise NotImplementedError
 
-    def render_chat(self, index: KnowledgeIndexPrecursor) -> ChatBranch:
+    def render_chat(self, knowledge: Knowledge) -> ChatBranch:
         """
         Renders a knowledge index as a chat branch.
 
         Args:
-            index: The knowledge index (or precursor) to render.
+            knowledge: The knowledge to render.
 
         Returns:
             A chat branch containing the rendered index, or an empty branch.
         """
-        rendered = self.render(index)
+        rendered = self.render(knowledge)
         return affirmation_turn(rendered)
 
 def standard_index_format() -> IndexFormat:

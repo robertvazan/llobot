@@ -2,10 +2,8 @@ from __future__ import annotations
 from functools import cache, lru_cache
 from typing import Callable
 from llobot.chats.branches import ChatBranch
-from llobot.chats.intents import ChatIntent
-from llobot.chats.messages import ChatMessage
+from llobot.knowledge import Knowledge
 from llobot.knowledge.scores import KnowledgeScores
-from llobot.knowledge.trees import standard_tree
 from llobot.formats.indexes import IndexFormat, standard_index_format
 from llobot.formats.affirmations import affirmation_turn
 
@@ -13,39 +11,41 @@ class IndexCrammer:
     """
     Crammer that formats file indexes.
 
-    Index crammers take knowledge scores (which define the index through their keys) and a budget,
+    Index crammers take knowledge, scores, and a budget,
     then try to fit the index or some part of it in the given budget.
     """
 
-    def cram(self, scores: KnowledgeScores, budget: int) -> ChatBranch:
+    def cram(self, knowledge: Knowledge, budget: int, scores: KnowledgeScores) -> ChatBranch:
         """
-        Crams the index from score keys in given budget.
+        Crams the index from knowledge in given budget.
 
         Args:
-            scores: Knowledge scores whose keys define the index to cram.
+            knowledge: Knowledge to get index from.
             budget: Maximum character budget for the formatted output.
+            scores: Knowledge scores, can be used to prioritize.
 
         Returns:
             ChatBranch containing formatted index.
         """
         return ChatBranch()
 
-    def __call__(self, scores: KnowledgeScores, budget: int) -> ChatBranch:
-        return self.cram(scores, budget)
+    def __call__(self, knowledge: Knowledge, budget: int, scores: KnowledgeScores) -> ChatBranch:
+        return self.cram(knowledge, budget, scores)
 
-def create_index_crammer(function: Callable[[KnowledgeScores, int], ChatBranch]) -> IndexCrammer:
+def create_index_crammer(function: Callable[[Knowledge, int, KnowledgeScores], ChatBranch]) -> IndexCrammer:
     """
     Creates an index crammer from a function.
 
     Args:
-        function: Cramming function that takes scores and budget and returns a ChatBranch.
+        function: Cramming function that takes knowledge, budget, and scores
+                  and returns a ChatBranch.
 
     Returns:
         IndexCrammer that uses the provided function.
     """
     class LambdaIndexCrammer(IndexCrammer):
-        def cram(self, scores: KnowledgeScores, budget: int) -> ChatBranch:
-            return function(scores, budget)
+        def cram(self, knowledge: Knowledge, budget: int, scores: KnowledgeScores) -> ChatBranch:
+            return function(knowledge, budget, scores)
     return LambdaIndexCrammer()
 
 @lru_cache
@@ -65,15 +65,12 @@ def optional_index_crammer(
     Returns:
         IndexCrammer that includes all files or none.
     """
-    def cram(scores: KnowledgeScores, budget: int) -> ChatBranch:
-        if not scores:
+    def cram(knowledge: Knowledge, budget: int, scores: KnowledgeScores) -> ChatBranch:
+        if not knowledge:
             return ChatBranch()
 
-        # Get index from scores
-        index = scores.keys()
-
         # Format index
-        formatted_content = index_format.render(index)
+        formatted_content = index_format.render(knowledge)
         if not formatted_content:
             return ChatBranch()
 

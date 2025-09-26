@@ -5,7 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 from llobot.formats.indexes import IndexFormat
 from llobot.knowledge import Knowledge
-from llobot.knowledge.indexes import coerce_index, KnowledgeIndexPrecursor
 from llobot.knowledge.ranking.rankers import KnowledgeRanker, standard_ranker
 from llobot.knowledge.trees.ranked import ranked_tree
 from llobot.utils.text import concat_documents
@@ -31,21 +30,19 @@ class GroupedIndexFormat(IndexFormat, ValueTypeMixin):
         """
         self._ranker = ranker if ranker is not None else standard_ranker()
 
-    def render(self, index: KnowledgeIndexPrecursor) -> str:
+    def render(self, knowledge: Knowledge) -> str:
         """
         Renders a knowledge index by grouping files by directory.
 
         Args:
-            index: The knowledge index to render.
+            knowledge: The knowledge to render.
 
         Returns:
             A Markdown string with files grouped by directory.
         """
-        coerced_index = coerce_index(index)
-        if not coerced_index:
+        if not knowledge:
             return ''
 
-        knowledge = Knowledge({path: '' for path in coerced_index})
         ranking = self._ranker.rank(knowledge)
         tree = ranked_tree(ranking)
 

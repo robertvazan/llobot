@@ -35,7 +35,6 @@ from llobot.knowledge.archives import KnowledgeArchive, standard_knowledge_archi
 from llobot.knowledge.ranking.rankers import KnowledgeRanker, standard_ranker
 from llobot.knowledge.scores.scorers import KnowledgeScorer, standard_scorer
 from llobot.knowledge.scores.relevance import NegativeRelevanceScorer, PositiveRelevanceScorer
-from llobot.knowledge.scores.uniform import uniform_scores
 from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.memories.examples import ExampleMemory
 from llobot.models import Model
@@ -154,9 +153,7 @@ class Editor(Role):
         scores -= blacklist
 
         # Index
-        # Add background scores so nothing is omitted from index
-        index_scores = scores | uniform_scores(knowledge.keys(), 0.001)
-        index_chat = self._index_crammer(index_scores, budget)
+        index_chat = self._index_crammer(knowledge, budget, scores)
         context.add(index_chat)
         budget -= index_chat.cost
 
