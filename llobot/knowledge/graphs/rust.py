@@ -1,10 +1,15 @@
+"""
+Crawlers for Rust source code.
+"""
 from __future__ import annotations
 from functools import cache
 import re
 from pathlib import Path
+from llobot.utils.values import ValueTypeMixin
 from llobot.knowledge import Knowledge
-from llobot.knowledge.graphs import KnowledgeGraph, KnowledgeGraphBuilder
-from llobot.scrapers import GraphScraper, create_scraper
+from llobot.knowledge.graphs import KnowledgeGraph
+from llobot.knowledge.graphs.builder import KnowledgeGraphBuilder
+from llobot.knowledge.graphs.crawler import KnowledgeCrawler
 
 def _source_path(source: Path) -> Path:
     """Convert a Rust file path to its module path."""
@@ -69,14 +74,29 @@ def _resolve_use_path(source: Path, path: str, knowledge: Knowledge) -> Path | N
         return None
 
 @cache
-def submodule_rust_scraper() -> GraphScraper:
-    pattern = re.compile(r'^ *(?:pub )?mod ([\w_]+);', re.MULTILINE)
-    def scrape(knowledge: Knowledge) -> KnowledgeGraph:
+def standard_rust_crawler() -> KnowledgeCrawler:
+    """
+    Returns the standard crawler for Rust.
+
+    The standard Rust crawler handles `mod` and `use` statements. Including
+    submodule references (`mod`) by default is a bit controversial, because a
+    parent does not depend on the submodule just because it exists. It is
+    however common for dependency relationship to match submodule relationship.
+    """
+    return RustSubmoduleCrawler() | RustUseCrawler()
+
+class RustSubmoduleCrawler(KnowledgeCrawler, ValueTypeMixin):
+    """
+    Crawls Rust files for `mod` statements to find submodule relationships.
+    """
+    _pattern = re.compile(r'^ *(?:pub )?mod ([\w_]+);', re.MULTILINE)
+
+    def crawl(self, knowledge: Knowledge) -> KnowledgeGraph:
         builder = KnowledgeGraphBuilder()
         for path, content in knowledge:
             if path.suffix == '.rs':
-                for module in pattern.findall(content):
-                    module_path = _source_path(path) / module
+                for module in self._pattern.findall(content):
+                    module_path = path.parent / module
                     rs_path, mod_path = _rust_module_paths(module_path)
 
                     if rs_path in knowledge:
@@ -84,23 +104,26 @@ def submodule_rust_scraper() -> GraphScraper:
                     elif mod_path in knowledge:
                         builder.add(path, mod_path)
         return builder.build()
-    return create_scraper(scrape)
 
-@cache
-def use_rust_scraper() -> GraphScraper:
-    statement_pattern = re.compile(r'^( *)(?:pub )?use ([^;]+);', re.MULTILINE)
-    brace_pattern = re.compile(r'([\w_:]*){([^{}]*)}')
-    item_pattern = re.compile(r'([\w_:]+)')
-    def expand(matched) -> str:
-        prefix = matched[1]
-        return ', '.join([(prefix + item if prefix else item) for item in item_pattern.findall(matched[2])])
-    def scrape(knowledge: Knowledge) -> KnowledgeGraph:
+class RustUseCrawler(KnowledgeCrawler, ValueTypeMixin):
+    """
+    Crawls Rust files for `use` statements to find dependencies.
+    """
+    _statement_pattern = re.compile(r'^( *)(?:pub )?use ([^;]+);', re.MULTILINE)
+    _brace_pattern = re.compile(r'([\w_:]*){([^{}]*)}')
+    _item_pattern = re.compile(r'([\w_:]+)')
+
+    def crawl(self, knowledge: Knowledge) -> KnowledgeGraph:
+        def expand(matched) -> str:
+            prefix = matched[1]
+            return ', '.join([(prefix + item if prefix else item) for item in self._item_pattern.findall(matched[2])])
+
         builder = KnowledgeGraphBuilder()
         for path, content in knowledge:
             if path.suffix == '.rs':
-                for indentation, spec in statement_pattern.findall(content):
+                for indentation, spec in self._statement_pattern.findall(content):
                     while True:
-                        expanded = brace_pattern.sub(expand, spec)
+                        expanded = self._brace_pattern.sub(expand, spec)
                         if expanded == spec:
                             break
                         spec = expanded
@@ -108,22 +131,14 @@ def use_rust_scraper() -> GraphScraper:
                     while indentation:
                         source = source/'nested-module'
                         indentation = indentation[4:]
-                    for item in item_pattern.findall(spec):
+                    for item in self._item_pattern.findall(spec):
                         target = _resolve_use_path(source, item, knowledge)
                         if target:
                             builder.add(path, target)
         return builder.build()
-    return create_scraper(scrape)
-
-@cache
-def standard_rust_scraper() -> GraphScraper:
-    # Including submodule references by default is a bit controversial,
-    # because parent does not depend on the submodule just because it exists.
-    # It is however common for dependency relationship to match submodule relationship.
-    return submodule_rust_scraper() | use_rust_scraper()
 
 __all__ = [
-    'submodule_rust_scraper',
-    'use_rust_scraper',
-    'standard_rust_scraper',
+    'standard_rust_crawler',
+    'RustSubmoduleCrawler',
+    'RustUseCrawler',
 ]

@@ -9,7 +9,7 @@ from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.scores import KnowledgeScores
 from llobot.knowledge.scores.scorers import KnowledgeScorer
 from llobot.knowledge.scores.constant import constant_scores
-from llobot.scrapers import GraphScraper, standard_scraper
+from llobot.knowledge.graphs.crawler import KnowledgeCrawler, standard_knowledge_crawler
 from llobot.utils.values import ValueTypeMixin
 
 @lru_cache(maxsize=2)
@@ -74,13 +74,13 @@ class PageRankScorer(KnowledgeScorer, ValueTypeMixin):
     """
     A scorer that uses the PageRank algorithm on the knowledge graph.
     """
-    _scraper: GraphScraper
+    _crawler: KnowledgeCrawler
     _damping: float
     _iterations: int
     _tolerance: float
 
     def __init__(self,
-        scraper: GraphScraper = standard_scraper(),
+        crawler: KnowledgeCrawler = standard_knowledge_crawler(),
         damping: float = 0.85,
         iterations: int = 100,
         tolerance: float = 1.0e-3
@@ -89,12 +89,12 @@ class PageRankScorer(KnowledgeScorer, ValueTypeMixin):
         Initializes the PageRank scorer.
 
         Args:
-            scraper: The scraper to use for building the knowledge graph.
+            crawler: The crawler to use for building the knowledge graph.
             damping: The damping factor for the PageRank algorithm.
             iterations: The maximum number of iterations to perform.
             tolerance: The tolerance for convergence.
         """
-        self._scraper = scraper
+        self._crawler = crawler
         self._damping = damping
         self._iterations = iterations
         self._tolerance = tolerance
@@ -115,7 +115,7 @@ class PageRankScorer(KnowledgeScorer, ValueTypeMixin):
         """
         Calculates PageRank scores, starting from a given set of initial scores.
 
-        It first scrapes the knowledge to build a graph, then runs the PageRank
+        It first crawls the knowledge to build a graph, then runs the PageRank
         algorithm on it.
 
         Args:
@@ -125,7 +125,7 @@ class PageRankScorer(KnowledgeScorer, ValueTypeMixin):
         Returns:
             The calculated PageRank scores.
         """
-        graph = self._scraper.scrape(knowledge)
+        graph = self._crawler.crawl(knowledge)
         return pagerank_scores(
             graph,
             knowledge.keys(),

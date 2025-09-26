@@ -17,8 +17,9 @@ scores/
     for implementing scoring strategies. Includes various scorer implementations
     like PageRank, length-based, and relevance-based scoring, as well as
     functions for score aggregation and normalization.
-graphs
-    KnowledgeGraph for relationship graphs between knowledge items
+graphs/
+    `KnowledgeGraph` for relationship graphs between knowledge items and
+    `KnowledgeCrawler` for building them.
 trees/
     KnowledgeTree for hierarchical directory tree representations
 subsets/
@@ -28,6 +29,8 @@ deltas/
     `deltas.knowledge`, `deltas.builder`, and `deltas.diffs`.
 archives/
     Historical knowledge storage
+resolver
+    `KnowledgeResolver` for efficient, proximity-based path resolution.
 """
 from __future__ import annotations
 from pathlib import Path

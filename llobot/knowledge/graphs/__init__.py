@@ -1,5 +1,31 @@
+"""
+Data structures for representing knowledge as a directed graph.
+
+This package provides `KnowledgeGraph` for representing relationships between
+documents and a `KnowledgeGraphBuilder` for constructing graphs. It also includes
+a `KnowledgeCrawler` framework for automatically building graphs from `Knowledge`
+by analyzing source code.
+
+Submodules
+----------
+builder
+    `KnowledgeGraphBuilder` for mutable graph construction.
+crawler
+    `KnowledgeCrawler` for building graphs from `Knowledge`.
+chain
+    `KnowledgeCrawlerChain` for combining crawlers.
+dummy
+    `DummyCrawler` for a no-op crawler.
+overview
+    Crawler that links documents to overview files.
+java
+    Crawlers for Java source code.
+python
+    Crawlers for Python source code.
+rust
+    Crawlers for Rust source code.
+"""
 from __future__ import annotations
-from collections import defaultdict
 from pathlib import Path
 from typing import Iterator
 from llobot.utils.values import ValueTypeMixin
@@ -65,6 +91,7 @@ class KnowledgeGraph(ValueTypeMixin):
         """
         Merges this graph with another, returning the union of their links.
         """
+        from llobot.knowledge.graphs.builder import KnowledgeGraphBuilder
         builder = KnowledgeGraphBuilder()
         for source, target in self.links():
             builder.add(source, target)
@@ -76,6 +103,7 @@ class KnowledgeGraph(ValueTypeMixin):
         """
         Returns a new graph with all links reversed.
         """
+        from llobot.knowledge.graphs.builder import KnowledgeGraphBuilder
         builder = KnowledgeGraphBuilder()
         for source, target in self.links():
             builder.add(target, source)
@@ -87,36 +115,6 @@ class KnowledgeGraph(ValueTypeMixin):
         """
         return self | self.reverse()
 
-class KnowledgeGraphBuilder:
-    """
-    A mutable builder for constructing `KnowledgeGraph` instances.
-    """
-    _graph: defaultdict[Path, set[Path]]
-
-    def __init__(self):
-        """Initializes an empty `KnowledgeGraphBuilder`."""
-        self._graph = defaultdict(set)
-
-    def add(self, source: Path, target: Path):
-        """
-        Adds a directed link to the graph.
-
-        Self-loops are ignored.
-
-        Args:
-            source: The source node.
-            target: The target node.
-        """
-        if source != target:
-            self._graph[source].add(target)
-
-    def build(self) -> KnowledgeGraph:
-        """
-        Constructs an immutable `KnowledgeGraph` from the current state.
-        """
-        return KnowledgeGraph({path: KnowledgeIndex(targets) for path, targets in self._graph.items()})
-
 __all__ = [
     'KnowledgeGraph',
-    'KnowledgeGraphBuilder',
 ]

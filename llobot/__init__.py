@@ -29,8 +29,6 @@ prompts
     Reusable sections for building system prompts.
 roles
     Definitions of different bot personalities and capabilities (e.g., Coder).
-scrapers
-    Tools to build knowledge graphs from source code and other documents.
 utils
     Core utilities for text, time, and filesystem operations.
 """
