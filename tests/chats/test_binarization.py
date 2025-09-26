@@ -27,9 +27,9 @@ def test_binarize_message():
 def test_binarize_chat_empty():
     """Tests binarizing an empty chat branch."""
     branch = ChatBranch()
-    assert binarize_chat(branch).messages == []
-    assert binarize_chat(branch, last=ChatIntent.PROMPT).messages == [ChatMessage(ChatIntent.PROMPT, "Go on")]
-    assert binarize_chat(branch, last=ChatIntent.RESPONSE).messages == [ChatMessage(ChatIntent.RESPONSE, "Okay")]
+    assert binarize_chat(branch).messages == ()
+    assert binarize_chat(branch, last=ChatIntent.PROMPT).messages == (ChatMessage(ChatIntent.PROMPT, "Go on"),)
+    assert binarize_chat(branch, last=ChatIntent.RESPONSE).messages == (ChatMessage(ChatIntent.RESPONSE, "Okay"),)
 
 def test_binarize_chat_reorders_prompt_session():
     """Tests that PROMPT-SESSION pairs are reordered to SESSION-PROMPT."""
@@ -38,11 +38,11 @@ def test_binarize_chat_reorders_prompt_session():
         ChatMessage(ChatIntent.SESSION, "s1"),
     ])
     binarized = binarize_chat(branch)
-    assert binarized.messages == [
+    assert binarized.messages == (
         ChatMessage(ChatIntent.PROMPT, "s1"),
         ChatMessage(ChatIntent.RESPONSE, "Okay"),
         ChatMessage(ChatIntent.PROMPT, "p1"),
-    ]
+    )
 
 def test_binarize_chat_reorders_prompt_session_at_end():
     """Tests reordering of PROMPT-SESSION pair at the end of a chat."""
@@ -52,12 +52,12 @@ def test_binarize_chat_reorders_prompt_session_at_end():
         ChatMessage(ChatIntent.SESSION, "s1"),
     ])
     binarized = binarize_chat(branch)
-    assert binarized.messages == [
+    assert binarized.messages == (
         ChatMessage(ChatIntent.RESPONSE, "r1"),
         ChatMessage(ChatIntent.PROMPT, "s1"),
         ChatMessage(ChatIntent.RESPONSE, "Okay"),
         ChatMessage(ChatIntent.PROMPT, "p1"),
-    ]
+    )
 
 def test_binarize_chat_consecutive_prompts():
     """Tests that a filler RESPONSE is inserted between consecutive PROMPTs."""
@@ -66,11 +66,11 @@ def test_binarize_chat_consecutive_prompts():
         ChatMessage(ChatIntent.SYSTEM, "s1"),
     ])
     binarized = binarize_chat(branch)
-    assert binarized.messages == [
+    assert binarized.messages == (
         ChatMessage(ChatIntent.PROMPT, "p1"),
         ChatMessage(ChatIntent.RESPONSE, "Okay"),
         ChatMessage(ChatIntent.PROMPT, "s1"),
-    ]
+    )
 
 def test_binarize_chat_consecutive_responses():
     """Tests that a filler PROMPT is inserted between consecutive RESPONSEs."""
@@ -79,35 +79,35 @@ def test_binarize_chat_consecutive_responses():
         ChatMessage(ChatIntent.AFFIRMATION, "a1"),
     ])
     binarized = binarize_chat(branch)
-    assert binarized.messages == [
+    assert binarized.messages == (
         ChatMessage(ChatIntent.RESPONSE, "r1"),
         ChatMessage(ChatIntent.PROMPT, "Go on"),
         ChatMessage(ChatIntent.RESPONSE, "a1"),
-    ]
+    )
 
 def test_binarize_chat_last_prompt():
     """Tests enforcing the last message intent to be PROMPT."""
     branch = ChatBranch([ChatMessage(ChatIntent.PROMPT, "p1")])
-    assert binarize_chat(branch, last=ChatIntent.PROMPT).messages == [ChatMessage(ChatIntent.PROMPT, "p1")]
+    assert binarize_chat(branch, last=ChatIntent.PROMPT).messages == (ChatMessage(ChatIntent.PROMPT, "p1"),)
 
     branch = ChatBranch([ChatMessage(ChatIntent.RESPONSE, "r1")])
     binarized = binarize_chat(branch, last=ChatIntent.PROMPT)
-    assert binarized.messages == [
+    assert binarized.messages == (
         ChatMessage(ChatIntent.RESPONSE, "r1"),
         ChatMessage(ChatIntent.PROMPT, "Go on"),
-    ]
+    )
 
 def test_binarize_chat_last_response():
     """Tests enforcing the last message intent to be RESPONSE."""
     branch = ChatBranch([ChatMessage(ChatIntent.RESPONSE, "r1")])
-    assert binarize_chat(branch, last=ChatIntent.RESPONSE).messages == [ChatMessage(ChatIntent.RESPONSE, "r1")]
+    assert binarize_chat(branch, last=ChatIntent.RESPONSE).messages == (ChatMessage(ChatIntent.RESPONSE, "r1"),)
 
     branch = ChatBranch([ChatMessage(ChatIntent.PROMPT, "p1")])
     binarized = binarize_chat(branch, last=ChatIntent.RESPONSE)
-    assert binarized.messages == [
+    assert binarized.messages == (
         ChatMessage(ChatIntent.PROMPT, "p1"),
         ChatMessage(ChatIntent.RESPONSE, "Okay"),
-    ]
+    )
 
 def test_binarize_chat_complex_case():
     """Tests binarization on a more complex sequence of messages."""
@@ -119,7 +119,7 @@ def test_binarize_chat_complex_case():
         ChatMessage(ChatIntent.AFFIRMATION, "a1"),
     ])
     binarized = binarize_chat(branch, last=ChatIntent.PROMPT)
-    assert binarized.messages == [
+    assert binarized.messages == (
         ChatMessage(ChatIntent.PROMPT, "system"),
         ChatMessage(ChatIntent.RESPONSE, "Okay"),
         ChatMessage(ChatIntent.PROMPT, "s1"),
@@ -129,4 +129,4 @@ def test_binarize_chat_complex_case():
         ChatMessage(ChatIntent.PROMPT, "Go on"),
         ChatMessage(ChatIntent.RESPONSE, "a1"),
         ChatMessage(ChatIntent.PROMPT, "Go on"),
-    ]
+    )

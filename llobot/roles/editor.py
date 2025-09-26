@@ -14,7 +14,7 @@ from llobot.commands.knowledge import ProjectKnowledgeStep
 from llobot.commands.project import ProjectCommand
 from llobot.commands.retrievals import RetrievalStep, standard_retrieval_commands
 from llobot.commands.unrecognized import UnrecognizedCommand
-from llobot.crammers.indexes import IndexCrammer, standard_index_crammer
+from llobot.crammers.index import IndexCrammer, standard_index_crammer
 from llobot.crammers.knowledge import KnowledgeCrammer, standard_knowledge_crammer
 from llobot.environments import Environment
 from llobot.environments.commands import CommandsEnv
@@ -32,10 +32,6 @@ from llobot.formats.prompts.reminder import ReminderPromptFormat
 from llobot.utils.fs import data_home
 from llobot.utils.zones import Zoning
 from llobot.knowledge.archives import KnowledgeArchive, standard_knowledge_archive
-from llobot.knowledge.ranking.rankers import KnowledgeRanker, standard_ranker
-from llobot.knowledge.scores.scorers import KnowledgeScorer, standard_scorer
-from llobot.knowledge.scores.relevance import NegativeRelevanceScorer, PositiveRelevanceScorer
-from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.memories.examples import ExampleMemory
 from llobot.models import Model
 from llobot.models.streams import ModelStream
@@ -67,9 +63,6 @@ class Editor(Role):
     _model: Model
     _system: str
     _knowledge_archive: KnowledgeArchive
-    _relevance_scorer: KnowledgeScorer
-    _graph_scorer: KnowledgeScorer
-    _ranker: KnowledgeRanker
     _knowledge_crammer: KnowledgeCrammer
     _index_crammer: IndexCrammer
     _knowledge_delta_format: KnowledgeDeltaFormat
@@ -83,9 +76,6 @@ class Editor(Role):
         projects: Iterable[Project] = (),
         knowledge_archive: KnowledgeArchive = standard_knowledge_archive(),
         example_archive: ChatArchive | Zoning | Path | str = standard_chat_archive(data_home()/'llobot/examples'),
-        relevance_scorer: KnowledgeScorer | KnowledgeSubset = NegativeRelevanceScorer(),
-        graph_scorer: KnowledgeScorer = standard_scorer(),
-        ranker: KnowledgeRanker = standard_ranker(),
         knowledge_crammer: KnowledgeCrammer = standard_knowledge_crammer(),
         index_crammer: IndexCrammer = standard_index_crammer(),
         knowledge_delta_format: KnowledgeDeltaFormat = standard_knowledge_delta_format(),
@@ -100,12 +90,6 @@ class Editor(Role):
         self._examples = ExampleMemory(name, archive=example_archive)
         self._system = str(prompt)
         self._knowledge_archive = knowledge_archive
-        if isinstance(relevance_scorer, KnowledgeSubset):
-            self._relevance_scorer = PositiveRelevanceScorer(relevance_scorer)
-        else:
-            self._relevance_scorer = relevance_scorer
-        self._graph_scorer = graph_scorer
-        self._ranker = ranker
         self._knowledge_crammer = knowledge_crammer
         self._index_crammer = index_crammer
         self._knowledge_delta_format = knowledge_delta_format
@@ -134,37 +118,26 @@ class Editor(Role):
         Args:
             env: The environment to populate.
         """
-        context = env[ContextEnv]
-        if context.messages:
+        context_env = env[ContextEnv]
+        if context_env.populated:
             return
 
         knowledge = env[KnowledgeEnv].get()
-        budget = self._model.context_budget
+        builder = context_env.builder
+        builder.budget = self._model.context_budget
 
-        # System prompt
-        system_chat = self._prompt_format.render_chat(self._system)
-        context.add(system_chat)
-        budget -= system_chat.cost
-
-        # Knowledge scores
-        scores = self._relevance_scorer.score(knowledge)
-        blacklist = knowledge.keys() - scores.keys()
-        scores = self._graph_scorer.rescore(knowledge, scores)
-        scores -= blacklist
+        # System prompt (unconditionally included)
+        builder.add(self._prompt_format.render_chat(self._system))
 
         # Index
-        index_chat = self._index_crammer(knowledge, budget, scores)
-        context.add(index_chat)
-        budget -= index_chat.cost
+        self._index_crammer.cram(builder, knowledge)
 
         # Knowledge
-        ranking = self._ranker.rank(knowledge)
-        knowledge_chat, _ = self._knowledge_crammer(knowledge, budget, scores, ranking)
-        context.add(knowledge_chat)
+        self._knowledge_crammer.cram(builder, knowledge)
 
     def chat(self, prompt: ChatBranch) -> ModelStream:
         env = Environment()
-        context = env[ContextEnv]
+        context_env = env[ContextEnv]
         queue = env[CommandsEnv]
         prompt_env = env[PromptEnv]
         status_env = env[StatusEnv]
@@ -181,9 +154,9 @@ class Editor(Role):
                 self._step_chain.process(env)
 
             if i == 0:
-                context.add(self._reminder_format.render_chat(self._system))
+                context_env.add(self._reminder_format.render_chat(self._system))
 
-            context.add(message)
+            context_env.add(message)
 
         if status_env.populated:
             yield from status_env.stream()
@@ -191,9 +164,9 @@ class Editor(Role):
 
         session_env = env[SessionEnv]
         yield from session_env.stream()
-        context.add(session_env.message())
+        context_env.add(session_env.message())
 
-        assembled_prompt = context.build()
+        assembled_prompt = context_env.build()
         yield from self._model.generate(assembled_prompt)
 
 __all__ = [

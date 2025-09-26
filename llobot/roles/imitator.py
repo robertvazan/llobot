@@ -11,7 +11,7 @@ from llobot.commands.custom import CustomStep
 from llobot.commands.cutoff import CutoffCommand, ImplicitCutoffStep
 from llobot.commands.project import ProjectCommand
 from llobot.commands.unrecognized import UnrecognizedCommand
-from llobot.crammers.examples import ExampleCrammer, standard_example_crammer
+from llobot.crammers.example import ExampleCrammer, standard_example_crammer
 from llobot.environments import Environment
 from llobot.environments.commands import CommandsEnv
 from llobot.environments.context import ContextEnv
@@ -79,28 +79,23 @@ class Imitator(Role):
         Args:
             env: The environment to populate.
         """
-        context = env[ContextEnv]
-        if context.messages:
+        context_env = env[ContextEnv]
+        if context_env.populated:
             return
 
-        budget = self._model.context_budget
+        builder = context_env.builder
+        builder.budget = self._model.context_budget
 
-        system_chat = self._prompt_format.render_chat(self._system)
-        context.add(system_chat)
-        budget -= system_chat.cost
-
-        reminder_chat = self._reminder_format.render_chat(self._system)
-        budget -= reminder_chat.cost
+        builder.add(self._prompt_format.render_chat(self._system))
 
         recent_examples = self._examples.recent(env)
-        examples = self._crammer(recent_examples, budget)
-        context.add(examples)
+        self._crammer.cram(builder, recent_examples)
 
-        context.add(reminder_chat)
+        builder.add(self._reminder_format.render_chat(self._system))
 
     def chat(self, prompt: ChatBranch) -> ModelStream:
         env = Environment()
-        context = env[ContextEnv]
+        context_env = env[ContextEnv]
         queue = env[CommandsEnv]
         prompt_env = env[PromptEnv]
         status_env = env[StatusEnv]
@@ -116,7 +111,7 @@ class Imitator(Role):
                 queue.add(parse_mentions(message))
                 self._step_chain.process(env)
 
-            context.add(message)
+            context_env.add(message)
 
         if status_env.populated:
             yield from status_env.stream()
@@ -124,9 +119,9 @@ class Imitator(Role):
 
         session_env = env[SessionEnv]
         yield from session_env.stream()
-        context.add(session_env.message())
+        context_env.add(session_env.message())
 
-        assembled_prompt = context.build()
+        assembled_prompt = context_env.build()
         yield from self._model.generate(assembled_prompt)
 
 __all__ = [

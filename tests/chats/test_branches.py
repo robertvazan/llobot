@@ -9,7 +9,7 @@ def test_construction_and_properties():
     branch = ChatBranch([msg1, msg2])
 
     assert len(branch) == 2
-    assert branch.messages == [msg1, msg2]
+    assert branch.messages == (msg1, msg2)
     assert bool(branch) is True
     assert branch.cost == msg1.cost + msg2.cost
 
@@ -41,7 +41,7 @@ def test_indexing_and_slicing():
 
     slice = branch[1:3]
     assert isinstance(slice, ChatBranch)
-    assert slice.messages == [msg2, msg3]
+    assert slice.messages == (msg2, msg3)
 
 def test_iteration_and_containment():
     """Tests iteration and 'in' operator."""
@@ -62,10 +62,10 @@ def test_addition():
     branch2 = ChatBranch([msg2])
 
     combined = branch1 + branch2
-    assert combined.messages == [msg1, msg2]
+    assert combined.messages == (msg1, msg2)
 
     combined_with_msg = branch1 + msg2
-    assert combined_with_msg.messages == [msg1, msg2]
+    assert combined_with_msg.messages == (msg1, msg2)
 
     combined_with_none = branch1 + None
     assert combined_with_none == branch1
@@ -91,10 +91,10 @@ def test_common_prefix():
     branch3 = ChatBranch([msg1])
 
     prefix = branch1 & branch2
-    assert prefix.messages == [msg1, msg2]
+    assert prefix.messages == (msg1, msg2)
 
     prefix2 = branch1 & branch3
-    assert prefix2.messages == [msg1]
+    assert prefix2.messages == (msg1,)
 
     prefix3 = branch1 & ChatBranch()
     assert len(prefix3) == 0

@@ -24,9 +24,9 @@ class ChatBranch(ValueTypeMixin):
         self._messages = tuple(messages)
 
     @property
-    def messages(self) -> list[ChatMessage]:
-        """A copy of the list of messages in this branch."""
-        return list(self._messages)
+    def messages(self) -> tuple[ChatMessage, ...]:
+        """The tuple of messages in this branch."""
+        return self._messages
 
     def __repr__(self) -> str:
         return str(self._messages)
