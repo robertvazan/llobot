@@ -1,4 +1,5 @@
 from __future__ import annotations
+import pytest
 from llobot.utils.values import ValueTypeMixin
 
 def test_value_type_mixin():
@@ -20,6 +21,8 @@ def test_value_type_mixin():
 
     # Test __eq__
     assert v1 == v2
+    assert v1 is not v2
+    assert v1 == v1
     assert v1 != v3
     assert v1 != v4
     assert v1 != v5
@@ -67,3 +70,20 @@ def test_value_type_mixin():
     assert s1 != s3
     assert hash(s1) == hash(s2)
     assert repr(s1) == "SimpleValue(x=10)"
+
+def test_value_type_mixin_unhashable():
+    class UnhashableValue(ValueTypeMixin):
+        def __init__(self, data):
+            self.data = data
+
+    v1 = UnhashableValue([1, 2, {'a'}])
+    v2 = UnhashableValue([1, 2, {'a'}])
+    v3 = UnhashableValue([1, 2, {'b'}])
+    v4 = UnhashableValue([1, 3, {'a'}])
+
+    with pytest.raises(TypeError):
+        hash(v1)
+
+    assert v1 == v2
+    assert v1 != v3
+    assert v1 != v4

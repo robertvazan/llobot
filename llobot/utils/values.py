@@ -8,7 +8,9 @@ class ValueTypeMixin:
     This mixin implements these methods based on the instance's attributes,
     excluding any fields marked as ephemeral. Leading underscores are stripped
     from attribute names, allowing private fields to be part of the value.
-    The hash code is cached for performance.
+    The hash code is cached for performance. Equality comparison is optimized
+    with an initial identity and hash check, falling back to full attribute
+    comparison if the object is not hashable.
     """
     _hash: int | None
 
@@ -31,8 +33,16 @@ class ValueTypeMixin:
         return {k.lstrip('_'): v for k, v in vars(self).items() if k not in ephemeral}
 
     def __eq__(self, other: object) -> bool:
+        if self is other:
+            return True
         if not isinstance(other, self.__class__):
             return NotImplemented
+        try:
+            if hash(self) != hash(other):
+                return False
+        except TypeError:
+            # Not hashable, fall back to full comparison.
+            pass
         return self._value_fields() == other._value_fields()
 
     def __hash__(self) -> int:
