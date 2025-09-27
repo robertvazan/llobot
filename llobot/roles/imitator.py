@@ -33,6 +33,17 @@ from llobot.prompts import Prompt
 from llobot.roles import Role
 
 class Imitator(Role):
+    """
+    A role that learns to perform tasks by imitating few-shot examples.
+
+    The Imitator role is designed for tasks where behavior is defined by a
+    collection of examples rather than a detailed system prompt with instructions.
+    It stuffs the context with user-approved prompt/response pairs from previous
+    conversations, leveraging the model's in-context learning capabilities. This
+    is useful for simple, repetitive tasks like data transformation or style
+    imitation. It supports an `@approve` command to save successful interactions
+    as new examples.
+    """
     _name: str
     _model: Model
     _system: str

@@ -59,6 +59,15 @@ def editor_system_prompt() -> SystemPrompt:
     )
 
 class Editor(Role):
+    """
+    A role specialized for analyzing and editing files in a project.
+
+    The Editor role is designed to handle software development tasks that involve
+    reading and modifying source code. It assembles a context for the LLM that
+    includes a system prompt, relevant files from a knowledge base, and a file
+    index. It supports commands for project selection (`@project`), file
+    retrieval (`@path/to/file`), and setting a knowledge cutoff time (`@cutoff`).
+    """
     _name: str
     _model: Model
     _system: str
