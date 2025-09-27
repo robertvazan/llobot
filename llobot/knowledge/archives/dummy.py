@@ -4,17 +4,18 @@ A no-op knowledge archive.
 from __future__ import annotations
 from datetime import datetime
 from functools import cache
+from pathlib import Path
 from llobot.knowledge import Knowledge
 from llobot.knowledge.archives import KnowledgeArchive
 
 class _DummyKnowledgeArchive(KnowledgeArchive):
-    def add(self, zone: str, time: datetime, knowledge: Knowledge):
+    def add(self, zone: Path, time: datetime, knowledge: Knowledge):
         pass
 
-    def remove(self, zone: str, time: datetime):
+    def remove(self, zone: Path, time: datetime):
         pass
 
-    def last(self, zone: str, cutoff: datetime | None = None) -> Knowledge:
+    def last(self, zone: Path, cutoff: datetime | None = None) -> Knowledge:
         return Knowledge()
 
 @cache

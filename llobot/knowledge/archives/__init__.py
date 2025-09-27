@@ -37,33 +37,33 @@ class KnowledgeArchive:
 
     A knowledge archive stores timestamped snapshots of a knowledge base.
     """
-    def add(self, zone: str, time: datetime, knowledge: Knowledge):
+    def add(self, zone: Path, time: datetime, knowledge: Knowledge):
         """
         Adds a new knowledge snapshot to the archive.
 
         Args:
-            zone: The zone (category) to store the snapshot in.
+            zone: The zone (a relative path) to store the snapshot in.
             time: The timestamp for the snapshot.
             knowledge: The knowledge base to store.
         """
         pass
 
-    def remove(self, zone: str, time: datetime):
+    def remove(self, zone: Path, time: datetime):
         """
         Removes a snapshot from the archive.
 
         Args:
-            zone: The zone from which to remove the snapshot.
+            zone: The zone (a relative path) from which to remove the snapshot.
             time: The timestamp of the snapshot to remove.
         """
         pass
 
-    def last(self, zone: str, cutoff: datetime | None = None) -> Knowledge:
+    def last(self, zone: Path, cutoff: datetime | None = None) -> Knowledge:
         """
         Retrieves the most recent snapshot from the archive.
 
         Args:
-            zone: The zone to retrieve from.
+            zone: The zone (a relative path) to retrieve from.
             cutoff: If provided, only snapshots at or before this time are considered.
 
         Returns:
@@ -71,12 +71,12 @@ class KnowledgeArchive:
         """
         return Knowledge()
 
-    def refresh(self, zone: str, knowledge: Knowledge):
+    def refresh(self, zone: Path, knowledge: Knowledge):
         """
         Checks for updates from the source and archives a new snapshot if changes are found.
 
         Args:
-            zone: The zone to store the snapshot in.
+            zone: The zone (a relative path) to store the snapshot in.
             knowledge: The current state of the knowledge.
         """
         fresh = knowledge

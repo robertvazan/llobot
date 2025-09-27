@@ -4,13 +4,13 @@ Prefix-based zoning.
 from __future__ import annotations
 from pathlib import Path
 from llobot.utils.values import ValueTypeMixin
-from llobot.utils.zones import Zoning
+from llobot.utils.zones import Zoning, validate_zone
 
 class PrefixZoning(Zoning, ValueTypeMixin):
     """
     Resolves zones as subdirectories of a prefix.
 
-    For example, `PrefixZoning('/data').resolve('cache')` returns `/data/cache`.
+    For example, `PrefixZoning('/data').resolve(Path('cache'))` returns `/data/cache`.
     """
     _prefix: Path
 
@@ -23,16 +23,17 @@ class PrefixZoning(Zoning, ValueTypeMixin):
         """
         self._prefix = Path(prefix).expanduser()
 
-    def resolve(self, zone: str) -> Path:
+    def resolve(self, zone: Path) -> Path:
         """
         Resolves a zone by appending it to the prefix.
 
         Args:
-            zone: The zone name to resolve.
+            zone: The zone identifier to resolve.
 
         Returns:
             The resolved path.
         """
+        validate_zone(zone)
         return self._prefix / zone
 
 __all__ = [

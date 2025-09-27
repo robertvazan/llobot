@@ -106,7 +106,7 @@ class Project:
         Args:
             archive: The knowledge archive to refresh.
         """
-        archive.refresh(self.name, self.load())
+        archive.refresh(Path(self.name), self.load())
 
     def last(self, archive: KnowledgeArchive, cutoff: datetime | None = None) -> Knowledge:
         """
@@ -119,7 +119,7 @@ class Project:
         Returns:
             The most recent Knowledge object, or an empty one if none are found.
         """
-        return archive.last(self.name, cutoff)
+        return archive.last(Path(self.name), cutoff)
 
     def __or__(self, other: Project) -> Project:
         """

@@ -100,18 +100,18 @@ class TgzKnowledgeArchive(KnowledgeArchive, ValueTypeMixin):
         """
         self._location = coerce_zoning(location)
 
-    def _path(self, zone: str, time: datetime):
+    def _path(self, zone: Path, time: datetime):
         return format_archive_path(self._location[zone], time, _KNOWLEDGE_TGZ_SUFFIX)
 
-    def add(self, zone: str, time: datetime, knowledge: Knowledge):
+    def add(self, zone: Path, time: datetime, knowledge: Knowledge):
         save_knowledge_tgz(self._path(zone, time), knowledge)
         load_knowledge_tgz.cache_clear()
 
-    def remove(self, zone: str, time: datetime):
+    def remove(self, zone: Path, time: datetime):
         self._path(zone, time).unlink(missing_ok=True)
         load_knowledge_tgz.cache_clear()
 
-    def last(self, zone: str, cutoff: datetime | None = None) -> Knowledge:
+    def last(self, zone: Path, cutoff: datetime | None = None) -> Knowledge:
         path = last_archive_path(self._location[zone], _KNOWLEDGE_TGZ_SUFFIX, cutoff)
         return load_knowledge_tgz(path) if path else Knowledge()
 

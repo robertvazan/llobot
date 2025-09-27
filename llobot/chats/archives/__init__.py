@@ -2,8 +2,8 @@
 Storage for chat histories.
 
 This package provides the `ChatArchive` interface for storing and retrieving
-chat histories. Archives are organized into zones, which are simple string
-identifiers. Within each zone, chats are stored by timestamp.
+chat histories. Archives are organized into zones, which are relative paths.
+Within each zone, chats are stored by timestamp.
 
 Submodules
 ----------
@@ -22,21 +22,21 @@ class ChatArchive:
     """
     An abstract base class for storing and retrieving chat histories.
 
-    Chat archives are organized into zones, which are simple string identifiers.
+    Chat archives are organized into zones, which are relative paths.
     Within each zone, chats are stored by timestamp.
     """
-    def add(self, zone: str, time: datetime, chat: ChatBranch):
+    def add(self, zone: Path, time: datetime, chat: ChatBranch):
         """
         Adds a chat to the archive.
 
         Args:
-            zone: The zone to store the chat in.
+            zone: The zone (a relative path) to store the chat in.
             time: The timestamp for the chat.
             chat: The chat branch to store.
         """
         pass
 
-    def scatter(self, zones: Iterable[str], time: datetime, chat: ChatBranch):
+    def scatter(self, zones: Iterable[Path], time: datetime, chat: ChatBranch):
         """
         Adds the same chat to multiple zones.
 
@@ -50,22 +50,22 @@ class ChatArchive:
         for zone in zones:
             self.add(zone, time, chat)
 
-    def remove(self, zone: str, time: datetime):
+    def remove(self, zone: Path, time: datetime):
         """
         Removes a chat from the archive.
 
         Args:
-            zone: The zone where the chat is stored.
+            zone: The zone (a relative path) where the chat is stored.
             time: The timestamp of the chat to remove.
         """
         pass
 
-    def read(self, zone: str, time: datetime) -> ChatBranch | None:
+    def read(self, zone: Path, time: datetime) -> ChatBranch | None:
         """
         Reads a specific chat from the archive.
 
         Args:
-            zone: The zone where the chat is stored.
+            zone: The zone (a relative path) where the chat is stored.
             time: The timestamp of the chat to read.
 
         Returns:
@@ -73,12 +73,12 @@ class ChatArchive:
         """
         return None
 
-    def contains(self, zone: str, time: datetime) -> bool:
+    def contains(self, zone: Path, time: datetime) -> bool:
         """
         Checks if a specific chat exists in the archive.
 
         Args:
-            zone: The zone where the chat is stored.
+            zone: The zone (a relative path) where the chat is stored.
             time: The timestamp of the chat to check.
 
         Returns:
@@ -86,12 +86,12 @@ class ChatArchive:
         """
         return self.read(zone, time) is not None
 
-    def recent(self, zone: str, cutoff: datetime | None = None) -> Iterable[tuple[datetime, ChatBranch]]:
+    def recent(self, zone: Path, cutoff: datetime | None = None) -> Iterable[tuple[datetime, ChatBranch]]:
         """
         Retrieves recent chats from a zone, newest first.
 
         Args:
-            zone: The zone to retrieve chats from.
+            zone: The zone (a relative path) to retrieve chats from.
             cutoff: If specified, only chats at or before this time are returned.
 
         Returns:
@@ -99,12 +99,12 @@ class ChatArchive:
         """
         return []
 
-    def last(self, zone: str, cutoff: datetime | None = None) -> tuple[datetime | None, ChatBranch | None]:
+    def last(self, zone: Path, cutoff: datetime | None = None) -> tuple[datetime | None, ChatBranch | None]:
         """
         Retrieves the most recent chat from a zone.
 
         Args:
-            zone: The zone to retrieve the chat from.
+            zone: The zone (a relative path) to retrieve the chat from.
             cutoff: If specified, the last chat at or before this time is returned.
 
         Returns:

@@ -14,12 +14,12 @@ def test_standard_and_coerce(tmp_path):
     # Test standard_knowledge_archive uses tgz
     archive = standard_knowledge_archive(tmp_path)
     time = current_time()
-    archive.add('zone', time, K1)
-    assert archive.last('zone') == K1
+    archive.add(Path('zone'), time, K1)
+    assert archive.last(Path('zone')) == K1
 
     # Test coerce from path
     coerced_from_path = coerce_knowledge_archive(tmp_path)
-    assert coerced_from_path.last('zone') == K1
+    assert coerced_from_path.last(Path('zone')) == K1
 
     # Test coerce from archive instance
     coerced_from_archive = coerce_knowledge_archive(archive)
@@ -34,17 +34,17 @@ def test_refresh():
 
     # First time, should add
     archive.last = Mock(return_value=Knowledge())
-    archive.refresh('zone1', k1)
+    archive.refresh(Path('zone1'), k1)
     archive.add.assert_called_once()
     archive.add.reset_mock()
 
     # Unchanged, should not add
     archive.last = Mock(return_value=k1)
-    archive.refresh('zone1', k1)
+    archive.refresh(Path('zone1'), k1)
     archive.add.assert_not_called()
     archive.add.reset_mock()
 
     # Changed, should add
     archive.last = Mock(return_value=k1)
-    archive.refresh('zone1', k2)
+    archive.refresh(Path('zone1'), k2)
     archive.add.assert_called_once()

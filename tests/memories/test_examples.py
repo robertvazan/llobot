@@ -38,7 +38,7 @@ def test_save_and_recent_with_project_and_role(tmp_path: Path):
     memory.save(chat, env)
 
     # Check both zones
-    assert (tmp_path / 'test_project-test_role').exists()
+    assert (tmp_path / 'test_role' / 'test_project').exists()
     assert (tmp_path / 'test_role').exists()
 
     recent_examples = list(memory.recent(env))
@@ -48,6 +48,23 @@ def test_save_and_recent_with_project_and_role(tmp_path: Path):
     env_no_project = Environment()
     recent_no_project = list(memory.recent(env_no_project))
     assert len(recent_no_project) == 1 # only from test_role zone
+
+def test_zones_with_path_like_project_name(tmp_path: Path):
+    archive = MarkdownChatArchive(tmp_path)
+    memory = ExampleMemory('test_role', archive=archive)
+    env = Environment()
+    env[ProjectEnv].add(DummyProject('my/project'))
+    chat = ChatBranch([ChatMessage(ChatIntent.PROMPT, "Question")])
+
+    memory.save(chat, env)
+
+    # Check both zones are created
+    assert (tmp_path / 'test_role' / 'my' / 'project').exists()
+    assert (tmp_path / 'test_role').exists()
+
+    # Check if they have content
+    assert len(list(archive.recent(Path('test_role/my/project')))) == 1
+    assert len(list(archive.recent(Path('test_role')))) == 1
 
 def test_save_with_project_only(tmp_path: Path):
     archive = MarkdownChatArchive(tmp_path)
@@ -105,11 +122,11 @@ def test_recent_merges_examples(tmp_path: Path):
     chat_role = ChatBranch([ChatMessage(ChatIntent.PROMPT, "role prompt")])
     chat_both = ChatBranch([ChatMessage(ChatIntent.PROMPT, "both prompt")])
 
-    archive.add('p1-test_role', parse_time('20240101-120000'), chat_p1)
-    archive.add('p2-test_role', parse_time('20240101-140000'), chat_p2)
-    archive.add('test_role', parse_time('20240101-100000'), chat_role)
+    archive.add(Path('test_role/p1'), parse_time('20240101-120000'), chat_p1)
+    archive.add(Path('test_role/p2'), parse_time('20240101-140000'), chat_p2)
+    archive.add(Path('test_role'), parse_time('20240101-100000'), chat_role)
     # this will be in two zones, but recent should deduplicate it
-    archive.scatter(['p1-test_role', 'p2-test_role'], parse_time('20240101-130000'), chat_both)
+    archive.scatter([Path('test_role/p1'), Path('test_role/p2')], parse_time('20240101-130000'), chat_both)
 
     recent = [c[0].content for c in memory.recent(env)]
     assert recent == [

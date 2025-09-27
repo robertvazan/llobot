@@ -35,19 +35,19 @@ def test_tgz_knowledge_archive(tmp_path):
     archive = TgzKnowledgeArchive(tmp_path)
 
     time1 = current_time()
-    archive.add('zone1', time1, K1)
+    archive.add(Path('zone1/sub'), time1, K1)
 
     # Make sure we get a different timestamp without slowing down the test.
     time2 = time1 + timedelta(seconds=1)
-    archive.add('zone1', time2, K2)
+    archive.add(Path('zone1/sub'), time2, K2)
 
-    assert archive.last('zone1') == K2
-    assert archive.last('zone1', time2) == K2
-    assert archive.last('zone1', time1) == K1
-    assert archive.last('zone2') == Knowledge()
+    assert archive.last(Path('zone1/sub')) == K2
+    assert archive.last(Path('zone1/sub'), time2) == K2
+    assert archive.last(Path('zone1/sub'), time1) == K1
+    assert archive.last(Path('zone2')) == Knowledge()
 
-    archive.remove('zone1', time2)
-    assert archive.last('zone1') == K1
+    archive.remove(Path('zone1/sub'), time2)
+    assert archive.last(Path('zone1/sub')) == K1
 
-    archive.remove('zone1', time1)
-    assert archive.last('zone1') == Knowledge()
+    archive.remove(Path('zone1/sub'), time1)
+    assert archive.last(Path('zone1/sub')) == Knowledge()

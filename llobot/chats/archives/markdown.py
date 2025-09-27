@@ -35,13 +35,13 @@ class MarkdownChatArchive(ChatArchive, ValueTypeMixin):
         """
         self._location = coerce_zoning(location)
 
-    def _path(self, zone: str, time: datetime) -> Path:
+    def _path(self, zone: Path, time: datetime) -> Path:
         return format_archive_path(self._location[zone], time, '.md')
 
-    def add(self, zone: str, time: datetime, chat: ChatBranch):
+    def add(self, zone: Path, time: datetime, chat: ChatBranch):
         save_chat_as_markdown(self._path(zone, time), chat)
 
-    def scatter(self, zones: Iterable[str], time: datetime, chat: ChatBranch):
+    def scatter(self, zones: Iterable[Path], time: datetime, chat: ChatBranch):
         zones = list(zones)
         if not zones:
             return
@@ -57,17 +57,17 @@ class MarkdownChatArchive(ChatArchive, ValueTypeMixin):
                 _logger.warning(f"Failed to create hardlink from {source_path} to {target_path}: {ex}")
                 self.add(zone, time, chat)
 
-    def remove(self, zone: str, time: datetime):
+    def remove(self, zone: Path, time: datetime):
         self._path(zone, time).unlink(missing_ok=True)
 
-    def read(self, zone: str, time: datetime) -> ChatBranch | None:
+    def read(self, zone: Path, time: datetime) -> ChatBranch | None:
         path = self._path(zone, time)
         return load_chat_as_markdown(path) if path.exists() else None
 
-    def contains(self, zone: str, time: datetime) -> bool:
+    def contains(self, zone: Path, time: datetime) -> bool:
         return self._path(zone, time).exists()
 
-    def recent(self, zone: str, cutoff: datetime | None = None) -> Iterable[tuple[datetime, ChatBranch]]:
+    def recent(self, zone: Path, cutoff: datetime | None = None) -> Iterable[tuple[datetime, ChatBranch]]:
         for path in recent_archive_paths(self._location[zone], '.md', cutoff):
             yield (parse_archive_path(path), load_chat_as_markdown(path))
 

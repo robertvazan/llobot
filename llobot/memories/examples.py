@@ -45,19 +45,19 @@ class ExampleMemory:
         self._role_name = role_name
         self._archive = coerce_chat_archive(archive)
 
-    def _zones(self, env: Environment) -> list[str]:
+    def _zones(self, env: Environment) -> list[Path]:
         """
         Determines the zone names based on the current environment.
         """
         projects = env[ProjectEnv].selected
-        zones = []
+        zones: list[Path] = []
         if self._role_name:
             for project in projects:
-                zones.append(f'{project.name}-{self._role_name}')
-            zones.append(self._role_name)
+                zones.append(Path(self._role_name) / project.name)
+            zones.append(Path(self._role_name))
         else:
             for project in projects:
-                zones.append(project.name)
+                zones.append(Path(project.name))
         return zones
 
     def save(self, chat: ChatBranch, env: Environment):
@@ -86,7 +86,7 @@ class ExampleMemory:
 
         time = current_time()
         self._archive.scatter(zones, time, chat)
-        _logger.info(f"Archived example: {', '.join(zones)}")
+        _logger.info(f"Archived example: {', '.join(map(str, zones))}")
 
     def _as_example(self, chat: ChatBranch) -> ChatBranch:
         """Converts all messages in a chat branch to their example versions."""
@@ -121,9 +121,11 @@ class ExampleMemory:
         project_zones = all_zones[:]
         role_zone_iter = []
 
-        if self._role_name in project_zones:
-            project_zones.remove(self._role_name)
-            role_zone_iter = self._archive.recent(self._role_name, cutoff)
+        if self._role_name:
+            role_path = Path(self._role_name)
+            if role_path in project_zones:
+                project_zones.remove(role_path)
+                role_zone_iter = self._archive.recent(role_path, cutoff)
 
         # Merge examples from all project zones, sorted by time descending.
         project_iters = [self._archive.recent(zone, cutoff) for zone in project_zones]
