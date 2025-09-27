@@ -1,45 +1,27 @@
 from __future__ import annotations
-from datetime import datetime
 from pathlib import Path
 import pytest
 from llobot.knowledge import Knowledge
-from llobot.knowledge.archives import KnowledgeArchive
-from llobot.knowledge.indexes import KnowledgeIndex
-from llobot.knowledge.subsets import KnowledgeSubset
-from llobot.knowledge.subsets.filename import FilenameSubset
-from llobot.knowledge.subsets.suffix import SuffixSubset
 from llobot.projects import Project
-from llobot.projects.directory import DirectoryProject
-from llobot.projects.none import NoProject
+from llobot.projects.empty import EmptyProject
+from llobot.projects.items import ProjectDirectory, ProjectFile, ProjectItem
 from llobot.projects.union import UnionProject, union_project
+from llobot.utils.values import ValueTypeMixin
 
-class MockProject(Project):
-    def __init__(self, name: str, files: dict[str, str | dict], prefix: Path | None = None):
-        self._name = name
+class MockProject(Project, ValueTypeMixin):
+    def __init__(self, zones: set[str], prefixes: set[str], files: dict[str, str | dict]):
+        self._zones = {Path(z) for z in zones}
+        self._prefixes = {Path(p) for p in prefixes}
         self._files = files
-        self._prefix = prefix if prefix is not None else Path(name)
-        self._whitelist = super().whitelist
-        self._blacklist = super().blacklist
+        self._tracked = True
 
     @property
-    def name(self) -> str:
-        return self._name
+    def zones(self) -> set[Path]:
+        return self._zones
 
     @property
-    def whitelist(self) -> KnowledgeSubset:
-        return self._whitelist
-
-    @whitelist.setter
-    def whitelist(self, value: KnowledgeSubset):
-        self._whitelist = value
-
-    @property
-    def blacklist(self) -> KnowledgeSubset:
-        return self._blacklist
-
-    @blacklist.setter
-    def blacklist(self, value: KnowledgeSubset):
-        self._blacklist = value
+    def prefixes(self) -> set[Path]:
+        return self._prefixes
 
     def _get_at(self, path: Path):
         node = self._files
@@ -51,57 +33,42 @@ class MockProject(Project):
             return None
         return node
 
-    def _to_local_path(self, path: Path) -> Path | None:
-        """Strips the project prefix from a path. Returns None if path is not under the prefix."""
-        if self._prefix == Path('.') or path.is_relative_to(self._prefix):
-            return path.relative_to(self._prefix) if self._prefix != Path('.') else path
-        return None
-
-    def list_files(self, path: Path) -> list[str]:
-        local_path = self._to_local_path(path)
-        if local_path is None:
-            return []
-        node = self._get_at(local_path)
-        if isinstance(node, dict):
-            return [name for name, content in node.items() if isinstance(content, str)]
-        return []
-
-    def list_subdirs(self, path: Path) -> list[str]:
-        local_path = self._to_local_path(path)
-        if local_path is not None:
-            node = self._get_at(local_path)
-            if isinstance(node, dict):
-                return [name for name, content in node.items() if isinstance(content, dict)]
-            return []
-
-        if self._prefix != Path('.') and self._prefix.is_relative_to(path):
-            relative_prefix = self._prefix.relative_to(path)
-            return [relative_prefix.parts[0]] if relative_prefix.parts else []
+    def items(self, path: Path) -> list[ProjectItem]:
+        for prefix in self.prefixes:
+            if path == prefix or path.is_relative_to(prefix):
+                local_path = path.relative_to(prefix)
+                node = self._get_at(local_path)
+                if isinstance(node, dict):
+                    result = []
+                    for name, content in node.items():
+                        item_path = path / name
+                        if isinstance(content, str):
+                            result.append(ProjectFile(item_path))
+                        elif isinstance(content, dict):
+                            result.append(ProjectDirectory(item_path))
+                    return sorted(result, key=lambda i: i.path)
         return []
 
     def read(self, path: Path) -> str | None:
-        local_path = self._to_local_path(path)
-        if local_path is None:
-            return None
-        content = self._get_at(local_path)
-        return content if isinstance(content, str) else None
+        for prefix in self.prefixes:
+            if path == prefix or path.is_relative_to(prefix):
+                local_path = path.relative_to(prefix)
+                content = self._get_at(local_path)
+                return content if isinstance(content, str) else None
+        return None
 
-def test_no_project():
-    project = NoProject()
-    with pytest.raises(NotImplementedError):
-        _ = project.name
-    assert project.enumerate() == KnowledgeIndex()
-    assert project.load() == Knowledge()
+    def tracked(self, item: ProjectItem) -> bool:
+        return self._tracked
 
 def test_union_project():
-    p1 = MockProject("p1", {"a.txt": "a", "b.py": "b"})
-    p2 = MockProject("p2", {"c.txt": "c", "d.py": "d"})
+    p1 = MockProject(zones={'p1z'}, prefixes={'p1'}, files={"a.txt": "a", "b.py": "b"})
+    p2 = MockProject(zones={'p2z'}, prefixes={'p2'}, files={"c.txt": "c", "d.py": "d"})
 
     union = union_project(p1, p2)
     assert (union | p1) is not None # test operator
 
-    expected_index = KnowledgeIndex([Path("p1/a.txt"), Path("p1/b.py"), Path("p2/c.txt"), Path("p2/d.py")])
-    assert union.enumerate() == expected_index
+    assert union.zones == {Path("p1z"), Path("p2z")}
+    assert union.prefixes == {Path("p1"), Path("p2")}
 
     expected_knowledge = Knowledge({
         Path("p1/a.txt"): "a",
@@ -109,40 +76,37 @@ def test_union_project():
         Path("p2/c.txt"): "c",
         Path("p2/d.py"): "d",
     })
-    assert union.load() == expected_knowledge
+    assert union.read_all() == expected_knowledge
 
     assert union.read(Path("p1/a.txt")) == "a"
     assert union.read(Path("p2/c.txt")) == "c"
     assert union.read(Path("nonexistent")) is None
-    assert sorted(union.list_subdirs(Path("."))) == ['p1', 'p2']
 
 def test_union_project_factory():
-    p1 = MockProject("p1", {})
-    assert union_project() == NoProject()
+    p1 = MockProject({"p1z"}, {"p1"}, {})
+    assert union_project() == EmptyProject()
     assert union_project(p1) is p1
     assert isinstance(union_project(p1, p1), UnionProject)
 
 def test_union_project_flattening():
-    p1 = MockProject("p1", {})
-    p2 = MockProject("p2", {})
-    p3 = MockProject("p3", {})
+    p1 = MockProject({"p1z"}, {"p1"}, {})
+    p2 = MockProject({"p2z"}, {"p2"}, {})
+    p3 = MockProject({"p3z"}, {"p3"}, {})
     union1 = union_project(p1, p2)
     union2 = union_project(union1, p3)
     assert isinstance(union2, UnionProject)
-    assert union2._projects == [p1, p2, p3]
+    assert union2._projects == (p1, p2, p3)
 
-def test_union_project_whitelist_blacklist():
-    p1 = MockProject("p1", {"a.txt": "a", "b.py": "b", "c.txt": "c"})
-    p1.whitelist = SuffixSubset(".txt")
-    p1.blacklist = FilenameSubset("c.txt")
+def test_union_duplicate_prefix_fails():
+    p1 = MockProject(zones={'z1'}, prefixes={'p'}, files={})
+    p2 = MockProject(zones={'z2'}, prefixes={'p'}, files={})
+    with pytest.raises(ValueError, match="Duplicate prefix"):
+        union_project(p1, p2)
 
-    p2 = MockProject("p2", {"d.txt": "d", "e.py": "e"})
-    p2.blacklist = FilenameSubset("e.py")
-
+def test_union_nested_prefix_allowed():
+    p1 = MockProject(zones={'z1'}, prefixes={'p/a'}, files={'x': 'y'})
+    p2 = MockProject(zones={'z2'}, prefixes={'p'}, files={'a': {}})
     union = union_project(p1, p2)
-
-    expected_index = KnowledgeIndex([
-        Path("p1/a.txt"),
-        Path("p2/d.txt"),
-    ])
-    assert union.enumerate() == expected_index
+    assert union.read(Path('p/a/x')) == 'y'
+    assert union.items(Path('p')) == [ProjectDirectory(Path('p/a'))]
+    assert union.items(Path('p/a')) == [ProjectFile(Path('p/a/x'))]

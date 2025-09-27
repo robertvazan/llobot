@@ -24,7 +24,7 @@ class ExampleMemory:
     Manages storage and retrieval of example chats for roles.
 
     Examples are stored in a ChatArchive and organized into zones based on
-    project and role names. This allows roles to retrieve relevant examples
+    project zones and role names. This allows roles to retrieve relevant examples
     during context stuffing.
     """
     _role_name: str | None
@@ -49,15 +49,15 @@ class ExampleMemory:
         """
         Determines the zone names based on the current environment.
         """
-        projects = env[ProjectEnv].selected
+        project_zones = env[ProjectEnv].union.zones
         zones: list[Path] = []
+
         if self._role_name:
-            for project in projects:
-                zones.append(Path(self._role_name) / project.name)
+            for pz in sorted(list(project_zones)):
+                zones.append(Path(self._role_name) / pz)
             zones.append(Path(self._role_name))
         else:
-            for project in projects:
-                zones.append(Path(project.name))
+            zones.extend(sorted(list(project_zones)))
         return zones
 
     def save(self, chat: ChatBranch, env: Environment):

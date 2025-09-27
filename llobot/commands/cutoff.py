@@ -9,7 +9,6 @@ from llobot.environments.projects import ProjectEnv
 from llobot.environments.prompt import PromptEnv
 from llobot.environments.session import SessionEnv
 from llobot.knowledge.archives import KnowledgeArchive
-from llobot.projects.none import NoProject
 from llobot.utils.time import current_time, format_time, try_parse_time
 
 class CutoffCommand(Command):

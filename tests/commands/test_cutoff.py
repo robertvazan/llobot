@@ -1,4 +1,5 @@
 from datetime import datetime, UTC
+from pathlib import Path
 from unittest.mock import Mock, patch
 import pytest
 from llobot.commands.cutoff import CutoffCommand, ImplicitCutoffStep
@@ -34,10 +35,19 @@ def test_implicit_cutoff_step_no_cutoff_last_prompt():
     step = ImplicitCutoffStep(archive)
     env = Environment()
 
+    p1_prefix = Path('p1')
     p1 = Mock(spec=Project)
-    p1.name = "p1"
+    p1.zones = {p1_prefix}
+    p1.prefixes = {p1_prefix}
+    p1.items.return_value = []
+    p1.read_all.return_value = Knowledge()
+
+    p2_prefix = Path('p2')
     p2 = Mock(spec=Project)
-    p2.name = "p2"
+    p2.zones = {p2_prefix}
+    p2.prefixes = {p2_prefix}
+    p2.items.return_value = []
+    p2.read_all.return_value = Knowledge()
 
     env[ProjectEnv].add(p1)
     env[ProjectEnv].add(p2)
@@ -49,8 +59,9 @@ def test_implicit_cutoff_step_no_cutoff_last_prompt():
     with patch('llobot.commands.cutoff.current_time', return_value=now):
         step.process(env)
 
-    p1.refresh.assert_called_once_with(archive)
-    p2.refresh.assert_called_once_with(archive)
+    # Base Project.refresh calls archive.refresh for each prefix.
+    archive.refresh.assert_any_call(p1_prefix, Knowledge())
+    archive.refresh.assert_any_call(p2_prefix, Knowledge())
     assert cutoff_env.get() == now
     assert session_env.content() == f"Data cutoff: @{format_time(now)}"
 
@@ -59,7 +70,8 @@ def test_implicit_cutoff_step_no_cutoff_not_last_prompt():
     step = ImplicitCutoffStep(archive)
     env = Environment()
     project = Mock(spec=Project)
-    project.name = "p1"
+    project.zones = {Path('p1')}
+    project.prefixes = {Path('p1')}
     env[ProjectEnv].add(project)
     cutoff_env = env[CutoffEnv]
     session_env = env[SessionEnv]
@@ -78,7 +90,8 @@ def test_implicit_cutoff_step_with_cutoff():
     step = ImplicitCutoffStep(archive)
     env = Environment()
     project = Mock(spec=Project)
-    project.name = "p1"
+    project.zones = {Path('p1')}
+    project.prefixes = {Path('p1')}
     env[ProjectEnv].add(project)
     env[PromptEnv].mark_last()
     cutoff_env = env[CutoffEnv]
@@ -106,14 +119,15 @@ def test_implicit_cutoff_step_no_project():
     with patch('llobot.commands.cutoff.current_time', return_value=now):
         step.process(env)
 
-    archive.refresh.assert_not_called()
+    # No project means EmptyProject, which has no prefixes and refresh is a no-op
     assert cutoff_env.get() == now
 
 def test_implicit_cutoff_step_no_archive():
     step = ImplicitCutoffStep()
     env = Environment()
     project = Mock(spec=Project)
-    project.name = "test-project"
+    project.zones = {Path('test-project')}
+    project.prefixes = {Path('test-project')}
     env[ProjectEnv].add(project)
     env[PromptEnv].mark_last()
     cutoff_env = env[CutoffEnv]

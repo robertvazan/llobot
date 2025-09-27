@@ -8,7 +8,7 @@ from llobot.chats.messages import ChatMessage
 from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
 from llobot.memories.examples import ExampleMemory
-from llobot.projects.dummy import DummyProject
+from llobot.projects.zone import ZoneProject
 from llobot.utils.time import parse_time
 
 def test_save_and_recent_with_role_only(tmp_path: Path):
@@ -32,7 +32,7 @@ def test_save_and_recent_with_project_and_role(tmp_path: Path):
     archive = MarkdownChatArchive(tmp_path)
     memory = ExampleMemory('test_role', archive=archive)
     env = Environment()
-    env[ProjectEnv].add(DummyProject('test_project'))
+    env[ProjectEnv].add(ZoneProject('test_project'))
     chat = ChatBranch([ChatMessage(ChatIntent.PROMPT, "Question")])
 
     memory.save(chat, env)
@@ -49,11 +49,11 @@ def test_save_and_recent_with_project_and_role(tmp_path: Path):
     recent_no_project = list(memory.recent(env_no_project))
     assert len(recent_no_project) == 1 # only from test_role zone
 
-def test_zones_with_path_like_project_name(tmp_path: Path):
+def test_zones_with_path_like_zone(tmp_path: Path):
     archive = MarkdownChatArchive(tmp_path)
     memory = ExampleMemory('test_role', archive=archive)
     env = Environment()
-    env[ProjectEnv].add(DummyProject('my/project'))
+    env[ProjectEnv].add(ZoneProject('my/project'))
     chat = ChatBranch([ChatMessage(ChatIntent.PROMPT, "Question")])
 
     memory.save(chat, env)
@@ -70,7 +70,7 @@ def test_save_with_project_only(tmp_path: Path):
     archive = MarkdownChatArchive(tmp_path)
     memory = ExampleMemory(archive=archive)
     env = Environment()
-    env[ProjectEnv].add(DummyProject('test_project'))
+    env[ProjectEnv].add(ZoneProject('test_project'))
     chat = ChatBranch([ChatMessage(ChatIntent.PROMPT, "Data")])
 
     memory.save(chat, env)
@@ -114,8 +114,8 @@ def test_recent_merges_examples(tmp_path: Path):
     archive = MarkdownChatArchive(tmp_path)
     memory = ExampleMemory('test_role', archive=archive)
     env = Environment()
-    env[ProjectEnv].add(DummyProject('p1'))
-    env[ProjectEnv].add(DummyProject('p2'))
+    env[ProjectEnv].add(ZoneProject('p1'))
+    env[ProjectEnv].add(ZoneProject('p2'))
 
     chat_p1 = ChatBranch([ChatMessage(ChatIntent.PROMPT, "p1 prompt")])
     chat_p2 = ChatBranch([ChatMessage(ChatIntent.PROMPT, "p2 prompt")])

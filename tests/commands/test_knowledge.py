@@ -7,25 +7,24 @@ from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.knowledge import Knowledge
 from llobot.knowledge.archives import KnowledgeArchive
-from llobot.projects import Project
+from llobot.projects.directory import DirectoryProject
 from llobot.utils.time import current_time
 
-def test_project_knowledge_step():
+def test_project_knowledge_step(tmp_path: Path):
     archive = Mock(spec=KnowledgeArchive)
     step = ProjectKnowledgeStep(archive)
     env = Environment()
 
-    k1 = Knowledge({Path('p1/a.txt'): 'hello'})
-    k2 = Knowledge({Path('p2/b.txt'): 'world'})
+    k1 = Knowledge({'a.txt': 'hello'})
+    k2 = Knowledge({'b.txt': 'world'})
+    p1_prefix = Path('p1')
+    p2_prefix = Path('p2')
 
-    p1 = Mock(spec=Project)
-    p1.name = "p1"
-    p1.last.return_value = k1
-    p2 = Mock(spec=Project)
-    p2.name = "p2"
-    p2.last.return_value = k2
+    p1 = DirectoryProject(tmp_path / 'p1', prefix=p1_prefix)
+    p2 = DirectoryProject(tmp_path / 'p2', prefix=p2_prefix)
 
     cutoff = current_time()
+    archive.last.side_effect = lambda zone, c: k1 if zone == p1_prefix else (k2 if zone == p2_prefix else Knowledge())
 
     env[ProjectEnv].add(p1)
     env[ProjectEnv].add(p2)
@@ -33,9 +32,9 @@ def test_project_knowledge_step():
 
     step.process(env)
 
-    p1.last.assert_called_once_with(archive, cutoff)
-    p2.last.assert_called_once_with(archive, cutoff)
-    expected_knowledge = k1 | k2
+    archive.last.assert_any_call(p1_prefix, cutoff)
+    archive.last.assert_any_call(p2_prefix, cutoff)
+    expected_knowledge = (p1_prefix / k1) | (p2_prefix / k2)
     assert env[KnowledgeEnv].get() == expected_knowledge
 
 def test_project_knowledge_step_no_project():
@@ -49,20 +48,21 @@ def test_project_knowledge_step_no_project():
     archive.last.assert_not_called()
     assert knowledge_env.get() == Knowledge() # empty
 
-def test_project_knowledge_step_no_cutoff():
+def test_project_knowledge_step_no_cutoff(tmp_path: Path):
     archive = Mock(spec=KnowledgeArchive)
     step = ProjectKnowledgeStep(archive)
     env = Environment()
 
-    mock_knowledge = Knowledge({Path('test-project/a.txt'): 'hello'})
-    project = Mock(spec=Project)
-    project.name = "test-project"
-    project.last.return_value = mock_knowledge
+    mock_knowledge = Knowledge({'a.txt': 'hello'})
+    prefix = Path('test-project')
+    project = DirectoryProject(tmp_path / prefix, prefix=prefix)
+
+    archive.last.return_value = mock_knowledge
 
     env[ProjectEnv].add(project)
     # No cutoff set
 
     step.process(env)
 
-    project.last.assert_called_once_with(archive, None)
-    assert env[KnowledgeEnv].get() == mock_knowledge
+    archive.last.assert_called_once_with(prefix, None)
+    assert env[KnowledgeEnv].get() == (prefix / mock_knowledge)

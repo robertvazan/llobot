@@ -6,23 +6,24 @@ various project sources.
 
 Submodules
 ----------
-dummy
-    A dummy project that has a name but no content.
+empty
+    An empty project that has no content.
+zone
+    A project that only has zones but no content.
 directory
     A project that sources its content from a filesystem directory.
-none
-    A project that represents the absence of a project.
 union
     A project that is a union of multiple projects.
+items
+    Defines item types that can be part of a project (file, directory, link).
 """
 from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
+from typing import Iterable
 from llobot.knowledge import Knowledge
 from llobot.knowledge.archives import KnowledgeArchive
-from llobot.knowledge.indexes import KnowledgeIndex
-from llobot.knowledge.subsets import KnowledgeSubset
-from llobot.knowledge.subsets.standard import blacklist_subset, whitelist_subset
+from llobot.projects.items import ProjectDirectory, ProjectFile, ProjectItem
 
 
 class Project:
@@ -30,87 +31,110 @@ class Project:
     A repository of documents that can be enumerated and read.
     """
     @property
-    def name(self) -> str:
+    def zones(self) -> set[Path]:
         """
-        Project name.
+        A set of zone identifiers associated with the project.
+
+        Zone identifiers must be valid relative paths as per `validate_zone`.
         """
-        raise NotImplementedError
+        return set()
 
     @property
-    def whitelist(self) -> KnowledgeSubset:
+    def prefixes(self) -> set[Path]:
         """
-        A subset of files to be included in the knowledge base.
-        This is only applied to files, not directories.
-        """
-        return whitelist_subset()
+        A set of relative path prefixes that define the project's content scope.
 
-    @property
-    def blacklist(self) -> KnowledgeSubset:
+        Prefixes must be valid relative paths as per `validate_zone`.
         """
-        A subset of files and directories to be excluded from the knowledge base.
-        """
-        return blacklist_subset()
+        return set()
 
-    def list_files(self, path: Path) -> list[str]:
+    def items(self, path: Path) -> list[ProjectItem]:
         """
-        Returns an unfiltered list of files in a directory.
-        """
-        return []
+        Returns a list of items in a directory.
 
-    def list_subdirs(self, path: Path) -> list[str]:
-        """
-        Returns an unfiltered list of subdirectories in a directory.
+        This method only works for paths that are inside one of the project's
+        `prefixes`. It returns an empty list for any path outside all prefixes.
+
+        Args:
+            path: The path of the directory within the project.
+
+        Returns:
+            A list of `ProjectItem` instances.
         """
         return []
 
     def read(self, path: Path) -> str | None:
         """
-        Reads a file if it exists, regardless of filters.
+        Reads a file if it exists.
+
+        Args:
+            path: The path of the file to read.
+
+        Returns:
+            The content of the file, or `None` if it doesn't exist or cannot be read.
         """
         return None
 
-    def _walk(self, directory: Path) -> 'Iterable[Path]':
-        if directory in self.blacklist:
-            return
-        # Files are sorted to ensure consistent order
-        for filename in sorted(self.list_files(directory)):
-            path = directory / filename
-            if path in self.whitelist and path not in self.blacklist:
-                yield path
-        # Subdirectories are sorted to ensure consistent order
-        for dirname in sorted(self.list_subdirs(directory)):
-            yield from self._walk(directory / dirname)
+    def tracked(self, item: ProjectItem) -> bool:
+        """
+        Indicates whether an item should be included in project-derived knowledge.
 
-    def enumerate(self) -> KnowledgeIndex:
-        """
-        Walks the project and returns a knowledge index of all files matching
-        the whitelist and not in the blacklist.
-        """
-        return KnowledgeIndex(self._walk(Path('.')))
+        Args:
+            item: The project item to check.
 
-    def load(self) -> Knowledge:
+        Returns:
+            `True` if the item is tracked, `False` otherwise.
         """
-        Reads all files returned by enumerate() and returns them as a Knowledge object.
+        return False
+
+    def _walk(self, directory: Path) -> Iterable[ProjectFile]:
+        """Recursively walks the project to find all tracked files."""
+        # Sort items for consistent order
+        sorted_items = sorted(self.items(directory), key=lambda i: i.path)
+
+        for item in sorted_items:
+            if self.tracked(item):
+                if isinstance(item, ProjectFile):
+                    yield item
+                elif isinstance(item, ProjectDirectory):
+                    yield from self._walk(item.path)
+
+    def read_all(self) -> Knowledge:
+        """
+        Reads all tracked files and returns them as a Knowledge object.
         """
         docs = {}
-        for path in self.enumerate():
-            content = self.read(path)
-            if content is not None:
-                docs[path] = content
+        for prefix in self.prefixes:
+            for file in self._walk(prefix):
+                content = self.read(file.path)
+                if content is not None:
+                    docs[file.path] = content
         return Knowledge(docs)
 
     def refresh(self, archive: KnowledgeArchive):
         """
-        Checks for updates from the source and archives a new snapshot if changes are found.
+        Checks for updates and archives a new snapshot for each prefix if changes are found.
+
+        For each project prefix, a separate snapshot is created in the archive
+        under a zone with the same path as the prefix. Paths in the snapshot
+        are relative to the prefix.
 
         Args:
             archive: The knowledge archive to refresh.
         """
-        archive.refresh(Path(self.name), self.load())
+        all_knowledge = self.read_all()
+        for prefix in self.prefixes:
+            knowledge_slice = all_knowledge / prefix
+            archive.refresh(prefix, knowledge_slice)
 
     def last(self, archive: KnowledgeArchive, cutoff: datetime | None = None) -> Knowledge:
         """
-        Retrieves the most recent snapshot from the archive for this project.
+        Retrieves the most recent snapshots from the archive for this project.
+
+        For each project prefix, the latest snapshot is retrieved from the
+        archive zone corresponding to that prefix. The snapshots are then
+        merged into a single `Knowledge` object with paths restored to be
+        relative to the project root.
 
         Args:
             archive: The knowledge archive to retrieve from.
@@ -119,7 +143,11 @@ class Project:
         Returns:
             The most recent Knowledge object, or an empty one if none are found.
         """
-        return archive.last(Path(self.name), cutoff)
+        knowledge = Knowledge()
+        for prefix in self.prefixes:
+            knowledge_slice = prefix / archive.last(prefix, cutoff)
+            knowledge |= knowledge_slice
+        return knowledge
 
     def __or__(self, other: Project) -> Project:
         """

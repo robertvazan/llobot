@@ -5,7 +5,7 @@ from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.subsets.filename import FilenameSubset
 from llobot.knowledge.subsets.suffix import SuffixSubset
 
-def test_project_enumerate_and_load(tmp_path: Path):
+def test_project_read_all(tmp_path: Path):
     (tmp_path / "subdir" / "nested").mkdir(parents=True)
     (tmp_path / "file1.txt").write_text("content1")
     (tmp_path / "file2.py").write_text("content2")
@@ -17,21 +17,13 @@ def test_project_enumerate_and_load(tmp_path: Path):
         tmp_path,
         blacklist=FilenameSubset("blacklisted.txt"),
         whitelist=SuffixSubset(".txt"),
-        prefix=Path('.')
     )
-
-    expected_index = KnowledgeIndex([
-        Path("file1.txt"),
-        Path("subdir/file3.txt"),
-    ])
-    assert project.enumerate() == expected_index
+    prefix = Path(tmp_path.name)
 
     expected_knowledge = Knowledge({
-        Path("file1.txt"): "content1\n",
-        Path("subdir/file3.txt"): "content3\n",
+        prefix / "file1.txt": "content1\n",
+        prefix / "subdir/file3.txt": "content3\n",
     })
     # read_document normalizes newlines
-    loaded = project.load()
-    assert loaded.keys() == expected_knowledge.keys()
-    assert loaded[Path("file1.txt")] == "content1\n"
-    assert loaded[Path("subdir/file3.txt")] == "content3\n"
+    loaded = project.read_all()
+    assert loaded == expected_knowledge

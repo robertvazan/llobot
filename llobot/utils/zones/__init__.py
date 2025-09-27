@@ -31,7 +31,7 @@ def validate_zone(zone: Path):
 
     A valid zone ID must:
     - Be a relative path.
-    - Not be empty.
+    - Not be empty or '.'.
     - Not contain `..` components.
     - Not contain wildcards or other special characters in its components.
 
@@ -43,8 +43,8 @@ def validate_zone(zone: Path):
     """
     if zone.is_absolute():
         raise ValueError(f"Zone must be a relative path: {zone}")
-    if not zone.parts:
-        raise ValueError("Zone must not be empty")
+    if not zone.parts or zone == Path('.'):
+        raise ValueError("Zone must be a non-empty relative path other than '.'")
     for part in zone.parts:
         if part == '..':
             raise ValueError(f"Zone component cannot be '..': {zone}")

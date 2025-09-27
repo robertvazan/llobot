@@ -30,8 +30,10 @@ def test_validate_zone():
 
     with pytest.raises(ValueError, match="Zone must be a relative path"):
         validate_zone(Path("/abs/path"))
-    with pytest.raises(ValueError, match="Zone must not be empty"):
+    with pytest.raises(ValueError, match="Zone must be a non-empty relative path other than '.'"):
         validate_zone(Path(""))
+    with pytest.raises(ValueError, match="Zone must be a non-empty relative path other than '.'"):
+        validate_zone(Path("."))
     with pytest.raises(ValueError, match="Zone component cannot be '..'"):
         validate_zone(Path(".."))
     with pytest.raises(ValueError, match="Zone component cannot be '..'"):
