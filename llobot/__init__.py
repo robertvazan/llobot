@@ -24,7 +24,8 @@ memories
 models
     Integrations with various LLM backends (Ollama, OpenAI, etc.).
 projects
-    Defines `Project` classes for managing knowledge bases.
+    Defines `Project` classes for managing knowledge bases and `ProjectLibrary`
+    for looking up projects.
 prompts
     Reusable sections for building system prompts.
 roles

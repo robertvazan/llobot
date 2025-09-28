@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 import pytest
 from llobot.projects.directory import DirectoryProject
@@ -36,6 +37,10 @@ def test_directory_project_dot_prefix_fails(tmp_path: Path):
     (tmp_path / "file1.txt").write_text("content1")
     with pytest.raises(ValueError, match="Zone must be a non-empty relative path other than '.'"):
         DirectoryProject(tmp_path, prefix=Path('.'))
+
+def test_directory_project_home_expansion():
+    project = DirectoryProject('~/project', prefix='p')
+    assert project._directory == (Path.home() / "project").absolute()
 
 def test_directory_project_custom_zones(tmp_path: Path):
     (tmp_path / "file1.txt").write_text("content1")

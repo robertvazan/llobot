@@ -33,7 +33,7 @@ from llobot.models.anthropic import AnthropicModel
 from llobot.models.gemini import GeminiModel
 from llobot.models.listeners.ollama import OllamaListener
 from llobot.models.ollama import OllamaModel
-from llobot.projects.directory import DirectoryProject
+from llobot.projects.library.home import HomeProjectLibrary
 from llobot.roles.coder import Coder
 from llobot.roles.models import RoleModel
 
@@ -56,11 +56,10 @@ claude_model = AnthropicModel(
     auth='YOUR_ANTHROPIC_API_KEY'
 )
 
-# Projects that will be used as knowledge bases
-projects = [
-    DirectoryProject(Path.home() / 'Sources' / 'llobot'),
-    DirectoryProject(Path.home() / 'Sources' / 'myproject'),
-]
+# Projects that will be used as knowledge bases.
+# HomeProjectLibrary looks up projects under given directory.
+# You can @-mention relative paths under this directory as projects.
+projects = HomeProjectLibrary('~/Sources')
 
 # Roles determine what goes in the context.
 # Lets use some standard roles that come with llobot.

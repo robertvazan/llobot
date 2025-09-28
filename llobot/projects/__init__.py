@@ -4,6 +4,11 @@ Projects are repositories of documents that can be enumerated and read.
 This package defines the base `Project` class and different implementations for
 various project sources.
 
+Subpackages
+-----------
+library
+    `ProjectLibrary` for looking up projects by key.
+
 Submodules
 ----------
 empty
@@ -156,6 +161,37 @@ class Project:
         from llobot.projects.union import union_project
         return union_project(self, other)
 
+type ProjectPrecursor = Project | Path | str
+
+def coerce_project(precursor: ProjectPrecursor) -> Project:
+    """
+    Coerces a precursor into a `Project`.
+
+    - `Project` is returned as is.
+    - `Path` is coerced to `DirectoryProject`.
+    - `str` starting with `/` or `~` is coerced to `DirectoryProject`.
+    - Other `str` values are coerced to `ZoneProject`.
+
+    Args:
+        precursor: The object to coerce. Can be a `Project`, `Path`, or `str`.
+
+    Returns:
+        A `Project` instance.
+    """
+    if isinstance(precursor, Project):
+        return precursor
+    from llobot.projects.directory import DirectoryProject
+    if isinstance(precursor, Path):
+        return DirectoryProject(precursor)
+    if isinstance(precursor, str):
+        if precursor.startswith('/') or precursor.startswith('~'):
+            return DirectoryProject(precursor)
+        from llobot.projects.zone import ZoneProject
+        return ZoneProject(precursor)
+    raise TypeError(f"Cannot coerce {precursor} to Project")
+
 __all__ = [
     'Project',
+    'ProjectPrecursor',
+    'coerce_project',
 ]

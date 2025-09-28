@@ -29,6 +29,7 @@ from llobot.memories.examples import ExampleMemory
 from llobot.models import Model
 from llobot.models.streams import ModelStream
 from llobot.projects import Project
+from llobot.projects.library import ProjectLibraryPrecursor, coerce_project_library
 from llobot.prompts import Prompt
 from llobot.roles import Role
 
@@ -55,7 +56,7 @@ class Imitator(Role):
 
     def __init__(self, name: str, model: Model, *,
         prompt: str | Prompt = '',
-        projects: Iterable[Project] = (),
+        projects: ProjectLibraryPrecursor = (),
         example_archive: ChatArchive | Zoning | Path | str = standard_chat_archive(data_home()/'llobot/examples'),
         crammer: ExampleCrammer = standard_example_crammer(),
         prompt_format: PromptFormat = standard_prompt_format(),
@@ -69,7 +70,7 @@ class Imitator(Role):
         self._prompt_format = prompt_format
         self._reminder_format = reminder_format
         self._step_chain = StepChain(
-            ProjectCommand(list(projects)),
+            ProjectCommand(coerce_project_library(projects)),
             CutoffCommand(),
             ImplicitCutoffStep(),
             CustomStep(self.stuff),

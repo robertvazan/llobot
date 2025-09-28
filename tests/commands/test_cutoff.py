@@ -9,8 +9,8 @@ from llobot.environments.projects import ProjectEnv
 from llobot.environments.prompt import PromptEnv
 from llobot.environments.session import SessionEnv
 from llobot.knowledge import Knowledge
-from llobot.knowledge.archives import KnowledgeArchive
-from llobot.projects import Project
+from llobot.knowledge.archives.tgz import TgzKnowledgeArchive
+from llobot.projects.directory import DirectoryProject
 from llobot.utils.time import parse_time, format_time
 
 def test_cutoff_command():
@@ -30,24 +30,20 @@ def test_cutoff_command():
     with pytest.raises(ValueError):
         command.handle("20240102-120000", env)
 
-def test_implicit_cutoff_step_no_cutoff_last_prompt():
-    archive = Mock(spec=KnowledgeArchive)
+def test_implicit_cutoff_step_no_cutoff_last_prompt(tmp_path: Path):
+    archive = TgzKnowledgeArchive(tmp_path / 'archive')
     step = ImplicitCutoffStep(archive)
     env = Environment()
 
-    p1_prefix = Path('p1')
-    p1 = Mock(spec=Project)
-    p1.zones = {p1_prefix}
-    p1.prefixes = {p1_prefix}
-    p1.items.return_value = []
-    p1.read_all.return_value = Knowledge()
+    p1_path = tmp_path / 'p1'
+    p1_path.mkdir()
+    (p1_path / 'f.txt').write_text('p1-content')
+    p1 = DirectoryProject(p1_path)
 
-    p2_prefix = Path('p2')
-    p2 = Mock(spec=Project)
-    p2.zones = {p2_prefix}
-    p2.prefixes = {p2_prefix}
-    p2.items.return_value = []
-    p2.read_all.return_value = Knowledge()
+    p2_path = tmp_path / 'p2'
+    p2_path.mkdir()
+    (p2_path / 'f.txt').write_text('p2-content')
+    p2 = DirectoryProject(p2_path)
 
     env[ProjectEnv].add(p1)
     env[ProjectEnv].add(p2)
@@ -59,20 +55,20 @@ def test_implicit_cutoff_step_no_cutoff_last_prompt():
     with patch('llobot.commands.cutoff.current_time', return_value=now):
         step.process(env)
 
-    # Base Project.refresh calls archive.refresh for each prefix.
-    archive.refresh.assert_any_call(p1_prefix, Knowledge())
-    archive.refresh.assert_any_call(p2_prefix, Knowledge())
+    assert len(list((tmp_path / 'archive' / p1.prefixes.copy().pop()).iterdir())) == 1
+    assert len(list((tmp_path / 'archive' / p2.prefixes.copy().pop()).iterdir())) == 1
     assert cutoff_env.get() == now
     assert session_env.content() == f"Data cutoff: @{format_time(now)}"
 
-def test_implicit_cutoff_step_no_cutoff_not_last_prompt():
-    archive = Mock(spec=KnowledgeArchive)
+def test_implicit_cutoff_step_no_cutoff_not_last_prompt(tmp_path: Path):
+    archive_dir = tmp_path / 'archive'
+    archive = TgzKnowledgeArchive(archive_dir)
     step = ImplicitCutoffStep(archive)
     env = Environment()
-    project = Mock(spec=Project)
-    project.zones = {Path('p1')}
-    project.prefixes = {Path('p1')}
-    env[ProjectEnv].add(project)
+    p1_path = tmp_path / 'p1'
+    p1_path.mkdir()
+    p1 = DirectoryProject(p1_path)
+    env[ProjectEnv].add(p1)
     cutoff_env = env[CutoffEnv]
     session_env = env[SessionEnv]
 
@@ -81,18 +77,19 @@ def test_implicit_cutoff_step_no_cutoff_not_last_prompt():
     with patch('llobot.commands.cutoff.current_time', return_value=now):
         step.process(env) # not last, should do nothing
 
-    project.refresh.assert_not_called()
+    assert not archive_dir.exists()
     assert cutoff_env.get() is None
     assert not session_env.content()
 
-def test_implicit_cutoff_step_with_cutoff():
-    archive = Mock(spec=KnowledgeArchive)
+def test_implicit_cutoff_step_with_cutoff(tmp_path: Path):
+    archive_dir = tmp_path / 'archive'
+    archive = TgzKnowledgeArchive(archive_dir)
     step = ImplicitCutoffStep(archive)
     env = Environment()
-    project = Mock(spec=Project)
-    project.zones = {Path('p1')}
-    project.prefixes = {Path('p1')}
-    env[ProjectEnv].add(project)
+    p1_path = tmp_path / 'p1'
+    p1_path.mkdir()
+    p1 = DirectoryProject(p1_path)
+    env[ProjectEnv].add(p1)
     env[PromptEnv].mark_last()
     cutoff_env = env[CutoffEnv]
     session_env = env[SessionEnv]
@@ -104,12 +101,12 @@ def test_implicit_cutoff_step_with_cutoff():
     with patch('llobot.commands.cutoff.current_time', return_value=now):
         step.process(env)
 
-    project.refresh.assert_not_called()
+    assert not archive_dir.exists()
     assert cutoff_env.get() == existing_cutoff
     assert not session_env.content()
 
-def test_implicit_cutoff_step_no_project():
-    archive = Mock(spec=KnowledgeArchive)
+def test_implicit_cutoff_step_no_project(tmp_path: Path):
+    archive = TgzKnowledgeArchive(tmp_path)
     step = ImplicitCutoffStep(archive)
     env = Environment()
     env[PromptEnv].mark_last()
@@ -122,12 +119,12 @@ def test_implicit_cutoff_step_no_project():
     # No project means EmptyProject, which has no prefixes and refresh is a no-op
     assert cutoff_env.get() == now
 
-def test_implicit_cutoff_step_no_archive():
+def test_implicit_cutoff_step_no_archive(tmp_path: Path):
     step = ImplicitCutoffStep()
     env = Environment()
-    project = Mock(spec=Project)
-    project.zones = {Path('test-project')}
-    project.prefixes = {Path('test-project')}
+    p_path = tmp_path / 'p'
+    p_path.mkdir()
+    project = DirectoryProject(p_path)
     env[ProjectEnv].add(project)
     env[PromptEnv].mark_last()
     cutoff_env = env[CutoffEnv]

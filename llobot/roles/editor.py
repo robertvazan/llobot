@@ -1,12 +1,8 @@
 from __future__ import annotations
-from datetime import datetime
 from functools import cache
 from pathlib import Path
-from typing import Iterable
-from llobot.chats.archives import ChatArchive, standard_chat_archive
 from llobot.chats.branches import ChatBranch
 from llobot.chats.intents import ChatIntent
-from llobot.commands.approve import ApproveCommand
 from llobot.commands.chain import StepChain
 from llobot.commands.custom import CustomStep
 from llobot.commands.cutoff import CutoffCommand, ImplicitCutoffStep
@@ -19,9 +15,7 @@ from llobot.crammers.knowledge import KnowledgeCrammer, standard_knowledge_cramm
 from llobot.environments import Environment
 from llobot.environments.commands import CommandsEnv
 from llobot.environments.context import ContextEnv
-from llobot.environments.cutoff import CutoffEnv
 from llobot.environments.knowledge import KnowledgeEnv
-from llobot.environments.projects import ProjectEnv
 from llobot.environments.prompt import PromptEnv
 from llobot.environments.session import SessionEnv
 from llobot.environments.status import StatusEnv
@@ -29,13 +23,10 @@ from llobot.formats.deltas.knowledge import KnowledgeDeltaFormat, standard_knowl
 from llobot.formats.mentions import parse_mentions
 from llobot.formats.prompts import PromptFormat, standard_prompt_format
 from llobot.formats.prompts.reminder import ReminderPromptFormat
-from llobot.utils.fs import data_home
-from llobot.utils.zones import Zoning
 from llobot.knowledge.archives import KnowledgeArchive, standard_knowledge_archive
-from llobot.memories.examples import ExampleMemory
 from llobot.models import Model
 from llobot.models.streams import ModelStream
-from llobot.projects import Project
+from llobot.projects.library import ProjectLibraryPrecursor, coerce_project_library
 from llobot.prompts import (
     Prompt,
     SystemPrompt,
@@ -78,13 +69,11 @@ class Editor(Role):
     _prompt_format: PromptFormat
     _reminder_format: PromptFormat
     _step_chain: StepChain
-    _examples: ExampleMemory
 
     def __init__(self, name: str, model: Model, *,
         prompt: str | Prompt = editor_system_prompt(),
-        projects: Iterable[Project] = (),
+        projects: ProjectLibraryPrecursor = (),
         knowledge_archive: KnowledgeArchive = standard_knowledge_archive(),
-        example_archive: ChatArchive | Zoning | Path | str = standard_chat_archive(data_home()/'llobot/examples'),
         knowledge_crammer: KnowledgeCrammer = standard_knowledge_crammer(),
         index_crammer: IndexCrammer = standard_index_crammer(),
         knowledge_delta_format: KnowledgeDeltaFormat = standard_knowledge_delta_format(),
@@ -96,7 +85,6 @@ class Editor(Role):
         """
         self._name = name
         self._model = model
-        self._examples = ExampleMemory(name, archive=example_archive)
         self._system = str(prompt)
         self._knowledge_archive = knowledge_archive
         self._knowledge_crammer = knowledge_crammer
@@ -104,15 +92,15 @@ class Editor(Role):
         self._knowledge_delta_format = knowledge_delta_format
         self._prompt_format = prompt_format
         self._reminder_format = reminder_format
+        project_library = coerce_project_library(projects)
         self._step_chain = StepChain(
-            ProjectCommand(list(projects)),
+            ProjectCommand(project_library),
             CutoffCommand(),
             ImplicitCutoffStep(self._knowledge_archive),
             ProjectKnowledgeStep(self._knowledge_archive),
             CustomStep(self.stuff),
             standard_retrieval_commands(),
             RetrievalStep(self._knowledge_delta_format),
-            ApproveCommand(self._examples),
             UnrecognizedCommand(),
         )
 

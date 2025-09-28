@@ -2,6 +2,7 @@ from pathlib import Path
 from llobot.commands.project import ProjectCommand
 from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
+from llobot.projects.library.zone import ZoneKeyedProjectLibrary
 from llobot.projects.zone import ZoneProject
 
 def test_project_command():
@@ -9,7 +10,8 @@ def test_project_command():
     project2 = ZoneProject("proj2")
     project3 = ZoneProject("proj1", "proj3") # Shares a zone with project1
 
-    command = ProjectCommand([project1, project2, project3])
+    library = ZoneKeyedProjectLibrary(project1, project2, project3)
+    command = ProjectCommand(library)
     env = Environment()
     project_env = env[ProjectEnv]
 

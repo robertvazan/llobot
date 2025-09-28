@@ -31,7 +31,7 @@ class DirectoryProject(Project, ValueTypeMixin):
         Initializes a new DirectoryProject.
 
         Args:
-            directory: The path to the project's root directory.
+            directory: The path to the project's root directory. It can contain `~`.
             zones: A set of zone identifiers for the project. If `None`, defaults
                    to a single zone matching the project's prefix.
             prefix: The path prefix for all items in the project. If `None`, it
@@ -39,7 +39,7 @@ class DirectoryProject(Project, ValueTypeMixin):
             whitelist: A custom whitelist subset for this project.
             blacklist: A custom blacklist subset for this project.
         """
-        self._directory = Path(directory).resolve()
+        self._directory = Path(directory).expanduser().absolute()
         self._prefix = Path(prefix) if prefix is not None else Path(self._directory.name)
         validate_zone(self._prefix)
 
