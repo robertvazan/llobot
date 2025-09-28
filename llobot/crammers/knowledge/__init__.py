@@ -1,5 +1,14 @@
 """
-Crammers for selecting knowledge documents.
+Crammers for selecting knowledge documents to fit in a context budget.
+
+This package defines the `KnowledgeCrammer` base class and standard
+implementations for selecting a subset of documents from a `Knowledge` base
+that will fit within the remaining budget of a `ChatBuilder`.
+
+Submodules
+----------
+ranked
+    `RankedKnowledgeCrammer` that selects documents from a ranked list.
 """
 from __future__ import annotations
 from functools import cache
@@ -32,8 +41,8 @@ def standard_knowledge_crammer() -> KnowledgeCrammer:
     """
     Returns the standard knowledge crammer.
     """
-    from llobot.crammers.knowledge.prioritized import PrioritizedKnowledgeCrammer
-    return PrioritizedKnowledgeCrammer()
+    from llobot.crammers.knowledge.ranked import RankedKnowledgeCrammer
+    return RankedKnowledgeCrammer()
 
 __all__ = [
     'KnowledgeCrammer',
