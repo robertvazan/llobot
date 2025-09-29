@@ -6,15 +6,16 @@ Llobot is a LLM library and a LLM tool that makes it easier to build simple conv
 
 Llobot also has some nice features:
 
-- **Protocol implementations**: Llobot can connect to local models (Ollama) as well as cloud models (OpenAI, Anthropic Claude, Google Gemini). It can also act as a server and expose virtual models via Ollama and OpenAI protocols.
-- **Context stuffing**: Instead of relying on the LLM to fetch the necessary files in an agentic loop, knowledge can be stuffed into the context proactively, which has [several advantages](https://blog.machinezoo.com/Why_context_stuffing) over agentic retrieval.
-- **Live examples**: When you approve a LLM response (or a user-provided correction), it will be included in future contexts as an example to leverage [in-context learning](https://arxiv.org/abs/2005.14165). Simple LLM applications (translations, conversions) can be built by just accumulating correct examples.
-- **Commands and mentions**: Every role can define a set of `@mention` commands that users can add to prompts. Llobot offers built-in commands for project selection (`@project`), file retrieval (`@path/to/file`), and example approval (`@approve`).
-- **Modular instructions**: You can assemble your system prompt from reusable sections. Llobot includes some predefined sections.
-- **Knowledge management**: You can load, filter, diff, and time-travel plaintext knowledge bases and source code.
-- **Context budget**: Llobot can select the most important information that fits in given context budget. Knowledge base can be prioritized using PageRank, file name patterns, and file size.
-- **Clean context**: Llobot builds clean context consisting of several chat turns using readable Markdown for easier auditing.
-- **Cache-friendly**: Context is assembled in reproducible order from whole documents to minimize cache invalidations.
+- **Protocol implementations:** Llobot can connect to local models (Ollama) as well as cloud models (OpenAI, Anthropic Claude, Google Gemini). It can also act as a server and expose virtual models via Ollama and OpenAI protocols.
+- **Context stuffing:** Instead of relying on the LLM to fetch the necessary files in an agentic loop, knowledge can be stuffed into the context proactively, which has [several advantages](https://blog.machinezoo.com/Why_context_stuffing) over agentic retrieval.
+- **Live examples:** When you approve a LLM response (or a user-provided correction), it will be included in future contexts as an example to leverage [in-context learning](https://arxiv.org/abs/2005.14165). Simple LLM applications (translations, conversions) can be built by just accumulating correct examples.
+- **Commands and mentions:** Every role can define a set of `@mention` commands that users can add to prompts. Llobot offers built-in commands for project selection (`@project`), file retrieval (`@path/to/file`), and example approval (`@approve`).
+- **Modular instructions:** You can assemble your system prompt from reusable sections. Llobot includes some predefined sections.
+- **Knowledge management:** You can load, filter, diff, and time-travel plaintext knowledge bases and source code.
+- **Context budget:** Llobot can select the most important information that fits in given context budget. Knowledge base can be prioritized using PageRank, file name patterns, and file size.
+- **Directory overviews:** Roles capable of editing files are by default instructed to create and maintain directory overview files, including `README.md`, docs in `__init__.py`, `mod.rs`, and similar files, and project information in `CONTRIBUTING.md`, `AGENTS.md`, etc. Overviews are added to the context before covered files to give the model basic understanding of the wider context.
+- **Clean context:** Llobot builds clean context consisting of several chat turns using readable Markdown for easier auditing.
+- **Cache-friendly:** Context is assembled in reproducible order from whole documents to minimize cache invalidations.
 
 There is currently no support for CLI, agentic loops, RAG, uploads, or URLs, although these features could be added in the future.
 
