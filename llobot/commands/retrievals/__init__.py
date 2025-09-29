@@ -30,13 +30,17 @@ class RetrievalStep(Step):
     """
     _knowledge_delta_format: KnowledgeDeltaFormat
 
-    def __init__(self, knowledge_delta_format: KnowledgeDeltaFormat):
+    def __init__(self, knowledge_delta_format: KnowledgeDeltaFormat | None = None):
         """
         Initializes the retrieval step.
 
         Args:
             knowledge_delta_format: The format to use for rendering retrieved documents.
+                                    Defaults to the standard format.
         """
+        if knowledge_delta_format is None:
+            from llobot.formats.deltas.knowledge import standard_knowledge_delta_format
+            knowledge_delta_format = standard_knowledge_delta_format()
         self._knowledge_delta_format = knowledge_delta_format
 
     def process(self, env: Environment):
@@ -69,21 +73,23 @@ class RetrievalStep(Step):
         retrievals.clear()
 
 
-def standard_retrieval_commands() -> StepChain:
+def standard_retrieval_step() -> StepChain:
     """
-    Returns a step chain with standard retrieval commands.
+    Returns a step chain with standard retrieval commands and the retrieval step.
 
-    This includes exact and wildcard retrieval.
+    This includes exact and wildcard retrieval commands, followed by the step
+    that adds retrieved documents to the context.
     """
     from llobot.commands.retrievals.exact import ExactRetrievalCommand
     from llobot.commands.retrievals.wildcard import WildcardRetrievalCommand
     return StepChain(
         ExactRetrievalCommand(),
         WildcardRetrievalCommand(),
+        RetrievalStep(),
     )
 
 
 __all__ = [
     'RetrievalStep',
-    'standard_retrieval_commands',
+    'standard_retrieval_step',
 ]

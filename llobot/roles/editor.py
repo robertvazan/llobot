@@ -3,12 +3,13 @@ from functools import cache
 from pathlib import Path
 from llobot.chats.branches import ChatBranch
 from llobot.chats.intents import ChatIntent
+from llobot.commands import Step
 from llobot.commands.chain import StepChain
 from llobot.commands.custom import CustomStep
 from llobot.commands.cutoff import CutoffCommand, ImplicitCutoffStep
 from llobot.commands.knowledge import ProjectKnowledgeStep
 from llobot.commands.project import ProjectCommand
-from llobot.commands.retrievals import RetrievalStep, standard_retrieval_commands
+from llobot.commands.retrievals import standard_retrieval_step
 from llobot.commands.unrecognized import UnrecognizedCommand
 from llobot.crammers.index import IndexCrammer, standard_index_crammer
 from llobot.crammers.knowledge import KnowledgeCrammer, standard_knowledge_crammer
@@ -19,7 +20,6 @@ from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.prompt import PromptEnv
 from llobot.environments.session import SessionEnv
 from llobot.environments.status import StatusEnv
-from llobot.formats.deltas.knowledge import KnowledgeDeltaFormat, standard_knowledge_delta_format
 from llobot.formats.mentions import parse_mentions
 from llobot.formats.prompts import PromptFormat, standard_prompt_format
 from llobot.formats.prompts.reminder import ReminderPromptFormat
@@ -65,7 +65,6 @@ class Editor(Role):
     _knowledge_archive: KnowledgeArchive
     _knowledge_crammer: KnowledgeCrammer
     _index_crammer: IndexCrammer
-    _knowledge_delta_format: KnowledgeDeltaFormat
     _prompt_format: PromptFormat
     _reminder_format: PromptFormat
     _step_chain: StepChain
@@ -76,9 +75,9 @@ class Editor(Role):
         knowledge_archive: KnowledgeArchive = standard_knowledge_archive(),
         knowledge_crammer: KnowledgeCrammer = standard_knowledge_crammer(),
         index_crammer: IndexCrammer = standard_index_crammer(),
-        knowledge_delta_format: KnowledgeDeltaFormat = standard_knowledge_delta_format(),
         prompt_format: PromptFormat = standard_prompt_format(),
         reminder_format: PromptFormat = ReminderPromptFormat(),
+        retrieval_step: Step = standard_retrieval_step(),
     ):
         """
         Creates a new editor role.
@@ -89,7 +88,6 @@ class Editor(Role):
         self._knowledge_archive = knowledge_archive
         self._knowledge_crammer = knowledge_crammer
         self._index_crammer = index_crammer
-        self._knowledge_delta_format = knowledge_delta_format
         self._prompt_format = prompt_format
         self._reminder_format = reminder_format
         project_library = coerce_project_library(projects)
@@ -99,8 +97,7 @@ class Editor(Role):
             ImplicitCutoffStep(self._knowledge_archive),
             ProjectKnowledgeStep(self._knowledge_archive),
             CustomStep(self.stuff),
-            standard_retrieval_commands(),
-            RetrievalStep(self._knowledge_delta_format),
+            retrieval_step,
             UnrecognizedCommand(),
         )
 
