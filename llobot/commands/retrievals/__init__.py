@@ -22,28 +22,40 @@ from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
 from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.retrievals import RetrievalsEnv
-from llobot.formats.deltas.knowledge import KnowledgeDeltaFormat
+from llobot.formats.deltas.knowledge import KnowledgeDeltaFormat, standard_knowledge_delta_format
 from llobot.knowledge.indexes import KnowledgeIndex
+from llobot.knowledge.ranking.rankers import KnowledgeRanker, standard_ranker
 
 
 class RetrievalStep(Step):
     """
     A step that adds retrieved documents to the context if they are not already there.
+
+    The documents are added in an order determined by the provided ranker.
     """
     _knowledge_delta_format: KnowledgeDeltaFormat
+    _ranker: KnowledgeRanker
 
-    def __init__(self, knowledge_delta_format: KnowledgeDeltaFormat | None = None):
+    def __init__(
+        self,
+        knowledge_delta_format: KnowledgeDeltaFormat | None = None,
+        ranker: KnowledgeRanker | None = None,
+    ):
         """
         Initializes the retrieval step.
 
         Args:
             knowledge_delta_format: The format to use for rendering retrieved documents.
                                     Defaults to the standard format.
+            ranker: The ranker to use for ordering retrieved documents.
+                    Defaults to the standard ranker.
         """
         if knowledge_delta_format is None:
-            from llobot.formats.deltas.knowledge import standard_knowledge_delta_format
             knowledge_delta_format = standard_knowledge_delta_format()
         self._knowledge_delta_format = knowledge_delta_format
+        if ranker is None:
+            ranker = standard_ranker()
+        self._ranker = ranker
 
     def process(self, env: Environment):
         """
@@ -69,7 +81,8 @@ class RetrievalStep(Step):
                         paths_to_add.add(path)
 
         retrieved_knowledge = knowledge & KnowledgeIndex(paths_to_add)
-        retrievals_chat = self._knowledge_delta_format.render_fresh_chat(retrieved_knowledge)
+        ranking = self._ranker.rank(retrieved_knowledge)
+        retrievals_chat = self._knowledge_delta_format.render_fresh_chat(retrieved_knowledge, ranking=ranking)
         context.add(retrievals_chat)
 
         retrievals.clear()
