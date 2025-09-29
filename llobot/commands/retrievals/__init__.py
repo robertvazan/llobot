@@ -12,6 +12,8 @@ solo
     Command to retrieve a single document by its path pattern.
 wildcard
     Command to retrieve documents using wildcard patterns.
+overviews
+    Step to retrieve overview documents for existing retrievals.
 """
 from __future__ import annotations
 from llobot.commands import Step
@@ -77,14 +79,17 @@ def standard_retrieval_step() -> StepChain:
     """
     Returns a step chain with standard retrieval commands and the retrieval step.
 
-    This includes exact and wildcard retrieval commands, followed by the step
-    that adds retrieved documents to the context.
+    This includes exact and wildcard retrieval commands, followed by a step to
+    add ancestor overviews, and finally the step that adds all retrieved
+    documents to the context.
     """
     from llobot.commands.retrievals.exact import ExactRetrievalCommand
+    from llobot.commands.retrievals.overviews import OverviewRetrievalStep
     from llobot.commands.retrievals.wildcard import WildcardRetrievalCommand
     return StepChain(
         ExactRetrievalCommand(),
         WildcardRetrievalCommand(),
+        OverviewRetrievalStep(),
         RetrievalStep(),
     )
 
