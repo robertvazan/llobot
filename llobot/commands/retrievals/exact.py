@@ -34,7 +34,7 @@ class ExactRetrievalCommand(Command):
         Returns:
             `True` if at least one document was retrieved, `False` otherwise.
         """
-        if not _PATH_RE.fullmatch(text) or ('.' not in text and '/' not in text):
+        if not _PATH_RE.fullmatch(text):
             return False
 
         knowledge_index = env[KnowledgeEnv].index()

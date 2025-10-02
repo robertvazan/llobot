@@ -34,7 +34,7 @@ class SoloRetrievalCommand(Command):
         Returns:
             `True` if a unique document was retrieved, `False` otherwise.
         """
-        if not _PATH_RE.fullmatch(text) or ('.' not in text and '/' not in text):
+        if not _PATH_RE.fullmatch(text):
             return False
 
         knowledge_index = env[KnowledgeEnv].index()
