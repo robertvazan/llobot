@@ -22,7 +22,28 @@
 *.cfg # Configuration
 *.config # Configuration
 *.properties # Java
-*.service # systemd
+
+# Systemd files
+*.service
+*.target
+*.socket
+*.path
+*.timer
+*.slice
+*.scope
+*.device
+*.mount
+*.automount
+*.swap
+
+# Podman systemd files
+*.container
+*.volume
+*.network
+*.kube
+*.image
+*.build
+*.pod
 
 # Source code - Systems languages
 *.c # C
