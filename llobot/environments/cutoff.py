@@ -36,6 +36,12 @@ class CutoffEnv:
         """
         return self._cutoff
 
+    def clear(self):
+        """
+        Clears the configured cutoff.
+        """
+        self._cutoff = None
+
 __all__ = [
     'CutoffEnv',
 ]

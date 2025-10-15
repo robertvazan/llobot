@@ -27,3 +27,17 @@ def test_cutoff_env_set_different_fails():
         env.set(cutoff2)
 
     assert env.get() == cutoff1
+
+def test_cutoff_env_clear():
+    env = CutoffEnv()
+    cutoff1 = current_time()
+    env.set(cutoff1)
+    assert env.get() is not None
+
+    env.clear()
+    assert env.get() is None
+
+    # After clearing, a new cutoff can be set.
+    cutoff2 = cutoff1 + timedelta(seconds=1)
+    env.set(cutoff2)
+    assert env.get() == cutoff2

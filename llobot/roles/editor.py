@@ -16,6 +16,7 @@ from llobot.crammers.knowledge import KnowledgeCrammer, standard_knowledge_cramm
 from llobot.environments import Environment
 from llobot.environments.commands import CommandsEnv
 from llobot.environments.context import ContextEnv
+from llobot.environments.cutoff import CutoffEnv
 from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.prompt import PromptEnv
 from llobot.environments.session import SessionEnv
@@ -141,6 +142,7 @@ class Editor(Role):
                 prompt_env.mark_last()
 
             if message.intent == ChatIntent.PROMPT:
+                env[CutoffEnv].clear()
                 prompt_env.set(message.content)
                 if i + 1 < len(prompt) and prompt[i + 1].intent == ChatIntent.SESSION:
                     queue.add(parse_mentions(prompt[i + 1]))
