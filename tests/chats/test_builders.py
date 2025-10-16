@@ -1,8 +1,9 @@
 import pytest
-from llobot.chats.intents import ChatIntent
-from llobot.chats.messages import ChatMessage, MESSAGE_OVERHEAD
 from llobot.chats.branches import ChatBranch
 from llobot.chats.builders import ChatBuilder
+from llobot.chats.intents import ChatIntent
+from llobot.chats.messages import ChatMessage, MESSAGE_OVERHEAD
+from llobot.models.streams import message_stream, text_stream
 
 def test_add_message():
     """Tests adding individual ChatMessage objects."""
@@ -91,3 +92,68 @@ def test_mark_and_undo():
     # Undo to beginning
     builder.undo(0)
     assert builder.messages == []
+
+def test_record_simple_text_stream():
+    """Tests recording a simple stream of text chunks."""
+    builder = ChatBuilder()
+    stream = text_stream("Hello world")
+    recorded_stream = builder.record(stream)
+    output = "".join(s for s in recorded_stream if isinstance(s, str))
+    assert output == "Hello world"
+    assert builder.messages == [ChatMessage(ChatIntent.RESPONSE, "Hello world")]
+
+
+def test_record_empty_stream():
+    """Tests recording an empty stream."""
+    builder = ChatBuilder()
+    stream = iter([])
+    list(builder.record(stream))
+    assert not builder.messages
+
+
+def test_record_multiple_messages():
+    """Tests recording a stream with multiple messages."""
+    builder = ChatBuilder()
+    msg1 = ChatMessage(ChatIntent.SESSION, "info")
+    msg2 = ChatMessage(ChatIntent.AFFIRMATION, "OK")
+    def source_stream():
+        yield from message_stream(msg1)
+        yield from message_stream(msg2)
+    recorded_stream = builder.record(source_stream())
+    list(recorded_stream)
+    assert builder.messages == [msg1, msg2]
+
+
+def test_record_stream_is_pass_through():
+    """Tests that record() yields exactly what it consumes."""
+    builder = ChatBuilder()
+    source = [ChatIntent.SESSION, "s1", " and s2", ChatIntent.RESPONSE, "r1"]
+    recorded_stream = builder.record(iter(source))
+    output_list = list(recorded_stream)
+    assert output_list == source
+    assert builder.messages == [
+        ChatMessage(ChatIntent.SESSION, "s1 and s2"),
+        ChatMessage(ChatIntent.RESPONSE, "r1"),
+    ]
+
+
+def test_record_starts_with_text():
+    """Tests recording a stream that starts with text."""
+    builder = ChatBuilder()
+    source = ["r1", " and r2", ChatIntent.SESSION, "s1"]
+    list(builder.record(iter(source)))
+    assert builder.messages == [
+        ChatMessage(ChatIntent.RESPONSE, "r1 and r2"),
+        ChatMessage(ChatIntent.SESSION, "s1"),
+    ]
+
+
+def test_record_empty_message_in_stream():
+    """Tests recording a stream with an empty message."""
+    builder = ChatBuilder()
+    source = [ChatIntent.SESSION, ChatIntent.RESPONSE, "r1"]
+    list(builder.record(iter(source)))
+    assert builder.messages == [
+        ChatMessage(ChatIntent.SESSION, ""),
+        ChatMessage(ChatIntent.RESPONSE, "r1"),
+    ]

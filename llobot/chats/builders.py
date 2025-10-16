@@ -1,6 +1,8 @@
 from __future__ import annotations
-from llobot.chats.messages import ChatMessage
 from llobot.chats.branches import ChatBranch
+from llobot.chats.intents import ChatIntent
+from llobot.chats.messages import ChatMessage
+from llobot.models.streams import ModelStream
 
 class ChatBuilder:
     """
@@ -105,6 +107,45 @@ class ChatBuilder:
             pass
         else:
             raise TypeError(what)
+
+    def record(self, stream: ModelStream) -> ModelStream:
+        """
+        Records a model stream while passing it through.
+
+        This method iterates over a `ModelStream`, appends the resulting chat
+        messages to the builder, and yields the stream's items unchanged. It
+        acts as a pass-through that records the conversation. The stream is
+        interpreted according to the rules in `llobot.models.streams`.
+
+        Args:
+            stream: The `ModelStream` to record.
+
+        Yields:
+            The items from the input stream.
+        """
+        current_intent: ChatIntent | None = None
+        current_content_parts = []
+
+        for item in stream:
+            yield item
+            if current_intent is None:
+                if isinstance(item, ChatIntent):
+                    current_intent = item
+                else:  # str
+                    current_intent = ChatIntent.RESPONSE
+                    current_content_parts.append(item)
+            else:
+                if isinstance(item, ChatIntent):
+                    content = "".join(current_content_parts)
+                    self.add(ChatMessage(current_intent, content))
+                    current_intent = item
+                    current_content_parts = []
+                else:  # str
+                    current_content_parts.append(item)
+
+        if current_intent is not None:
+            content = "".join(current_content_parts)
+            self.add(ChatMessage(current_intent, content))
 
     def build(self) -> ChatBranch:
         """Constructs an immutable ChatBranch from the current state of the builder."""
