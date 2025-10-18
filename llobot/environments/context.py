@@ -1,11 +1,15 @@
 from __future__ import annotations
+from pathlib import Path
+from llobot.chats.archives.markdown import load_chat_as_markdown, save_chat_as_markdown
 from llobot.chats.branches import ChatBranch
 from llobot.chats.builders import ChatBuilder
 from llobot.chats.messages import ChatMessage
+from llobot.environments.persistent import PersistentEnv
 
-class ContextEnv:
+class ContextEnv(PersistentEnv):
     """
     An environment component for accumulating chat messages.
+    The accumulated context can be persisted to disk.
     """
     _builder: ChatBuilder
 
@@ -37,6 +41,27 @@ class ContextEnv:
         Builds the final `ChatBranch` from the accumulated messages.
         """
         return self._builder.build()
+
+    def save(self, directory: Path):
+        """
+        Saves the current context to `context.md`.
+
+        The file is created even if the context is empty.
+        """
+        save_chat_as_markdown(directory / 'context.md', self.build())
+
+    def load(self, directory: Path):
+        """
+        Loads context from `context.md`.
+
+        If the file doesn't exist, the context is left empty.
+        """
+        path = directory / 'context.md'
+        if path.exists():
+            branch = load_chat_as_markdown(path)
+            self._builder = branch.to_builder()
+        else:
+            self._builder = ChatBuilder()
 
 __all__ = [
     'ContextEnv',

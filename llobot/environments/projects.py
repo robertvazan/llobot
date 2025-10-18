@@ -3,28 +3,31 @@ Project selection environment component.
 """
 from __future__ import annotations
 from functools import cached_property
+from pathlib import Path
+from llobot.environments.persistent import PersistentEnv
 from llobot.projects import Project
 from llobot.projects.library import ProjectLibrary
 from llobot.projects.library.empty import EmptyProjectLibrary
 from llobot.projects.union import union_project
+from llobot.utils.fs import read_text, write_text
 
-class ProjectEnv:
+class ProjectEnv(PersistentEnv):
     """
     An environment component that holds the currently selected projects.
+    It can be persisted by saving the keys of selected projects.
     """
     _projects: set[Project]
     _library: ProjectLibrary
+    _keys: set[str]
 
     def __init__(self):
         self._projects = set()
         self._library = EmptyProjectLibrary()
+        self._keys = set()
 
     def configure(self, library: ProjectLibrary):
         """
         Configures the project library to use for lookups.
-
-        Args:
-            library: The project library.
         """
         self._library = library
 
@@ -43,9 +46,9 @@ class ProjectEnv:
         """
         found = self._library.lookup(key)
         if found:
+            self._keys.add(key)
             initial_count = len(self._projects)
-            for project in found:
-                self._projects.add(project)
+            self._projects.update(found)
             if len(self._projects) > initial_count and 'union' in self.__dict__:
                 del self.union
         return found
@@ -71,6 +74,47 @@ class ProjectEnv:
             selected.
         """
         return union_project(*self.selected)
+
+    def save(self, directory: Path):
+        """
+        Saves the keys of selected projects to `projects.txt`.
+
+        The file is created even if it's empty, containing one key per line, sorted.
+        """
+        content = '\n'.join(sorted(list(self._keys)))
+        if content:
+            content += '\n'
+        write_text(directory / 'projects.txt', content)
+
+    def load(self, directory: Path):
+        """
+        Loads project keys from `projects.txt`, clearing any prior state.
+
+        This method assumes that a project library has already been configured via `configure()`.
+        If the `projects.txt` file doesn't exist, the project selection is simply cleared.
+
+        Args:
+            directory: The directory to load the state from.
+
+        Raises:
+            ValueError: If a key from `projects.txt` does not match any project.
+        """
+        # Clear prior state
+        self._projects.clear()
+        self._keys.clear()
+        if 'union' in self.__dict__:
+            del self.union
+
+        path = directory / 'projects.txt'
+        if not path.exists():
+            return
+
+        content = read_text(path)
+        keys = {line.strip() for line in content.splitlines() if line.strip()}
+
+        for key in sorted(list(keys)):
+            if not self.add(key):
+                raise ValueError(f"Project key '{key}' from projects.txt not found in library.")
 
 __all__ = [
     'ProjectEnv',

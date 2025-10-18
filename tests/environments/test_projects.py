@@ -1,3 +1,5 @@
+from pathlib import Path
+import pytest
 from llobot.environments.projects import ProjectEnv
 from llobot.projects.empty import EmptyProject
 from llobot.projects.library.zone import ZoneKeyedProjectLibrary
@@ -74,3 +76,65 @@ def test_project_env_union_caching():
     assert isinstance(union3, UnionProject)
     union4 = env.union
     assert union3 is union4
+
+def test_project_env_persistence(tmp_path: Path):
+    p1 = ZoneProject("p1")
+    p2 = ZoneProject("p2")
+    p3 = ZoneProject("p3")
+    library = ZoneKeyedProjectLibrary(p1, p2, p3)
+
+    # --- Save env with p1, p2 ---
+    env1 = ProjectEnv()
+    env1.configure(library)
+    env1.add("p1")
+    env1.add("p2")
+
+    save_path = tmp_path / "env"
+    env1.save(save_path)
+
+    projects_txt = save_path / 'projects.txt'
+    assert projects_txt.exists()
+    assert projects_txt.read_text() == "p1\np2\n"
+
+    # --- Test loading into an env that already has p3, should be cleared ---
+    env2 = ProjectEnv()
+    env2.configure(library)
+    env2.add("p3")
+    assert env2._keys == {"p3"}
+
+    env2.load(save_path)
+
+    # State should be replaced with loaded state
+    assert env2._keys == {"p1", "p2"}
+    assert len(env2.selected) == 2
+    # .selected is sorted by zone
+    assert env2.selected[0].zones == {Path("p1")}
+    assert env2.selected[1].zones == {Path("p2")}
+
+def test_project_env_load_not_found_fails(tmp_path: Path):
+    library = ZoneKeyedProjectLibrary(ZoneProject("p1"))
+
+    save_path = tmp_path / "env"
+    save_path.mkdir()
+    (save_path / "projects.txt").write_text("p1\np2\n") # p2 does not exist
+
+    env = ProjectEnv()
+    env.configure(library)
+
+    with pytest.raises(ValueError, match="Project key 'p2' from projects.txt not found in library."):
+        env.load(save_path)
+
+def test_project_env_load_missing_file_clears(tmp_path: Path):
+    p1 = ZoneProject("p1")
+    library = ZoneKeyedProjectLibrary(p1)
+
+    env = ProjectEnv()
+    env.configure(library)
+    env.add("p1")
+    assert env._keys == {"p1"}
+
+    # Load from a non-existent dir/file. It should clear the env.
+    env.load(tmp_path / "nonexistent")
+
+    assert env._keys == set()
+    assert env.selected == []

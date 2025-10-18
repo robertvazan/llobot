@@ -1,3 +1,4 @@
+from pathlib import Path
 from llobot.environments.context import ContextEnv
 from llobot.chats.messages import ChatMessage
 from llobot.chats.intents import ChatIntent
@@ -25,3 +26,47 @@ def test_context_env():
     assert len(built) == 2
     assert built[0] == msg1
     assert built[1] == msg2
+
+def test_context_env_persistence(tmp_path: Path):
+    env = ContextEnv()
+    msg1 = ChatMessage(ChatIntent.PROMPT, "Hello")
+    msg2 = ChatMessage(ChatIntent.RESPONSE, "Hi")
+    env.add(msg1)
+    env.add(msg2)
+
+    save_path = tmp_path / "env"
+    env.save(save_path)
+
+    context_md = save_path / 'context.md'
+    assert context_md.exists()
+    content = context_md.read_text()
+    assert '> Prompt' in content
+    assert 'Hello' in content
+    assert '> Response' in content
+    assert 'Hi' in content
+
+    # Test loading
+    env2 = ContextEnv()
+    env2.load(save_path)
+    branch = env2.build()
+    assert len(branch) == 2
+    assert branch[0] == msg1
+    assert branch[1] == msg2
+
+def test_context_env_persistence_empty(tmp_path: Path):
+    env = ContextEnv()
+    save_path = tmp_path / "env"
+    env.save(save_path)
+
+    context_md = save_path / 'context.md'
+    assert context_md.exists()
+    assert context_md.read_text() == ""
+
+    env2 = ContextEnv()
+    env2.load(save_path)
+    assert not env2.build()
+
+def test_context_env_load_missing_file(tmp_path: Path):
+    env = ContextEnv()
+    env.load(tmp_path)
+    assert not env.build()
