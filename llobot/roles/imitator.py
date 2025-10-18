@@ -29,7 +29,7 @@ from llobot.memories.examples import ExampleMemory
 from llobot.models import Model
 from llobot.models.streams import ModelStream
 from llobot.projects import Project
-from llobot.projects.library import ProjectLibraryPrecursor, coerce_project_library
+from llobot.projects.library import ProjectLibrary, ProjectLibraryPrecursor, coerce_project_library
 from llobot.prompts import Prompt
 from llobot.roles import Role
 
@@ -51,6 +51,7 @@ class Imitator(Role):
     _crammer: ExampleCrammer
     _prompt_format: PromptFormat
     _reminder_format: PromptFormat
+    _project_library: ProjectLibrary
     _step_chain: StepChain
     _examples: ExampleMemory
 
@@ -69,8 +70,9 @@ class Imitator(Role):
         self._crammer = crammer
         self._prompt_format = prompt_format
         self._reminder_format = reminder_format
+        self._project_library = coerce_project_library(projects)
         self._step_chain = StepChain(
-            ProjectCommand(coerce_project_library(projects)),
+            ProjectCommand(),
             CutoffCommand(),
             ImplicitCutoffStep(),
             CustomStep(self.stuff),
@@ -105,6 +107,7 @@ class Imitator(Role):
 
     def chat(self, prompt: ChatBranch) -> ModelStream:
         env = Environment()
+        env[ProjectEnv].configure(self._project_library)
         context_env = env[ContextEnv]
         queue = env[CommandsEnv]
         prompt_env = env[PromptEnv]

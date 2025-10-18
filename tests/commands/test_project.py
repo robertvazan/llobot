@@ -11,9 +11,10 @@ def test_project_command():
     project3 = ZoneProject("proj1", "proj3") # Shares a zone with project1
 
     library = ZoneKeyedProjectLibrary(project1, project2, project3)
-    command = ProjectCommand(library)
+    command = ProjectCommand()
     env = Environment()
     project_env = env[ProjectEnv]
+    project_env.configure(library)
 
     # Handle a zone with a single project.
     assert command.handle("proj2", env) is True

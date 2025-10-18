@@ -11,6 +11,7 @@ from llobot.environments.session import SessionEnv
 from llobot.knowledge import Knowledge
 from llobot.knowledge.archives.tgz import TgzKnowledgeArchive
 from llobot.projects.directory import DirectoryProject
+from llobot.projects.library import ProjectLibrary
 from llobot.utils.time import parse_time, format_time
 
 def test_cutoff_command():
@@ -45,8 +46,13 @@ def test_implicit_cutoff_step_no_cutoff_last_prompt(tmp_path: Path):
     (p2_path / 'f.txt').write_text('p2-content')
     p2 = DirectoryProject(p2_path)
 
-    env[ProjectEnv].add(p1)
-    env[ProjectEnv].add(p2)
+    library = Mock(spec=ProjectLibrary)
+    library.lookup.side_effect = lambda key: {'p1': [p1], 'p2': [p2]}.get(key, [])
+    project_env = env[ProjectEnv]
+    project_env.configure(library)
+    project_env.add('p1')
+    project_env.add('p2')
+
     env[PromptEnv].mark_last()
     cutoff_env = env[CutoffEnv]
     session_env = env[SessionEnv]
@@ -68,7 +74,13 @@ def test_implicit_cutoff_step_no_cutoff_not_last_prompt(tmp_path: Path):
     p1_path = tmp_path / 'p1'
     p1_path.mkdir()
     p1 = DirectoryProject(p1_path)
-    env[ProjectEnv].add(p1)
+
+    library = Mock(spec=ProjectLibrary)
+    library.lookup.return_value = [p1]
+    project_env = env[ProjectEnv]
+    project_env.configure(library)
+    project_env.add('p1')
+
     cutoff_env = env[CutoffEnv]
     session_env = env[SessionEnv]
 
@@ -89,7 +101,13 @@ def test_implicit_cutoff_step_with_cutoff(tmp_path: Path):
     p1_path = tmp_path / 'p1'
     p1_path.mkdir()
     p1 = DirectoryProject(p1_path)
-    env[ProjectEnv].add(p1)
+
+    library = Mock(spec=ProjectLibrary)
+    library.lookup.return_value = [p1]
+    project_env = env[ProjectEnv]
+    project_env.configure(library)
+    project_env.add('p1')
+
     env[PromptEnv].mark_last()
     cutoff_env = env[CutoffEnv]
     session_env = env[SessionEnv]
@@ -125,7 +143,13 @@ def test_implicit_cutoff_step_no_archive(tmp_path: Path):
     p_path = tmp_path / 'p'
     p_path.mkdir()
     project = DirectoryProject(p_path)
-    env[ProjectEnv].add(project)
+
+    library = Mock(spec=ProjectLibrary)
+    library.lookup.return_value = [project]
+    project_env = env[ProjectEnv]
+    project_env.configure(library)
+    project_env.add('p')
+
     env[PromptEnv].mark_last()
     cutoff_env = env[CutoffEnv]
     session_env = env[SessionEnv]

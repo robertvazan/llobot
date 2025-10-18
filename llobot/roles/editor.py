@@ -18,6 +18,7 @@ from llobot.environments.commands import CommandsEnv
 from llobot.environments.context import ContextEnv
 from llobot.environments.cutoff import CutoffEnv
 from llobot.environments.knowledge import KnowledgeEnv
+from llobot.environments.projects import ProjectEnv
 from llobot.environments.prompt import PromptEnv
 from llobot.environments.session import SessionEnv
 from llobot.environments.status import StatusEnv
@@ -27,7 +28,7 @@ from llobot.formats.prompts.reminder import ReminderPromptFormat
 from llobot.knowledge.archives import KnowledgeArchive, standard_knowledge_archive
 from llobot.models import Model
 from llobot.models.streams import ModelStream
-from llobot.projects.library import ProjectLibraryPrecursor, coerce_project_library
+from llobot.projects.library import ProjectLibrary, ProjectLibraryPrecursor, coerce_project_library
 from llobot.prompts import (
     Prompt,
     SystemPrompt,
@@ -68,6 +69,7 @@ class Editor(Role):
     _index_crammer: IndexCrammer
     _prompt_format: PromptFormat
     _reminder_format: PromptFormat
+    _project_library: ProjectLibrary
     _step_chain: StepChain
 
     def __init__(self, name: str, model: Model, *,
@@ -91,9 +93,9 @@ class Editor(Role):
         self._index_crammer = index_crammer
         self._prompt_format = prompt_format
         self._reminder_format = reminder_format
-        project_library = coerce_project_library(projects)
+        self._project_library = coerce_project_library(projects)
         self._step_chain = StepChain(
-            ProjectCommand(project_library),
+            ProjectCommand(),
             CutoffCommand(),
             ImplicitCutoffStep(self._knowledge_archive),
             ProjectKnowledgeStep(self._knowledge_archive),
@@ -132,6 +134,7 @@ class Editor(Role):
 
     def chat(self, prompt: ChatBranch) -> ModelStream:
         env = Environment()
+        env[ProjectEnv].configure(self._project_library)
         context_env = env[ContextEnv]
         queue = env[CommandsEnv]
         prompt_env = env[PromptEnv]

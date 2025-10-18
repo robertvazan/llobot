@@ -8,6 +8,7 @@ from llobot.chats.messages import ChatMessage
 from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
 from llobot.memories.examples import ExampleMemory
+from llobot.projects.library.zone import ZoneKeyedProjectLibrary
 from llobot.projects.zone import ZoneProject
 from llobot.utils.time import parse_time
 
@@ -32,7 +33,10 @@ def test_save_and_recent_with_project_and_role(tmp_path: Path):
     archive = MarkdownChatArchive(tmp_path)
     memory = ExampleMemory('test_role', archive=archive)
     env = Environment()
-    env[ProjectEnv].add(ZoneProject('test_project'))
+    library = ZoneKeyedProjectLibrary(ZoneProject('test_project'))
+    project_env = env[ProjectEnv]
+    project_env.configure(library)
+    project_env.add('test_project')
     chat = ChatBranch([ChatMessage(ChatIntent.PROMPT, "Question")])
 
     memory.save(chat, env)
@@ -53,7 +57,10 @@ def test_zones_with_path_like_zone(tmp_path: Path):
     archive = MarkdownChatArchive(tmp_path)
     memory = ExampleMemory('test_role', archive=archive)
     env = Environment()
-    env[ProjectEnv].add(ZoneProject('my/project'))
+    library = ZoneKeyedProjectLibrary(ZoneProject('my/project'))
+    project_env = env[ProjectEnv]
+    project_env.configure(library)
+    project_env.add('my/project')
     chat = ChatBranch([ChatMessage(ChatIntent.PROMPT, "Question")])
 
     memory.save(chat, env)
@@ -70,7 +77,10 @@ def test_save_with_project_only(tmp_path: Path):
     archive = MarkdownChatArchive(tmp_path)
     memory = ExampleMemory(archive=archive)
     env = Environment()
-    env[ProjectEnv].add(ZoneProject('test_project'))
+    library = ZoneKeyedProjectLibrary(ZoneProject('test_project'))
+    project_env = env[ProjectEnv]
+    project_env.configure(library)
+    project_env.add('test_project')
     chat = ChatBranch([ChatMessage(ChatIntent.PROMPT, "Data")])
 
     memory.save(chat, env)
@@ -114,8 +124,11 @@ def test_recent_merges_examples(tmp_path: Path):
     archive = MarkdownChatArchive(tmp_path)
     memory = ExampleMemory('test_role', archive=archive)
     env = Environment()
-    env[ProjectEnv].add(ZoneProject('p1'))
-    env[ProjectEnv].add(ZoneProject('p2'))
+    library = ZoneKeyedProjectLibrary(ZoneProject('p1'), ZoneProject('p2'))
+    project_env = env[ProjectEnv]
+    project_env.configure(library)
+    project_env.add('p1')
+    project_env.add('p2')
 
     chat_p1 = ChatBranch([ChatMessage(ChatIntent.PROMPT, "p1 prompt")])
     chat_p2 = ChatBranch([ChatMessage(ChatIntent.PROMPT, "p2 prompt")])

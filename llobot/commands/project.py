@@ -12,20 +12,9 @@ class ProjectCommand(Command):
     A command that selects one or more projects to be used as a knowledge base.
 
     The command handler uses the command text as a key to look up projects in
-    a `ProjectLibrary`. If one or more projects are found, they are added to the
-    `ProjectEnv` of the environment.
+    the `ProjectLibrary` configured in `ProjectEnv`. If one or more projects
+    are found, they are added to the `ProjectEnv`.
     """
-    _library: ProjectLibrary
-
-    def __init__(self, library: ProjectLibrary):
-        """
-        Initializes the `ProjectCommand`.
-
-        Args:
-            library: A project library to look up projects from.
-        """
-        self._library = library
-
     def handle(self, text: str, env: Environment) -> bool:
         """
         Handles the project selection command.
@@ -40,12 +29,9 @@ class ProjectCommand(Command):
         Returns:
             `True` if any project was selected, `False` otherwise.
         """
-        found = self._library.lookup(text)
-        if found:
-            for project in found:
-                env[ProjectEnv].add(project)
-            return True
-        return False
+        project_env = env[ProjectEnv]
+        found = project_env.add(text)
+        return bool(found)
 
 __all__ = [
     'ProjectCommand',

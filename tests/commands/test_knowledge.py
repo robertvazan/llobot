@@ -1,5 +1,5 @@
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 from llobot.commands.knowledge import ProjectKnowledgeStep
 from llobot.environments import Environment
@@ -9,6 +9,7 @@ from llobot.environments.projects import ProjectEnv
 from llobot.knowledge import Knowledge
 from llobot.knowledge.archives.tgz import TgzKnowledgeArchive
 from llobot.projects.directory import DirectoryProject
+from llobot.projects.library import ProjectLibrary
 from llobot.projects.union import union_project
 from llobot.utils.time import parse_time
 
@@ -35,8 +36,12 @@ def test_project_knowledge_step(tmp_path: Path):
     with patch('llobot.knowledge.archives.current_time', return_value=cutoff):
         union.refresh(archive)
 
-    env[ProjectEnv].add(p1)
-    env[ProjectEnv].add(p2)
+    library = Mock(spec=ProjectLibrary)
+    library.lookup.side_effect = lambda key: {'p1': [p1], 'p2': [p2]}.get(key, [])
+    project_env = env[ProjectEnv]
+    project_env.configure(library)
+    project_env.add('p1')
+    project_env.add('p2')
     env[CutoffEnv].set(cutoff)
 
     step.process(env)
@@ -72,7 +77,11 @@ def test_project_knowledge_step_no_cutoff(tmp_path: Path):
 
     project.refresh(archive)
 
-    env[ProjectEnv].add(project)
+    library = Mock(spec=ProjectLibrary)
+    library.lookup.return_value = [project]
+    project_env = env[ProjectEnv]
+    project_env.configure(library)
+    project_env.add('test-project')
     # No cutoff set
 
     step.process(env)
