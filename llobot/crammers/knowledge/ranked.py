@@ -1,5 +1,5 @@
 from __future__ import annotations
-from llobot.chats.builders import ChatBuilder
+from llobot.chats.builder import ChatBuilder
 from llobot.crammers.knowledge import KnowledgeCrammer
 from llobot.formats.deltas.knowledge import KnowledgeDeltaFormat, standard_knowledge_delta_format
 from llobot.knowledge import Knowledge
@@ -66,7 +66,7 @@ class RankedKnowledgeCrammer(KnowledgeCrammer, ValueTypeMixin):
                 break
             cost += doc_cost
             selection_paths.append(path)
-        
+
         if not selection_paths:
             return KnowledgeIndex()
 
@@ -81,7 +81,7 @@ class RankedKnowledgeCrammer(KnowledgeCrammer, ValueTypeMixin):
 
             if builder.unused >= 0:
                 return candidate_knowledge.keys()
-            
+
             overrun = -builder.unused
             builder.undo()
 
@@ -91,7 +91,7 @@ class RankedKnowledgeCrammer(KnowledgeCrammer, ValueTypeMixin):
             while removed_cost < overrun and selection_paths:
                 removed_path = selection_paths.pop()
                 removed_cost += len(knowledge[removed_path])
-            
+
             if not selection_paths:
                 return KnowledgeIndex()
 

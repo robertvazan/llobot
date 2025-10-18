@@ -1,20 +1,20 @@
 from __future__ import annotations
 from textwrap import dedent
-from llobot.chats.branches import ChatBranch
-from llobot.chats.messages import ChatMessage
-from llobot.chats.intents import ChatIntent
+from llobot.chats.thread import ChatThread
+from llobot.chats.message import ChatMessage
+from llobot.chats.intent import ChatIntent
 from llobot.formats.submessages.details import DetailsSubmessageFormat
 from llobot.models.streams import text_stream
 
 formatter = DetailsSubmessageFormat()
 
 def test_render_empty():
-    chat = ChatBranch()
+    chat = ChatThread()
     content = formatter.render(chat)
     assert content == ""
 
 def test_render_single_message():
-    chat = ChatBranch([
+    chat = ChatThread([
         ChatMessage(ChatIntent.SYSTEM, "System prompt content.")
     ])
     content = formatter.render(chat)
@@ -30,7 +30,7 @@ def test_render_single_message():
     assert content == expected
 
 def test_render_multiple_messages():
-    chat = ChatBranch([
+    chat = ChatThread([
         ChatMessage(ChatIntent.SYSTEM, "System prompt content."),
         ChatMessage(ChatIntent.AFFIRMATION, "Okay"),
         ChatMessage(ChatIntent.PROMPT, "User prompt.")
@@ -64,7 +64,7 @@ def test_render_multiple_messages():
     assert content == expected
 
 def test_render_with_response():
-    chat = ChatBranch([
+    chat = ChatThread([
         ChatMessage(ChatIntent.RESPONSE, "This is a response."),
         ChatMessage(ChatIntent.SYSTEM, "System prompt content."),
         ChatMessage(ChatIntent.RESPONSE, "Another response.")
@@ -130,7 +130,7 @@ def test_parse_multiple_messages():
         </details>
     """).strip()
     chat = formatter.parse(text)
-    expected = ChatBranch([
+    expected = ChatThread([
         ChatMessage(ChatIntent.SYSTEM, "System prompt content."),
         ChatMessage(ChatIntent.AFFIRMATION, "Okay"),
         ChatMessage(ChatIntent.PROMPT, "User prompt.")
@@ -152,7 +152,7 @@ def test_parse_with_response():
         Another response.
     """).strip()
     chat = formatter.parse(text)
-    expected = ChatBranch([
+    expected = ChatThread([
         ChatMessage(ChatIntent.RESPONSE, "This is a response."),
         ChatMessage(ChatIntent.SYSTEM, "System prompt content."),
         ChatMessage(ChatIntent.RESPONSE, "Another response.")
@@ -211,7 +211,7 @@ def test_parse_unstructured_text_is_response():
         Trailing junk.
     """).strip()
     chat = formatter.parse(text)
-    expected = ChatBranch([
+    expected = ChatThread([
         ChatMessage(ChatIntent.RESPONSE, "Some leading junk."),
         ChatMessage(ChatIntent.SYSTEM, "System prompt content."),
         ChatMessage(ChatIntent.RESPONSE, "Some junk in between."),
@@ -230,7 +230,7 @@ def test_parse_malformed_submessage():
         ... missing end marker and closing details
     """).strip()
     chat = formatter.parse(text)
-    expected = ChatBranch([
+    expected = ChatThread([
         ChatMessage(ChatIntent.RESPONSE, 'Response part 1.'),
         ChatMessage(ChatIntent.SYSTEM, 'System content.\n... missing end marker and closing details')
     ])
@@ -248,7 +248,7 @@ def test_parse_malformed_summary():
         </details>
     """).strip()
     chat = formatter.parse(text)
-    expected = ChatBranch([
+    expected = ChatThread([
         ChatMessage(ChatIntent.RESPONSE, text)
     ])
     assert chat == expected
@@ -265,13 +265,13 @@ def test_parse_malformed_intent():
         </details>
     """).strip()
     chat = formatter.parse(text)
-    expected = ChatBranch([
+    expected = ChatThread([
         ChatMessage(ChatIntent.RESPONSE, text)
     ])
     assert chat == expected
 
 def test_roundtrip():
-    chat = ChatBranch([
+    chat = ChatThread([
         ChatMessage(ChatIntent.RESPONSE, "Response message."),
         ChatMessage(ChatIntent.SYSTEM, "System prompt content."),
         ChatMessage(ChatIntent.AFFIRMATION, "Okay"),
@@ -283,7 +283,7 @@ def test_roundtrip():
     assert parsed == chat
 
 def test_roundtrip_empty_content():
-    chat = ChatBranch([
+    chat = ChatThread([
         ChatMessage(ChatIntent.SYSTEM, "System prompt content."),
         ChatMessage(ChatIntent.AFFIRMATION, ""),
         ChatMessage(ChatIntent.PROMPT, "User prompt.")
@@ -391,12 +391,12 @@ def test_render_stream_ends_with_intent():
     assert result == expected
 
 def test_parse_chat_empty():
-    chat = ChatBranch()
+    chat = ChatThread()
     parsed = formatter.parse_chat(chat)
     assert parsed == chat
 
 def test_parse_chat_no_response():
-    chat = ChatBranch([
+    chat = ChatThread([
         ChatMessage(ChatIntent.SYSTEM, "System message."),
         ChatMessage(ChatIntent.PROMPT, "User prompt.")
     ])
@@ -417,12 +417,12 @@ def test_parse_chat_with_submessages():
 
         Another response part.
     """).strip()
-    chat = ChatBranch([
+    chat = ChatThread([
         ChatMessage(ChatIntent.PROMPT, "User prompt."),
         ChatMessage(ChatIntent.RESPONSE, response_content)
     ])
     parsed = formatter.parse_chat(chat)
-    expected = ChatBranch([
+    expected = ChatThread([
         ChatMessage(ChatIntent.PROMPT, "User prompt."),
         ChatMessage(ChatIntent.RESPONSE, "This is a response."),
         ChatMessage(ChatIntent.SYSTEM, "System prompt content."),
@@ -452,7 +452,7 @@ def test_parse_chat_multiple_responses():
         </details>
     """).strip()
 
-    chat = ChatBranch([
+    chat = ChatThread([
         ChatMessage(ChatIntent.PROMPT, "Prompt."),
         ChatMessage(ChatIntent.RESPONSE, response1_content),
         ChatMessage(ChatIntent.RESPONSE, response2_content),
@@ -462,7 +462,7 @@ def test_parse_chat_multiple_responses():
 
     parsed = formatter.parse_chat(chat)
 
-    expected = ChatBranch([
+    expected = ChatThread([
         ChatMessage(ChatIntent.PROMPT, "Prompt."),
         ChatMessage(ChatIntent.AFFIRMATION, "Okay"),
         ChatMessage(ChatIntent.RESPONSE, "Just a simple response."),

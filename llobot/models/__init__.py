@@ -28,7 +28,7 @@ streams
     Defines `ModelStream` for streaming model responses.
 """
 from __future__ import annotations
-from llobot.chats.branches import ChatBranch
+from llobot.chats.thread import ChatThread
 from llobot.models.streams import ModelStream
 
 class Model:
@@ -49,12 +49,12 @@ class Model:
         """
         return 0
 
-    def generate(self, prompt: ChatBranch) -> ModelStream:
+    def generate(self, prompt: ChatThread) -> ModelStream:
         """
         Generates a response to a prompt.
 
         Args:
-            prompt: The chat branch to respond to.
+            prompt: The chat thread to respond to.
 
         Returns:
             A `ModelStream` of response chunks.

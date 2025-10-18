@@ -2,9 +2,9 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 from typing import Iterable
-from llobot.chats.archives import ChatArchive, standard_chat_archive
-from llobot.chats.branches import ChatBranch
-from llobot.chats.intents import ChatIntent
+from llobot.chats.history import ChatHistory, standard_chat_history
+from llobot.chats.thread import ChatThread
+from llobot.chats.intent import ChatIntent
 from llobot.commands.approve import ApproveCommand
 from llobot.commands.chain import StepChain
 from llobot.commands.custom import CustomStep
@@ -58,14 +58,14 @@ class Imitator(Role):
     def __init__(self, name: str, model: Model, *,
         prompt: str | Prompt = '',
         projects: ProjectLibraryPrecursor = (),
-        example_archive: ChatArchive | Zoning | Path | str = standard_chat_archive(data_home()/'llobot/examples'),
+        example_history: ChatHistory | Zoning | Path | str = standard_chat_history(data_home()/'llobot/examples'),
         crammer: ExampleCrammer = standard_example_crammer(),
         prompt_format: PromptFormat = standard_prompt_format(),
         reminder_format: PromptFormat = ReminderPromptFormat(),
     ):
         self._name = name
         self._model = model
-        self._examples = ExampleMemory(name, archive=example_archive)
+        self._examples = ExampleMemory(name, history=example_history)
         self._system = str(prompt)
         self._crammer = crammer
         self._prompt_format = prompt_format
@@ -105,7 +105,7 @@ class Imitator(Role):
 
         builder.add(self._reminder_format.render_chat(self._system))
 
-    def chat(self, prompt: ChatBranch) -> ModelStream:
+    def chat(self, prompt: ChatThread) -> ModelStream:
         env = Environment()
         env[ProjectEnv].configure(self._project_library)
         context_env = env[ContextEnv]

@@ -2,10 +2,10 @@
 Submessage format using HTML details tags.
 """
 from __future__ import annotations
-from llobot.chats.branches import ChatBranch
-from llobot.chats.messages import ChatMessage
-from llobot.chats.intents import ChatIntent
-from llobot.chats.builders import ChatBuilder
+from llobot.chats.thread import ChatThread
+from llobot.chats.message import ChatMessage
+from llobot.chats.intent import ChatIntent
+from llobot.chats.builder import ChatBuilder
 from llobot.formats.submessages import SubmessageFormat
 from llobot.models.streams import ModelStream
 from llobot.utils.text import concat_documents
@@ -15,7 +15,7 @@ class DetailsSubmessageFormat(SubmessageFormat, ValueTypeMixin):
     """
     A submessage format using HTML details/summary tags.
 
-    Each message in the branch with an intent other than `RESPONSE` is
+    Each message in the thread with an intent other than `RESPONSE` is
     wrapped in a collapsible `<details>` block. The content of `RESPONSE`
     messages is included directly. This allows embedding structured messages
     in a single response message without cluttering the UI.
@@ -41,15 +41,15 @@ class DetailsSubmessageFormat(SubmessageFormat, ValueTypeMixin):
     messages (both wrapped and unwrapped) by an empty line.
     """
 
-    def render(self, chat: ChatBranch) -> str:
+    def render(self, chat: ChatThread) -> str:
         """
-        Renders a chat branch into a single string using `<details>` tags.
+        Renders a chat thread into a single string using `<details>` tags.
 
         Args:
-            chat: The chat branch to render.
+            chat: The chat thread to render.
 
         Returns:
-            A single string representing the branch with nested messages.
+            A single string representing the thread with nested messages.
         """
         submessages = []
         for message in chat:
@@ -98,15 +98,15 @@ class DetailsSubmessageFormat(SubmessageFormat, ValueTypeMixin):
         if in_details:
             yield '\n\n[//]: # (end of nested message)\n</details>'
 
-    def parse(self, formatted: str) -> ChatBranch:
+    def parse(self, formatted: str) -> ChatThread:
         """
-        Parses a formatted string with `<details>` tags back into a chat branch.
+        Parses a formatted string with `<details>` tags back into a chat thread.
 
         Args:
             formatted: The string to parse.
 
         Returns:
-            A `ChatBranch` object with the expanded submessages.
+            A `ChatThread` object with the expanded submessages.
         """
         builder = ChatBuilder()
         state = 'response'

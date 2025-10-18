@@ -5,9 +5,9 @@ from __future__ import annotations
 from typing import Iterable
 from openai import OpenAI
 from llobot.chats.binarization import binarize_chat, binarize_intent
-from llobot.chats.branches import ChatBranch
-from llobot.chats.intents import ChatIntent
-from llobot.chats.messages import ChatMessage
+from llobot.chats.thread import ChatThread
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 from llobot.models import Model
 from llobot.models.streams import ModelStream, buffer_stream
 from llobot.utils.values import ValueTypeMixin
@@ -24,8 +24,8 @@ def _encode_message(message: ChatMessage) -> dict[str, str]:
         'content': message.content
     }
 
-def _encode_chat(branch: ChatBranch) -> list[dict[str, str]]:
-    return [_encode_message(message) for message in branch]
+def _encode_chat(chat: ChatThread) -> list[dict[str, str]]:
+    return [_encode_message(message) for message in chat]
 
 class OpenAIModel(Model, ValueTypeMixin):
     """
@@ -70,7 +70,7 @@ class OpenAIModel(Model, ValueTypeMixin):
     def context_budget(self) -> int:
         return self._context_budget
 
-    def generate(self, prompt: ChatBranch) -> ModelStream:
+    def generate(self, prompt: ChatThread) -> ModelStream:
         def _stream() -> ModelStream:
             client = OpenAI(
                 api_key=self._auth

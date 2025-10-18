@@ -7,10 +7,10 @@ import json
 import logging
 from typing import Iterable
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from llobot.chats.branches import ChatBranch
-from llobot.chats.builders import ChatBuilder
-from llobot.chats.intents import ChatIntent
-from llobot.chats.messages import ChatMessage
+from llobot.chats.thread import ChatThread
+from llobot.chats.builder import ChatBuilder
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 from llobot.models import Model
 from llobot.models.listeners import ModelListener
 from llobot.models.streams import ModelStream
@@ -32,13 +32,13 @@ def _decode_role(data: str) -> ChatIntent:
 def _decode_message(data: dict) -> ChatMessage:
     return ChatMessage(_decode_role(data['role']), data['content'])
 
-def _decode_chat(data: list) -> ChatBranch:
+def _decode_chat(data: list) -> ChatThread:
     chat = ChatBuilder()
     for item in data:
         chat.add(_decode_message(item))
     return chat.build()
 
-def _decode_request(data: dict) -> tuple[str, ChatBranch]:
+def _decode_request(data: dict) -> tuple[str, ChatThread]:
     return data['model'], _decode_chat(data['messages'])
 
 def _encode_content_event(model: str, token: str) -> dict:

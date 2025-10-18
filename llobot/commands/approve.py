@@ -2,9 +2,9 @@
 Approve command for saving examples.
 """
 from __future__ import annotations
-from llobot.chats.branches import ChatBranch
-from llobot.chats.intents import ChatIntent
-from llobot.chats.messages import ChatMessage
+from llobot.chats.thread import ChatThread
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 from llobot.commands import Command
 from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
@@ -40,11 +40,11 @@ class ApproveCommand(Command):
         response_text = strip_mentions(prompt_text)
         if response_text:
             response_message = ChatMessage(ChatIntent.RESPONSE, response_text)
-            example = ChatBranch([user_prompt_message, response_message])
+            example = ChatThread([user_prompt_message, response_message])
         else:
             # Fallback if stripped response is empty or prompt was not set.
             messages = [m for m in context.build() if m.intent in [ChatIntent.PROMPT, ChatIntent.RESPONSE]]
-            example = ChatBranch(messages)
+            example = ChatThread(messages)
 
         self._examples.save(example, env)
         env[StatusEnv].append("✅ Example saved.")

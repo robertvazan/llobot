@@ -1,6 +1,6 @@
 from __future__ import annotations
-from llobot.chats.branches import ChatBranch
-from llobot.chats.builders import ChatBuilder
+from llobot.chats.thread import ChatThread
+from llobot.chats.builder import ChatBuilder
 from llobot.models import Model
 from llobot.models.streams import ModelStream
 from llobot.prompts import Prompt
@@ -39,14 +39,14 @@ class Chatbot(Role):
     def name(self) -> str:
         return self._name
 
-    def chat(self, prompt: ChatBranch) -> ModelStream:
+    def chat(self, prompt: ChatThread) -> ModelStream:
         """
         Processes user's prompt and returns response as a stream.
 
         It prepends the system prompt to the user's prompt and sends it to the model.
 
         Args:
-            prompt: The user's prompt as a chat branch.
+            prompt: The user's prompt as a chat thread.
 
         Returns:
             A model stream with the generated response.

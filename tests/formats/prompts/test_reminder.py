@@ -1,5 +1,5 @@
 from llobot.formats.prompts.reminder import ReminderPromptFormat
-from llobot.chats.intents import ChatIntent
+from llobot.chats.intent import ChatIntent
 
 def test_render():
     formatter = ReminderPromptFormat()

@@ -3,8 +3,8 @@ Parser for @command mentions in chat messages.
 """
 from __future__ import annotations
 import re
-from llobot.chats.messages import ChatMessage
-from llobot.chats.branches import ChatBranch
+from llobot.chats.message import ChatMessage
+from llobot.chats.thread import ChatThread
 
 _CODE_BLOCK_RE = re.compile(r'(`{3,}).*?\1', re.DOTALL)
 
@@ -41,9 +41,9 @@ _UNIFIED_RE = re.compile(
     re.VERBOSE
 )
 
-def parse_mentions(source: str | ChatMessage | ChatBranch) -> list[str]:
+def parse_mentions(source: str | ChatMessage | ChatThread) -> list[str]:
     """
-    Parses @command mentions from a string, ChatMessage, or ChatBranch.
+    Parses @command mentions from a string, ChatMessage, or ChatThread.
 
     It supports bare mentions (@command) and quoted mentions (@`command`).
     A mention can be preceded by whitespace, punctuation, or be at the start
@@ -58,8 +58,8 @@ def parse_mentions(source: str | ChatMessage | ChatBranch) -> list[str]:
     Returns:
         A list of command strings found in the text.
     """
-    if isinstance(source, ChatBranch):
-        # Concatenate content from all messages in the branch.
+    if isinstance(source, ChatThread):
+        # Concatenate content from all messages in the thread.
         content = '\n'.join(m.content for m in source)
     elif isinstance(source, ChatMessage):
         content = source.content

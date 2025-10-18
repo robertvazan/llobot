@@ -1,7 +1,7 @@
-from llobot.chats.branches import ChatBranch
-from llobot.chats.builders import ChatBuilder
-from llobot.chats.intents import ChatIntent
-from llobot.chats.messages import ChatMessage
+from llobot.chats.thread import ChatThread
+from llobot.chats.builder import ChatBuilder
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 from llobot.crammers.example.greedy import GreedyExampleCrammer
 
 def test_cram_empty():
@@ -15,7 +15,7 @@ def test_cram_empty():
 
 def test_cram_no_budget():
     """Tests cramming with zero budget."""
-    ex1 = ChatBranch([ChatMessage(ChatIntent.EXAMPLE_PROMPT, "p1"), ChatMessage(ChatIntent.EXAMPLE_RESPONSE, "r1")])
+    ex1 = ChatThread([ChatMessage(ChatIntent.EXAMPLE_PROMPT, "p1"), ChatMessage(ChatIntent.EXAMPLE_RESPONSE, "r1")])
     crammer = GreedyExampleCrammer()
     builder = ChatBuilder()
     builder.budget = 0
@@ -25,8 +25,8 @@ def test_cram_no_budget():
 
 def test_cram_fits():
     """Tests cramming examples that all fit in the budget."""
-    ex1 = ChatBranch([ChatMessage(ChatIntent.EXAMPLE_PROMPT, "p1"), ChatMessage(ChatIntent.EXAMPLE_RESPONSE, "r1")])
-    ex2 = ChatBranch([ChatMessage(ChatIntent.EXAMPLE_PROMPT, "p2"), ChatMessage(ChatIntent.EXAMPLE_RESPONSE, "r2")])
+    ex1 = ChatThread([ChatMessage(ChatIntent.EXAMPLE_PROMPT, "p1"), ChatMessage(ChatIntent.EXAMPLE_RESPONSE, "r1")])
+    ex2 = ChatThread([ChatMessage(ChatIntent.EXAMPLE_PROMPT, "p2"), ChatMessage(ChatIntent.EXAMPLE_RESPONSE, "r2")])
     crammer = GreedyExampleCrammer()
     builder = ChatBuilder()
     builder.budget = 1000
@@ -36,8 +36,8 @@ def test_cram_fits():
 
 def test_cram_budget_limit():
     """Tests that cramming stops when budget is exceeded."""
-    ex1 = ChatBranch([ChatMessage(ChatIntent.EXAMPLE_PROMPT, "prompt one"), ChatMessage(ChatIntent.EXAMPLE_RESPONSE, "response one")])
-    ex2 = ChatBranch([ChatMessage(ChatIntent.EXAMPLE_PROMPT, "prompt two"), ChatMessage(ChatIntent.EXAMPLE_RESPONSE, "response two")])
+    ex1 = ChatThread([ChatMessage(ChatIntent.EXAMPLE_PROMPT, "prompt one"), ChatMessage(ChatIntent.EXAMPLE_RESPONSE, "response one")])
+    ex2 = ChatThread([ChatMessage(ChatIntent.EXAMPLE_PROMPT, "prompt two"), ChatMessage(ChatIntent.EXAMPLE_RESPONSE, "response two")])
     # ex1 and ex2 have the same cost
     assert ex1.cost == ex2.cost
 
@@ -50,9 +50,9 @@ def test_cram_budget_limit():
 
 def test_cram_deduplication():
     """Tests that examples with the same prompt are deduplicated, keeping the most recent."""
-    ex1 = ChatBranch([ChatMessage(ChatIntent.EXAMPLE_PROMPT, "p1"), ChatMessage(ChatIntent.EXAMPLE_RESPONSE, "r1 old")])
-    ex2 = ChatBranch([ChatMessage(ChatIntent.EXAMPLE_PROMPT, "p1"), ChatMessage(ChatIntent.EXAMPLE_RESPONSE, "r1 new")]) # More recent
-    ex3 = ChatBranch([ChatMessage(ChatIntent.EXAMPLE_PROMPT, "p2"), ChatMessage(ChatIntent.EXAMPLE_RESPONSE, "r2")])
+    ex1 = ChatThread([ChatMessage(ChatIntent.EXAMPLE_PROMPT, "p1"), ChatMessage(ChatIntent.EXAMPLE_RESPONSE, "r1 old")])
+    ex2 = ChatThread([ChatMessage(ChatIntent.EXAMPLE_PROMPT, "p1"), ChatMessage(ChatIntent.EXAMPLE_RESPONSE, "r1 new")]) # More recent
+    ex3 = ChatThread([ChatMessage(ChatIntent.EXAMPLE_PROMPT, "p2"), ChatMessage(ChatIntent.EXAMPLE_RESPONSE, "r2")])
     crammer = GreedyExampleCrammer()
     builder = ChatBuilder()
     builder.budget = 1000
@@ -62,8 +62,8 @@ def test_cram_deduplication():
 
 def test_seen_prompts_updated_on_skip():
     """Tests that a prompt is marked 'seen' even if the example is too large."""
-    ex_new_long = ChatBranch([ChatMessage(ChatIntent.EXAMPLE_PROMPT, "p1"), ChatMessage(ChatIntent.EXAMPLE_RESPONSE, "r1 new long content")])
-    ex_old_short = ChatBranch([ChatMessage(ChatIntent.EXAMPLE_PROMPT, "p1"), ChatMessage(ChatIntent.EXAMPLE_RESPONSE, "r1 old short")])
+    ex_new_long = ChatThread([ChatMessage(ChatIntent.EXAMPLE_PROMPT, "p1"), ChatMessage(ChatIntent.EXAMPLE_RESPONSE, "r1 new long content")])
+    ex_old_short = ChatThread([ChatMessage(ChatIntent.EXAMPLE_PROMPT, "p1"), ChatMessage(ChatIntent.EXAMPLE_RESPONSE, "r1 old short")])
     crammer = GreedyExampleCrammer()
     builder = ChatBuilder()
     builder.budget = ex_old_short.cost + 5 # Enough for short, not for long

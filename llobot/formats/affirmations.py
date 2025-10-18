@@ -2,10 +2,10 @@
 Utilities for creating affirmation messages.
 """
 from __future__ import annotations
-from llobot.chats.intents import ChatIntent
-from llobot.chats.messages import ChatMessage
-from llobot.chats.branches import ChatBranch
-from llobot.chats.builders import ChatBuilder
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
+from llobot.chats.thread import ChatThread
+from llobot.chats.builder import ChatBuilder
 
 def affirmation_text() -> str:
     """
@@ -25,25 +25,25 @@ def affirmation_message() -> ChatMessage:
     """
     return ChatMessage(ChatIntent.AFFIRMATION, affirmation_text())
 
-def affirmation_turn(message: ChatMessage | str) -> ChatBranch:
+def affirmation_turn(message: ChatMessage | str) -> ChatThread:
     """
-    Creates a chat branch with a message followed by an affirmation.
+    Creates a chat thread with a message followed by an affirmation.
 
     If a string is provided, it's wrapped in a `ChatMessage` with `SYSTEM`
-    intent. If the string is empty or whitespace-only, an empty branch
+    intent. If the string is empty or whitespace-only, an empty thread
     is returned.
 
     Args:
         message: The message to include, as a `ChatMessage` or a string.
 
     Returns:
-        A `ChatBranch` containing the message and a following affirmation, or an
-        empty branch if the input message string is empty.
+        A `ChatThread` containing the message and a following affirmation, or an
+        empty thread if the input message string is empty.
     """
     if isinstance(message, str):
         message = message.strip()
         if not message:
-            return ChatBranch()
+            return ChatThread()
         message = ChatMessage(ChatIntent.SYSTEM, message)
     builder = ChatBuilder()
     builder.add(message)

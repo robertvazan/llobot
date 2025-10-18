@@ -1,8 +1,8 @@
 import pytest
-from llobot.chats.branches import ChatBranch
-from llobot.chats.builders import ChatBuilder
-from llobot.chats.intents import ChatIntent
-from llobot.chats.messages import ChatMessage, MESSAGE_OVERHEAD
+from llobot.chats.thread import ChatThread
+from llobot.chats.builder import ChatBuilder
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage, MESSAGE_OVERHEAD
 from llobot.models.streams import message_stream, text_stream
 
 def test_add_message():
@@ -14,13 +14,13 @@ def test_add_message():
     builder.add(msg2)
     assert builder.messages == [msg1, msg2]
 
-def test_add_branch():
-    """Tests adding a ChatBranch."""
+def test_add_thread():
+    """Tests adding a ChatThread."""
     builder = ChatBuilder()
     msg1 = ChatMessage(ChatIntent.PROMPT, "p1")
     msg2 = ChatMessage(ChatIntent.RESPONSE, "r1")
-    branch = ChatBranch([msg1, msg2])
-    builder.add(branch)
+    chat = ChatThread([msg1, msg2])
+    builder.add(chat)
     assert builder.messages == [msg1, msg2]
 
 def test_add_none():
@@ -36,16 +36,16 @@ def test_add_type_error():
         builder.add(123)
 
 def test_build():
-    """Tests building a ChatBranch from a builder."""
+    """Tests building a ChatThread from a builder."""
     builder = ChatBuilder()
     msg1 = ChatMessage(ChatIntent.PROMPT, "p1")
     msg2 = ChatMessage(ChatIntent.RESPONSE, "r1")
     builder.add(msg1)
     builder.add(msg2)
 
-    branch = builder.build()
-    assert isinstance(branch, ChatBranch)
-    assert branch.messages == (msg1, msg2)
+    chat = builder.build()
+    assert isinstance(chat, ChatThread)
+    assert chat.messages == (msg1, msg2)
 
 def test_budget():
     """Tests budget and unused properties."""

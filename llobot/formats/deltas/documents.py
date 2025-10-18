@@ -3,7 +3,7 @@ Document delta format.
 """
 from __future__ import annotations
 from pathlib import Path
-from llobot.chats.branches import ChatBranch
+from llobot.chats.thread import ChatThread
 from llobot.knowledge.deltas.documents import DocumentDelta
 from llobot.knowledge.deltas.knowledge import KnowledgeDelta
 from llobot.knowledge.deltas.builder import KnowledgeDeltaBuilder
@@ -29,15 +29,15 @@ class DocumentDeltaFormat:
         """
         raise NotImplementedError
 
-    def render_chat(self, delta: DocumentDelta) -> ChatBranch:
+    def render_chat(self, delta: DocumentDelta) -> ChatThread:
         """
-        Renders a document delta as a chat branch.
+        Renders a document delta as a chat thread.
 
         Args:
             delta: The document delta to render.
 
         Returns:
-            A chat branch containing the rendered delta, or an empty branch.
+            A chat thread containing the rendered delta, or an empty thread.
         """
         rendered = self.render(delta)
         return affirmation_turn(rendered)
@@ -55,16 +55,16 @@ class DocumentDeltaFormat:
         """
         return self.render(DocumentDelta(path, content))
 
-    def render_fresh_chat(self, path: Path, content: str) -> ChatBranch:
+    def render_fresh_chat(self, path: Path, content: str) -> ChatThread:
         """
-        Renders a fresh document (new or modified) as a chat branch.
+        Renders a fresh document (new or modified) as a chat thread.
 
         Args:
             path: The path of the document.
             content: The content of the document.
 
         Returns:
-            A chat branch containing the rendered document.
+            A chat thread containing the rendered document.
         """
         return self.render_chat(DocumentDelta(path, content))
 
@@ -102,7 +102,7 @@ class DocumentDeltaFormat:
         Returns:
             A `KnowledgeDelta` containing all parsed document deltas.
         """
-        from llobot.chats.messages import ChatMessage
+        from llobot.chats.message import ChatMessage
         if isinstance(message, ChatMessage):
             message = message.content
 
@@ -113,12 +113,12 @@ class DocumentDeltaFormat:
                 builder.add(delta)
         return builder.build()
 
-    def parse_chat(self, chat: ChatBranch) -> KnowledgeDelta:
+    def parse_chat(self, chat: ChatThread) -> KnowledgeDelta:
         """
-        Parses all deltas found in a chat branch.
+        Parses all deltas found in a chat thread.
 
         Args:
-            chat: The chat branch to parse.
+            chat: The chat thread to parse.
 
         Returns:
             A `KnowledgeDelta` containing all parsed document deltas.

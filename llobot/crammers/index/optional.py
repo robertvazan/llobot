@@ -1,5 +1,5 @@
 from __future__ import annotations
-from llobot.chats.builders import ChatBuilder
+from llobot.chats.builder import ChatBuilder
 from llobot.crammers.index import IndexCrammer
 from llobot.formats.indexes import IndexFormat, standard_index_format
 from llobot.knowledge import Knowledge

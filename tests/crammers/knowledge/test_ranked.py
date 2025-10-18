@@ -1,10 +1,11 @@
 from pathlib import Path
-from llobot.chats.builders import ChatBuilder
+from llobot.chats.builder import ChatBuilder
 from llobot.crammers.knowledge.ranked import RankedKnowledgeCrammer
 from llobot.knowledge import Knowledge
 from llobot.knowledge.ranking import KnowledgeRanking
 from llobot.knowledge.ranking.lexicographical import LexicographicalRanker
 from llobot.knowledge.subsets.empty import EmptySubset
+from llobot.chats.monolithic import monolithic_chat
 
 def test_cram_all_fit():
     """Tests cramming when all documents fit."""
@@ -21,7 +22,7 @@ def test_cram_all_fit():
 
     added = crammer.cram(builder, k)
     assert added == k.keys()
-    chat_content = builder.build().monolithic()
+    chat_content = monolithic_chat(builder.build())
     assert "File: a.txt" in chat_content
     assert "File: b.txt" in chat_content
 
@@ -49,7 +50,7 @@ def test_cram_some_fit():
     assert Path("a.txt") in added
     assert Path("b.txt") in added
     assert Path("c.txt") not in added
-    chat_content = builder.build().monolithic()
+    chat_content = monolithic_chat(builder.build())
     assert "File: a.txt" in chat_content
     assert "File: b.txt" in chat_content
     assert "File: c.txt" not in chat_content

@@ -1,7 +1,7 @@
 from llobot.formats.mentions import parse_mentions, strip_mentions
-from llobot.chats.messages import ChatMessage
-from llobot.chats.branches import ChatBranch
-from llobot.chats.intents import ChatIntent
+from llobot.chats.message import ChatMessage
+from llobot.chats.thread import ChatThread
+from llobot.chats.intent import ChatIntent
 
 def test_parse_empty():
     assert parse_mentions('') == []
@@ -81,12 +81,12 @@ def test_chat_message_input():
     message = ChatMessage(ChatIntent.PROMPT, 'this is a test with @a-mention')
     assert parse_mentions(message) == ['a-mention']
 
-def test_chat_branch_input():
-    branch = ChatBranch([
+def test_chat_thread_input():
+    chat = ChatThread([
         ChatMessage(ChatIntent.PROMPT, 'first message with @one'),
         ChatMessage(ChatIntent.RESPONSE, 'second message with @`two`'),
     ])
-    assert parse_mentions(branch) == ['one', 'two']
+    assert parse_mentions(chat) == ['one', 'two']
 
 def test_strip_empty():
     assert strip_mentions('') == ''

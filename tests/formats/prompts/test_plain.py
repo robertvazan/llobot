@@ -1,5 +1,5 @@
 from llobot.formats.prompts.plain import PlainPromptFormat
-from llobot.chats.intents import ChatIntent
+from llobot.chats.intent import ChatIntent
 
 def test_render():
     formatter = PlainPromptFormat()

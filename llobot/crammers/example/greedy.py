@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Iterable
-from llobot.chats.branches import ChatBranch
-from llobot.chats.builders import ChatBuilder
+from llobot.chats.thread import ChatThread
+from llobot.chats.builder import ChatBuilder
 from llobot.crammers.example import ExampleCrammer
 from llobot.utils.values import ValueTypeMixin
 
@@ -24,7 +24,7 @@ class GreedyExampleCrammer(ExampleCrammer, ValueTypeMixin):
         self._depth = depth
         self._fill = fill
 
-    def cram(self, builder: ChatBuilder, examples: Iterable[ChatBranch]) -> list[ChatBranch]:
+    def cram(self, builder: ChatBuilder, examples: Iterable[ChatThread]) -> list[ChatThread]:
         """
         Greedily adds recent examples to the builder until the budget is filled.
         """

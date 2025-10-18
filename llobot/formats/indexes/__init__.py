@@ -2,7 +2,7 @@
 Formatting knowledge indexes.
 """
 from __future__ import annotations
-from llobot.chats.branches import ChatBranch
+from llobot.chats.thread import ChatThread
 from llobot.knowledge import Knowledge
 from llobot.formats.affirmations import affirmation_turn
 
@@ -25,15 +25,15 @@ class IndexFormat:
         """
         raise NotImplementedError
 
-    def render_chat(self, knowledge: Knowledge) -> ChatBranch:
+    def render_chat(self, knowledge: Knowledge) -> ChatThread:
         """
-        Renders a knowledge index as a chat branch.
+        Renders a knowledge index as a chat thread.
 
         Args:
             knowledge: The knowledge to render.
 
         Returns:
-            A chat branch containing the rendered index, or an empty branch.
+            A chat thread containing the rendered index, or an empty thread.
         """
         rendered = self.render(knowledge)
         return affirmation_turn(rendered)

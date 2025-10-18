@@ -1,8 +1,8 @@
 from pathlib import Path
 from llobot.environments.context import ContextEnv
-from llobot.chats.messages import ChatMessage
-from llobot.chats.intents import ChatIntent
-from llobot.chats.branches import ChatBranch
+from llobot.chats.message import ChatMessage
+from llobot.chats.intent import ChatIntent
+from llobot.chats.thread import ChatThread
 
 def test_context_env():
     env = ContextEnv()
@@ -16,13 +16,13 @@ def test_context_env():
     assert env.build()[0] == msg1
 
     msg2 = ChatMessage(ChatIntent.RESPONSE, "Hi")
-    branch = ChatBranch([msg2])
-    env.add(branch)
+    chat = ChatThread([msg2])
+    env.add(chat)
     assert len(env.build()) == 2
     assert env.build()[1] == msg2
 
     built = env.build()
-    assert isinstance(built, ChatBranch)
+    assert isinstance(built, ChatThread)
     assert len(built) == 2
     assert built[0] == msg1
     assert built[1] == msg2
@@ -48,10 +48,10 @@ def test_context_env_persistence(tmp_path: Path):
     # Test loading
     env2 = ContextEnv()
     env2.load(save_path)
-    branch = env2.build()
-    assert len(branch) == 2
-    assert branch[0] == msg1
-    assert branch[1] == msg2
+    chat = env2.build()
+    assert len(chat) == 2
+    assert chat[0] == msg1
+    assert chat[1] == msg2
 
 def test_context_env_persistence_empty(tmp_path: Path):
     env = ContextEnv()

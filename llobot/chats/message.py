@@ -1,7 +1,6 @@
 from __future__ import annotations
-from llobot.utils.text import concat_documents
 from llobot.utils.values import ValueTypeMixin
-from llobot.chats.intents import ChatIntent
+from llobot.chats.intent import ChatIntent
 
 # Guesstimate of how many chars are consumed per message by typical chat format.
 MESSAGE_OVERHEAD: int = 10
@@ -46,12 +45,6 @@ class ChatMessage(ValueTypeMixin):
 
     def __contains__(self, text: str) -> bool:
         return text in self.content
-
-    def monolithic(self) -> str:
-        """
-        Returns a single-string representation of the message, including its intent.
-        """
-        return concat_documents(f'**{self.intent}:**', self.content)
 
 __all__ = [
     'ChatMessage',

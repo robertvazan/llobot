@@ -2,8 +2,8 @@
 Granular knowledge delta format.
 """
 from __future__ import annotations
-from llobot.chats.builders import ChatBuilder
-from llobot.chats.branches import ChatBranch
+from llobot.chats.builder import ChatBuilder
+from llobot.chats.thread import ChatThread
 from llobot.knowledge.deltas.knowledge import KnowledgeDelta
 from llobot.formats.deltas.documents import DocumentDeltaFormat, standard_document_delta_format
 from llobot.formats.deltas.knowledge import KnowledgeDeltaFormat
@@ -29,7 +29,7 @@ class GranularKnowledgeDeltaFormat(KnowledgeDeltaFormat, ValueTypeMixin):
         """The format used for rendering individual document deltas."""
         return self._document_delta_format
 
-    def render_chat(self, delta: KnowledgeDelta) -> ChatBranch:
+    def render_chat(self, delta: KnowledgeDelta) -> ChatThread:
         """
         Renders a knowledge delta by formatting each document delta individually.
 
@@ -37,7 +37,7 @@ class GranularKnowledgeDeltaFormat(KnowledgeDeltaFormat, ValueTypeMixin):
             delta: The knowledge delta to render.
 
         Returns:
-            A chat branch with each document delta as a separate message turn.
+            A chat thread with each document delta as a separate message turn.
         """
         chat = ChatBuilder()
         for document in delta:

@@ -1,8 +1,8 @@
 from __future__ import annotations
 from functools import cache
 from pathlib import Path
-from llobot.chats.branches import ChatBranch
-from llobot.chats.intents import ChatIntent
+from llobot.chats.thread import ChatThread
+from llobot.chats.intent import ChatIntent
 from llobot.commands import Step
 from llobot.commands.chain import StepChain
 from llobot.commands.custom import CustomStep
@@ -132,7 +132,7 @@ class Editor(Role):
         # Knowledge
         self._knowledge_crammer.cram(builder, knowledge)
 
-    def chat(self, prompt: ChatBranch) -> ModelStream:
+    def chat(self, prompt: ChatThread) -> ModelStream:
         env = Environment()
         env[ProjectEnv].configure(self._project_library)
         context_env = env[ContextEnv]

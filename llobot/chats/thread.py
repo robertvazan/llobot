@@ -1,22 +1,21 @@
 from __future__ import annotations
 from typing import Iterator, Iterable
-from llobot.utils.text import concat_documents
 from llobot.utils.values import ValueTypeMixin
-from llobot.chats.intents import ChatIntent
-from llobot.chats.messages import ChatMessage
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 
-class ChatBranch(ValueTypeMixin):
+class ChatThread(ValueTypeMixin):
     """
     Represents an immutable sequence of chat messages.
 
-    A ChatBranch is a list-like object that holds ChatMessage instances. It provides
-    methods for accessing, combining, and transforming branches.
+    A ChatThread is a list-like object that holds ChatMessage instances. It provides
+    methods for accessing, combining, and transforming threads.
     """
     _messages: tuple[ChatMessage, ...]
 
     def __init__(self, messages: Iterable[ChatMessage] = []):
         """
-        Initializes a new ChatBranch.
+        Initializes a new ChatThread.
 
         Args:
             messages: An iterable of ChatMessage objects.
@@ -25,7 +24,7 @@ class ChatBranch(ValueTypeMixin):
 
     @property
     def messages(self) -> tuple[ChatMessage, ...]:
-        """The tuple of messages in this branch."""
+        """The tuple of messages in this thread."""
         return self._messages
 
     def __repr__(self) -> str:
@@ -39,12 +38,12 @@ class ChatBranch(ValueTypeMixin):
 
     @property
     def cost(self) -> int:
-        """The total estimated cost of all messages in the branch."""
+        """The total estimated cost of all messages in the thread."""
         return sum([message.cost for message in self], 0)
 
-    def __getitem__(self, key: int | slice) -> ChatMessage | ChatBranch:
+    def __getitem__(self, key: int | slice) -> ChatMessage | ChatThread:
         if isinstance(key, slice):
-            return ChatBranch(self._messages[key])
+            return ChatThread(self._messages[key])
         return self._messages[key]
 
     def __iter__(self) -> Iterator[ChatMessage]:
@@ -53,34 +52,28 @@ class ChatBranch(ValueTypeMixin):
     def __contains__(self, text: str) -> bool:
         return any((text in message.content) for message in self)
 
-    def __add__(self, suffix: ChatBranch | ChatMessage | None) -> ChatBranch:
+    def __add__(self, suffix: ChatThread | ChatMessage | None) -> ChatThread:
         """
-        Concatenates this branch with another branch or a single message.
+        Concatenates this thread with another thread or a single message.
         """
         if suffix is None:
             return self
         if isinstance(suffix, ChatMessage):
-            suffix = ChatBranch([suffix])
-        return ChatBranch(self._messages + suffix._messages)
+            suffix = ChatThread([suffix])
+        return ChatThread(self._messages + suffix._messages)
 
     def to_builder(self) -> 'ChatBuilder':
-        """Creates a ChatBuilder initialized with the messages from this branch."""
-        from llobot.chats.builders import ChatBuilder
+        """Creates a ChatBuilder initialized with the messages from this thread."""
+        from llobot.chats.builder import ChatBuilder
         builder = ChatBuilder()
         builder.add(self)
         return builder
 
-    def monolithic(self) -> str:
+    def __and__(self, other: ChatThread) -> ChatThread:
         """
-        Returns a single-string representation of the entire branch.
+        Finds the common prefix between this thread and another.
         """
-        return concat_documents(*(message.monolithic() for message in self))
-
-    def __and__(self, other: ChatBranch) -> ChatBranch:
-        """
-        Finds the common prefix between this branch and another.
-        """
-        from llobot.chats.builders import ChatBuilder
+        from llobot.chats.builder import ChatBuilder
         shared = ChatBuilder()
         for message1, message2 in zip(self, other):
             if message1 == message2:
@@ -90,5 +83,5 @@ class ChatBranch(ValueTypeMixin):
         return shared.build()
 
 __all__ = [
-    'ChatBranch',
+    'ChatThread',
 ]

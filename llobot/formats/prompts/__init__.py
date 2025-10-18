@@ -3,11 +3,11 @@ System prompt formatting.
 
 This package provides the `PromptFormat` base class and implementations for
 rendering system prompts into chat messages. The main purpose is to convert a
-`Prompt` object or a raw string into a `ChatBranch` that can be prepended to
+`Prompt` object or a raw string into a `ChatThread` that can be prepended to
 the conversation history.
 """
 from __future__ import annotations
-from llobot.chats.branches import ChatBranch
+from llobot.chats.thread import ChatThread
 from llobot.prompts import Prompt
 from llobot.formats.affirmations import affirmation_turn
 
@@ -27,9 +27,9 @@ class PromptFormat:
         """
         raise NotImplementedError
 
-    def render_chat(self, prompt: str | Prompt) -> ChatBranch:
+    def render_chat(self, prompt: str | Prompt) -> ChatThread:
         """
-        Renders a prompt as a chat branch.
+        Renders a prompt as a chat thread.
 
         This method renders the prompt to a string and then wraps it in a
         standard system message turn (a system message followed by an
@@ -39,7 +39,7 @@ class PromptFormat:
             prompt: The prompt object or string to render.
 
         Returns:
-            A `ChatBranch` containing the rendered prompt.
+            A `ChatThread` containing the rendered prompt.
         """
         rendered = self.render(prompt)
         return affirmation_turn(rendered)

@@ -1,6 +1,6 @@
 import pytest
-from llobot.chats.intents import ChatIntent
-from llobot.chats.messages import ChatMessage
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 from llobot.environments import Environment
 from llobot.environments.session import SessionEnv
 from llobot.utils.text import concat_documents

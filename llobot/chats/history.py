@@ -1,42 +1,37 @@
 """
 Storage for chat histories.
 
-This package provides the `ChatArchive` interface for storing and retrieving
-chat histories. Archives are organized into zones, which are relative paths.
+This package provides the `ChatHistory` interface for storing and retrieving
+chat histories. Histories are organized into zones, which are relative paths.
 Within each zone, chats are stored by timestamp.
-
-Submodules
-----------
-markdown
-    An implementation of `ChatArchive` that stores chats as Markdown files.
 """
 from __future__ import annotations
 from datetime import datetime
 from typing import Iterable
 from pathlib import Path
-from llobot.chats.branches import ChatBranch
+from llobot.chats.thread import ChatThread
 from llobot.utils.zones import Zoning
 from llobot.utils.fs import data_home
 
-class ChatArchive:
+class ChatHistory:
     """
     An abstract base class for storing and retrieving chat histories.
 
-    Chat archives are organized into zones, which are relative paths.
+    Chat histories are organized into zones, which are relative paths.
     Within each zone, chats are stored by timestamp.
     """
-    def add(self, zone: Path, time: datetime, chat: ChatBranch):
+    def add(self, zone: Path, time: datetime, chat: ChatThread):
         """
-        Adds a chat to the archive.
+        Adds a chat to the history.
 
         Args:
             zone: The zone (a relative path) to store the chat in.
             time: The timestamp for the chat.
-            chat: The chat branch to store.
+            chat: The chat thread to store.
         """
         pass
 
-    def scatter(self, zones: Iterable[Path], time: datetime, chat: ChatBranch):
+    def scatter(self, zones: Iterable[Path], time: datetime, chat: ChatThread):
         """
         Adds the same chat to multiple zones.
 
@@ -45,14 +40,14 @@ class ChatArchive:
         Args:
             zones: The zones to store the chat in.
             time: The timestamp for the chat.
-            chat: The chat branch to store.
+            chat: The chat thread to store.
         """
         for zone in zones:
             self.add(zone, time, chat)
 
     def remove(self, zone: Path, time: datetime):
         """
-        Removes a chat from the archive.
+        Removes a chat from the history.
 
         Args:
             zone: The zone (a relative path) where the chat is stored.
@@ -60,22 +55,22 @@ class ChatArchive:
         """
         pass
 
-    def read(self, zone: Path, time: datetime) -> ChatBranch | None:
+    def read(self, zone: Path, time: datetime) -> ChatThread | None:
         """
-        Reads a specific chat from the archive.
+        Reads a specific chat from the history.
 
         Args:
             zone: The zone (a relative path) where the chat is stored.
             time: The timestamp of the chat to read.
 
         Returns:
-            The ChatBranch if found, otherwise None.
+            The ChatThread if found, otherwise None.
         """
         return None
 
     def contains(self, zone: Path, time: datetime) -> bool:
         """
-        Checks if a specific chat exists in the archive.
+        Checks if a specific chat exists in the history.
 
         Args:
             zone: The zone (a relative path) where the chat is stored.
@@ -86,7 +81,7 @@ class ChatArchive:
         """
         return self.read(zone, time) is not None
 
-    def recent(self, zone: Path, cutoff: datetime | None = None) -> Iterable[tuple[datetime, ChatBranch]]:
+    def recent(self, zone: Path, cutoff: datetime | None = None) -> Iterable[tuple[datetime, ChatThread]]:
         """
         Retrieves recent chats from a zone, newest first.
 
@@ -95,11 +90,11 @@ class ChatArchive:
             cutoff: If specified, only chats at or before this time are returned.
 
         Returns:
-            An iterable of (timestamp, ChatBranch) tuples.
+            An iterable of (timestamp, ChatThread) tuples.
         """
         return []
 
-    def last(self, zone: Path, cutoff: datetime | None = None) -> tuple[datetime | None, ChatBranch | None]:
+    def last(self, zone: Path, cutoff: datetime | None = None) -> tuple[datetime | None, ChatThread | None]:
         """
         Retrieves the most recent chat from a zone.
 
@@ -108,46 +103,46 @@ class ChatArchive:
             cutoff: If specified, the last chat at or before this time is returned.
 
         Returns:
-            A (timestamp, ChatBranch) tuple, or (None, None) if the zone is empty.
+            A (timestamp, ChatThread) tuple, or (None, None) if the zone is empty.
         """
         last_item = next(self.recent(zone, cutoff), None)
         if last_item:
             return last_item
         return None, None
 
-def standard_chat_archive(location: Zoning | Path | str = data_home()/'llobot/chats') -> ChatArchive:
+def standard_chat_history(location: Zoning | Path | str = data_home()/'llobot/chats') -> ChatHistory:
     """
-    Creates a standard chat archive using the markdown implementation.
+    Creates a standard chat history using the markdown implementation.
 
     Args:
-        location: The root directory or zoning configuration for the archive.
+        location: The root directory or zoning configuration for the history.
 
     Returns:
-        A ChatArchive instance.
+        A ChatHistory instance.
     """
-    from llobot.chats.archives.markdown import MarkdownChatArchive
-    return MarkdownChatArchive(location)
+    from llobot.chats.markdown import MarkdownChatHistory
+    return MarkdownChatHistory(location)
 
-def coerce_chat_archive(what: ChatArchive | Zoning | Path | str) -> ChatArchive:
+def coerce_chat_history(what: ChatHistory | Zoning | Path | str) -> ChatHistory:
     """
-    Coerces various types into a ChatArchive instance.
+    Coerces various types into a ChatHistory instance.
 
-    If `what` is already a `ChatArchive`, it's returned as is.
-    Otherwise, it's passed to `standard_chat_archive()` to create a new archive.
+    If `what` is already a `ChatHistory`, it's returned as is.
+    Otherwise, it's passed to `standard_chat_history()` to create a new history.
 
     Args:
         what: The object to coerce.
 
     Returns:
-        A ChatArchive instance.
+        A ChatHistory instance.
     """
-    if isinstance(what, ChatArchive):
+    if isinstance(what, ChatHistory):
         return what
     else:
-        return standard_chat_archive(what)
+        return standard_chat_history(what)
 
 __all__ = [
-    'ChatArchive',
-    'standard_chat_archive',
-    'coerce_chat_archive',
+    'ChatHistory',
+    'standard_chat_history',
+    'coerce_chat_history',
 ]

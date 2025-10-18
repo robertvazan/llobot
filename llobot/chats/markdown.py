@@ -1,5 +1,5 @@
 """
-An implementation of `ChatArchive` that stores chats as Markdown files.
+An implementation of `ChatHistory` that stores chats as Markdown files.
 """
 from __future__ import annotations
 import logging
@@ -8,40 +8,40 @@ from pathlib import Path
 from datetime import datetime
 from typing import Iterable
 from llobot.utils.zones import Zoning, coerce_zoning
-from llobot.chats.branches import ChatBranch
+from llobot.chats.thread import ChatThread
 from llobot.utils.fs import create_parents, read_text, write_text
 from llobot.utils.archives import format_archive_path, parse_archive_path, recent_archive_paths
-from llobot.chats.archives import ChatArchive
-from llobot.chats.intents import ChatIntent
-from llobot.chats.builders import ChatBuilder
-from llobot.chats.messages import ChatMessage
+from llobot.chats.history import ChatHistory
+from llobot.chats.intent import ChatIntent
+from llobot.chats.builder import ChatBuilder
+from llobot.chats.message import ChatMessage
 from llobot.utils.values import ValueTypeMixin
 
 _logger = logging.getLogger(__name__)
 _INTENT_RE = re.compile('> ([A-Z][-A-Za-z]*)')
 
-class MarkdownChatArchive(ChatArchive, ValueTypeMixin):
+class MarkdownChatHistory(ChatHistory, ValueTypeMixin):
     """
-    A chat archive that stores chats as Markdown files on the filesystem.
+    A chat history that stores chats as Markdown files on the filesystem.
     """
     _location: Zoning
 
     def __init__(self, location: Zoning | Path | str):
         """
-        Creates a new markdown-based chat archive.
+        Creates a new markdown-based chat history.
 
         Args:
-            location: The root directory or zoning configuration for the archive.
+            location: The root directory or zoning configuration for the history.
         """
         self._location = coerce_zoning(location)
 
     def _path(self, zone: Path, time: datetime) -> Path:
         return format_archive_path(self._location[zone], time, '.md')
 
-    def add(self, zone: Path, time: datetime, chat: ChatBranch):
-        save_chat_as_markdown(self._path(zone, time), chat)
+    def add(self, zone: Path, time: datetime, chat: ChatThread):
+        save_chat_to_markdown(self._path(zone, time), chat)
 
-    def scatter(self, zones: Iterable[Path], time: datetime, chat: ChatBranch):
+    def scatter(self, zones: Iterable[Path], time: datetime, chat: ChatThread):
         zones = list(zones)
         if not zones:
             return
@@ -60,25 +60,25 @@ class MarkdownChatArchive(ChatArchive, ValueTypeMixin):
     def remove(self, zone: Path, time: datetime):
         self._path(zone, time).unlink(missing_ok=True)
 
-    def read(self, zone: Path, time: datetime) -> ChatBranch | None:
+    def read(self, zone: Path, time: datetime) -> ChatThread | None:
         path = self._path(zone, time)
-        return load_chat_as_markdown(path) if path.exists() else None
+        return load_chat_from_markdown(path) if path.exists() else None
 
     def contains(self, zone: Path, time: datetime) -> bool:
         return self._path(zone, time).exists()
 
-    def recent(self, zone: Path, cutoff: datetime | None = None) -> Iterable[tuple[datetime, ChatBranch]]:
+    def recent(self, zone: Path, cutoff: datetime | None = None) -> Iterable[tuple[datetime, ChatThread]]:
         for path in recent_archive_paths(self._location[zone], '.md', cutoff):
-            yield (parse_archive_path(path), load_chat_as_markdown(path))
+            yield (parse_archive_path(path), load_chat_from_markdown(path))
 
-def format_chat_as_markdown(chat: ChatBranch) -> str:
+def format_chat_as_markdown(chat: ChatThread) -> str:
     """
-    Serializes a chat branch into a Markdown string.
+    Serializes a chat thread into a Markdown string.
 
     Each message is preceded by a blockquote indicating its intent, e.g., `> Prompt`.
 
     Args:
-        chat: The chat branch to format.
+        chat: The chat thread to format.
 
     Returns:
         The Markdown representation of the chat.
@@ -101,9 +101,9 @@ def format_chat_as_markdown(chat: ChatBranch) -> str:
         lines.pop(0)
     return ''.join([l + '\n' for l in lines])
 
-def parse_chat_as_markdown(formatted: str) -> ChatBranch:
+def parse_chat_from_markdown(formatted: str) -> ChatThread:
     """
-    Parses a chat branch from its Markdown representation.
+    Parses a chat thread from its Markdown representation.
 
     This is the reverse of `format_chat_as_markdown()`.
 
@@ -111,7 +111,7 @@ def parse_chat_as_markdown(formatted: str) -> ChatBranch:
         formatted: The Markdown string to parse.
 
     Returns:
-        The parsed chat branch.
+        The parsed chat thread.
 
     Raises:
         ValueError: If the format is invalid.
@@ -149,32 +149,32 @@ def parse_chat_as_markdown(formatted: str) -> ChatBranch:
         builder.add(ChatMessage(intent, '\n'.join(lines[1:])))
     return builder.build()
 
-def save_chat_as_markdown(path: Path, chat: ChatBranch):
+def save_chat_to_markdown(path: Path, chat: ChatThread):
     """
-    Saves a chat branch to a Markdown file.
+    Saves a chat thread to a Markdown file.
 
     Args:
         path: The path to the file.
-        chat: The chat branch to save.
+        chat: The chat thread to save.
     """
     write_text(path, format_chat_as_markdown(chat))
 
-def load_chat_as_markdown(path: Path) -> ChatBranch:
+def load_chat_from_markdown(path: Path) -> ChatThread:
     """
-    Loads a chat branch from a Markdown file.
+    Loads a chat thread from a Markdown file.
 
     Args:
         path: The path to the file.
 
     Returns:
-        The loaded chat branch.
+        The loaded chat thread.
     """
-    return parse_chat_as_markdown(read_text(path))
+    return parse_chat_from_markdown(read_text(path))
 
 __all__ = [
-    'MarkdownChatArchive',
+    'MarkdownChatHistory',
     'format_chat_as_markdown',
-    'parse_chat_as_markdown',
-    'save_chat_as_markdown',
-    'load_chat_as_markdown',
+    'parse_chat_from_markdown',
+    'save_chat_to_markdown',
+    'load_chat_from_markdown',
 ]

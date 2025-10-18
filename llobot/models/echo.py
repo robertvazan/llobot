@@ -3,7 +3,8 @@ An echo model for testing and debugging.
 """
 from __future__ import annotations
 from llobot.models import Model
-from llobot.chats.branches import ChatBranch
+from llobot.chats.thread import ChatThread
+from llobot.chats.monolithic import monolithic_chat
 from llobot.models.streams import ModelStream, text_stream
 from llobot.utils.values import ValueTypeMixin
 
@@ -33,17 +34,17 @@ class EchoModel(Model, ValueTypeMixin):
     def context_budget(self) -> int:
         return self._context_budget
 
-    def generate(self, prompt: ChatBranch) -> ModelStream:
+    def generate(self, prompt: ChatThread) -> ModelStream:
         """
         Generates a response by returning the prompt's content as a stream.
 
         Args:
-            prompt: The chat branch to echo.
+            prompt: The chat thread to echo.
 
         Returns:
             A `ModelStream` containing the monolithic prompt content.
         """
-        return text_stream(prompt.monolithic())
+        return text_stream(monolithic_chat(prompt))
 
 __all__ = [
     'EchoModel',

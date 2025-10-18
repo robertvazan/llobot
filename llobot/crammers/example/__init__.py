@@ -4,8 +4,8 @@ Crammers for selecting few-shot examples.
 from __future__ import annotations
 from functools import cache
 from typing import Iterable
-from llobot.chats.branches import ChatBranch
-from llobot.chats.builders import ChatBuilder
+from llobot.chats.thread import ChatThread
+from llobot.chats.builder import ChatBuilder
 
 class ExampleCrammer:
     """
@@ -14,7 +14,7 @@ class ExampleCrammer:
     An example crammer's goal is to select a subset of provided examples
     that fit within the budget of a `ChatBuilder`.
     """
-    def cram(self, builder: ChatBuilder, examples: Iterable[ChatBranch]) -> list[ChatBranch]:
+    def cram(self, builder: ChatBuilder, examples: Iterable[ChatThread]) -> list[ChatThread]:
         """
         Selects examples and adds them to the builder.
 

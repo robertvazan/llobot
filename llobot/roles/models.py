@@ -1,6 +1,6 @@
 from __future__ import annotations
 import logging
-from llobot.chats.branches import ChatBranch
+from llobot.chats.thread import ChatThread
 from llobot.models import Model
 from llobot.models.streams import ModelStream, exception_stream
 from llobot.roles import Role
@@ -34,7 +34,7 @@ class RoleModel(Model, ValueTypeMixin):
     def name(self) -> str:
         return self._role.name
 
-    def generate(self, prompt: ChatBranch) -> ModelStream:
+    def generate(self, prompt: ChatThread) -> ModelStream:
         """
         Generates a response by invoking the role's chat method.
 
@@ -47,7 +47,7 @@ class RoleModel(Model, ValueTypeMixin):
         conversations while presenting a single-message interface.
 
         Args:
-            prompt: The user's prompt as a chat branch.
+            prompt: The user's prompt as a chat thread.
 
         Returns:
             A model stream with the generated response

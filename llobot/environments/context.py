@@ -1,9 +1,9 @@
 from __future__ import annotations
 from pathlib import Path
-from llobot.chats.archives.markdown import load_chat_as_markdown, save_chat_as_markdown
-from llobot.chats.branches import ChatBranch
-from llobot.chats.builders import ChatBuilder
-from llobot.chats.messages import ChatMessage
+from llobot.chats.markdown import load_chat_from_markdown, save_chat_to_markdown
+from llobot.chats.thread import ChatThread
+from llobot.chats.builder import ChatBuilder
+from llobot.chats.message import ChatMessage
 from llobot.environments.persistent import PersistentEnv
 
 class ContextEnv(PersistentEnv):
@@ -30,15 +30,15 @@ class ContextEnv(PersistentEnv):
         """
         return self._builder
 
-    def add(self, branch: ChatBranch | ChatMessage | None):
+    def add(self, branch: ChatThread | ChatMessage | None):
         """
         Adds messages to the context.
         """
         self._builder.add(branch)
 
-    def build(self) -> ChatBranch:
+    def build(self) -> ChatThread:
         """
-        Builds the final `ChatBranch` from the accumulated messages.
+        Builds the final `ChatThread` from the accumulated messages.
         """
         return self._builder.build()
 
@@ -48,7 +48,7 @@ class ContextEnv(PersistentEnv):
 
         The file is created even if the context is empty.
         """
-        save_chat_as_markdown(directory / 'context.md', self.build())
+        save_chat_to_markdown(directory / 'context.md', self.build())
 
     def load(self, directory: Path):
         """
@@ -58,8 +58,8 @@ class ContextEnv(PersistentEnv):
         """
         path = directory / 'context.md'
         if path.exists():
-            branch = load_chat_as_markdown(path)
-            self._builder = branch.to_builder()
+            chat = load_chat_from_markdown(path)
+            self._builder = chat.to_builder()
         else:
             self._builder = ChatBuilder()
 

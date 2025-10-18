@@ -2,9 +2,10 @@
 Tests for the EchoModel.
 """
 from __future__ import annotations
-from llobot.chats.branches import ChatBranch
-from llobot.chats.messages import ChatMessage
-from llobot.chats.intents import ChatIntent
+from llobot.chats.thread import ChatThread
+from llobot.chats.message import ChatMessage
+from llobot.chats.intent import ChatIntent
+from llobot.chats.monolithic import monolithic_chat
 from llobot.models.echo import EchoModel
 
 def test_value_type():
@@ -23,10 +24,10 @@ def test_generate():
     Tests that EchoModel correctly echoes the prompt.
     """
     model = EchoModel('echo')
-    prompt = ChatBranch([
+    prompt = ChatThread([
         ChatMessage(ChatIntent.SYSTEM, "System prompt."),
         ChatMessage(ChatIntent.PROMPT, "User prompt.")
     ])
     response_stream = model.generate(prompt)
     response = "".join(response_stream)
-    assert response == prompt.monolithic()
+    assert response == monolithic_chat(prompt)

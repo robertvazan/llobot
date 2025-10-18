@@ -36,13 +36,13 @@ The core interaction is orchestrated by a [`Role`](llobot/roles/__init__.py). Wh
 
 The `Role` performs "context stuffing". It uses [`Crammer`s](llobot/crammers/__init__.py) to select the most relevant information (e.g., knowledge documents, few-shot examples from [`ExampleMemory`](llobot/memories/examples.py)) that fits within the [`Model`'s](llobot/models/__init__.py) context budget. This content is rendered into clean, human-readable Markdown by components from the [`formats`](llobot/formats/__init__.py) package.
 
-Finally, the assembled context, represented as a [`ChatBranch`](llobot/chats/branches.py), is sent to the backend [`Model`](llobot/models/__init__.py) (e.g., Ollama, OpenAI) for generation. The response is streamed back to the user.
+Finally, the assembled context, represented as a [`ChatThread`](llobot/chats/thread.py), is sent to the backend [`Model`](llobot/models/__init__.py) (e.g., Ollama, OpenAI) for generation. The response is streamed back to the user.
 
 ## Conventions
 
 Llobot follows several architectural patterns and conventions that are important for contributors to understand:
 
-- **Immutability and Builders**: Core data structures like [`Knowledge`](llobot/knowledge/__init__.py) and [`ChatBranch`](llobot/chats/branches.py) are immutable. Some of them have associated mutable `Builder` classes (e.g., [`ChatBuilder`](llobot/chats/builders.py)). Algorithm classes like [`Model`](llobot/models/__init__.py) and [`Role`](llobot/roles/__init__.py) are also immutable.
+- **Immutability and Builders**: Core data structures like [`Knowledge`](llobot/knowledge/__init__.py) and [`ChatThread`](llobot/chats/thread.py) are immutable. Some of them have associated mutable `Builder` classes (e.g., [`ChatBuilder`](llobot/chats/builder.py)). Algorithm classes like [`Model`](llobot/models/__init__.py) and [`Role`](llobot/roles/__init__.py) are also immutable.
 - **Value Types**: Most classes are immutable value types that inherit from [`ValueTypeMixin`](llobot/utils/values.py). This provides automatic implementations of `__eq__`, `__hash__`, and `__repr__` based on an object's attributes. Aside from benefiting testing and debugging, this importantly enables function caching (e.g., with `@lru_cache` or `@cache`) even when parameters are complex types.
 - **Composition**: Many components can be combined using the `|` (`__or__`) operator. This pattern is used in [`KnowledgeSubset`](llobot/knowledge/subsets/__init__.py), [`KnowledgeIndex`](llobot/knowledge/indexes.py), [`Project`](llobot/projects/__init__.py), and many others classes to create composite objects from simpler parts.
 - **Coercion Functions**: Functions like [`coerce_subset()`](llobot/knowledge/subsets/__init__.py), [`coerce_index()`](llobot/knowledge/indexes.py), and [`coerce_zoning()`](llobot/utils/zones/__init__.py) provide API flexibility by accepting various input types (e.g., a `str` pattern, a `Path`, or a [`Knowledge`](llobot/knowledge/__init__.py) object) and converting them into the required class (e.g., a `KnowledgeSubset`).

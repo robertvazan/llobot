@@ -8,6 +8,7 @@ from llobot.knowledge import Knowledge
 from llobot.knowledge.ranking import KnowledgeRanking
 from llobot.knowledge.ranking.lexicographical import rank_lexicographically
 from llobot.knowledge.ranking.rankers import KnowledgeRanker
+from llobot.chats.monolithic import monolithic_chat
 
 
 class ReversedLexicographicalRanker(KnowledgeRanker):
@@ -40,8 +41,8 @@ def test_one_retrieval():
     step.process(env)
     context = env[ContextEnv]
     assert context.populated
-    assert 'File: a.txt' in context.build().monolithic()
-    assert 'content a' in context.build().monolithic()
+    assert 'File: a.txt' in monolithic_chat(context.build())
+    assert 'content a' in monolithic_chat(context.build())
     assert not env[RetrievalsEnv].get()
 
 def test_multiple_retrievals():
@@ -51,7 +52,7 @@ def test_multiple_retrievals():
     env[RetrievalsEnv].add(Path('a.txt'))
     step.process(env)
     context = env[ContextEnv]
-    monolithic = context.build().monolithic()
+    monolithic = monolithic_chat(context.build())
     assert 'File: a.txt' in monolithic
     assert 'content a' in monolithic
     assert 'File: b.txt' in monolithic
@@ -67,7 +68,7 @@ def test_ranking_order():
     env[RetrievalsEnv].add(Path('b.txt'))
     step.process(env)
     context = env[ContextEnv]
-    monolithic = context.build().monolithic()
+    monolithic = monolithic_chat(context.build())
     pos_a = monolithic.find('File: a.txt')
     pos_b = monolithic.find('File: b.txt')
     pos_c = monolithic.find('File: c.txt')

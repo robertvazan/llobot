@@ -2,27 +2,27 @@
 Submessage formatting for packing multiple messages into one.
 """
 from __future__ import annotations
-from llobot.chats.branches import ChatBranch
-from llobot.chats.builders import ChatBuilder
-from llobot.chats.intents import ChatIntent
+from llobot.chats.thread import ChatThread
+from llobot.chats.builder import ChatBuilder
+from llobot.chats.intent import ChatIntent
 from llobot.models.streams import ModelStream
 
 class SubmessageFormat:
     """
     Base class for submessage formats.
 
-    Submessage formats pack a `ChatBranch` into a single string.
-    They can also parse the formatted string back into a `ChatBranch`.
+    Submessage formats pack a `ChatThread` into a single string.
+    They can also parse the formatted string back into a `ChatThread`.
     """
-    def render(self, chat: ChatBranch) -> str:
+    def render(self, chat: ChatThread) -> str:
         """
-        Renders a chat branch into a single string.
+        Renders a chat thread into a single string.
 
         Args:
-            chat: The chat branch to render.
+            chat: The chat thread to render.
 
         Returns:
-            A single string representing the branch.
+            A single string representing the thread.
         """
         raise NotImplementedError
 
@@ -38,27 +38,27 @@ class SubmessageFormat:
         """
         raise NotImplementedError
 
-    def parse(self, formatted: str) -> ChatBranch:
+    def parse(self, formatted: str) -> ChatThread:
         """
-        Parses a formatted string back into a chat branch.
+        Parses a formatted string back into a chat thread.
 
         Args:
             formatted: The string to parse.
 
         Returns:
-            A `ChatBranch` object.
+            A `ChatThread` object.
         """
         raise NotImplementedError
 
-    def parse_chat(self, chat: ChatBranch) -> ChatBranch:
+    def parse_chat(self, chat: ChatThread) -> ChatThread:
         """
-        Parses submessages within RESPONSE messages of a chat branch.
+        Parses submessages within RESPONSE messages of a chat thread.
 
         Args:
-            chat: The chat branch to parse.
+            chat: The chat thread to parse.
 
         Returns:
-            A new `ChatBranch` with submessages expanded.
+            A new `ChatThread` with submessages expanded.
         """
         builder = ChatBuilder()
         for message in chat:

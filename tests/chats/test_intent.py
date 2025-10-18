@@ -1,5 +1,5 @@
 import pytest
-from llobot.chats.intents import ChatIntent
+from llobot.chats.intent import ChatIntent
 
 def test_str():
     """Tests that str(intent) returns its value."""

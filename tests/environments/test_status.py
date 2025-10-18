@@ -1,5 +1,5 @@
-from llobot.chats.intents import ChatIntent
-from llobot.chats.messages import ChatMessage
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 from llobot.environments.status import StatusEnv
 
 def test_status_env():

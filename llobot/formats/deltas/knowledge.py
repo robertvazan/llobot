@@ -2,7 +2,7 @@
 Knowledge delta format.
 """
 from __future__ import annotations
-from llobot.chats.branches import ChatBranch
+from llobot.chats.thread import ChatThread
 from llobot.knowledge import Knowledge
 from llobot.knowledge.deltas.knowledge import KnowledgeDelta, fresh_knowledge_delta
 from llobot.knowledge.ranking import KnowledgeRanking
@@ -32,15 +32,15 @@ class KnowledgeDeltaFormat:
         """
         return concat_documents(*(self.document_delta_format.render(d) for d in delta))
 
-    def render_chat(self, delta: KnowledgeDelta) -> ChatBranch:
+    def render_chat(self, delta: KnowledgeDelta) -> ChatThread:
         """
-        Renders a knowledge delta as a chat branch.
+        Renders a knowledge delta as a chat thread.
 
         Args:
             delta: The knowledge delta to render.
 
         Returns:
-            A `ChatBranch` containing the rendered delta.
+            A `ChatThread` containing the rendered delta.
         """
         raise NotImplementedError
 
@@ -58,16 +58,16 @@ class KnowledgeDeltaFormat:
         delta = fresh_knowledge_delta(knowledge, ranking)
         return self.render(delta)
 
-    def render_fresh_chat(self, knowledge: Knowledge, ranking: KnowledgeRanking | None = None) -> ChatBranch:
+    def render_fresh_chat(self, knowledge: Knowledge, ranking: KnowledgeRanking | None = None) -> ChatThread:
         """
-        Renders a fresh knowledge state as a chat branch.
+        Renders a fresh knowledge state as a chat thread.
 
         Args:
             knowledge: The knowledge base to render.
             ranking: An optional ranking to order the documents.
 
         Returns:
-            A `ChatBranch` containing the rendered knowledge.
+            A `ChatThread` containing the rendered knowledge.
         """
         delta = fresh_knowledge_delta(knowledge, ranking)
         return self.render_chat(delta)

@@ -5,11 +5,11 @@ from pathlib import Path
 from typing import Iterable
 from heapq import merge
 from itertools import chain
-from llobot.chats.archives import ChatArchive, standard_chat_archive, coerce_chat_archive
+from llobot.chats.history import ChatHistory, standard_chat_history, coerce_chat_history
 from llobot.chats.binarization import binarize_intent
-from llobot.chats.branches import ChatBranch
-from llobot.chats.intents import ChatIntent
-from llobot.chats.messages import ChatMessage
+from llobot.chats.thread import ChatThread
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 from llobot.environments import Environment
 from llobot.environments.cutoff import CutoffEnv
 from llobot.environments.projects import ProjectEnv
@@ -23,27 +23,27 @@ class ExampleMemory:
     """
     Manages storage and retrieval of example chats for roles.
 
-    Examples are stored in a ChatArchive and organized into zones based on
+    Examples are stored in a ChatHistory and organized into zones based on
     project zones and role names. This allows roles to retrieve relevant examples
     during context stuffing.
     """
     _role_name: str | None
-    _archive: ChatArchive
+    _history: ChatHistory
 
     def __init__(self,
         role_name: str | None = None,
         *,
-        archive: ChatArchive | Zoning | Path | str = standard_chat_archive(data_home()/'llobot/examples'),
+        history: ChatHistory | Zoning | Path | str = standard_chat_history(data_home()/'llobot/examples'),
     ):
         """
         Initializes the ExampleMemory.
 
         Args:
             role_name: The name of the role this memory is for.
-            archive: The chat archive for storing examples.
+            history: The chat history for storing examples.
         """
         self._role_name = role_name
-        self._archive = coerce_chat_archive(archive)
+        self._history = coerce_chat_history(history)
 
     def _zones(self, env: Environment) -> list[Path]:
         """
@@ -60,7 +60,7 @@ class ExampleMemory:
             zones.extend(sorted(list(project_zones)))
         return zones
 
-    def save(self, chat: ChatBranch, env: Environment):
+    def save(self, chat: ChatThread, env: Environment):
         """
         Saves a chat as an example.
 
@@ -68,7 +68,7 @@ class ExampleMemory:
         environment. Replaces the last example if it has the same prompt.
 
         Args:
-            chat: The chat branch to save.
+            chat: The chat thread to save.
             env: The environment containing project and other context.
 
         Raises:
@@ -80,16 +80,16 @@ class ExampleMemory:
 
         # Replace the last example if it has the same prompt.
         for zone in zones:
-            last_time, last_chat = self._archive.last(zone)
+            last_time, last_chat = self._history.last(zone)
             if last_chat and len(last_chat) > 0 and len(chat) > 0 and last_chat[0].content == chat[0].content:
-                self._archive.remove(zone, last_time)
+                self._history.remove(zone, last_time)
 
         time = current_time()
-        self._archive.scatter(zones, time, chat)
+        self._history.scatter(zones, time, chat)
         _logger.info(f"Archived example: {', '.join(map(str, zones))}")
 
-    def _as_example(self, chat: ChatBranch) -> ChatBranch:
-        """Converts all messages in a chat branch to their example versions."""
+    def _as_example(self, chat: ChatThread) -> ChatThread:
+        """Converts all messages in a chat thread to their example versions."""
         messages = []
         for message in chat:
             if binarize_intent(message.intent) == ChatIntent.RESPONSE:
@@ -97,9 +97,9 @@ class ExampleMemory:
             else:
                 example_intent = ChatIntent.EXAMPLE_PROMPT
             messages.append(ChatMessage(example_intent, message.content))
-        return ChatBranch(messages)
+        return ChatThread(messages)
 
-    def recent(self, env: Environment) -> Iterable[ChatBranch]:
+    def recent(self, env: Environment) -> Iterable[ChatThread]:
         """
         Retrieves recent examples.
 
@@ -112,7 +112,7 @@ class ExampleMemory:
             env: The environment containing projects and cutoff time.
 
         Returns:
-            An iterable of recent example chat branches.
+            An iterable of recent example chat threads.
         """
         cutoff = env[CutoffEnv].get()
         seen = set()
@@ -125,10 +125,10 @@ class ExampleMemory:
             role_path = Path(self._role_name)
             if role_path in project_zones:
                 project_zones.remove(role_path)
-                role_zone_iter = self._archive.recent(role_path, cutoff)
+                role_zone_iter = self._history.recent(role_path, cutoff)
 
         # Merge examples from all project zones, sorted by time descending.
-        project_iters = [self._archive.recent(zone, cutoff) for zone in project_zones]
+        project_iters = [self._history.recent(zone, cutoff) for zone in project_zones]
         merged_project_examples = merge(*project_iters, key=lambda item: item[0], reverse=True)
 
         all_examples = chain(merged_project_examples, role_zone_iter)

@@ -5,9 +5,9 @@ This module provides functions to normalize a chat into a strict alternating
 sequence of PROMPT and RESPONSE messages, which is required by many LLM APIs.
 """
 from __future__ import annotations
-from llobot.chats.intents import ChatIntent
-from llobot.chats.messages import ChatMessage
-from llobot.chats.branches import ChatBranch
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
+from llobot.chats.thread import ChatThread
 
 def binarize_intent(intent: ChatIntent) -> ChatIntent:
     """
@@ -25,9 +25,9 @@ def binarize_message(message: ChatMessage) -> ChatMessage:
     """
     return ChatMessage(binarize_intent(message.intent), message.content)
 
-def binarize_chat(chat: ChatBranch, *, last: ChatIntent | None = None) -> ChatBranch:
+def binarize_chat(chat: ChatThread, *, last: ChatIntent | None = None) -> ChatThread:
     """
-    Normalizes a chat branch into a strict alternating sequence of PROMPT and RESPONSE messages.
+    Normalizes a chat thread into a strict alternating sequence of PROMPT and RESPONSE messages.
 
     This method performs several normalization steps:
     - Reorders prompt-session message pairs to session-prompt pairs.
@@ -37,11 +37,11 @@ def binarize_chat(chat: ChatBranch, *, last: ChatIntent | None = None) -> ChatBr
     - Ensures the last message has the specified intent, appending "Go on" or "Okay" if necessary.
 
     Args:
-        chat: The chat branch to normalize.
+        chat: The chat thread to normalize.
         last: The expected intent of the last message. If None, the final message intent is not enforced.
 
     Returns:
-        A new, normalized ChatBranch.
+        A new, normalized ChatThread.
     """
     # Use local import to avoid circular dependency
     from llobot.formats.affirmations import affirmation_message
@@ -88,7 +88,7 @@ def binarize_chat(chat: ChatBranch, *, last: ChatIntent | None = None) -> ChatBr
             else:  # RESPONSE
                 final_messages.append(binarize_message(affirmation_message()))
 
-    return ChatBranch(final_messages)
+    return ChatThread(final_messages)
 
 __all__ = [
     'binarize_intent',

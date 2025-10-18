@@ -1,5 +1,5 @@
 from pathlib import Path
-from llobot.chats.builders import ChatBuilder
+from llobot.chats.builder import ChatBuilder
 from llobot.crammers.index.optional import OptionalIndexCrammer
 from llobot.formats.indexes import IndexFormat
 from llobot.knowledge import Knowledge

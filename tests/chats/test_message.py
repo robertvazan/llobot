@@ -1,5 +1,5 @@
-from llobot.chats.intents import ChatIntent
-from llobot.chats.messages import ChatMessage
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 
 def test_properties():
     """Tests basic properties of ChatMessage."""
@@ -26,8 +26,3 @@ def test_contains():
     assert "Hello" in msg
     assert "world" in msg
     assert "foo" not in msg
-
-def test_monolithic():
-    """Tests the monolithic string representation."""
-    msg = ChatMessage(ChatIntent.PROMPT, "Hello")
-    assert msg.monolithic() == "**Prompt:**\n\nHello"

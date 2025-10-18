@@ -1,9 +1,9 @@
 from __future__ import annotations
 import json
 from typing import Iterable
-from llobot.chats.intents import ChatIntent
-from llobot.chats.messages import ChatMessage
-from llobot.chats.branches import ChatBranch
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
+from llobot.chats.thread import ChatThread
 from llobot.chats.binarization import binarize_intent
 
 def _format_model_name(name: str) -> str:
@@ -23,17 +23,17 @@ def _encode_message(message: ChatMessage) -> dict:
         'content': message.content
     }
 
-def _encode_chat(branch: ChatBranch) -> list:
-    return [_encode_message(message) for message in branch]
+def _encode_chat(chat: ChatThread) -> list:
+    return [_encode_message(message) for message in chat]
 
-def encode_request(model: str, options: dict, prompt: ChatBranch) -> dict:
+def encode_request(model: str, options: dict, prompt: ChatThread) -> dict:
     """
     Encodes a chat request for the Ollama API.
 
     Args:
         model: The model ID.
         options: A dictionary of Ollama options.
-        prompt: The chat branch to send.
+        prompt: The chat thread to send.
 
     Returns:
         A dictionary representing the JSON request body.

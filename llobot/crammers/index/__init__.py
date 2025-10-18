@@ -3,7 +3,7 @@ Crammers for formatting and including file indexes.
 """
 from __future__ import annotations
 from functools import cache
-from llobot.chats.builders import ChatBuilder
+from llobot.chats.builder import ChatBuilder
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 

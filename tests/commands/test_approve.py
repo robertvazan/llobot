@@ -1,7 +1,7 @@
 from pathlib import Path
-from llobot.chats.archives import standard_chat_archive
-from llobot.chats.intents import ChatIntent
-from llobot.chats.messages import ChatMessage
+from llobot.chats.history import standard_chat_history
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 from llobot.commands.approve import ApproveCommand
 from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
@@ -10,8 +10,8 @@ from llobot.environments.status import StatusEnv
 from llobot.memories.examples import ExampleMemory
 
 def test_approve_command(tmp_path: Path):
-    archive = standard_chat_archive(tmp_path)
-    examples = ExampleMemory('test-role', archive=archive)
+    history = standard_chat_history(tmp_path)
+    examples = ExampleMemory('test-role', history=history)
     command = ApproveCommand(examples)
     env = Environment()
 
@@ -44,8 +44,8 @@ def test_approve_command(tmp_path: Path):
     assert example[1].content == "Approved response."
 
 def test_approve_command_full_chat(tmp_path: Path):
-    archive = standard_chat_archive(tmp_path)
-    examples = ExampleMemory('test-role', archive=archive)
+    history = standard_chat_history(tmp_path)
+    examples = ExampleMemory('test-role', history=history)
     command = ApproveCommand(examples)
     env = Environment()
 
@@ -76,8 +76,8 @@ def test_approve_command_full_chat(tmp_path: Path):
     assert example[2].content == "User prompt 2"
 
 def test_approve_command_empty_stripped_prompt(tmp_path: Path):
-    archive = standard_chat_archive(tmp_path)
-    examples = ExampleMemory('test-role', archive=archive)
+    history = standard_chat_history(tmp_path)
+    examples = ExampleMemory('test-role', history=history)
     command = ApproveCommand(examples)
     env = Environment()
 
@@ -107,8 +107,8 @@ def test_approve_command_empty_stripped_prompt(tmp_path: Path):
     assert example[1].content == "Model response 1"
 
 def test_approve_command_not_last(tmp_path: Path):
-    archive = standard_chat_archive(tmp_path)
-    examples = ExampleMemory('test-role', archive=archive)
+    history = standard_chat_history(tmp_path)
+    examples = ExampleMemory('test-role', history=history)
     command = ApproveCommand(examples)
     env = Environment()
 

@@ -3,9 +3,9 @@ from pathlib import Path
 from llobot.formats.deltas.documents import standard_document_delta_format
 from llobot.knowledge.deltas.documents import DocumentDelta
 from llobot.knowledge.deltas.knowledge import KnowledgeDelta
-from llobot.chats.messages import ChatMessage
-from llobot.chats.branches import ChatBranch
-from llobot.chats.intents import ChatIntent
+from llobot.chats.message import ChatMessage
+from llobot.chats.thread import ChatThread
+from llobot.chats.intent import ChatIntent
 
 def test_render_file():
     formatter = standard_document_delta_format()
@@ -122,7 +122,7 @@ def test_parse_message():
 
 def test_parse_chat():
     formatter = standard_document_delta_format()
-    chat = ChatBranch([
+    chat = ChatThread([
         ChatMessage(ChatIntent.PROMPT, "Please make some changes."),
         ChatMessage(ChatIntent.RESPONSE, dedent("""
             Sure! Here's what I'll do:

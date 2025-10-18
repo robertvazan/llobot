@@ -1,14 +1,14 @@
 from __future__ import annotations
-from llobot.chats.branches import ChatBranch
-from llobot.chats.intents import ChatIntent
-from llobot.chats.messages import ChatMessage
+from llobot.chats.thread import ChatThread
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 from llobot.models.streams import ModelStream
 
 class ChatBuilder:
     """
-    A mutable builder for constructing ChatBranch instances.
+    A mutable builder for constructing ChatThread instances.
 
-    The builder allows for incrementally adding messages or entire branches,
+    The builder allows for incrementally adding messages or entire threads,
     and it merges consecutive messages that have the same intent.
 
     It supports a budget for content size, and speculative appends via `mark()`
@@ -82,23 +82,23 @@ class ChatBuilder:
         """The total estimated cost of all messages currently in the builder."""
         return self.build().cost
 
-    def __getitem__(self, key: int | slice) -> ChatMessage | ChatBranch:
+    def __getitem__(self, key: int | slice) -> ChatMessage | ChatThread:
         if isinstance(key, slice):
-            return ChatBranch(self._messages[key])
+            return ChatThread(self._messages[key])
         return self._messages[key]
 
-    def add(self, what: ChatMessage | ChatBranch | None):
+    def add(self, what: ChatMessage | ChatThread | None):
         """
         Adds content to the chat.
 
-        - A `ChatBranch` adds all its messages.
+        - A `ChatThread` adds all its messages.
         - A `ChatMessage` is appended.
         - `None` is ignored.
 
         Args:
             what: The content to add.
         """
-        if isinstance(what, ChatBranch):
+        if isinstance(what, ChatThread):
             for message in what:
                 self.add(message)
         elif isinstance(what, ChatMessage):
@@ -147,9 +147,9 @@ class ChatBuilder:
             content = "".join(current_content_parts)
             self.add(ChatMessage(current_intent, content))
 
-    def build(self) -> ChatBranch:
-        """Constructs an immutable ChatBranch from the current state of the builder."""
-        return ChatBranch(self._messages)
+    def build(self) -> ChatThread:
+        """Constructs an immutable ChatThread from the current state of the builder."""
+        return ChatThread(self._messages)
 
 __all__ = [
     'ChatBuilder',
