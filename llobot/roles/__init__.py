@@ -26,7 +26,7 @@ prompts for the respective roles.
 
 from __future__ import annotations
 from llobot.chats.thread import ChatThread
-from llobot.models.streams import ModelStream
+from llobot.chats.stream import ChatStream
 
 class Role:
     @property
@@ -37,7 +37,7 @@ class Role:
     def __str__(self) -> str:
         return self.name
 
-    def chat(self, prompt: ChatThread) -> ModelStream:
+    def chat(self, prompt: ChatThread) -> ChatStream:
         """
         Processes user's prompt and returns response as a stream.
 

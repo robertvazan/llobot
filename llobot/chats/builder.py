@@ -2,7 +2,7 @@ from __future__ import annotations
 from llobot.chats.thread import ChatThread
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
-from llobot.models.streams import ModelStream
+from llobot.chats.stream import ChatStream
 
 class ChatBuilder:
     """
@@ -108,17 +108,17 @@ class ChatBuilder:
         else:
             raise TypeError(what)
 
-    def record(self, stream: ModelStream) -> ModelStream:
+    def record(self, stream: ChatStream) -> ChatStream:
         """
         Records a model stream while passing it through.
 
-        This method iterates over a `ModelStream`, appends the resulting chat
+        This method iterates over a `ChatStream`, appends the resulting chat
         messages to the builder, and yields the stream's items unchanged. It
         acts as a pass-through that records the conversation. The stream is
-        interpreted according to the rules in `llobot.models.streams`.
+        interpreted according to the rules in `llobot.chats.stream`.
 
         Args:
-            stream: The `ModelStream` to record.
+            stream: The `ChatStream` to record.
 
         Yields:
             The items from the input stream.
@@ -128,20 +128,14 @@ class ChatBuilder:
 
         for item in stream:
             yield item
-            if current_intent is None:
-                if isinstance(item, ChatIntent):
-                    current_intent = item
-                else:  # str
-                    current_intent = ChatIntent.RESPONSE
-                    current_content_parts.append(item)
-            else:
-                if isinstance(item, ChatIntent):
+            if isinstance(item, ChatIntent):
+                if current_intent is not None:
                     content = "".join(current_content_parts)
                     self.add(ChatMessage(current_intent, content))
-                    current_intent = item
-                    current_content_parts = []
-                else:  # str
-                    current_content_parts.append(item)
+                current_intent = item
+                current_content_parts = []
+            else:  # str
+                current_content_parts.append(item)
 
         if current_intent is not None:
             content = "".join(current_content_parts)

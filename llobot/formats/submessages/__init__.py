@@ -5,7 +5,7 @@ from __future__ import annotations
 from llobot.chats.thread import ChatThread
 from llobot.chats.builder import ChatBuilder
 from llobot.chats.intent import ChatIntent
-from llobot.models.streams import ModelStream
+from llobot.chats.stream import ChatStream
 
 class SubmessageFormat:
     """
@@ -26,7 +26,7 @@ class SubmessageFormat:
         """
         raise NotImplementedError
 
-    def render_stream(self, stream: ModelStream) -> ModelStream:
+    def render_stream(self, stream: ChatStream) -> ChatStream:
         """
         Renders a model stream into a single message stream.
 
@@ -34,7 +34,7 @@ class SubmessageFormat:
             stream: The model stream to format.
 
         Returns:
-            A new stream of strings containing the formatted output.
+            A new stream containing the formatted output as a single message.
         """
         raise NotImplementedError
 

@@ -4,7 +4,7 @@ from anthropic import Anthropic
 from llobot.chats.intent import ChatIntent
 from llobot.chats.thread import ChatThread
 from llobot.models import Model
-from llobot.models.streams import ModelStream, buffer_stream
+from llobot.chats.stream import ChatStream, buffer_stream
 from llobot.chats.binarization import binarize_chat
 from llobot.utils.values import ValueTypeMixin
 
@@ -69,8 +69,8 @@ class AnthropicModel(Model, ValueTypeMixin):
     def context_budget(self) -> int:
         return self._context_budget
 
-    def generate(self, prompt: ChatThread) -> ModelStream:
-        def _stream() -> ModelStream:
+    def generate(self, prompt: ChatThread) -> ChatStream:
+        def _stream() -> ChatStream:
             messages = []
             sanitized_prompt = binarize_chat(prompt, last=ChatIntent.PROMPT)
             for message in sanitized_prompt:

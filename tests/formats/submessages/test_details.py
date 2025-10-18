@@ -4,9 +4,13 @@ from llobot.chats.thread import ChatThread
 from llobot.chats.message import ChatMessage
 from llobot.chats.intent import ChatIntent
 from llobot.formats.submessages.details import DetailsSubmessageFormat
-from llobot.models.streams import text_stream
 
 formatter = DetailsSubmessageFormat()
+
+def _details_tags(intent: ChatIntent) -> tuple[str, str]:
+    open_tag = f'<details>\n<summary>Nested message: {intent}</summary>\n\n'
+    close_tag = '\n\n[//]: # (end of nested message)\n</details>'
+    return open_tag, close_tag
 
 def test_render_empty():
     chat = ChatThread()
@@ -294,55 +298,42 @@ def test_roundtrip_empty_content():
 
 def test_render_stream_empty():
     stream = []
-    result = "".join(formatter.render_stream(stream))
-    assert result == ""
+    result = list(formatter.render_stream(stream))
+    assert result == [ChatIntent.RESPONSE]
 
-def test_render_stream_single_message_strings_only():
-    stream = text_stream("Hello world.")
-    result = "".join(formatter.render_stream(stream))
-    assert result == "Hello world."
+def test_render_stream_single_response_message():
+    stream = iter([ChatIntent.RESPONSE, "Hello world."])
+    result = list(formatter.render_stream(stream))
+    assert result == [ChatIntent.RESPONSE, "Hello world."]
 
-def test_render_stream_single_message_with_intent():
+def test_render_stream_single_other_message():
     stream = [ChatIntent.SYSTEM, "System message."]
-    result = "".join(formatter.render_stream(stream))
-    expected = dedent("""
-        <details>
-        <summary>Nested message: System</summary>
-
-        System message.
-
-        [//]: # (end of nested message)
-        </details>
-    """).strip()
-    assert result == expected
+    result = list(formatter.render_stream(stream))
+    details_open, details_close = _details_tags(ChatIntent.SYSTEM)
+    assert result == [ChatIntent.RESPONSE, details_open, "System message.", details_close]
 
 def test_render_stream_multiple_messages():
     stream = [
-        "Response part 1.", " Response part 2.",
+        ChatIntent.RESPONSE, "Response part 1.", " Response part 2.",
         ChatIntent.SYSTEM, "System message.",
         ChatIntent.PROMPT, "Prompt message."
     ]
-    result = "".join(formatter.render_stream(stream))
-    expected = dedent("""
-        Response part 1. Response part 2.
-
-        <details>
-        <summary>Nested message: System</summary>
-
-        System message.
-
-        [//]: # (end of nested message)
-        </details>
-
-        <details>
-        <summary>Nested message: Prompt</summary>
-
-        Prompt message.
-
-        [//]: # (end of nested message)
-        </details>
-    """).strip()
-    assert result == expected
+    result = list(formatter.render_stream(stream))
+    details_system_open, details_system_close = _details_tags(ChatIntent.SYSTEM)
+    details_prompt_open, details_prompt_close = _details_tags(ChatIntent.PROMPT)
+    assert result == [
+        ChatIntent.RESPONSE,
+        "Response part 1.",
+        " Response part 2.",
+        '\n\n',
+        details_system_open,
+        "System message.",
+        details_system_close,
+        '\n\n',
+        details_prompt_open,
+        "Prompt message.",
+        details_prompt_close
+    ]
 
 def test_render_stream_empty_messages():
     stream = [
@@ -352,43 +343,32 @@ def test_render_stream_empty_messages():
         ChatIntent.RESPONSE,
         "Response here."
     ]
-    result = "".join(formatter.render_stream(stream))
-    expected = dedent("""
-        <details>
-        <summary>Nested message: System</summary>
-
-        System message.
-
-        [//]: # (end of nested message)
-        </details>
-
-        <details>
-        <summary>Nested message: Prompt</summary>
-
-
-
-        [//]: # (end of nested message)
-        </details>
-
-        Response here.
-    """).strip()
-    assert result == expected
+    result = list(formatter.render_stream(stream))
+    details_system_open, details_system_close = _details_tags(ChatIntent.SYSTEM)
+    details_prompt_open, details_prompt_close = _details_tags(ChatIntent.PROMPT)
+    assert result == [
+        ChatIntent.RESPONSE,
+        details_system_open,
+        "System message.",
+        details_system_close,
+        '\n\n',
+        details_prompt_open,
+        details_prompt_close,
+        '\n\n',
+        "Response here."
+    ]
 
 def test_render_stream_ends_with_intent():
-    stream = ["A message.", ChatIntent.SYSTEM]
-    result = "".join(formatter.render_stream(stream))
-    expected = dedent("""
-        A message.
-
-        <details>
-        <summary>Nested message: System</summary>
-
-
-
-        [//]: # (end of nested message)
-        </details>
-    """).strip()
-    assert result == expected
+    stream = [ChatIntent.RESPONSE, "A message.", ChatIntent.SYSTEM]
+    result = list(formatter.render_stream(stream))
+    details_system_open, details_system_close = _details_tags(ChatIntent.SYSTEM)
+    assert result == [
+        ChatIntent.RESPONSE,
+        "A message.",
+        '\n\n',
+        details_system_open,
+        details_system_close
+    ]
 
 def test_parse_chat_empty():
     chat = ChatThread()

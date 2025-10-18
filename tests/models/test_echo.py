@@ -29,5 +29,5 @@ def test_generate():
         ChatMessage(ChatIntent.PROMPT, "User prompt.")
     ])
     response_stream = model.generate(prompt)
-    response = "".join(response_stream)
+    response = "".join(s for s in response_stream if isinstance(s, str))
     assert response == monolithic_chat(prompt)

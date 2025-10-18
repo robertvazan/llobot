@@ -27,7 +27,7 @@ from llobot.formats.prompts import PromptFormat, standard_prompt_format
 from llobot.formats.prompts.reminder import ReminderPromptFormat
 from llobot.knowledge.archives import KnowledgeArchive, standard_knowledge_archive
 from llobot.models import Model
-from llobot.models.streams import ModelStream
+from llobot.chats.stream import ChatStream
 from llobot.projects.library import ProjectLibrary, ProjectLibraryPrecursor, coerce_project_library
 from llobot.prompts import (
     Prompt,
@@ -132,7 +132,7 @@ class Editor(Role):
         # Knowledge
         self._knowledge_crammer.cram(builder, knowledge)
 
-    def chat(self, prompt: ChatThread) -> ModelStream:
+    def chat(self, prompt: ChatThread) -> ChatStream:
         env = Environment()
         env[ProjectEnv].configure(self._project_library)
         context_env = env[ContextEnv]

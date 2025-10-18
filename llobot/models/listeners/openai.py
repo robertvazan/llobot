@@ -14,7 +14,7 @@ from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
 from llobot.models import Model
 from llobot.models.listeners import ModelListener
-from llobot.models.streams import ModelStream
+from llobot.chats.stream import ChatStream
 
 _logger = logging.getLogger(__name__)
 
@@ -81,7 +81,7 @@ def _encode_stop_event(model: str) -> dict:
 def _format_event(data: dict) -> str:
     return f'data: {json.dumps(data)}'
 
-def _format_stream(model: str, stream: ModelStream) -> Iterable[str]:
+def _format_stream(model: str, stream: ChatStream) -> Iterable[str]:
     # The first event must set the role.
     yield _format_event(_encode_role_event(model))
     for item in stream:

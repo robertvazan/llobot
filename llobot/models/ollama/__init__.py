@@ -4,7 +4,7 @@ import requests
 from llobot.chats.thread import ChatThread
 from llobot.chats.intent import ChatIntent
 from llobot.models import Model
-from llobot.models.streams import ModelStream, buffer_stream
+from llobot.chats.stream import ChatStream, buffer_stream
 from llobot.chats.binarization import binarize_chat
 from llobot.models.ollama.endpoints import localhost_ollama_endpoint
 from llobot.models.ollama.encoding import encode_request, parse_stream
@@ -55,8 +55,8 @@ class OllamaModel(Model, ValueTypeMixin):
     def context_budget(self) -> int:
         return self._context_budget
 
-    def generate(self, prompt: ChatThread) -> ModelStream:
-        def _stream() -> ModelStream:
+    def generate(self, prompt: ChatThread) -> ChatStream:
+        def _stream() -> ChatStream:
             sanitized_prompt = binarize_chat(prompt, last=ChatIntent.PROMPT)
             request = encode_request(self._model, {'num_ctx': self._num_ctx}, sanitized_prompt)
             yield ChatIntent.RESPONSE

@@ -24,12 +24,10 @@ gemini
     Client for Google Gemini models.
 openai
     Client for OpenAI models.
-streams
-    Defines `ModelStream` for streaming model responses.
 """
 from __future__ import annotations
 from llobot.chats.thread import ChatThread
-from llobot.models.streams import ModelStream
+from llobot.chats.stream import ChatStream
 
 class Model:
     """
@@ -49,7 +47,7 @@ class Model:
         """
         return 0
 
-    def generate(self, prompt: ChatThread) -> ModelStream:
+    def generate(self, prompt: ChatThread) -> ChatStream:
         """
         Generates a response to a prompt.
 
@@ -57,7 +55,7 @@ class Model:
             prompt: The chat thread to respond to.
 
         Returns:
-            A `ModelStream` of response chunks.
+            A `ChatStream` of response chunks.
         """
         raise NotImplementedError
 

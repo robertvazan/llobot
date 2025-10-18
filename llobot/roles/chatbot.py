@@ -2,7 +2,7 @@ from __future__ import annotations
 from llobot.chats.thread import ChatThread
 from llobot.chats.builder import ChatBuilder
 from llobot.models import Model
-from llobot.models.streams import ModelStream
+from llobot.chats.stream import ChatStream
 from llobot.prompts import Prompt
 from llobot.roles import Role
 from llobot.formats.prompts import PromptFormat, standard_prompt_format
@@ -39,7 +39,7 @@ class Chatbot(Role):
     def name(self) -> str:
         return self._name
 
-    def chat(self, prompt: ChatThread) -> ModelStream:
+    def chat(self, prompt: ChatThread) -> ChatStream:
         """
         Processes user's prompt and returns response as a stream.
 

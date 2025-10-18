@@ -3,7 +3,6 @@ from llobot.chats.thread import ChatThread
 from llobot.chats.builder import ChatBuilder
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage, MESSAGE_OVERHEAD
-from llobot.models.streams import message_stream, text_stream
 
 def test_add_message():
     """Tests adding individual ChatMessage objects."""
@@ -96,7 +95,7 @@ def test_mark_and_undo():
 def test_record_simple_text_stream():
     """Tests recording a simple stream of text chunks."""
     builder = ChatBuilder()
-    stream = text_stream("Hello world")
+    stream = iter([ChatIntent.RESPONSE, "Hello world"])
     recorded_stream = builder.record(stream)
     output = "".join(s for s in recorded_stream if isinstance(s, str))
     assert output == "Hello world"
@@ -117,8 +116,8 @@ def test_record_multiple_messages():
     msg1 = ChatMessage(ChatIntent.SESSION, "info")
     msg2 = ChatMessage(ChatIntent.AFFIRMATION, "OK")
     def source_stream():
-        yield from message_stream(msg1)
-        yield from message_stream(msg2)
+        yield from msg1.stream()
+        yield from msg2.stream()
     recorded_stream = builder.record(source_stream())
     list(recorded_stream)
     assert builder.messages == [msg1, msg2]
@@ -134,17 +133,6 @@ def test_record_stream_is_pass_through():
     assert builder.messages == [
         ChatMessage(ChatIntent.SESSION, "s1 and s2"),
         ChatMessage(ChatIntent.RESPONSE, "r1"),
-    ]
-
-
-def test_record_starts_with_text():
-    """Tests recording a stream that starts with text."""
-    builder = ChatBuilder()
-    source = ["r1", " and r2", ChatIntent.SESSION, "s1"]
-    list(builder.record(iter(source)))
-    assert builder.messages == [
-        ChatMessage(ChatIntent.RESPONSE, "r1 and r2"),
-        ChatMessage(ChatIntent.SESSION, "s1"),
     ]
 
 

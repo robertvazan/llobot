@@ -4,8 +4,9 @@ An echo model for testing and debugging.
 from __future__ import annotations
 from llobot.models import Model
 from llobot.chats.thread import ChatThread
+from llobot.chats.intent import ChatIntent
 from llobot.chats.monolithic import monolithic_chat
-from llobot.models.streams import ModelStream, text_stream
+from llobot.chats.stream import ChatStream
 from llobot.utils.values import ValueTypeMixin
 
 class EchoModel(Model, ValueTypeMixin):
@@ -34,7 +35,7 @@ class EchoModel(Model, ValueTypeMixin):
     def context_budget(self) -> int:
         return self._context_budget
 
-    def generate(self, prompt: ChatThread) -> ModelStream:
+    def generate(self, prompt: ChatThread) -> ChatStream:
         """
         Generates a response by returning the prompt's content as a stream.
 
@@ -42,9 +43,12 @@ class EchoModel(Model, ValueTypeMixin):
             prompt: The chat thread to echo.
 
         Returns:
-            A `ModelStream` containing the monolithic prompt content.
+            A `ChatStream` containing the monolithic prompt content.
         """
-        return text_stream(monolithic_chat(prompt))
+        content = monolithic_chat(prompt)
+        if content:
+            yield ChatIntent.RESPONSE
+            yield content
 
 __all__ = [
     'EchoModel',

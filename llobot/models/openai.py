@@ -9,7 +9,7 @@ from llobot.chats.thread import ChatThread
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
 from llobot.models import Model
-from llobot.models.streams import ModelStream, buffer_stream
+from llobot.chats.stream import ChatStream, buffer_stream
 from llobot.utils.values import ValueTypeMixin
 
 def _encode_role(intent: ChatIntent) -> str:
@@ -70,8 +70,8 @@ class OpenAIModel(Model, ValueTypeMixin):
     def context_budget(self) -> int:
         return self._context_budget
 
-    def generate(self, prompt: ChatThread) -> ModelStream:
-        def _stream() -> ModelStream:
+    def generate(self, prompt: ChatThread) -> ChatStream:
+        def _stream() -> ChatStream:
             client = OpenAI(
                 api_key=self._auth
             )

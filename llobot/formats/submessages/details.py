@@ -7,7 +7,7 @@ from llobot.chats.message import ChatMessage
 from llobot.chats.intent import ChatIntent
 from llobot.chats.builder import ChatBuilder
 from llobot.formats.submessages import SubmessageFormat
-from llobot.models.streams import ModelStream
+from llobot.chats.stream import ChatStream
 from llobot.utils.text import concat_documents
 from llobot.utils.values import ValueTypeMixin
 
@@ -63,7 +63,7 @@ class DetailsSubmessageFormat(SubmessageFormat, ValueTypeMixin):
         # Join consecutive submessages with an empty line.
         return concat_documents(*submessages)
 
-    def render_stream(self, stream: ModelStream) -> ModelStream:
+    def render_stream(self, stream: ChatStream) -> ChatStream:
         """
         Renders a model stream into a single message stream using `<details>` tags.
 
@@ -71,10 +71,12 @@ class DetailsSubmessageFormat(SubmessageFormat, ValueTypeMixin):
             stream: The model stream to format.
 
         Returns:
-            A new stream of strings containing the formatted output.
+            A new stream containing the formatted output as a single message.
         """
         in_details = False
         is_first_message = True
+
+        yield ChatIntent.RESPONSE
 
         for item in stream:
             if isinstance(item, ChatIntent):
@@ -92,7 +94,6 @@ class DetailsSubmessageFormat(SubmessageFormat, ValueTypeMixin):
                     in_details = True
 
             elif isinstance(item, str) and item:
-                is_first_message = False
                 yield item
 
         if in_details:

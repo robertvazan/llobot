@@ -13,7 +13,7 @@ from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
 from llobot.models import Model
 from llobot.models.listeners import ModelListener
-from llobot.models.streams import ModelStream
+from llobot.chats.stream import ChatStream
 
 _logger = logging.getLogger(__name__)
 
@@ -57,7 +57,7 @@ def _encode_done_event(model: str) -> dict:
         'done': True
     }
 
-def _format_stream(model: str, stream: ModelStream) -> Iterable[str]:
+def _format_stream(model: str, stream: ChatStream) -> Iterable[str]:
     for item in stream:
         if isinstance(item, str):
             yield json.dumps(_encode_content_event(model, item))

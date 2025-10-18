@@ -27,7 +27,7 @@ from llobot.utils.fs import data_home
 from llobot.utils.zones import Zoning
 from llobot.memories.examples import ExampleMemory
 from llobot.models import Model
-from llobot.models.streams import ModelStream
+from llobot.chats.stream import ChatStream
 from llobot.projects import Project
 from llobot.projects.library import ProjectLibrary, ProjectLibraryPrecursor, coerce_project_library
 from llobot.prompts import Prompt
@@ -105,7 +105,7 @@ class Imitator(Role):
 
         builder.add(self._reminder_format.render_chat(self._system))
 
-    def chat(self, prompt: ChatThread) -> ModelStream:
+    def chat(self, prompt: ChatThread) -> ChatStream:
         env = Environment()
         env[ProjectEnv].configure(self._project_library)
         context_env = env[ContextEnv]

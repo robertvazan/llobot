@@ -1,10 +1,13 @@
 from __future__ import annotations
 import logging
+import traceback
 from llobot.chats.thread import ChatThread
+from llobot.chats.intent import ChatIntent
 from llobot.models import Model
-from llobot.models.streams import ModelStream, exception_stream
+from llobot.chats.stream import ChatStream
 from llobot.roles import Role
 from llobot.formats.submessages import SubmessageFormat, standard_submessage_format
+from llobot.utils.text import markdown_code_details
 from llobot.utils.values import ValueTypeMixin
 
 _logger = logging.getLogger(__name__)
@@ -34,7 +37,7 @@ class RoleModel(Model, ValueTypeMixin):
     def name(self) -> str:
         return self._role.name
 
-    def generate(self, prompt: ChatThread) -> ModelStream:
+    def generate(self, prompt: ChatThread) -> ChatStream:
         """
         Generates a response by invoking the role's chat method.
 
@@ -58,7 +61,12 @@ class RoleModel(Model, ValueTypeMixin):
             yield from self._format.render_stream(stream)
         except Exception as ex:
             _logger.error(f'Exception in {self._role.name} role.', exc_info=True)
-            yield from exception_stream(ex)
+            message = str(ex) or ex.__class__.__name__
+            stack_trace = "".join(traceback.format_exception(ex)).strip()
+            details = markdown_code_details('Stack trace', '', stack_trace)
+            content = f'❌ `{message}`\n\n{details}'
+            yield ChatIntent.RESPONSE
+            yield content
 
 __all__ = [
     'RoleModel',

@@ -1,6 +1,7 @@
 from __future__ import annotations
 from llobot.utils.values import ValueTypeMixin
 from llobot.chats.intent import ChatIntent
+from llobot.chats.stream import ChatStream
 
 # Guesstimate of how many chars are consumed per message by typical chat format.
 MESSAGE_OVERHEAD: int = 10
@@ -39,6 +40,12 @@ class ChatMessage(ValueTypeMixin):
     def cost(self) -> int:
         """Estimated cost of the message in characters, including overhead."""
         return len(self.content) + MESSAGE_OVERHEAD
+
+    def stream(self) -> ChatStream:
+        """Creates a stream that yields this single message."""
+        yield self.intent
+        if self.content:
+            yield self.content
 
     def __repr__(self) -> str:
         return f'{self.intent}: {self.content}'

@@ -5,7 +5,7 @@ from __future__ import annotations
 from llobot.utils.text import concat_documents
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
-from llobot.models.streams import ModelStream, message_stream
+from llobot.chats.stream import ChatStream
 
 class StatusEnv:
     """
@@ -50,17 +50,17 @@ class StatusEnv:
             return None
         return ChatMessage(ChatIntent.RESPONSE, content)
 
-    def stream(self) -> ModelStream:
+    def stream(self) -> ChatStream:
         """
         Constructs a status message and returns it as a stream.
 
         Returns:
-            A `ModelStream` containing the status message, or an empty stream if no
+            A `ChatStream` containing the status message, or an empty stream if no
             fragments were added.
         """
         msg = self.message()
         if msg:
-            yield from message_stream(msg)
+            yield from msg.stream()
 
 __all__ = [
     'StatusEnv',
