@@ -5,13 +5,10 @@ from typing import Iterable
 from llobot.chats.history import ChatHistory, standard_chat_history
 from llobot.chats.thread import ChatThread
 from llobot.chats.intent import ChatIntent
-from llobot.commands import Step
-from llobot.commands.approve import ApproveCommand
-from llobot.commands.chain import StepChain
-from llobot.commands.custom import CustomStep
-from llobot.commands.project import ProjectCommand
-from llobot.commands.session import ImplicitSessionStep, SessionCommand, SessionLoadStep
-from llobot.commands.unrecognized import UnrecognizedCommand
+from llobot.commands.approve import handle_approve_commands
+from llobot.commands.project import handle_project_commands
+from llobot.commands.session import ensure_session_command, handle_session_commands
+from llobot.commands.unrecognized import handle_unrecognized_commands
 from llobot.crammers.example import ExampleCrammer, standard_example_crammer
 from llobot.environments import Environment
 from llobot.environments.commands import CommandsEnv
@@ -53,7 +50,6 @@ class Imitator(Role):
     _prompt_format: PromptFormat
     _reminder_format: PromptFormat
     _project_library: ProjectLibrary
-    _step_chain: StepChain
     _examples: ExampleMemory
     _session_history: SessionHistory
 
@@ -65,7 +61,6 @@ class Imitator(Role):
         crammer: ExampleCrammer = standard_example_crammer(),
         prompt_format: PromptFormat = standard_prompt_format(),
         reminder_format: PromptFormat = ReminderPromptFormat(),
-        extra_step: Step = Step(),
     ):
         """
         Creates a new imitator role.
@@ -80,8 +75,6 @@ class Imitator(Role):
             crammer: Crammer for few-shot examples.
             prompt_format: Format for the main system prompt.
             reminder_format: Format for reminder prompts.
-            extra_step: An extra step to run before the unrecognized command handler.
-                        This can be used to add custom commands.
         """
         self._name = name
         self._model = model
@@ -92,19 +85,38 @@ class Imitator(Role):
         self._prompt_format = prompt_format
         self._reminder_format = reminder_format
         self._project_library = coerce_project_library(projects)
-        self._step_chain = StepChain(
-            ImplicitSessionStep(),
-            SessionLoadStep(self._session_history),
-            ProjectCommand(),
-            CustomStep(self.stuff),
-            ApproveCommand(self._examples),
-            extra_step,
-            UnrecognizedCommand(),
-        )
 
     @property
     def name(self) -> str:
         return self._name
+
+    def _process_commands(self, env: Environment):
+        """
+        Processes commands and populates the environment.
+        This method can be overridden by subclasses to customize command handling.
+
+        Args:
+            env: The environment to process commands in.
+        """
+        ensure_session_command(env)
+        session_id = env[SessionEnv].get_id()
+        if session_id:
+            self._session_history.load(session_id, env)
+        handle_project_commands(env)
+        self.stuff(env)
+        handle_approve_commands(env, self._examples)
+        self._handle_extra_commands(env)
+        handle_unrecognized_commands(env)
+
+    def _handle_extra_commands(self, env: Environment):
+        """
+        Hook for subclasses to add custom command handlers. Runs before the
+        unrecognized command handler.
+
+        Args:
+            env: The environment.
+        """
+        pass
 
     def stuff(self, env: Environment):
         """
@@ -136,12 +148,12 @@ class Imitator(Role):
         for m in prompt:
             if m.intent == ChatIntent.SESSION:
                 env[CommandsEnv].add(parse_mentions(m))
-        session_command_chain = StepChain(SessionCommand(), UnrecognizedCommand())
-        session_command_chain.process(env)
+        handle_session_commands(env)
+        handle_unrecognized_commands(env)
 
         env[PromptEnv].set(prompt[-1].content)
         env[CommandsEnv].add(parse_mentions(prompt[-1]))
-        self._step_chain.process(env)
+        self._process_commands(env)
 
         context_env = env[ContextEnv]
         if len(prompt) == 1:

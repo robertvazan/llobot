@@ -1,10 +1,9 @@
 import pytest
 from llobot.environments import Environment
-from llobot.commands.unrecognized import UnrecognizedCommand
+from llobot.commands.unrecognized import handle_unrecognized_command
 
-def test_unrecognized_command_handle_raises():
-    """Tests that UnrecognizedCommand.handle raises ValueError."""
-    cmd = UnrecognizedCommand()
+def test_handle_unrecognized_command_raises():
+    """Tests that handle_unrecognized_command raises ValueError."""
     env = Environment()
     with pytest.raises(ValueError, match="Unrecognized: some command"):
-        cmd.handle("some command", env)
+        handle_unrecognized_command("some command", env)

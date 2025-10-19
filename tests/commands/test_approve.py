@@ -2,7 +2,7 @@ from pathlib import Path
 from llobot.chats.history import standard_chat_history
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
-from llobot.commands.approve import ApproveCommand
+from llobot.commands.approve import handle_approve_command
 from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
 from llobot.environments.prompt import PromptEnv
@@ -12,7 +12,6 @@ from llobot.memories.examples import ExampleMemory
 def test_approve_command(tmp_path: Path):
     history = standard_chat_history(tmp_path)
     examples = ExampleMemory('test-role', history=history)
-    command = ApproveCommand(examples)
     env = Environment()
 
     # Setup context
@@ -24,7 +23,7 @@ def test_approve_command(tmp_path: Path):
     prompt_env.set("Approved response. @approve")
 
     # Handle
-    assert command.handle('approve', env)
+    assert handle_approve_command('approve', env, examples)
 
     # Check status
     status = env[StatusEnv]
@@ -44,7 +43,6 @@ def test_approve_command(tmp_path: Path):
 def test_approve_command_full_chat(tmp_path: Path):
     history = standard_chat_history(tmp_path)
     examples = ExampleMemory('test-role', history=history)
-    command = ApproveCommand(examples)
     env = Environment()
 
     # Setup context
@@ -54,7 +52,7 @@ def test_approve_command_full_chat(tmp_path: Path):
     context.add(ChatMessage(ChatIntent.PROMPT, "User prompt 2"))
 
     # Handle (no prompt in PromptEnv)
-    assert command.handle('approve', env)
+    assert handle_approve_command('approve', env, examples)
 
     # Check status
     assert env[StatusEnv].populated
@@ -74,7 +72,6 @@ def test_approve_command_full_chat(tmp_path: Path):
 def test_approve_command_empty_stripped_prompt(tmp_path: Path):
     history = standard_chat_history(tmp_path)
     examples = ExampleMemory('test-role', history=history)
-    command = ApproveCommand(examples)
     env = Environment()
 
     # Setup context
@@ -87,7 +84,7 @@ def test_approve_command_empty_stripped_prompt(tmp_path: Path):
     prompt_env.set("@approve")
 
     # Handle
-    assert command.handle('approve', env)
+    assert handle_approve_command('approve', env, examples)
 
     # Check status
     assert env[StatusEnv].populated

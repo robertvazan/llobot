@@ -1,12 +1,11 @@
 from pathlib import Path
-from llobot.commands.retrievals.exact import ExactRetrievalCommand
+from llobot.commands.retrievals.exact import handle_exact_retrieval_command
 from llobot.environments import Environment
 from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.retrievals import RetrievalsEnv
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 
-COMMAND = ExactRetrievalCommand()
 KNOWLEDGE = Knowledge({
     Path('a/b.txt'): 'content',
     Path('a/c.txt'): 'another',
@@ -20,7 +19,7 @@ def create_env() -> Environment:
 
 def test_no_match():
     env = create_env()
-    assert not COMMAND.handle('e.txt', env)
+    assert not handle_exact_retrieval_command('e.txt', env)
     assert not env[RetrievalsEnv].get()
 
 def test_multiple_matches():
@@ -30,30 +29,30 @@ def test_multiple_matches():
     })
     env = Environment()
     env[KnowledgeEnv].set(knowledge)
-    assert COMMAND.handle('b.txt', env)
+    assert handle_exact_retrieval_command('b.txt', env)
     assert env[RetrievalsEnv].get() == knowledge.keys()
 
 def test_not_a_path():
     env = create_env()
-    assert not COMMAND.handle('hello world', env)
+    assert not handle_exact_retrieval_command('hello world', env)
     assert not env[RetrievalsEnv].get()
 
 def test_invalid_characters():
     env = create_env()
-    assert not COMMAND.handle('d.txt$', env)
+    assert not handle_exact_retrieval_command('d.txt$', env)
     assert not env[RetrievalsEnv].get()
 
 def test_exact_match():
     env = create_env()
-    assert COMMAND.handle('d.txt', env)
+    assert handle_exact_retrieval_command('d.txt', env)
     assert env[RetrievalsEnv].get() == KnowledgeIndex([Path('d.txt')])
 
 def test_absolute_path_match():
     env = create_env()
-    assert COMMAND.handle('/a/b.txt', env)
+    assert handle_exact_retrieval_command('/a/b.txt', env)
     assert env[RetrievalsEnv].get() == KnowledgeIndex([Path('a/b.txt')])
 
 def test_wildcard_is_ignored():
     env = create_env()
-    assert not COMMAND.handle('a/*.txt', env)
+    assert not handle_exact_retrieval_command('a/*.txt', env)
     assert not env[RetrievalsEnv].get()

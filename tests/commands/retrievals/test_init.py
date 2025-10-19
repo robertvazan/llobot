@@ -1,5 +1,5 @@
 from pathlib import Path
-from llobot.commands.retrievals import RetrievalStep
+from llobot.commands.retrievals import flush_retrieval_commands
 from llobot.environments import Environment
 from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.retrievals import RetrievalsEnv
@@ -29,16 +29,14 @@ def create_env() -> Environment:
 
 def test_no_retrievals():
     env = create_env()
-    step = RetrievalStep()
-    step.process(env)
+    flush_retrieval_commands(env)
     assert not env[ContextEnv].populated
     assert not env[RetrievalsEnv].get()
 
 def test_one_retrieval():
     env = create_env()
-    step = RetrievalStep()
     env[RetrievalsEnv].add(Path('a.txt'))
-    step.process(env)
+    flush_retrieval_commands(env)
     context = env[ContextEnv]
     assert context.populated
     assert 'File: a.txt' in monolithic_chat(context.build())
@@ -47,10 +45,9 @@ def test_one_retrieval():
 
 def test_multiple_retrievals():
     env = create_env()
-    step = RetrievalStep()
     env[RetrievalsEnv].add(Path('b.txt'))
     env[RetrievalsEnv].add(Path('a.txt'))
-    step.process(env)
+    flush_retrieval_commands(env)
     context = env[ContextEnv]
     monolithic = monolithic_chat(context.build())
     assert 'File: a.txt' in monolithic
@@ -62,11 +59,10 @@ def test_multiple_retrievals():
 
 def test_ranking_order():
     env = create_env()
-    step = RetrievalStep(ranker=ReversedLexicographicalRanker())
     env[RetrievalsEnv].add(Path('a.txt'))
     env[RetrievalsEnv].add(Path('c.txt'))
     env[RetrievalsEnv].add(Path('b.txt'))
-    step.process(env)
+    flush_retrieval_commands(env, ranker=ReversedLexicographicalRanker())
     context = env[ContextEnv]
     monolithic = monolithic_chat(context.build())
     pos_a = monolithic.find('File: a.txt')
@@ -77,12 +73,11 @@ def test_ranking_order():
 
 def test_duplicate_retrieval_prevention():
     env = create_env()
-    step = RetrievalStep()
     env[RetrievalsEnv].add(Path('a.txt'))
-    step.process(env)
+    flush_retrieval_commands(env)
     context = env[ContextEnv]
     initial_messages_count = len(context.build())
     env[RetrievalsEnv].add(Path('a.txt'))
-    step.process(env)
+    flush_retrieval_commands(env)
     assert len(context.build()) == initial_messages_count
     assert not env[RetrievalsEnv].get()

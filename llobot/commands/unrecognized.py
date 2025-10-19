@@ -3,28 +3,28 @@ Command for handling unrecognized commands.
 """
 from __future__ import annotations
 from llobot.environments import Environment
-from llobot.commands import Command
+from llobot.commands import handle_commands
 
-class UnrecognizedCommand(Command):
+def handle_unrecognized_command(text: str, env: Environment) -> bool:
     """
-    A command that raises an error for any command it handles.
+    Always raises a ValueError, indicating an unrecognized command.
 
-    This command is intended to be the last in a command chain to catch
-    any commands that were not handled by other commands.
+    Args:
+        text: The unparsed command string.
+        env: The environment.
+
+    Raises:
+        ValueError: Always, as this command handles unrecognized commands by failing.
     """
-    def handle(self, text: str, env: Environment) -> bool:
-        """
-        Always raises a ValueError, indicating an unrecognized command.
+    raise ValueError(f'Unrecognized: {text}')
 
-        Args:
-            text: The unparsed command string.
-            env: The environment.
-
-        Raises:
-            ValueError: Always, as this command handles unrecognized commands by failing.
-        """
-        raise ValueError(f'Unrecognized: {text}')
+def handle_unrecognized_commands(env: Environment):
+    """
+    Handles unrecognized commands by raising an error.
+    """
+    handle_commands(env, handle_unrecognized_command)
 
 __all__ = [
-    'UnrecognizedCommand',
+    'handle_unrecognized_command',
+    'handle_unrecognized_commands',
 ]

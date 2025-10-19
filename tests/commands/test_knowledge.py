@@ -1,7 +1,7 @@
 from pathlib import Path
 from unittest.mock import patch, Mock
 
-from llobot.commands.knowledge import ProjectKnowledgeStep
+from llobot.commands.knowledge import populate_knowledge_env
 from llobot.environments import Environment
 from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.projects import ProjectEnv
@@ -11,8 +11,7 @@ from llobot.projects.library import ProjectLibrary
 from llobot.projects.union import union_project
 
 
-def test_project_knowledge_step(tmp_path: Path):
-    step = ProjectKnowledgeStep()
+def test_populate_knowledge_env(tmp_path: Path):
     env = Environment()
 
     p1_prefix = Path('p1')
@@ -34,7 +33,7 @@ def test_project_knowledge_step(tmp_path: Path):
     project_env.add('p1')
     project_env.add('p2')
 
-    step.process(env)
+    populate_knowledge_env(env)
 
     expected_knowledge = Knowledge({
         Path('p1/a.txt'): 'hello\n',
@@ -43,11 +42,10 @@ def test_project_knowledge_step(tmp_path: Path):
     assert env[KnowledgeEnv].get() == expected_knowledge
 
 
-def test_project_knowledge_step_no_project():
-    step = ProjectKnowledgeStep()
+def test_populate_knowledge_env_no_project():
     env = Environment()
     knowledge_env = env[KnowledgeEnv]
 
-    step.process(env)
+    populate_knowledge_env(env)
 
     assert knowledge_env.get() == Knowledge()  # empty

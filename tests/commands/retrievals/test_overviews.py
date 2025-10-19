@@ -1,5 +1,5 @@
 from pathlib import Path
-from llobot.commands.retrievals.overviews import OverviewRetrievalStep
+from llobot.commands.retrievals.overviews import assume_overview_retrieval_commands
 from llobot.environments import Environment
 from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.retrievals import RetrievalsEnv
@@ -25,15 +25,13 @@ def create_env() -> Environment:
 
 def test_no_retrievals():
     env = create_env()
-    step = OverviewRetrievalStep(overviews=OVERVIEWS)
-    step.process(env)
+    assume_overview_retrieval_commands(env, overviews=OVERVIEWS)
     assert not env[RetrievalsEnv].get()
 
 def test_retrieval_in_subdir():
     env = create_env()
     env[RetrievalsEnv].add(Path('a/b/file.txt'))
-    step = OverviewRetrievalStep(overviews=OVERVIEWS)
-    step.process(env)
+    assume_overview_retrieval_commands(env, overviews=OVERVIEWS)
     assert env[RetrievalsEnv].get() == KnowledgeIndex([
         Path('a/b/file.txt'),
         Path('README.md'),
@@ -47,8 +45,7 @@ def test_retrieval_in_root():
     knowledge = KNOWLEDGE | Knowledge({Path('root.txt'): 'i am root'})
     env[KnowledgeEnv].set(knowledge)
     env[RetrievalsEnv].add(Path('root.txt'))
-    step = OverviewRetrievalStep(overviews=OVERVIEWS)
-    step.process(env)
+    assume_overview_retrieval_commands(env, overviews=OVERVIEWS)
     assert env[RetrievalsEnv].get() == KnowledgeIndex([
         Path('root.txt'),
         Path('README.md'),
@@ -58,8 +55,7 @@ def test_multiple_retrievals():
     env = create_env()
     env[RetrievalsEnv].add(Path('a/b/file.txt'))
     env[RetrievalsEnv].add(Path('c/file.txt'))
-    step = OverviewRetrievalStep(overviews=OVERVIEWS)
-    step.process(env)
+    assume_overview_retrieval_commands(env, overviews=OVERVIEWS)
     assert env[RetrievalsEnv].get() == KnowledgeIndex([
         Path('a/b/file.txt'),
         Path('c/file.txt'),
@@ -72,8 +68,7 @@ def test_multiple_retrievals():
 def test_retrieved_is_overview():
     env = create_env()
     env[RetrievalsEnv].add(Path('a/README.md'))
-    step = OverviewRetrievalStep(overviews=OVERVIEWS)
-    step.process(env)
+    assume_overview_retrieval_commands(env, overviews=OVERVIEWS)
     assert env[RetrievalsEnv].get() == KnowledgeIndex([
         Path('a/README.md'),
         Path('README.md'),
