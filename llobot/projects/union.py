@@ -75,6 +75,35 @@ class UnionProject(Project, ValueTypeMixin):
         project = self._find_project(item.path)
         return project.tracked(item) if project else False
 
+    def mutable(self, path: Path) -> bool:
+        """
+        Checks if a path is mutable by delegating to the appropriate member project.
+        """
+        project = self._find_project(path)
+        return project.mutable(path) if project else False
+
+    def write(self, path: Path, content: str):
+        """
+        Writes to a file by delegating to the appropriate member project.
+        """
+        if not self.mutable(path):
+            raise PermissionError(f"Path is not mutable: {path}")
+        project = self._find_project(path)
+        # There must be a project if mutable() succeeded.
+        assert project, f"Path {path} is mutable but has no project."
+        project.write(path, content)
+
+    def remove(self, path: Path):
+        """
+        Removes a file by delegating to the appropriate member project.
+        """
+        if not self.mutable(path):
+            raise PermissionError(f"Path is not mutable: {path}")
+        project = self._find_project(path)
+        # There must be a project if mutable() succeeded.
+        assert project, f"Path {path} is mutable but has no project."
+        project.remove(path)
+
 
 def union_project(*projects: Project) -> Project:
     """

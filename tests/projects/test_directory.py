@@ -7,6 +7,7 @@ from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.subsets.suffix import SuffixSubset
 from llobot.knowledge.subsets.parsing import parse_pattern
 from llobot.projects.items import ProjectDirectory, ProjectFile
+from llobot.knowledge.deltas.documents import DocumentDelta
 
 def test_directory_project_simple(tmp_path: Path):
     (tmp_path / "file1.txt").write_text("content1")
@@ -81,3 +82,62 @@ def test_items(tmp_path: Path):
         ProjectFile(prefix / "file.txt"),
         ProjectDirectory(prefix / "subdir"),
     }
+
+def test_directory_project_mutable(tmp_path: Path):
+    project_dir = tmp_path / "mutable_project"
+    project_dir.mkdir()
+    (project_dir / "file.txt").write_text("initial")
+
+    project = DirectoryProject(project_dir, prefix="p", mutable=True)
+    assert project.mutable(Path("p/file.txt"))
+    assert not project.mutable(Path("q/file.txt"))
+
+    # Test write
+    project.write(Path("p/new_file.txt"), "new content")
+    assert (project_dir / "new_file.txt").read_text() == "new content"
+
+    # Test update (via write)
+    project.write(Path("p/file.txt"), "updated")
+    assert (project_dir / "file.txt").read_text() == "updated"
+
+    # Test remove
+    assert (project_dir / "file.txt").exists()
+    project.remove(Path("p/file.txt"))
+    assert not (project_dir / "file.txt").exists()
+
+    # Test remove non-existent
+    with pytest.raises(FileNotFoundError):
+        project.remove(Path("p/non_existent_file.txt"))
+
+    # Test remove directory
+    (project_dir / "subdir").mkdir()
+    with pytest.raises(IsADirectoryError):
+        project.remove(Path("p/subdir"))
+
+    # Test move
+    (project_dir / "source.txt").write_text("move me")
+    project.move(Path("p/source.txt"), Path("p/dest.txt"))
+    assert not (project_dir / "source.txt").exists()
+    assert (project_dir / "dest.txt").read_text() == "move me\n"
+
+    # Test update
+    delta_add = DocumentDelta(Path("p/delta_add.txt"), "delta content")
+    project.update(delta_add)
+    assert (project_dir / "delta_add.txt").read_text() == "delta content"
+
+    delta_rem = DocumentDelta(Path("p/delta_add.txt"), None, removed=True)
+    project.update(delta_rem)
+    assert not (project_dir / "delta_add.txt").exists()
+
+def test_directory_project_immutable_write_fails(tmp_path: Path):
+    project_dir = tmp_path / "immutable_project"
+    project_dir.mkdir()
+
+    project = DirectoryProject(project_dir, prefix="p")
+    assert not project.mutable(Path("p/some_file.txt"))
+
+    with pytest.raises(PermissionError):
+        project.write(Path("p/file.txt"), "content")
+
+    with pytest.raises(PermissionError):
+        project.remove(Path("p/file.txt"))

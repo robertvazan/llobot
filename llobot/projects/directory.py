@@ -4,19 +4,21 @@ from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.knowledge.subsets.standard import blacklist_subset, whitelist_subset
 from llobot.projects import Project
 from llobot.projects.items import ProjectDirectory, ProjectFile, ProjectItem, ProjectLink
-from llobot.utils.fs import read_document
+from llobot.utils.fs import read_document, write_text
 from llobot.utils.values import ValueTypeMixin
 from llobot.utils.zones import validate_zone
 
 class DirectoryProject(Project, ValueTypeMixin):
     """
     A project that sources its content from a filesystem directory.
+    Can be configured to be mutable.
     """
     _directory: Path
     _zones: frozenset[Path]
     _prefix: Path
     _whitelist: KnowledgeSubset
     _blacklist: KnowledgeSubset
+    _mutable: bool
 
     def __init__(
         self,
@@ -26,6 +28,7 @@ class DirectoryProject(Project, ValueTypeMixin):
         prefix: Path | str | None = None,
         whitelist: KnowledgeSubset | None = None,
         blacklist: KnowledgeSubset | None = None,
+        mutable: bool = False,
     ):
         """
         Initializes a new DirectoryProject.
@@ -38,6 +41,7 @@ class DirectoryProject(Project, ValueTypeMixin):
                     defaults to the last component of the directory path.
             whitelist: A custom whitelist subset for this project.
             blacklist: A custom blacklist subset for this project.
+            mutable: If `True`, the project allows write operations. Defaults to `False`.
         """
         self._directory = Path(directory).expanduser().absolute()
         self._prefix = Path(prefix) if prefix is not None else Path(self._directory.name)
@@ -53,6 +57,7 @@ class DirectoryProject(Project, ValueTypeMixin):
 
         self._whitelist = whitelist or whitelist_subset()
         self._blacklist = blacklist or blacklist_subset()
+        self._mutable = mutable
 
     @property
     def zones(self) -> set[Path]:
@@ -106,6 +111,56 @@ class DirectoryProject(Project, ValueTypeMixin):
         if isinstance(item, ProjectDirectory):
             return item.path not in self._blacklist
         return False
+
+    def mutable(self, path: Path) -> bool:
+        """
+        Checks if the path is mutable.
+
+        A path is mutable if the project is configured as mutable and the
+        path is within the project's prefix.
+        """
+        return self._mutable and self._to_local_path(path) is not None
+
+    def write(self, path: Path, content: str):
+        """
+        Writes content to a file in the project directory.
+
+        Args:
+            path: The project path of the file to write.
+            content: The content to write.
+
+        Raises:
+            PermissionError: If the project is not mutable or the path is
+                             outside the project prefix.
+        """
+        if not self.mutable(path):
+            raise PermissionError(f"Path is not mutable in this project: {path}")
+        local_path = self._to_local_path(path)
+        # This should not happen if mutable() check passed
+        assert local_path, f"Path {path} is not under project prefix despite mutable() check passing"
+        real_path = self._directory / local_path
+        write_text(real_path, content)
+
+    def remove(self, path: Path):
+        """
+        Removes a file from the project directory.
+
+        Args:
+            path: The project path of the file to remove.
+
+        Raises:
+            PermissionError: If the project is not mutable or the path is
+                             outside the project prefix.
+            FileNotFoundError: If the path does not exist.
+            IsADirectoryError: If the path is a directory.
+        """
+        if not self.mutable(path):
+            raise PermissionError(f"Path is not mutable in this project: {path}")
+        local_path = self._to_local_path(path)
+        # This should not happen if mutable() check passed
+        assert local_path, f"Path {path} is not under project prefix despite mutable() check passing"
+        real_path = self._directory / local_path
+        real_path.unlink()
 
 __all__ = [
     'DirectoryProject',

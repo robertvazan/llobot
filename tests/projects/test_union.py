@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 from llobot.knowledge import Knowledge
 from llobot.projects import Project
+from llobot.projects.directory import DirectoryProject
 from llobot.projects.empty import EmptyProject
 from llobot.projects.items import ProjectDirectory, ProjectFile, ProjectItem
 from llobot.projects.union import UnionProject, union_project
@@ -110,3 +111,56 @@ def test_union_nested_prefix_allowed():
     assert union.read(Path('p/a/x')) == 'y'
     assert union.items(Path('p')) == [ProjectDirectory(Path('p/a'))]
     assert union.items(Path('p/a')) == [ProjectFile(Path('p/a/x'))]
+
+def test_union_project_mutable(tmp_path: Path):
+    dir1 = tmp_path / "p1"
+    dir1.mkdir()
+    (dir1 / "a.txt").write_text("a")
+    dir2 = tmp_path / "p2"
+    dir2.mkdir()
+    (dir2 / "b.txt").write_text("b")
+
+    p1 = DirectoryProject(dir1, prefix="p1", mutable=True)
+    p2 = DirectoryProject(dir2, prefix="p2", mutable=False)
+    union = union_project(p1, p2)
+
+    assert union.mutable(Path("p1/a.txt"))
+    assert not union.mutable(Path("p2/b.txt"))
+    assert not union.mutable(Path("p3/c.txt"))
+
+    union.write(Path("p1/c.txt"), "c")
+    assert (dir1 / "c.txt").read_text() == "c"
+
+    with pytest.raises(PermissionError):
+        union.write(Path("p2/d.txt"), "d")
+
+    union.remove(Path("p1/a.txt"))
+    assert not (dir1 / "a.txt").exists()
+
+    union.move(Path("p1/c.txt"), Path("p1/d.txt"))
+    assert not (dir1 / "c.txt").exists()
+    assert (dir1 / "d.txt").read_text() == "c\n"
+
+def test_union_project_move_across_projects(tmp_path: Path):
+    dir1 = tmp_path / "p1"
+    dir1.mkdir()
+    (dir1 / "a.txt").write_text("a")
+    dir2 = tmp_path / "p2"
+    dir2.mkdir()
+
+    p1 = DirectoryProject(dir1, prefix="p1", mutable=True)
+    p2 = DirectoryProject(dir2, prefix="p2", mutable=True)
+    union = union_project(p1, p2)
+
+    union.move(Path("p1/a.txt"), Path("p2/b.txt"))
+    assert not (dir1 / "a.txt").exists()
+    assert (dir2 / "b.txt").read_text() == "a\n"
+
+    # Move from mutable to immutable should fail
+    p2_immutable = DirectoryProject(dir2, prefix="p2", mutable=False)
+    union_mixed = union_project(p1, p2_immutable)
+    (dir1 / "x.txt").write_text("x")
+    with pytest.raises(PermissionError, match="Destination path is not mutable"):
+        union_mixed.move(Path("p1/x.txt"), Path("p2/y.txt"))
+    assert (dir1 / "x.txt").exists()
+    assert not (dir2 / "y.txt").exists()
