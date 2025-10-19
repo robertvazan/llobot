@@ -151,13 +151,13 @@ class Imitator(Role):
             context_env.add(self._reminder_format.render_chat(self._system))
         context_env.add(last_prompt_message)
 
+        session_env = env[SessionEnv]
+        yield from context_env.record(session_env.stream())
+
         status_env = env[StatusEnv]
         if status_env.populated:
             yield from context_env.record(status_env.stream())
         else:
-            session_env = env[SessionEnv]
-            yield from context_env.record(session_env.stream())
-
             assembled_prompt = context_env.build()
             model_stream = self._model.generate(assembled_prompt)
             yield from context_env.record(model_stream)
