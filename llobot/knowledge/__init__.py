@@ -27,8 +27,6 @@ subsets/
 deltas/
     Change tracking for knowledge states. See `deltas.documents`,
     `deltas.knowledge`, `deltas.builder`, and `deltas.diffs`.
-archives/
-    Historical knowledge storage
 resolver
     `KnowledgeResolver` for efficient, proximity-based path resolution.
 """

@@ -23,11 +23,9 @@ items
     Defines item types that can be part of a project (file, directory, link).
 """
 from __future__ import annotations
-from datetime import datetime
 from pathlib import Path
 from typing import Iterable
 from llobot.knowledge import Knowledge
-from llobot.knowledge.archives import KnowledgeArchive
 from llobot.projects.items import ProjectDirectory, ProjectFile, ProjectItem
 
 
@@ -115,44 +113,6 @@ class Project:
                 if content is not None:
                     docs[file.path] = content
         return Knowledge(docs)
-
-    def refresh(self, archive: KnowledgeArchive):
-        """
-        Checks for updates and archives a new snapshot for each prefix if changes are found.
-
-        For each project prefix, a separate snapshot is created in the archive
-        under a zone with the same path as the prefix. Paths in the snapshot
-        are relative to the prefix.
-
-        Args:
-            archive: The knowledge archive to refresh.
-        """
-        all_knowledge = self.read_all()
-        for prefix in self.prefixes:
-            knowledge_slice = all_knowledge / prefix
-            archive.refresh(prefix, knowledge_slice)
-
-    def last(self, archive: KnowledgeArchive, cutoff: datetime | None = None) -> Knowledge:
-        """
-        Retrieves the most recent snapshots from the archive for this project.
-
-        For each project prefix, the latest snapshot is retrieved from the
-        archive zone corresponding to that prefix. The snapshots are then
-        merged into a single `Knowledge` object with paths restored to be
-        relative to the project root.
-
-        Args:
-            archive: The knowledge archive to retrieve from.
-            cutoff: If provided, only snapshots at or before this time are considered.
-
-        Returns:
-            The most recent Knowledge object, or an empty one if none are found.
-        """
-        knowledge = Knowledge()
-        for prefix in self.prefixes:
-            knowledge_slice = prefix / archive.last(prefix, cutoff)
-            knowledge |= knowledge_slice
-        return knowledge
 
     def __or__(self, other: Project) -> Project:
         """
