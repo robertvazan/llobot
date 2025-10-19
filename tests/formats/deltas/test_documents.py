@@ -79,6 +79,27 @@ def test_parse_file():
     assert not delta.removed
     assert not delta.moved
 
+def test_parse_file_with_sloppy_whitespace():
+    formatter = standard_document_delta_format()
+    formatted = dedent("""
+        <details>
+          <summary>File:   test.py  </summary>
+
+        ```python
+        def hello():
+            return "world"
+
+        ```
+
+        </details>
+        """).strip()
+    delta = formatter.parse(formatted)
+    assert delta is not None
+    assert delta.path == Path('test.py')
+    assert 'def hello():' in delta.content
+    assert not delta.removed
+    assert not delta.moved
+
 def test_parse_removal():
     formatter = standard_document_delta_format()
     formatted = 'Removed: `test.py`'

@@ -14,11 +14,11 @@ from llobot.utils.values import ValueTypeMixin
 _CODE_BLOCK_PATTERN = '|'.join(rf'{"`" * i}[^`\n]*\n.*?^{"`" * i}' for i in range(3, 11))
 
 # Regex for complete details block with file listing
-_DETAILS_PATTERN = rf'<details>\n<summary>[^\n]+</summary>\n\n(?:{_CODE_BLOCK_PATTERN})\n\n</details>'
+_DETAILS_PATTERN = rf'<details>\s*<summary>.*?</summary>\s*(?:{_CODE_BLOCK_PATTERN})\s*</details>'
 
 # Regex for one-line operations (must be on their own line)
-_REMOVED_PATTERN = r'^Removed: `([^`]+)`$'
-_MOVED_PATTERN = r'^Moved: `([^`]+)` => `([^`]+)`$'
+_REMOVED_PATTERN = r'^Removed:\s*`([^`]+)`\s*$'
+_MOVED_PATTERN = r'^Moved:\s*`([^`]+)`\s*=>\s*`([^`]+)`\s*$'
 
 # Combined detection regex: details blocks, bare code blocks (to skip), or one-line operations
 _DETECTION_REGEX = re.compile(
@@ -27,11 +27,11 @@ _DETECTION_REGEX = re.compile(
 )
 
 # Unified parsing regex for details blocks
-_DETAILS_PARSING_RE = re.compile(rf'<details>\n<summary>File: ([^\n]+?)</summary>\n\n```+[^\n]*\n(.*)^```+\n\n</details>', re.MULTILINE | re.DOTALL)
+_DETAILS_PARSING_RE = re.compile(rf'<details>\s*<summary>File:\s*(.*?)\s*</summary>\s*```+[^\n]*\n(.*?)^```+\s*</details>', re.MULTILINE | re.DOTALL)
 
 # Parsing regexes for one-line operations
-_REMOVED_RE = re.compile(_REMOVED_PATTERN, re.MULTILINE)
-_MOVED_RE = re.compile(_MOVED_PATTERN, re.MULTILINE)
+_REMOVED_RE = re.compile(r'Removed:\s*`([^`]+)`')
+_MOVED_RE = re.compile(r'Moved:\s*`([^`]+)`\s*=>\s*`([^`]+)`')
 
 
 class DetailsDocumentDeltaFormat(DocumentDeltaFormat, ValueTypeMixin):
