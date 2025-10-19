@@ -15,7 +15,7 @@ from llobot.crammers.example import ExampleCrammer, standard_example_crammer
 from llobot.environments import Environment
 from llobot.environments.commands import CommandsEnv
 from llobot.environments.context import ContextEnv
-from llobot.environments.history import SessionHistory, coerce_session_history
+from llobot.environments.history import SessionHistory, coerce_session_history, standard_session_history
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.prompt import PromptEnv
 from llobot.environments.session import SessionEnv
@@ -59,12 +59,26 @@ class Imitator(Role):
     def __init__(self, name: str, model: Model, *,
         prompt: str | Prompt = '',
         projects: ProjectLibraryPrecursor = (),
-        session_history: SessionHistory | Zoning | Path | str,
+        session_history: SessionHistory | Zoning | Path | str = standard_session_history(),
         example_history: ChatHistory | Zoning | Path | str = standard_chat_history(data_home()/'llobot/examples'),
         crammer: ExampleCrammer = standard_example_crammer(),
         prompt_format: PromptFormat = standard_prompt_format(),
         reminder_format: PromptFormat = ReminderPromptFormat(),
     ):
+        """
+        Creates a new imitator role.
+
+        Args:
+            name: The name of the role.
+            model: The language model to use.
+            prompt: The system prompt. Defaults to empty.
+            projects: A project library or a precursor for one.
+            session_history: Session history storage. Defaults to the standard one.
+            example_history: Storage for approved examples.
+            crammer: Crammer for few-shot examples.
+            prompt_format: Format for the main system prompt.
+            reminder_format: Format for reminder prompts.
+        """
         self._name = name
         self._model = model
         self._session_history = coerce_session_history(session_history)

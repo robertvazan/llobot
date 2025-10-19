@@ -16,7 +16,7 @@ from llobot.crammers.knowledge import KnowledgeCrammer, standard_knowledge_cramm
 from llobot.environments import Environment
 from llobot.environments.commands import CommandsEnv
 from llobot.environments.context import ContextEnv
-from llobot.environments.history import SessionHistory, coerce_session_history
+from llobot.environments.history import SessionHistory, coerce_session_history, standard_session_history
 from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.prompt import PromptEnv
@@ -75,7 +75,7 @@ class Editor(Role):
     def __init__(self, name: str, model: Model, *,
         prompt: str | Prompt = editor_system_prompt(),
         projects: ProjectLibraryPrecursor = (),
-        session_history: SessionHistory | Zoning | Path | str,
+        session_history: SessionHistory | Zoning | Path | str = standard_session_history(),
         knowledge_crammer: KnowledgeCrammer = standard_knowledge_crammer(),
         index_crammer: IndexCrammer = standard_index_crammer(),
         prompt_format: PromptFormat = standard_prompt_format(),
@@ -84,6 +84,18 @@ class Editor(Role):
     ):
         """
         Creates a new editor role.
+
+        Args:
+            name: The name of the role.
+            model: The language model to use.
+            prompt: The system prompt. Defaults to `editor_system_prompt()`.
+            projects: A project library or a precursor for one.
+            session_history: Session history storage. Defaults to the standard one.
+            knowledge_crammer: Crammer for knowledge documents.
+            index_crammer: Crammer for the file index.
+            prompt_format: Format for the main system prompt.
+            reminder_format: Format for reminder prompts.
+            retrieval_step: Step for handling document retrieval commands.
         """
         self._name = name
         self._model = model
