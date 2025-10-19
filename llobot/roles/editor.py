@@ -131,13 +131,12 @@ class Editor(Role):
         Args:
             env: The environment to populate.
         """
-        context_env = env[ContextEnv]
-        if context_env.populated:
+        if env[ContextEnv].populated:
             return
 
-        knowledge = env[KnowledgeEnv].get()
-        builder = context_env.builder
+        builder = env[ContextEnv].builder
         builder.budget = self._model.context_budget
+        knowledge = env[KnowledgeEnv].get()
 
         # System prompt (unconditionally included)
         builder.add(self._prompt_format.render_chat(self._system))
@@ -155,29 +154,24 @@ class Editor(Role):
         env = Environment()
         env[ProjectEnv].configure(self._project_library)
 
-        session_messages = [m for m in prompt if m.intent == ChatIntent.SESSION]
+        for m in prompt:
+            if m.intent == ChatIntent.SESSION:
+                env[CommandsEnv].add(parse_mentions(m))
         session_command_chain = StepChain(SessionCommand(), UnrecognizedCommand())
-        queue = env[CommandsEnv]
-        for m in session_messages:
-            queue.add(parse_mentions(m))
         session_command_chain.process(env)
 
-        last_prompt_message = prompt[-1]
-        env[PromptEnv].set(last_prompt_message.content)
-        env[CommandsEnv].add(parse_mentions(last_prompt_message))
+        env[PromptEnv].set(prompt[-1].content)
+        env[CommandsEnv].add(parse_mentions(prompt[-1]))
         self._step_chain.process(env)
 
         context_env = env[ContextEnv]
         if len(prompt) == 1:
             context_env.add(self._reminder_format.render_chat(self._system))
-        context_env.add(last_prompt_message)
+        context_env.add(prompt[-1])
 
-        session_env = env[SessionEnv]
-        yield from context_env.record(session_env.stream())
-
-        status_env = env[StatusEnv]
-        if status_env.populated:
-            yield from context_env.record(status_env.stream())
+        yield from context_env.record(env[SessionEnv].stream())
+        if env[StatusEnv].populated:
+            yield from context_env.record(env[StatusEnv].stream())
         else:
             assembled_prompt = context_env.build()
             model_stream = self._model.generate(assembled_prompt)
