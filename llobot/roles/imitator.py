@@ -5,6 +5,7 @@ from typing import Iterable
 from llobot.chats.history import ChatHistory, standard_chat_history
 from llobot.chats.thread import ChatThread
 from llobot.chats.intent import ChatIntent
+from llobot.commands import Step
 from llobot.commands.approve import ApproveCommand
 from llobot.commands.chain import StepChain
 from llobot.commands.custom import CustomStep
@@ -64,6 +65,7 @@ class Imitator(Role):
         crammer: ExampleCrammer = standard_example_crammer(),
         prompt_format: PromptFormat = standard_prompt_format(),
         reminder_format: PromptFormat = ReminderPromptFormat(),
+        extra_step: Step = Step(),
     ):
         """
         Creates a new imitator role.
@@ -78,6 +80,8 @@ class Imitator(Role):
             crammer: Crammer for few-shot examples.
             prompt_format: Format for the main system prompt.
             reminder_format: Format for reminder prompts.
+            extra_step: An extra step to run before the unrecognized command handler.
+                        This can be used to add custom commands.
         """
         self._name = name
         self._model = model
@@ -94,6 +98,7 @@ class Imitator(Role):
             ProjectCommand(),
             CustomStep(self.stuff),
             ApproveCommand(self._examples),
+            extra_step,
             UnrecognizedCommand(),
         )
 

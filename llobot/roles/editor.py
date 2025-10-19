@@ -81,6 +81,7 @@ class Editor(Role):
         prompt_format: PromptFormat = standard_prompt_format(),
         reminder_format: PromptFormat = ReminderPromptFormat(),
         retrieval_step: Step = standard_retrieval_step(),
+        extra_step: Step = Step(),
     ):
         """
         Creates a new editor role.
@@ -96,6 +97,8 @@ class Editor(Role):
             prompt_format: Format for the main system prompt.
             reminder_format: Format for reminder prompts.
             retrieval_step: Step for handling document retrieval commands.
+            extra_step: An extra step to run before the unrecognized command handler.
+                        This can be used to add custom commands.
         """
         self._name = name
         self._model = model
@@ -113,6 +116,7 @@ class Editor(Role):
             ProjectKnowledgeStep(),
             CustomStep(self.stuff),
             retrieval_step,
+            extra_step,
             UnrecognizedCommand(),
         )
 
