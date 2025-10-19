@@ -10,7 +10,7 @@ from typing import Iterable
 from llobot.utils.zones import Zoning, coerce_zoning
 from llobot.chats.thread import ChatThread
 from llobot.utils.fs import create_parents, read_text, write_text
-from llobot.utils.archives import format_archive_path, parse_archive_path, recent_archive_paths
+from llobot.utils.history import format_history_path, parse_history_path, recent_history_paths
 from llobot.chats.history import ChatHistory
 from llobot.chats.intent import ChatIntent
 from llobot.chats.builder import ChatBuilder
@@ -36,7 +36,7 @@ class MarkdownChatHistory(ChatHistory, ValueTypeMixin):
         self._location = coerce_zoning(location)
 
     def _path(self, zone: Path, time: datetime) -> Path:
-        return format_archive_path(self._location[zone], time, '.md')
+        return format_history_path(self._location[zone], time, '.md')
 
     def add(self, zone: Path, time: datetime, chat: ChatThread):
         save_chat_to_markdown(self._path(zone, time), chat)
@@ -68,8 +68,8 @@ class MarkdownChatHistory(ChatHistory, ValueTypeMixin):
         return self._path(zone, time).exists()
 
     def recent(self, zone: Path, cutoff: datetime | None = None) -> Iterable[tuple[datetime, ChatThread]]:
-        for path in recent_archive_paths(self._location[zone], '.md', cutoff):
-            yield (parse_archive_path(path), load_chat_from_markdown(path))
+        for path in recent_history_paths(self._location[zone], '.md', cutoff):
+            yield (parse_history_path(path), load_chat_from_markdown(path))
 
 def format_chat_as_markdown(chat: ChatThread) -> str:
     """

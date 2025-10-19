@@ -12,8 +12,8 @@ time
     Utilities for handling timestamps.
 fs
     Filesystem utilities for data and cache management.
-archives
-    Utilities for handling timestamped file-based archives.
+history
+    Utilities for handling timestamped file-based history.
 zones
     Zoning system for mapping abstract zone names to filesystem paths.
 values
