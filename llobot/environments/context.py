@@ -1,6 +1,7 @@
 from __future__ import annotations
 from pathlib import Path
 from llobot.chats.markdown import load_chat_from_markdown, save_chat_to_markdown
+from llobot.chats.stream import ChatStream
 from llobot.chats.thread import ChatThread
 from llobot.chats.builder import ChatBuilder
 from llobot.chats.message import ChatMessage
@@ -35,6 +36,12 @@ class ContextEnv(PersistentEnv):
         Adds messages to the context.
         """
         self._builder.add(branch)
+
+    def record(self, stream: ChatStream) -> ChatStream:
+        """
+        Records a model stream while passing it through.
+        """
+        return self._builder.record(stream)
 
     def build(self) -> ChatThread:
         """

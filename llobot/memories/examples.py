@@ -11,7 +11,6 @@ from llobot.chats.thread import ChatThread
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
 from llobot.environments import Environment
-from llobot.environments.cutoff import CutoffEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.utils.fs import data_home
 from llobot.utils.zones import Zoning
@@ -109,12 +108,11 @@ class ExampleMemory:
         the role-only zone. Duplicates are removed.
 
         Args:
-            env: The environment containing projects and cutoff time.
+            env: The environment containing projects.
 
         Returns:
             An iterable of recent example chat threads.
         """
-        cutoff = env[CutoffEnv].get()
         seen = set()
 
         all_zones = self._zones(env)
@@ -125,10 +123,10 @@ class ExampleMemory:
             role_path = Path(self._role_name)
             if role_path in project_zones:
                 project_zones.remove(role_path)
-                role_zone_iter = self._history.recent(role_path, cutoff)
+                role_zone_iter = self._history.recent(role_path)
 
         # Merge examples from all project zones, sorted by time descending.
-        project_iters = [self._history.recent(zone, cutoff) for zone in project_zones]
+        project_iters = [self._history.recent(zone) for zone in project_zones]
         merged_project_examples = merge(*project_iters, key=lambda item: item[0], reverse=True)
 
         all_examples = chain(merged_project_examples, role_zone_iter)

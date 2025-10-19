@@ -2,9 +2,8 @@
 Utilities for handling timestamps.
 
 Timestamps are optimized for readability at the cost of resolution. We support
-only timestamps with second precision. That is plenty for user interactions.
-If the user ever happens to perform two actions at the same time, it is okay
-if only one persists.
+only timestamps with second precision. This is used for session IDs and example
+timestamps.
 
 We could expand precision in the future to milliseconds or microseconds if we
 ever have to support fast ingestion batches. We could also artificially ensure

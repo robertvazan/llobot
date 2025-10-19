@@ -26,9 +26,6 @@ class ApproveCommand(Command):
         if text != 'approve':
             return False
 
-        if not env[PromptEnv].is_last:
-            return True
-
         context = env[ContextEnv]
         prompt_env = env[PromptEnv]
 

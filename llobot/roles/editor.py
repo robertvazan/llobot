@@ -6,17 +6,17 @@ from llobot.chats.intent import ChatIntent
 from llobot.commands import Step
 from llobot.commands.chain import StepChain
 from llobot.commands.custom import CustomStep
-from llobot.commands.cutoff import CutoffCommand, ImplicitCutoffStep
 from llobot.commands.knowledge import ProjectKnowledgeStep
 from llobot.commands.project import ProjectCommand
 from llobot.commands.retrievals import standard_retrieval_step
+from llobot.commands.session import ImplicitSessionStep, SessionCommand, SessionLoadStep
 from llobot.commands.unrecognized import UnrecognizedCommand
 from llobot.crammers.index import IndexCrammer, standard_index_crammer
 from llobot.crammers.knowledge import KnowledgeCrammer, standard_knowledge_crammer
 from llobot.environments import Environment
 from llobot.environments.commands import CommandsEnv
 from llobot.environments.context import ContextEnv
-from llobot.environments.cutoff import CutoffEnv
+from llobot.environments.history import SessionHistory, coerce_session_history
 from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.prompt import PromptEnv
@@ -25,7 +25,6 @@ from llobot.environments.status import StatusEnv
 from llobot.formats.mentions import parse_mentions
 from llobot.formats.prompts import PromptFormat, standard_prompt_format
 from llobot.formats.prompts.reminder import ReminderPromptFormat
-from llobot.knowledge.archives import KnowledgeArchive, standard_knowledge_archive
 from llobot.models import Model
 from llobot.chats.stream import ChatStream
 from llobot.projects.library import ProjectLibrary, ProjectLibraryPrecursor, coerce_project_library
@@ -38,6 +37,7 @@ from llobot.prompts import (
     read_prompt,
 )
 from llobot.roles import Role
+from llobot.utils.zones import Zoning
 
 @cache
 def editor_system_prompt() -> SystemPrompt:
@@ -59,12 +59,12 @@ class Editor(Role):
     reading and modifying source code. It assembles a context for the LLM that
     includes a system prompt, relevant files from a knowledge base, and a file
     index. It supports commands for project selection (`@project`), file
-    retrieval (`@path/to/file`), and setting a knowledge cutoff time (`@cutoff`).
+    retrieval (`@path/to/file`), and uses session IDs to persist state.
     """
     _name: str
     _model: Model
     _system: str
-    _knowledge_archive: KnowledgeArchive
+    _session_history: SessionHistory
     _knowledge_crammer: KnowledgeCrammer
     _index_crammer: IndexCrammer
     _prompt_format: PromptFormat
@@ -75,7 +75,7 @@ class Editor(Role):
     def __init__(self, name: str, model: Model, *,
         prompt: str | Prompt = editor_system_prompt(),
         projects: ProjectLibraryPrecursor = (),
-        knowledge_archive: KnowledgeArchive = standard_knowledge_archive(),
+        session_history: SessionHistory | Zoning | Path | str,
         knowledge_crammer: KnowledgeCrammer = standard_knowledge_crammer(),
         index_crammer: IndexCrammer = standard_index_crammer(),
         prompt_format: PromptFormat = standard_prompt_format(),
@@ -88,17 +88,17 @@ class Editor(Role):
         self._name = name
         self._model = model
         self._system = str(prompt)
-        self._knowledge_archive = knowledge_archive
+        self._session_history = coerce_session_history(session_history)
         self._knowledge_crammer = knowledge_crammer
         self._index_crammer = index_crammer
         self._prompt_format = prompt_format
         self._reminder_format = reminder_format
         self._project_library = coerce_project_library(projects)
         self._step_chain = StepChain(
+            ImplicitSessionStep(),
+            SessionLoadStep(self._session_history),
             ProjectCommand(),
-            CutoffCommand(),
-            ImplicitCutoffStep(self._knowledge_archive),
-            ProjectKnowledgeStep(self._knowledge_archive),
+            ProjectKnowledgeStep(),
             CustomStep(self.stuff),
             retrieval_step,
             UnrecognizedCommand(),
@@ -133,40 +133,42 @@ class Editor(Role):
         self._knowledge_crammer.cram(builder, knowledge)
 
     def chat(self, prompt: ChatThread) -> ChatStream:
+        if not prompt or prompt[-1].intent != ChatIntent.PROMPT:
+            raise ValueError("The last message in the chat thread must be a PROMPT.")
+
         env = Environment()
         env[ProjectEnv].configure(self._project_library)
-        context_env = env[ContextEnv]
+
+        session_messages = [m for m in prompt if m.intent == ChatIntent.SESSION]
+        session_command_chain = StepChain(SessionCommand(), UnrecognizedCommand())
         queue = env[CommandsEnv]
-        prompt_env = env[PromptEnv]
+        for m in session_messages:
+            queue.add(parse_mentions(m))
+        session_command_chain.process(env)
+
+        last_prompt_message = prompt[-1]
+        env[PromptEnv].set(last_prompt_message.content)
+        env[CommandsEnv].add(parse_mentions(last_prompt_message))
+        self._step_chain.process(env)
+
+        context_env = env[ContextEnv]
+        if len(prompt) == 1:
+            context_env.add(self._reminder_format.render_chat(self._system))
+        context_env.add(last_prompt_message)
+
         status_env = env[StatusEnv]
-
-        for i, message in enumerate(prompt):
-            if i + 1 == len(prompt):
-                prompt_env.mark_last()
-
-            if message.intent == ChatIntent.PROMPT:
-                env[CutoffEnv].clear()
-                prompt_env.set(message.content)
-                if i + 1 < len(prompt) and prompt[i + 1].intent == ChatIntent.SESSION:
-                    queue.add(parse_mentions(prompt[i + 1]))
-                queue.add(parse_mentions(message))
-                self._step_chain.process(env)
-
-            if i == 0:
-                context_env.add(self._reminder_format.render_chat(self._system))
-
-            context_env.add(message)
-
         if status_env.populated:
-            yield from status_env.stream()
-            return
+            yield from context_env.record(status_env.stream())
+        else:
+            session_env = env[SessionEnv]
+            yield from context_env.record(session_env.stream())
 
-        session_env = env[SessionEnv]
-        yield from session_env.stream()
-        context_env.add(session_env.message())
+            assembled_prompt = context_env.build()
+            model_stream = self._model.generate(assembled_prompt)
+            yield from context_env.record(model_stream)
 
-        assembled_prompt = context_env.build()
-        yield from self._model.generate(assembled_prompt)
+        session_id = env[SessionEnv].get_id()
+        self._session_history.save(session_id, env)
 
 __all__ = [
     'editor_system_prompt',

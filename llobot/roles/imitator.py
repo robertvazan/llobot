@@ -8,14 +8,14 @@ from llobot.chats.intent import ChatIntent
 from llobot.commands.approve import ApproveCommand
 from llobot.commands.chain import StepChain
 from llobot.commands.custom import CustomStep
-from llobot.commands.cutoff import CutoffCommand, ImplicitCutoffStep
 from llobot.commands.project import ProjectCommand
+from llobot.commands.session import ImplicitSessionStep, SessionCommand, SessionLoadStep
 from llobot.commands.unrecognized import UnrecognizedCommand
 from llobot.crammers.example import ExampleCrammer, standard_example_crammer
 from llobot.environments import Environment
 from llobot.environments.commands import CommandsEnv
 from llobot.environments.context import ContextEnv
-from llobot.environments.cutoff import CutoffEnv
+from llobot.environments.history import SessionHistory, coerce_session_history
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.prompt import PromptEnv
 from llobot.environments.session import SessionEnv
@@ -54,10 +54,12 @@ class Imitator(Role):
     _project_library: ProjectLibrary
     _step_chain: StepChain
     _examples: ExampleMemory
+    _session_history: SessionHistory
 
     def __init__(self, name: str, model: Model, *,
         prompt: str | Prompt = '',
         projects: ProjectLibraryPrecursor = (),
+        session_history: SessionHistory | Zoning | Path | str,
         example_history: ChatHistory | Zoning | Path | str = standard_chat_history(data_home()/'llobot/examples'),
         crammer: ExampleCrammer = standard_example_crammer(),
         prompt_format: PromptFormat = standard_prompt_format(),
@@ -65,6 +67,7 @@ class Imitator(Role):
     ):
         self._name = name
         self._model = model
+        self._session_history = coerce_session_history(session_history)
         self._examples = ExampleMemory(name, history=example_history)
         self._system = str(prompt)
         self._crammer = crammer
@@ -72,9 +75,9 @@ class Imitator(Role):
         self._reminder_format = reminder_format
         self._project_library = coerce_project_library(projects)
         self._step_chain = StepChain(
+            ImplicitSessionStep(),
+            SessionLoadStep(self._session_history),
             ProjectCommand(),
-            CutoffCommand(),
-            ImplicitCutoffStep(),
             CustomStep(self.stuff),
             ApproveCommand(self._examples),
             UnrecognizedCommand(),
@@ -106,36 +109,42 @@ class Imitator(Role):
         builder.add(self._reminder_format.render_chat(self._system))
 
     def chat(self, prompt: ChatThread) -> ChatStream:
+        if not prompt or prompt[-1].intent != ChatIntent.PROMPT:
+            raise ValueError("The last message in the chat thread must be a PROMPT.")
+
         env = Environment()
         env[ProjectEnv].configure(self._project_library)
-        context_env = env[ContextEnv]
+
+        session_messages = [m for m in prompt if m.intent == ChatIntent.SESSION]
+        session_command_chain = StepChain(SessionCommand(), UnrecognizedCommand())
         queue = env[CommandsEnv]
-        prompt_env = env[PromptEnv]
+        for m in session_messages:
+            queue.add(parse_mentions(m))
+        session_command_chain.process(env)
+
+        last_prompt_message = prompt[-1]
+        env[PromptEnv].set(last_prompt_message.content)
+        env[CommandsEnv].add(parse_mentions(last_prompt_message))
+        self._step_chain.process(env)
+
+        context_env = env[ContextEnv]
+        if len(prompt) == 1:
+            context_env.add(self._reminder_format.render_chat(self._system))
+        context_env.add(last_prompt_message)
+
         status_env = env[StatusEnv]
-
-        for i, message in enumerate(prompt):
-            if i + 1 == len(prompt):
-                prompt_env.mark_last()
-
-            if message.intent == ChatIntent.PROMPT:
-                prompt_env.set(message.content)
-                if i + 1 < len(prompt) and prompt[i + 1].intent == ChatIntent.SESSION:
-                    queue.add(parse_mentions(prompt[i + 1]))
-                queue.add(parse_mentions(message))
-                self._step_chain.process(env)
-
-            context_env.add(message)
-
         if status_env.populated:
-            yield from status_env.stream()
-            return
+            yield from context_env.record(status_env.stream())
+        else:
+            session_env = env[SessionEnv]
+            yield from context_env.record(session_env.stream())
 
-        session_env = env[SessionEnv]
-        yield from session_env.stream()
-        context_env.add(session_env.message())
+            assembled_prompt = context_env.build()
+            model_stream = self._model.generate(assembled_prompt)
+            yield from context_env.record(model_stream)
 
-        assembled_prompt = context_env.build()
-        yield from self._model.generate(assembled_prompt)
+        session_id = env[SessionEnv].get_id()
+        self._session_history.save(session_id, env)
 
 __all__ = [
     'Imitator',

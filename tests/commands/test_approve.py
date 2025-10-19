@@ -23,8 +23,6 @@ def test_approve_command(tmp_path: Path):
     prompt_env = env[PromptEnv]
     prompt_env.set("Approved response. @approve")
 
-    prompt_env.mark_last()
-
     # Handle
     assert command.handle('approve', env)
 
@@ -54,8 +52,6 @@ def test_approve_command_full_chat(tmp_path: Path):
     context.add(ChatMessage(ChatIntent.PROMPT, "User prompt 1"))
     context.add(ChatMessage(ChatIntent.RESPONSE, "Model response 1"))
     context.add(ChatMessage(ChatIntent.PROMPT, "User prompt 2"))
-
-    env[PromptEnv].mark_last()
 
     # Handle (no prompt in PromptEnv)
     assert command.handle('approve', env)
@@ -90,8 +86,6 @@ def test_approve_command_empty_stripped_prompt(tmp_path: Path):
     prompt_env = env[PromptEnv]
     prompt_env.set("@approve")
 
-    prompt_env.mark_last()
-
     # Handle
     assert command.handle('approve', env)
 
@@ -105,19 +99,3 @@ def test_approve_command_empty_stripped_prompt(tmp_path: Path):
     assert len(example.messages) == 2
     assert example[0].content == "User prompt 1"
     assert example[1].content == "Model response 1"
-
-def test_approve_command_not_last(tmp_path: Path):
-    history = standard_chat_history(tmp_path)
-    examples = ExampleMemory('test-role', history=history)
-    command = ApproveCommand(examples)
-    env = Environment()
-
-    context = env[ContextEnv]
-    context.add(ChatMessage(ChatIntent.PROMPT, "User prompt"))
-    prompt_env = env[PromptEnv]
-    prompt_env.set("Approved response. @approve")
-
-    assert not prompt_env.is_last
-    assert command.handle('approve', env)
-    assert not env[StatusEnv].populated
-    assert not list(examples.recent(env))

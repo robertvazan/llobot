@@ -2,19 +2,49 @@
 Session messages.
 """
 from __future__ import annotations
+from datetime import datetime
 from llobot.utils.text import concat_documents
+from llobot.utils.time import format_time
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
 from llobot.chats.stream import ChatStream
 
 class SessionEnv:
     """
-    An environment component that accumulates session messages from commands.
+    An environment component that accumulates session messages from commands
+    and holds the session ID.
     """
     _fragments: list[str]
+    _id: datetime | None
 
     def __init__(self):
         self._fragments = []
+        self._id = None
+
+    def set_id(self, session_id: datetime):
+        """
+        Sets the session ID for the environment.
+
+        It is okay to set the same session ID multiple times.
+
+        Args:
+            session_id: The session ID to set.
+
+        Raises:
+            ValueError: If a different session ID is already set.
+        """
+        if self._id is not None and self._id != session_id:
+            raise ValueError(f"Session ID already set to {format_time(self._id)}, cannot change to {format_time(session_id)}")
+        self._id = session_id
+
+    def get_id(self) -> datetime | None:
+        """
+        Gets the currently configured session ID.
+
+        Returns:
+            The configured session ID, or None if not set.
+        """
+        return self._id
 
     def append(self, text: str | None):
         """
