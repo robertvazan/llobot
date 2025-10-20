@@ -16,12 +16,14 @@ class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
     _home: Path
     _whitelist: KnowledgeSubset | None
     _blacklist: KnowledgeSubset | None
+    _mutable: bool
 
     def __init__(self,
         home: str | Path = '~',
         *,
         whitelist: KnowledgeSubset | None = None,
-        blacklist: KnowledgeSubset | None = None
+        blacklist: KnowledgeSubset | None = None,
+        mutable: bool = False
     ):
         """
         Initializes a new `HomeProjectLibrary`.
@@ -30,10 +32,12 @@ class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
             home: The base directory to look for projects in. Defaults to `~`.
             whitelist: A whitelist to pass to created `DirectoryProject`s.
             blacklist: A blacklist to pass to created `DirectoryProject`s.
+            mutable: If `True`, created projects allow write operations.
         """
         self._home = Path(home).expanduser().absolute()
         self._whitelist = whitelist
         self._blacklist = blacklist
+        self._mutable = mutable
 
     def lookup(self, key: str) -> list[Project]:
         """
@@ -61,7 +65,8 @@ class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
                 project_dir,
                 prefix=key,
                 whitelist=self._whitelist,
-                blacklist=self._blacklist
+                blacklist=self._blacklist,
+                mutable=self._mutable
             )]
         return []
 

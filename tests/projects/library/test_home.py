@@ -1,4 +1,7 @@
 from pathlib import Path
+
+import pytest
+
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.projects.directory import DirectoryProject
 from llobot.projects.library.home import HomeProjectLibrary
@@ -35,3 +38,25 @@ def test_home_project_library_with_filters(tmp_path: Path):
 def test_home_project_library_default_home():
     lib = HomeProjectLibrary()
     assert lib._home == Path.home().absolute()
+
+def test_home_project_library_mutable(tmp_path: Path):
+    (tmp_path / 'project3').mkdir()
+
+    # Test mutable=True
+    mutable_lib = HomeProjectLibrary(tmp_path, mutable=True)
+    mutable_project = mutable_lib.lookup('project3')[0]
+
+    assert isinstance(mutable_project, DirectoryProject)
+    assert mutable_project.mutable(Path('project3/new.txt'))
+
+    mutable_project.write(Path('project3/new.txt'), 'new')
+    assert (tmp_path / 'project3' / 'new.txt').read_text() == 'new'
+
+    # Test default is not mutable
+    immutable_lib = HomeProjectLibrary(tmp_path)
+    immutable_project = immutable_lib.lookup('project3')[0]
+
+    assert not immutable_project.mutable(Path('project3/another.txt'))
+    with pytest.raises(PermissionError):
+        immutable_project.write(Path('project3/another.txt'), 'fail')
+    assert not (tmp_path / 'project3' / 'another.txt').exists()
