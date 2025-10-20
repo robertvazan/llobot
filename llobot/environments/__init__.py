@@ -9,6 +9,8 @@ Submodules
 ----------
 projects
     Selected project.
+model
+    Selected model.
 knowledge
     Knowledge base for selected project.
 retrievals

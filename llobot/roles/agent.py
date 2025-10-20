@@ -3,12 +3,14 @@ from pathlib import Path
 from llobot.chats.thread import ChatThread
 from llobot.chats.intent import ChatIntent
 from llobot.chats.stream import ChatStream
+from llobot.commands.model import handle_model_commands
 from llobot.commands.session import ensure_session_command, handle_session_commands
 from llobot.commands.unrecognized import handle_unrecognized_commands
 from llobot.environments import Environment
 from llobot.environments.commands import CommandsEnv
 from llobot.environments.context import ContextEnv
 from llobot.environments.history import SessionHistory, coerce_session_history, standard_session_history
+from llobot.environments.model import ModelEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.prompt import PromptEnv
 from llobot.environments.session import SessionEnv
@@ -17,6 +19,8 @@ from llobot.formats.mentions import parse_mentions
 from llobot.formats.prompts import PromptFormat, standard_prompt_format
 from llobot.formats.prompts.reminder import ReminderPromptFormat
 from llobot.models import Model
+from llobot.models.library import ModelLibrary
+from llobot.models.library.empty import EmptyModelLibrary
 from llobot.projects.library import ProjectLibrary, ProjectLibraryPrecursor, coerce_project_library
 from llobot.prompts import Prompt
 from llobot.roles import Role
@@ -38,10 +42,12 @@ class Agent(Role):
     _prompt_format: PromptFormat
     _reminder_format: PromptFormat
     _project_library: ProjectLibrary
+    _model_library: ModelLibrary
 
     def __init__(self, name: str, model: Model, *,
         prompt: str | Prompt = '',
         projects: ProjectLibraryPrecursor = (),
+        models: ModelLibrary | None = None,
         session_history: SessionHistory | Zoning | Path | str = standard_session_history(),
         prompt_format: PromptFormat = standard_prompt_format(),
         reminder_format: PromptFormat = ReminderPromptFormat(),
@@ -51,9 +57,10 @@ class Agent(Role):
 
         Args:
             name: The name of the role.
-            model: The language model to use.
+            model: The default language model to use.
             prompt: The system prompt.
             projects: A project library or a precursor for one.
+            models: A model library.
             session_history: Session history storage.
             prompt_format: Format for the main system prompt.
             reminder_format: Format for reminder prompts.
@@ -62,6 +69,7 @@ class Agent(Role):
         self._model = model
         self._system = str(prompt)
         self._project_library = coerce_project_library(projects)
+        self._model_library = models or EmptyModelLibrary()
         self._session_history = coerce_session_history(session_history)
         self._prompt_format = prompt_format
         self._reminder_format = reminder_format
@@ -85,6 +93,9 @@ class Agent(Role):
         session_id = env[SessionEnv].get_id()
         if session_id:
             self._session_history.load(session_id, env)
+
+        handle_model_commands(env)
+
         self.handle_setup(env)
         if not env[ContextEnv].populated:
             self.stuff(env)
@@ -94,9 +105,9 @@ class Agent(Role):
         """
         Hook for subclasses to prepare the environment before stuffing.
 
-        This is called after project commands are handled but before the context
-        is stuffed. It can be used to populate environment components that `stuff`
-        depends on, such as loading a knowledge base.
+        This is called after project and model commands are handled but before the
+        context is stuffed. It can be used to populate environment components
+        that `stuff` depends on, such as loading a knowledge base.
 
         Args:
             env: The environment to prepare.
@@ -115,7 +126,7 @@ class Agent(Role):
             env: The environment to populate.
         """
         builder = env[ContextEnv].builder
-        builder.budget = self._model.context_budget
+        builder.budget = env[ModelEnv].get().context_budget
         builder.add(self._prompt_format.render_chat(self._system))
 
     def remind(self, env: Environment):
@@ -167,6 +178,7 @@ class Agent(Role):
 
         env = Environment()
         env[ProjectEnv].configure(self._project_library)
+        env[ModelEnv].configure(self._model_library, self._model)
 
         for m in prompt:
             if m.intent == ChatIntent.SESSION:
@@ -189,7 +201,8 @@ class Agent(Role):
             yield from context_env.record(env[StatusEnv].stream())
         else:
             assembled_prompt = context_env.build()
-            model_stream = self._model.generate(assembled_prompt)
+            model = env[ModelEnv].get()
+            model_stream = model.generate(assembled_prompt)
             yield from context_env.record(model_stream)
 
         session_id = env[SessionEnv].get_id()

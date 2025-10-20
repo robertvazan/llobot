@@ -8,6 +8,8 @@ Submodules
 
 project
     Command to select a project.
+model
+    Command to select a model.
 knowledge
     Function to load project knowledge.
 retrievals

@@ -13,6 +13,8 @@ listeners
     Servers that expose llobot models via standard protocols (Ollama, OpenAI).
 ollama
     Client for Ollama-compatible models.
+library
+    `ModelLibrary` for looking up models by key.
 
 Submodules
 ----------
