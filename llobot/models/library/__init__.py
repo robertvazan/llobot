@@ -3,6 +3,17 @@ Model libraries for looking up models by key.
 
 This package provides the `ModelLibrary` interface and several implementations
 for discovering and retrieving `Model` instances based on a string key.
+
+Submodules
+----------
+empty
+    An empty model library.
+named
+    A library that looks up models by name.
+aliased
+    A library that looks up models by alias.
+union
+    A library that combines other libraries.
 """
 from __future__ import annotations
 from llobot.models import Model
