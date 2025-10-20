@@ -32,30 +32,32 @@ sys.path.insert(0, str(Path.home() / 'Sources' / 'llobot'))
 
 from llobot.models.anthropic import AnthropicModel
 from llobot.models.gemini import GeminiModel
+from llobot.models.library.named import NamedModelLibrary
 from llobot.models.listeners.ollama import OllamaListener
 from llobot.models.ollama import OllamaModel
 from llobot.projects.library.home import HomeProjectLibrary
+from llobot.roles.chatbot import Chatbot
 from llobot.roles.coder import Coder
+from llobot.roles.editor import Editor
+from llobot.roles.imitator import Imitator
 from llobot.roles.models import RoleModel
 
-# Backend models that respond to the assembled prompt
-# This will use qwen2.5-coder:7b on localhost instance of Ollama.
-local_model = OllamaModel(
-    'local',
-    model='qwen2.5-coder',
-    # Context size has to be always specified, because Ollama defaults are tiny.
-    num_ctx=24 * 1024
+# Backend models that respond to the assembled prompt.
+models = NamedModelLibrary(
+    # This will use qwen2.5-coder on localhost instance of Ollama.
+    OllamaModel('local', model='qwen2.5-coder', num_ctx=24 * 1024),
+    GeminiModel(
+        'cloud',
+        model='gemini-2.5-flash',
+        auth='YOUR_GOOGLE_API_KEY'
+    ),
+    AnthropicModel(
+        'frontier',
+        model='claude-sonnet-4-5',
+        auth='YOUR_ANTHROPIC_API_KEY'
+    ),
 )
-cloud_model = GeminiModel(
-    'cloud',
-    model='gemini-2.5-flash',
-    auth='YOUR_GOOGLE_API_KEY'
-)
-claude_model = AnthropicModel(
-    'claude',
-    model='claude-sonnet-4-0',
-    auth='YOUR_ANTHROPIC_API_KEY'
-)
+default_model = models['local']
 
 # Projects that will be used as knowledge bases.
 # HomeProjectLibrary looks up projects under given directory.
@@ -65,7 +67,19 @@ projects = HomeProjectLibrary('~/Sources')
 # Roles determine what goes in the context.
 # Lets use some standard roles that come with llobot.
 roles = [
-    Coder('coder', local_model, projects=projects),
+    Coder('coder', default_model, projects=projects, models=models),
+    Editor('editor', default_model, projects=projects, models=models),
+    Imitator(
+        'translator',
+        default_model,
+        prompt="Respond to every message with its Spanish translation.",
+        models=models,
+    ),
+    Chatbot(
+        'reader',
+        default_model,
+        prompt="Respond with summary of the provided article. Then answer questions.",
+    ),
 ]
 
 # Create virtual models for all roles.
@@ -75,7 +89,7 @@ role_models = [RoleModel(role) for role in roles]
 OllamaListener(*role_models, port=11435).listen()
 ```
 
-Run this script and add `localhost:11435` as an additional Ollama endpoint to your UI frontend (like Open WebUI, which is [no longer open source](https://github.com/open-webui/open-webui/issues/13579), so feel free to look for alternatives). You should now see the virtual model `coder` listed in the UI.
+Run this script and add `localhost:11435` as an additional Ollama endpoint to your UI frontend (like Open WebUI, which is [no longer open source](https://github.com/open-webui/open-webui/issues/13579), so feel free to look for alternatives). You should now see virtual models `coder`, `editor`, `translator`, and `reader` listed in the UI.
 
 ## How to use
 
