@@ -9,6 +9,8 @@ and examples.
 Submodules
 ----------
 
+agent
+    Base class for roles that manage sessions and commands.
 chatbot
     A simple chatbot role.
 imitator
