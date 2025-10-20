@@ -43,6 +43,7 @@ from llobot.roles.imitator import Imitator
 from llobot.roles.models import RoleModel
 
 # Backend models that respond to the assembled prompt.
+# You can @-mention them to override the model default.
 models = NamedModelLibrary(
     # This will use qwen2.5-coder on localhost instance of Ollama.
     OllamaModel('local', model='qwen2.5-coder', num_ctx=24 * 1024),
