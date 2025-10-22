@@ -175,8 +175,10 @@ class Project:
         """
         Moves a file from a source path to a destination path.
 
-        This is implemented as a read-write-remove sequence and can work
-        across different member projects in a `UnionProject`.
+        The base implementation uses a read-write-remove sequence, which can
+        work across different member projects in a `UnionProject`. Subclasses
+        may override this for more efficient, in-project moves that preserve
+        file attributes.
 
         Args:
             source: The path of the file to move.

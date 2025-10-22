@@ -1,4 +1,5 @@
 import os
+import stat
 from pathlib import Path
 import pytest
 from llobot.projects.directory import DirectoryProject
@@ -118,7 +119,36 @@ def test_directory_project_mutable(tmp_path: Path):
     (project_dir / "source.txt").write_text("move me")
     project.move(Path("p/source.txt"), Path("p/dest.txt"))
     assert not (project_dir / "source.txt").exists()
-    assert (project_dir / "dest.txt").read_text() == "move me\n"
+    assert (project_dir / "dest.txt").read_text() == "move me"
+
+    # Test write preserves permissions
+    executable_path = project_dir / "executable.sh"
+    executable_path.write_text("#!/bin/bash\necho hello")
+    executable_path.chmod(0o755)
+    original_mode = executable_path.stat().st_mode
+    assert os.access(executable_path, os.X_OK)
+
+    project.write(Path("p/executable.sh"), "#!/bin/bash\necho world")
+    assert (project_dir / "executable.sh").read_text() == "#!/bin/bash\necho world"
+    new_mode = executable_path.stat().st_mode
+    assert stat.S_IMODE(new_mode) == stat.S_IMODE(original_mode)
+    assert os.access(executable_path, os.X_OK)
+
+    # Test move preserves permissions
+    executable_move_src_path = project_dir / "executable_move_src.sh"
+    executable_move_src_path.write_text("#!/bin/bash\necho move")
+    executable_move_src_path.chmod(0o755)
+    src_mode = executable_move_src_path.stat().st_mode
+    assert os.access(executable_move_src_path, os.X_OK)
+
+    project.move(Path("p/executable_move_src.sh"), Path("p/executable_move_dest.sh"))
+
+    executable_move_dest_path = project_dir / "executable_move_dest.sh"
+    assert not executable_move_src_path.exists()
+    assert executable_move_dest_path.exists()
+    dest_mode = executable_move_dest_path.stat().st_mode
+    assert stat.S_IMODE(dest_mode) == stat.S_IMODE(src_mode)
+    assert os.access(executable_move_dest_path, os.X_OK)
 
     # Test update
     delta_add = DocumentDelta(Path("p/delta_add.txt"), "delta content")

@@ -1,4 +1,6 @@
 from __future__ import annotations
+import os
+import stat
 from pathlib import Path
 import pytest
 from llobot.knowledge import Knowledge
@@ -139,7 +141,7 @@ def test_union_project_mutable(tmp_path: Path):
 
     union.move(Path("p1/c.txt"), Path("p1/d.txt"))
     assert not (dir1 / "c.txt").exists()
-    assert (dir1 / "d.txt").read_text() == "c\n"
+    assert (dir1 / "d.txt").read_text() == "c"
 
 def test_union_project_move_across_projects(tmp_path: Path):
     dir1 = tmp_path / "p1"
@@ -164,3 +166,25 @@ def test_union_project_move_across_projects(tmp_path: Path):
         union_mixed.move(Path("p1/x.txt"), Path("p2/y.txt"))
     assert (dir1 / "x.txt").exists()
     assert not (dir2 / "y.txt").exists()
+
+def test_union_project_move_within_project_preserves_permissions(tmp_path: Path):
+    dir1 = tmp_path / "p1"
+    dir1.mkdir()
+    executable_path = dir1 / "executable.sh"
+    executable_path.write_text("#!/bin/bash\necho hello")
+    executable_path.chmod(0o755)
+
+    p1 = DirectoryProject(dir1, prefix="p1", mutable=True)
+    union = union_project(p1)
+
+    src_mode = executable_path.stat().st_mode
+    assert os.access(executable_path, os.X_OK)
+
+    union.move(Path("p1/executable.sh"), Path("p1/moved.sh"))
+
+    dest_path = dir1 / "moved.sh"
+    assert not executable_path.exists()
+    assert dest_path.exists()
+    dest_mode = dest_path.stat().st_mode
+    assert stat.S_IMODE(dest_mode) == stat.S_IMODE(src_mode)
+    assert os.access(dest_path, os.X_OK)

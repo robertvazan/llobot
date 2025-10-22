@@ -104,6 +104,32 @@ class UnionProject(Project, ValueTypeMixin):
         assert project, f"Path {path} is mutable but has no project."
         project.remove(path)
 
+    def move(self, source: Path, destination: Path):
+        """
+        Moves a file from a source path to a destination path.
+
+        If both source and destination are handled by the same member project,
+        the move is delegated to that project. Otherwise, it falls back to a
+        read-write-remove sequence.
+
+        Args:
+            source: The path of the file to move.
+            destination: The new path for the file.
+
+        Raises:
+            PermissionError: If the source is not readable/removable or the
+                             destination is not writable.
+            FileNotFoundError: If the source file does not exist or is not a file.
+        """
+        source_project = self._find_project(source)
+        destination_project = self._find_project(destination)
+
+        if source_project and source_project is destination_project:
+            source_project.move(source, destination)
+        else:
+            # Fallback to base implementation for cross-project moves
+            super().move(source, destination)
+
 
 def union_project(*projects: Project) -> Project:
     """

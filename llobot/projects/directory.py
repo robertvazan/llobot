@@ -4,7 +4,7 @@ from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.knowledge.subsets.standard import blacklist_subset, whitelist_subset
 from llobot.projects import Project
 from llobot.projects.items import ProjectDirectory, ProjectFile, ProjectItem, ProjectLink
-from llobot.utils.fs import read_document, write_text
+from llobot.utils.fs import create_parents, read_document, write_text
 from llobot.utils.values import ValueTypeMixin
 from llobot.utils.zones import validate_zone
 
@@ -161,6 +161,36 @@ class DirectoryProject(Project, ValueTypeMixin):
         assert local_path, f"Path {path} is not under project prefix despite mutable() check passing"
         real_path = self._directory / local_path
         real_path.unlink()
+
+    def move(self, source: Path, destination: Path):
+        """
+        Moves a file within the project directory using a filesystem move.
+
+        Args:
+            source: The project path of the file to move.
+            destination: The new project path for the file.
+
+        Raises:
+            PermissionError: If the project is not mutable or if either path
+                             is outside the project prefix.
+            FileNotFoundError: If the source file does not exist.
+        """
+        if not self.mutable(source):
+            raise PermissionError(f"Source path is not mutable in this project: {source}")
+        if not self.mutable(destination):
+            raise PermissionError(f"Destination path is not mutable in this project: {destination}")
+
+        source_local = self._to_local_path(source)
+        dest_local = self._to_local_path(destination)
+        # This should not happen if mutable() check passed
+        assert source_local, f"Path {source} is not under project prefix despite mutable() check passing"
+        assert dest_local, f"Path {destination} is not under project prefix despite mutable() check passing"
+
+        real_source = self._directory / source_local
+        real_dest = self._directory / dest_local
+
+        create_parents(real_dest)
+        real_source.rename(real_dest)
 
 __all__ = [
     'DirectoryProject',
