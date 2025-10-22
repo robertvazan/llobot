@@ -12,3 +12,4 @@
 - Where practical, keep the documentation self-contained, so that it can be understood without visiting other files
 - Describe behavior from caller's perspective, not implementation details
 - Explain purpose, context, advantages, and trade-offs if this information is available to you
+- IMPORTANT: Documentation and comments describe the final state of the code, not what you just changed
