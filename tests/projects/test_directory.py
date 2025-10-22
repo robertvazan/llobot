@@ -171,3 +171,44 @@ def test_directory_project_immutable_write_fails(tmp_path: Path):
 
     with pytest.raises(PermissionError):
         project.remove(Path("p/file.txt"))
+
+def test_directory_project_write_preserves_executable(tmp_path: Path):
+    """
+    Overwriting an existing executable file must preserve the executable bit.
+    """
+    project_dir = tmp_path / "exec_project"
+    project_dir.mkdir()
+    exe_path = project_dir / "run.sh"
+    exe_path.write_text("#!/bin/bash\necho hello")
+    exe_path.chmod(0o755)
+    original_mode = exe_path.stat().st_mode
+    assert os.access(exe_path, os.X_OK)
+
+    project = DirectoryProject(project_dir, prefix="p", mutable=True)
+    project.write(Path("p/run.sh"), "#!/bin/bash\necho world")
+
+    assert (project_dir / "run.sh").read_text() == "#!/bin/bash\necho world"
+    new_mode = exe_path.stat().st_mode
+    assert stat.S_IMODE(new_mode) == stat.S_IMODE(original_mode)
+    assert os.access(exe_path, os.X_OK)
+
+def test_directory_project_update_preserves_executable(tmp_path: Path):
+    """
+    Updating an existing executable file via DocumentDelta must preserve the executable bit.
+    """
+    project_dir = tmp_path / "exec_update_project"
+    project_dir.mkdir()
+    exe_path = project_dir / "tool.sh"
+    exe_path.write_text("#!/bin/bash\necho old")
+    exe_path.chmod(0o755)
+    original_mode = exe_path.stat().st_mode
+    assert os.access(exe_path, os.X_OK)
+
+    project = DirectoryProject(project_dir, prefix="p", mutable=True)
+    delta = DocumentDelta(Path("p/tool.sh"), "#!/bin/bash\necho new")
+    project.update(delta)
+
+    assert (project_dir / "tool.sh").read_text() == "#!/bin/bash\necho new"
+    new_mode = exe_path.stat().st_mode
+    assert stat.S_IMODE(new_mode) == stat.S_IMODE(original_mode)
+    assert os.access(exe_path, os.X_OK)
