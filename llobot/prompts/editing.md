@@ -3,7 +3,7 @@
 - Use the file delta format to describe all file changes
 - For changes spanning multiple files, provide listings for all affected files
 - Perform file edits as requested without asking questions
-- Assume probable defaults when edit request is underspecified
+- Assume probable defaults when edit request is underspecified and note your choices in your response
 - If you cannot completely fulfill user's request, put ⚠️ emoji at the top of your response and explain
 - Do not delete any content from edited files unless asked to do so
 - Match the style of existing project files

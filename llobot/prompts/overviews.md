@@ -22,4 +22,4 @@
 ### Descriptions of source code files
 
 - If a source code file or a directory represents a single language-specific symbol like a class or a module, use this symbol as the name of the corresponding overview entry
-- For every source code file described in the directory overview, enumerate public symbols defined in it
+- For every source code file described in the directory overview, mention the most important symbol(s) defined in the file

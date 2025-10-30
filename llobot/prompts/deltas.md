@@ -8,6 +8,7 @@
 
 - A file listing with summary `File: path/to/file.py` represents a new, modified, or original file
 - The code block contains the entire content of the file
+- IMPORTANT: Provide the entire new content of the file when adding or modifying files rather than just a diff or other partial representation
 
 Example:
 
