@@ -45,29 +45,32 @@ def test_approve_command_full_chat(tmp_path: Path):
     examples = ExampleMemory('test-role', history=history)
     env = Environment()
 
-    # Setup context
+    # Setup context with intermediate conversation
     context = env[ContextEnv]
     context.add(ChatMessage(ChatIntent.PROMPT, "User prompt 1"))
     context.add(ChatMessage(ChatIntent.RESPONSE, "Model response 1"))
-    context.add(ChatMessage(ChatIntent.PROMPT, "User prompt 2"))
+    context.add(ChatMessage(ChatIntent.PROMPT, "Refinement prompt"))
+    context.add(ChatMessage(ChatIntent.RESPONSE, "Final model response"))
 
-    # Handle (no prompt in PromptEnv)
+    # Setup prompt that is empty after stripping, to use the last response from context
+    prompt_env = env[PromptEnv]
+    prompt_env.set("@approve")
+
+    # Handle
     assert handle_approve_command('approve', env, examples)
 
     # Check status
     assert env[StatusEnv].populated
 
-    # Check saved example
+    # Check that only initial prompt and final response are saved
     saved_examples = list(examples.recent(env))
     assert len(saved_examples) == 1
     example = saved_examples[0]
-    assert len(example.messages) == 3
+    assert len(example.messages) == 2
     assert example[0].intent == ChatIntent.EXAMPLE_PROMPT
     assert example[0].content == "User prompt 1"
     assert example[1].intent == ChatIntent.EXAMPLE_RESPONSE
-    assert example[1].content == "Model response 1"
-    assert example[2].intent == ChatIntent.EXAMPLE_PROMPT
-    assert example[2].content == "User prompt 2"
+    assert example[1].content == "Final model response"
 
 def test_approve_command_empty_stripped_prompt(tmp_path: Path):
     history = standard_chat_history(tmp_path)
@@ -89,7 +92,7 @@ def test_approve_command_empty_stripped_prompt(tmp_path: Path):
     # Check status
     assert env[StatusEnv].populated
 
-    # Check that the whole context was saved
+    # Check that the initial prompt and last response were saved
     saved_examples = list(examples.recent(env))
     assert len(saved_examples) == 1
     example = saved_examples[0]

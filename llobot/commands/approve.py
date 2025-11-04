@@ -15,7 +15,10 @@ from llobot.memories.examples import ExampleMemory
 
 def handle_approve_command(text: str, env: Environment, examples: ExampleMemory) -> bool:
     """
-    A command to approve the last interaction and save it as an example.
+    A command to approve correct prompt-response pair and save it as an example.
+    Only the initial prompt and the last response are saved.
+    Intermediate conversation is not saved, so that the user can ask for refinements.
+    If the command is accompanied with text, then that is taken to be the correct response.
     """
     if text != 'approve':
         return False
@@ -23,19 +26,17 @@ def handle_approve_command(text: str, env: Environment, examples: ExampleMemory)
     context = env[ContextEnv]
     prompt_env = env[PromptEnv]
 
-    user_prompt_message = next((m for m in context.build() if m.intent == ChatIntent.PROMPT), None)
-    if user_prompt_message is None:
+    initial_prompt = next((m for m in context.build() if m.intent == ChatIntent.PROMPT), None)
+    if initial_prompt is None:
         raise ValueError("Cannot approve an empty conversation.")
 
-    prompt_text = prompt_env.get()
-    response_text = strip_mentions(prompt_text)
+    command_message_text = prompt_env.get()
+    response_text = strip_mentions(command_message_text)
     if response_text:
         response_message = ChatMessage(ChatIntent.RESPONSE, response_text)
-        example = ChatThread([user_prompt_message, response_message])
     else:
-        # Fallback if stripped response is empty or prompt was not set.
-        messages = [m for m in context.build() if m.intent in [ChatIntent.PROMPT, ChatIntent.RESPONSE]]
-        example = ChatThread(messages)
+        response_message = [m for m in context.build() if m.intent == ChatIntent.RESPONSE][-1]
+    example = ChatThread([initial_prompt, response_message])
 
     examples.save(example, env)
     env[StatusEnv].append("✅ Example saved.")

@@ -6,6 +6,8 @@ from __future__ import annotations
 class PromptEnv:
     """
     An environment component that holds the current prompt message.
+    Keeping this separate from ContextEnv lets us populate the context
+    before adding the current prompt to it.
     """
     _prompt: str = ''
 

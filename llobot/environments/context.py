@@ -11,6 +11,9 @@ class ContextEnv(PersistentEnv):
     """
     An environment component for accumulating chat messages.
     The accumulated context can be persisted to disk.
+
+    Last prompt message is only kept in PromptEnv while it is being processed,
+    so that the context can be populated before the prompt message is added.
     """
     _builder: ChatBuilder
 
