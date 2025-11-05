@@ -75,8 +75,8 @@ def standard_submessage_format() -> SubmessageFormat:
     Returns:
         The standard `SubmessageFormat`.
     """
-    from llobot.formats.submessages.details import DetailsSubmessageFormat
-    return DetailsSubmessageFormat()
+    from llobot.formats.submessages.link_comment import LinkCommentSubmessageFormat
+    return LinkCommentSubmessageFormat()
 
 __all__ = [
     'SubmessageFormat',

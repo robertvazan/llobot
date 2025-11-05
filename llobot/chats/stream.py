@@ -17,6 +17,7 @@ import threading
 from queue import Queue
 from typing import Iterable
 from llobot.chats.intent import ChatIntent
+from llobot.chats.thread import ChatThread
 
 type ChatStream = Iterable[str | ChatIntent]
 
@@ -50,7 +51,23 @@ def buffer_stream(stream: ChatStream) -> ChatStream:
             raise item
         yield item
 
+def record_stream(stream: ChatStream) -> ChatThread:
+    """
+    Consumes a chat stream and builds a ChatThread from it.
+
+    Args:
+        stream: The stream to record.
+
+    Returns:
+        A ChatThread containing all messages from the stream.
+    """
+    from llobot.chats.builder import ChatBuilder
+    builder = ChatBuilder()
+    list(builder.record(stream))
+    return builder.build()
+
 __all__ = [
     'ChatStream',
     'buffer_stream',
+    'record_stream',
 ]
