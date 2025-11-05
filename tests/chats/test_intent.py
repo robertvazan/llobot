@@ -6,12 +6,14 @@ def test_str():
     assert str(ChatIntent.SYSTEM) == 'System'
     assert str(ChatIntent.PROMPT) == 'Prompt'
     assert str(ChatIntent.RESPONSE) == 'Response'
+    assert str(ChatIntent.STATUS) == 'Status'
 
 def test_parse():
     """Tests parsing intent from string."""
     assert ChatIntent.parse('System') == ChatIntent.SYSTEM
     assert ChatIntent.parse('Prompt') == ChatIntent.PROMPT
     assert ChatIntent.parse('Response') == ChatIntent.RESPONSE
+    assert ChatIntent.parse('Status') == ChatIntent.STATUS
     with pytest.raises(ValueError):
         ChatIntent.parse('InvalidIntent')
 

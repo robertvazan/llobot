@@ -43,12 +43,12 @@ class StatusEnv:
         Constructs a status message from accumulated fragments.
 
         Returns:
-            A `ChatMessage` with `RESPONSE` intent, or `None` if no fragments were added.
+            A `ChatMessage` with `STATUS` intent, or `None` if no fragments were added.
         """
         content = self.content()
         if not content:
             return None
-        return ChatMessage(ChatIntent.RESPONSE, content)
+        return ChatMessage(ChatIntent.STATUS, content)
 
     def stream(self) -> ChatStream:
         """

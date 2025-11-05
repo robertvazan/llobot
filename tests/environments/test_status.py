@@ -12,10 +12,10 @@ def test_status_env():
     env.append('First part.')
     assert env.populated
     assert env.content() == 'First part.'
-    assert env.message() == ChatMessage(ChatIntent.RESPONSE, 'First part.')
+    assert env.message() == ChatMessage(ChatIntent.STATUS, 'First part.')
     stream_content = list(env.stream())
     assert len(stream_content) == 2
-    assert stream_content[0] == ChatIntent.RESPONSE
+    assert stream_content[0] == ChatIntent.STATUS
     assert stream_content[1] == 'First part.'
 
     env.append(None)
@@ -24,4 +24,4 @@ def test_status_env():
 
     env.append('Second part.')
     assert env.content() == 'First part.\n\nSecond part.'
-    assert env.message() == ChatMessage(ChatIntent.RESPONSE, 'First part.\n\nSecond part.')
+    assert env.message() == ChatMessage(ChatIntent.STATUS, 'First part.\n\nSecond part.')

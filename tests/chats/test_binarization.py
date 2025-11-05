@@ -12,6 +12,7 @@ def test_binarize_intent():
     assert binarize_intent(ChatIntent.AFFIRMATION) == ChatIntent.RESPONSE
     assert binarize_intent(ChatIntent.EXAMPLE_RESPONSE) == ChatIntent.RESPONSE
     assert binarize_intent(ChatIntent.RESPONSE) == ChatIntent.RESPONSE
+    assert binarize_intent(ChatIntent.STATUS) == ChatIntent.RESPONSE
 
 def test_binarize_message():
     """Tests that a message's intent is correctly binarized."""
@@ -19,10 +20,16 @@ def test_binarize_message():
     binarized_prompt = binarize_message(prompt_msg)
     assert binarized_prompt.intent == ChatIntent.PROMPT
     assert binarized_prompt.content == "content"
+
     response_msg = ChatMessage(ChatIntent.AFFIRMATION, "content")
     binarized_response = binarize_message(response_msg)
     assert binarized_response.intent == ChatIntent.RESPONSE
     assert binarized_response.content == "content"
+
+    status_msg = ChatMessage(ChatIntent.STATUS, "content")
+    binarized_status = binarize_message(status_msg)
+    assert binarized_status.intent == ChatIntent.RESPONSE
+    assert binarized_status.content == "content"
 
 def test_binarize_chat_empty():
     """Tests binarizing an empty chat thread."""
@@ -77,12 +84,15 @@ def test_binarize_chat_consecutive_responses():
     chat = ChatThread([
         ChatMessage(ChatIntent.RESPONSE, "r1"),
         ChatMessage(ChatIntent.AFFIRMATION, "a1"),
+        ChatMessage(ChatIntent.STATUS, "s1"),
     ])
     binarized = binarize_chat(chat)
     assert binarized.messages == (
         ChatMessage(ChatIntent.RESPONSE, "r1"),
         ChatMessage(ChatIntent.PROMPT, "Go on"),
         ChatMessage(ChatIntent.RESPONSE, "a1"),
+        ChatMessage(ChatIntent.PROMPT, "Go on"),
+        ChatMessage(ChatIntent.RESPONSE, "s1"),
     )
 
 def test_binarize_chat_last_prompt():
@@ -117,6 +127,7 @@ def test_binarize_chat_complex_case():
         ChatMessage(ChatIntent.SESSION, "s1"),
         ChatMessage(ChatIntent.RESPONSE, "r1"),
         ChatMessage(ChatIntent.AFFIRMATION, "a1"),
+        ChatMessage(ChatIntent.STATUS, "status"),
     ])
     binarized = binarize_chat(chat, last=ChatIntent.PROMPT)
     assert binarized.messages == (
@@ -128,5 +139,7 @@ def test_binarize_chat_complex_case():
         ChatMessage(ChatIntent.RESPONSE, "r1"),
         ChatMessage(ChatIntent.PROMPT, "Go on"),
         ChatMessage(ChatIntent.RESPONSE, "a1"),
+        ChatMessage(ChatIntent.PROMPT, "Go on"),
+        ChatMessage(ChatIntent.RESPONSE, "status"),
         ChatMessage(ChatIntent.PROMPT, "Go on"),
     )

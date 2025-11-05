@@ -29,9 +29,9 @@ class LinkCommentSubmessageFormat(SubmessageFormat, ValueTypeMixin):
 
     where `ID` is a unique random identifier.
 
-    Messages with intents other than `RESPONSE` are additionally wrapped in
-    collapsible `<details>` blocks. This allows embedding structured messages
-    in a single response message without cluttering the UI.
+    Messages with intents other than `RESPONSE` or `STATUS` are additionally
+    wrapped in collapsible `<details>` blocks. This allows embedding structured
+    messages in a single response message without cluttering the UI.
 
     For example:
 
@@ -48,8 +48,8 @@ class LinkCommentSubmessageFormat(SubmessageFormat, ValueTypeMixin):
     </details>
     ```
 
-    `RESPONSE` messages are not wrapped in `<details>`. Consecutive submessages
-    are separated by an empty line.
+    `RESPONSE` and `STATUS` messages are not wrapped in `<details>`. Consecutive
+    submessages are separated by an empty line.
     """
 
     def render(self, chat: ChatThread) -> str:
@@ -72,7 +72,7 @@ class LinkCommentSubmessageFormat(SubmessageFormat, ValueTypeMixin):
 
             block = f'{open_comment}{content_block}{close_comment}'
 
-            if message.intent != ChatIntent.RESPONSE:
+            if message.intent not in [ChatIntent.RESPONSE, ChatIntent.STATUS]:
                 block = f'<details>\n<summary>{message.intent}</summary>\n\n{block}\n\n</details>'
 
             submessages.append(block)
@@ -104,7 +104,7 @@ class LinkCommentSubmessageFormat(SubmessageFormat, ValueTypeMixin):
                     if has_content:
                         yield '\n\n'
                     yield f'[//]: # ({current_id})'
-                    if current_intent and current_intent != ChatIntent.RESPONSE:
+                    if current_intent and current_intent not in [ChatIntent.RESPONSE, ChatIntent.STATUS]:
                         yield '\n\n</details>'
                     in_message = False
 
@@ -119,7 +119,7 @@ class LinkCommentSubmessageFormat(SubmessageFormat, ValueTypeMixin):
 
                 open_comment = f'[//]: # ({current_intent}: {current_id})'
 
-                if current_intent != ChatIntent.RESPONSE:
+                if current_intent not in [ChatIntent.RESPONSE, ChatIntent.STATUS]:
                     yield f'<details>\n<summary>{current_intent}</summary>\n\n{open_comment}\n\n'
                 else:
                     yield f'{open_comment}\n\n'
@@ -132,7 +132,7 @@ class LinkCommentSubmessageFormat(SubmessageFormat, ValueTypeMixin):
             if has_content:
                 yield '\n\n'
             yield f'[//]: # ({current_id})'
-            if current_intent and current_intent != ChatIntent.RESPONSE:
+            if current_intent and current_intent not in [ChatIntent.RESPONSE, ChatIntent.STATUS]:
                 yield '\n\n</details>'
 
     def parse(self, formatted: str) -> ChatThread:

@@ -65,7 +65,7 @@ class RoleModel(Model, ValueTypeMixin):
             stack_trace = "".join(traceback.format_exception(ex)).strip()
             details = markdown_code_details('Stack trace', '', stack_trace)
             content = f'❌ `{message}`\n\n{details}'
-            yield ChatIntent.RESPONSE
+            yield ChatIntent.STATUS
             yield content
 
 __all__ = [

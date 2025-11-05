@@ -29,9 +29,10 @@ class ChatIntent(Enum):
         PROMPT: The user's prompt as seen in the chat front-end. This notably
             excludes any messages automatically inserted by roles.
         RESPONSE: The model's response to a user prompt, as seen in the chat
-            front-end. This also includes role-generated status messages (e.g.,
-            confirmations of actions taken), which are given this intent to
-            ensure they are prominently displayed in the chat UI.
+            front-end.
+        STATUS: Role-generated status messages (e.g., confirmations of actions
+            taken or error reports), which are given this intent to ensure they
+            are prominently displayed in the chat UI.
     """
     SYSTEM = 'System'
     SESSION = 'Session'
@@ -40,6 +41,7 @@ class ChatIntent(Enum):
     EXAMPLE_RESPONSE = 'Example-Response'
     PROMPT = 'Prompt'
     RESPONSE = 'Response'
+    STATUS = 'Status'
 
     def __str__(self) -> str:
         return self.value
@@ -65,6 +67,8 @@ class ChatIntent(Enum):
             return ChatIntent.PROMPT
         if codename == 'Response':
             return ChatIntent.RESPONSE
+        if codename == 'Status':
+            return ChatIntent.STATUS
         raise ValueError(f'Unknown intent: {codename}')
 
 __all__ = [

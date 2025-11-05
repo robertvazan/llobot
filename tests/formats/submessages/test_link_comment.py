@@ -8,7 +8,7 @@ from llobot.chats.stream import record_stream
 from llobot.formats.submessages.link_comment import LinkCommentSubmessageFormat
 
 formatter = LinkCommentSubmessageFormat()
-MOCK_IDS = ['id1', 'id2', 'id3', 'id4', 'id5']
+MOCK_IDS = ['id1', 'id2', 'id3', 'id4', 'id5', 'id6']
 
 def test_render_empty():
     chat = ChatThread()
@@ -80,10 +80,11 @@ def test_render_multiple_messages(_):
     assert content == expected
 
 @patch('llobot.formats.submessages.link_comment._new_id', side_effect=MOCK_IDS)
-def test_render_with_response(_):
+def test_render_with_response_and_status(_):
     chat = ChatThread([
         ChatMessage(ChatIntent.RESPONSE, "This is a response."),
         ChatMessage(ChatIntent.SYSTEM, "System prompt content."),
+        ChatMessage(ChatIntent.STATUS, "This is a status message."),
         ChatMessage(ChatIntent.RESPONSE, "Another response.")
     ])
     content = formatter.render(chat)
@@ -105,11 +106,17 @@ def test_render_with_response(_):
 
         </details>
 
-        [//]: # (Response: id3)
+        [//]: # (Status: id3)
+
+        This is a status message.
+
+        [//]: # (id3)
+
+        [//]: # (Response: id4)
 
         Another response.
 
-        [//]: # (id3)
+        [//]: # (id4)
     """).strip()
     assert content == expected
 
@@ -242,6 +249,7 @@ def test_roundtrip(_):
         ChatMessage(ChatIntent.SYSTEM, "System prompt content."),
         ChatMessage(ChatIntent.AFFIRMATION, "Okay"),
         ChatMessage(ChatIntent.PROMPT, "User prompt with\nnewlines and\n\nstuff."),
+        ChatMessage(ChatIntent.STATUS, "Status message."),
         ChatMessage(ChatIntent.RESPONSE, "Another response.")
     ])
     rendered = formatter.render(chat)
@@ -283,6 +291,22 @@ def test_render_stream_single_response_message(_):
         [//]: # (Response: id1)
 
         Hello world.
+
+        [//]: # (id1)
+    """).strip()
+    assert result == expected
+
+@patch('llobot.formats.submessages.link_comment._new_id', side_effect=MOCK_IDS)
+def test_render_stream_single_status_message(_):
+    stream = iter([ChatIntent.STATUS, "Status message."])
+    rendered_chat = record_stream(formatter.render_stream(stream))
+    assert len(rendered_chat) == 1
+    assert rendered_chat[0].intent == ChatIntent.RESPONSE
+    result = rendered_chat[0].content
+    expected = dedent("""
+        [//]: # (Status: id1)
+
+        Status message.
 
         [//]: # (id1)
     """).strip()
@@ -343,6 +367,7 @@ def test_render_stream_multiple_messages(_):
     stream = [
         ChatIntent.RESPONSE, "Response part 1.", " Response part 2.",
         ChatIntent.SYSTEM, "System message.",
+        ChatIntent.STATUS, "Status message.",
         ChatIntent.PROMPT, "Prompt message."
     ]
     rendered_chat = record_stream(formatter.render_stream(stream))
@@ -367,14 +392,20 @@ def test_render_stream_multiple_messages(_):
 
         </details>
 
+        [//]: # (Status: id3)
+
+        Status message.
+
+        [//]: # (id3)
+
         <details>
         <summary>Prompt</summary>
 
-        [//]: # (Prompt: id3)
+        [//]: # (Prompt: id4)
 
         Prompt message.
 
-        [//]: # (id3)
+        [//]: # (id4)
 
         </details>
     """).strip()

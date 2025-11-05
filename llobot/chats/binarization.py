@@ -15,7 +15,7 @@ def binarize_intent(intent: ChatIntent) -> ChatIntent:
     """
     if intent in [ChatIntent.SYSTEM, ChatIntent.SESSION, ChatIntent.EXAMPLE_PROMPT, ChatIntent.PROMPT]:
         return ChatIntent.PROMPT
-    if intent in [ChatIntent.AFFIRMATION, ChatIntent.EXAMPLE_RESPONSE, ChatIntent.RESPONSE]:
+    if intent in [ChatIntent.AFFIRMATION, ChatIntent.EXAMPLE_RESPONSE, ChatIntent.RESPONSE, ChatIntent.STATUS]:
         return ChatIntent.RESPONSE
     raise ValueError(f"Unknown intent for binarization: {intent}")
 

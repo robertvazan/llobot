@@ -35,7 +35,10 @@ def handle_approve_command(text: str, env: Environment, examples: ExampleMemory)
     if response_text:
         response_message = ChatMessage(ChatIntent.RESPONSE, response_text)
     else:
-        response_message = [m for m in context.build() if m.intent == ChatIntent.RESPONSE][-1]
+        prior_responses = [m for m in context.build() if m.intent == ChatIntent.RESPONSE]
+        if not prior_responses:
+            raise ValueError("Nothing to approve.")
+        response_message = prior_responses[-1]
     example = ChatThread([initial_prompt, response_message])
 
     examples.save(example, env)
