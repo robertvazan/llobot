@@ -2,9 +2,9 @@
 Session history management.
 """
 from __future__ import annotations
-from datetime import datetime
 from pathlib import Path
 from llobot.environments import Environment
+from llobot.environments.session import SessionEnv
 from llobot.utils.fs import data_home
 from llobot.utils.time import format_time
 from llobot.utils.zones import Zoning, coerce_zoning
@@ -13,6 +13,10 @@ from llobot.utils.zones import Zoning, coerce_zoning
 class SessionHistory:
     """
     Manages persistence of Environment states for sessions.
+
+    The session ID is obtained from the provided Environment's SessionEnv.
+    If the Environment has no session ID configured, save/load operations
+    are no-ops.
     """
     _location: Zoning
 
@@ -25,29 +29,37 @@ class SessionHistory:
         """
         self._location = coerce_zoning(location)
 
-    def save(self, time: datetime, env: Environment):
+    def save(self, env: Environment):
         """
-        Saves an environment state for a given session time.
+        Saves an environment state for the current session.
+
+        The session ID is read from env[SessionEnv]. If there is no session ID,
+        this method does nothing.
 
         Args:
-            time: The session timestamp (ID).
             env: The environment to save.
         """
-        zone = Path(format_time(time))
+        session_id = env[SessionEnv].get_id()
+        if not session_id:
+            return
+        zone = Path(format_time(session_id))
         path = self._location.resolve(zone)
         env.save(path)
 
-    def load(self, time: datetime, env: Environment):
+    def load(self, env: Environment):
         """
-        Loads an environment state for a given session time.
+        Loads an environment state for the current session.
 
-        If the session does not exist, the environment is not modified.
+        The session ID is read from env[SessionEnv]. If the session does not
+        exist or there is no session ID, the environment is not modified.
 
         Args:
-            time: The session timestamp (ID).
             env: The environment to load into.
         """
-        zone = Path(format_time(time))
+        session_id = env[SessionEnv].get_id()
+        if not session_id:
+            return
+        zone = Path(format_time(session_id))
         path = self._location.resolve(zone)
         env.load(path)
 

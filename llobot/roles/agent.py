@@ -90,9 +90,8 @@ class Agent(Role):
             env: The environment to process commands in.
         """
         ensure_session_command(env)
-        session_id = env[SessionEnv].get_id()
-        if session_id:
-            self._session_history.load(session_id, env)
+        # Load session history (if any) for the current session ID.
+        self._session_history.load(env)
 
         handle_model_commands(env)
 
@@ -205,8 +204,8 @@ class Agent(Role):
             model_stream = model.generate(assembled_prompt)
             yield from context_env.record(model_stream)
 
-        session_id = env[SessionEnv].get_id()
-        self._session_history.save(session_id, env)
+        # Save session state for the current session ID.
+        self._session_history.save(env)
 
 __all__ = [
     'Agent',
