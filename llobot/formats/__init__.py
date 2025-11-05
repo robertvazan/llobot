@@ -15,6 +15,8 @@ languages
     Language detection for syntax highlighting in code blocks.
 mentions
     Parser for @command mentions in chat messages.
+monolithic
+    Formatting chats as a single monolithic string.
 prompts
     Prompt formats for assembling complete LLM prompts.
 submessages

@@ -5,8 +5,8 @@ from __future__ import annotations
 from llobot.models import Model
 from llobot.chats.thread import ChatThread
 from llobot.chats.intent import ChatIntent
-from llobot.chats.monolithic import monolithic_chat
 from llobot.chats.stream import ChatStream
+from llobot.formats.monolithic import MonolithicFormat, standard_monolithic_format
 from llobot.utils.values import ValueTypeMixin
 
 class EchoModel(Model, ValueTypeMixin):
@@ -15,17 +15,24 @@ class EchoModel(Model, ValueTypeMixin):
     """
     _name: str
     _context_budget: int
+    _format: MonolithicFormat
 
-    def __init__(self, name: str, *, context_budget: int = 100_000):
+    def __init__(self, name: str, *,
+        context_budget: int = 100_000,
+        format: MonolithicFormat | None = None,
+    ):
         """
         Initializes the echo model.
 
         Args:
             name: The name for this model instance.
             context_budget: The context budget to report.
+            format: The format to use for rendering the prompt.
+                    Defaults to the standard monolithic format.
         """
         self._name = name
         self._context_budget = context_budget
+        self._format = format if format is not None else standard_monolithic_format()
 
     @property
     def name(self) -> str:
@@ -45,7 +52,7 @@ class EchoModel(Model, ValueTypeMixin):
         Returns:
             A `ChatStream` containing the monolithic prompt content.
         """
-        content = monolithic_chat(prompt)
+        content = self._format.render(prompt)
         if content:
             yield ChatIntent.RESPONSE
             yield content

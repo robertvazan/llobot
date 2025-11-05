@@ -21,8 +21,6 @@ history
     Manages storage of chat histories.
 markdown
     An implementation of `ChatHistory` that stores chats as Markdown files.
-monolithic
-    Functions to get single-string representation of chats.
 stream
     Stream-based representation of chats.
 """

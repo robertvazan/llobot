@@ -2,7 +2,6 @@ from pathlib import Path
 from llobot.formats.deltas.chunked import ChunkedKnowledgeDeltaFormat
 from llobot.knowledge.deltas.knowledge import KnowledgeDelta
 from llobot.knowledge.deltas.documents import DocumentDelta
-from llobot.chats.monolithic import monolithic_chat
 
 def test_render_chat_empty():
     formatter = ChunkedKnowledgeDeltaFormat()
@@ -18,9 +17,8 @@ def test_render_chat_single_chunk():
     ])
     chat = formatter.render_chat(delta)
     assert len(chat) == 2  # message + affirmation
-    monolithic = monolithic_chat(chat)
-    assert 'File: a.txt' in monolithic
-    assert 'File: b.txt' in monolithic
+    assert any('File: a.txt' in msg.content for msg in chat)
+    assert any('File: b.txt' in msg.content for msg in chat)
 
 def test_render_chat_multiple_chunks():
     formatter = ChunkedKnowledgeDeltaFormat(min_size=100)

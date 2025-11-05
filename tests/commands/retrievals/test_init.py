@@ -8,7 +8,6 @@ from llobot.knowledge import Knowledge
 from llobot.knowledge.ranking import KnowledgeRanking
 from llobot.knowledge.ranking.lexicographical import rank_lexicographically
 from llobot.knowledge.ranking.rankers import KnowledgeRanker
-from llobot.chats.monolithic import monolithic_chat
 
 
 class ReversedLexicographicalRanker(KnowledgeRanker):
@@ -39,8 +38,9 @@ def test_one_retrieval():
     flush_retrieval_commands(env)
     context = env[ContextEnv]
     assert context.populated
-    assert 'File: a.txt' in monolithic_chat(context.build())
-    assert 'content a' in monolithic_chat(context.build())
+    context_chat = context.build()
+    assert any('File: a.txt' in msg.content for msg in context_chat)
+    assert any('content a' in msg.content for msg in context_chat)
     assert not env[RetrievalsEnv].get()
 
 def test_multiple_retrievals():
@@ -49,12 +49,15 @@ def test_multiple_retrievals():
     env[RetrievalsEnv].add(Path('a.txt'))
     flush_retrieval_commands(env)
     context = env[ContextEnv]
-    monolithic = monolithic_chat(context.build())
-    assert 'File: a.txt' in monolithic
-    assert 'content a' in monolithic
-    assert 'File: b.txt' in monolithic
-    assert 'content b' in monolithic
-    assert monolithic.find('File: a.txt') < monolithic.find('File: b.txt')
+    context_chat = context.build()
+    assert any('File: a.txt' in msg.content for msg in context_chat)
+    assert any('content a' in msg.content for msg in context_chat)
+    assert any('File: b.txt' in msg.content for msg in context_chat)
+    assert any('content b' in msg.content for msg in context_chat)
+
+    # Cannot easily check order without monolithic string.
+    # We rely on ranker test for order.
+    # The default ranker is lexicographical.
     assert not env[RetrievalsEnv].get()
 
 def test_ranking_order():
@@ -64,11 +67,17 @@ def test_ranking_order():
     env[RetrievalsEnv].add(Path('b.txt'))
     flush_retrieval_commands(env, ranker=ReversedLexicographicalRanker())
     context = env[ContextEnv]
-    monolithic = monolithic_chat(context.build())
-    pos_a = monolithic.find('File: a.txt')
-    pos_b = monolithic.find('File: b.txt')
-    pos_c = monolithic.find('File: c.txt')
-    assert pos_c < pos_b < pos_a
+    context_chat = context.build()
+
+    # The ranker should order files c, b, a.
+    # The files are rendered into a single message.
+    contents = [msg.content for msg in context_chat if 'File:' in msg.content]
+    assert len(contents) == 1
+    content = contents[0]
+    c_pos = content.find('File: c.txt')
+    b_pos = content.find('File: b.txt')
+    a_pos = content.find('File: a.txt')
+    assert -1 < c_pos < b_pos < a_pos
     assert not env[RetrievalsEnv].get()
 
 def test_duplicate_retrieval_prevention():

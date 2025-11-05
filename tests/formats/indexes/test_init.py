@@ -1,7 +1,6 @@
 from llobot.formats.indexes import standard_index_format
 from llobot.formats.indexes.details import DetailsIndexFormat
 from llobot.knowledge import Knowledge
-from llobot.chats.monolithic import monolithic_chat
 
 def test_standard_index_format():
     formatter = standard_index_format()
@@ -12,4 +11,4 @@ def test_render_chat():
     formatter = standard_index_format()
     chat = formatter.render_chat(knowledge)
     assert len(chat) == 2
-    assert 'a.txt' in monolithic_chat(chat)
+    assert any('a.txt' in msg.content for msg in chat)
