@@ -79,6 +79,8 @@ index.htm # HTML index page
 index.html # HTML index page
 
 # Build configuration files
+Dockerfile # Docker
+Containerfile # Docker
 *.cabal # Haskell, Cabal
 *.csproj # C#, .NET
 *.fsproj # F#, .NET
