@@ -2,16 +2,19 @@ from pathlib import Path
 
 import pytest
 
+from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.projects.directory import DirectoryProject
 from llobot.projects.library.home import HomeProjectLibrary
 from llobot.knowledge.subsets.parsing import parse_pattern
+from llobot.projects.shallow import ShallowProject
+
 
 def test_home_project_library(tmp_path: Path):
     (tmp_path / 'project1').mkdir()
     (tmp_path / 'project1' / 'file.txt').write_text('content')
 
-    lib = HomeProjectLibrary(tmp_path)
+    lib = HomeProjectLibrary(tmp_path, parents=False)
     found = lib.lookup('project1')
     assert len(found) == 1
     project = found[0]
@@ -24,13 +27,40 @@ def test_home_project_library(tmp_path: Path):
     assert lib.lookup('/absolute/path') == []
     assert lib.lookup('invalid/../path') == []
 
+def test_home_project_library_with_parents(tmp_path: Path):
+    (tmp_path / 'p' / 'sub').mkdir(parents=True)
+    (tmp_path / 'p' / 'file1.txt').write_text('1')
+    (tmp_path / 'p' / 'sub' / 'file2.txt').write_text('2')
+
+    lib = HomeProjectLibrary(tmp_path, parents=True)
+
+    # Test with one parent
+    found = lib.lookup('p/sub')
+    assert len(found) == 2
+
+    main_project = found[0]
+    assert isinstance(main_project, DirectoryProject)
+    assert main_project.prefixes == {Path('p/sub')}
+    assert main_project.read_all() == Knowledge({Path('p/sub/file2.txt'): '2\n'})
+
+    parent_project = found[1]
+    assert isinstance(parent_project, ShallowProject)
+    assert parent_project.prefixes == {Path('p')}
+    assert parent_project.read_all() == Knowledge({Path('p/file1.txt'): '1\n'})
+
+    # Test with no parents (stops at home)
+    found_no_parents = lib.lookup('p')
+    assert len(found_no_parents) == 1
+    assert isinstance(found_no_parents[0], DirectoryProject)
+    assert found_no_parents[0].prefixes == {Path('p')}
+
 def test_home_project_library_with_filters(tmp_path: Path):
     (tmp_path / 'project2').mkdir()
     (tmp_path / 'project2' / 'a.txt').write_text('a')
     (tmp_path / 'project2' / 'b.py').write_text('b')
 
     whitelist = parse_pattern('*.txt')
-    lib = HomeProjectLibrary(tmp_path, whitelist=whitelist)
+    lib = HomeProjectLibrary(tmp_path, whitelist=whitelist, parents=False)
     project = lib.lookup('project2')[0]
     assert isinstance(project, DirectoryProject)
     assert project.read_all().keys() == KnowledgeIndex([Path('project2/a.txt')])
@@ -43,7 +73,7 @@ def test_home_project_library_mutable(tmp_path: Path):
     (tmp_path / 'project3').mkdir()
 
     # Test mutable=True
-    mutable_lib = HomeProjectLibrary(tmp_path, mutable=True)
+    mutable_lib = HomeProjectLibrary(tmp_path, mutable=True, parents=False)
     mutable_project = mutable_lib.lookup('project3')[0]
 
     assert isinstance(mutable_project, DirectoryProject)
@@ -53,7 +83,7 @@ def test_home_project_library_mutable(tmp_path: Path):
     assert (tmp_path / 'project3' / 'new.txt').read_text() == 'new'
 
     # Test default is not mutable
-    immutable_lib = HomeProjectLibrary(tmp_path)
+    immutable_lib = HomeProjectLibrary(tmp_path, parents=False)
     immutable_project = immutable_lib.lookup('project3')[0]
 
     assert not immutable_project.mutable(Path('project3/another.txt'))

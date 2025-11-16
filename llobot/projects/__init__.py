@@ -17,6 +17,8 @@ zone
     A project that only has zones but no content.
 directory
     A project that sources its content from a filesystem directory.
+shallow
+    A wrapper project that restricts access to files directly under prefixes.
 union
     A project that is a union of multiple projects.
 items

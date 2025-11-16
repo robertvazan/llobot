@@ -5,6 +5,7 @@ from llobot.projects import Project
 from llobot.projects.directory import DirectoryProject
 from llobot.projects.library import ProjectLibrary
 from llobot.knowledge.subsets import KnowledgeSubset
+from llobot.projects.shallow import ShallowProject
 from llobot.utils.values import ValueTypeMixin
 
 class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
@@ -17,13 +18,15 @@ class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
     _whitelist: KnowledgeSubset | None
     _blacklist: KnowledgeSubset | None
     _mutable: bool
+    _parents: bool
 
     def __init__(self,
         home: str | Path = '~',
         *,
         whitelist: KnowledgeSubset | None = None,
         blacklist: KnowledgeSubset | None = None,
-        mutable: bool = False
+        mutable: bool = False,
+        parents: bool = True
     ):
         """
         Initializes a new `HomeProjectLibrary`.
@@ -33,11 +36,14 @@ class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
             whitelist: A whitelist to pass to created `DirectoryProject`s.
             blacklist: A blacklist to pass to created `DirectoryProject`s.
             mutable: If `True`, created projects allow write operations.
+            parents: If `True`, the library also returns shallow projects for
+                     ancestor directories of any matched project. Defaults to `True`.
         """
         self._home = Path(home).expanduser().absolute()
         self._whitelist = whitelist
         self._blacklist = blacklist
         self._mutable = mutable
+        self._parents = parents
 
     def lookup(self, key: str) -> list[Project]:
         """
@@ -50,7 +56,9 @@ class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
             key: The lookup key, interpreted as a relative path.
 
         Returns:
-            A list containing one `DirectoryProject` if found, or an empty list.
+            A list containing a `DirectoryProject` for the matched path. If `parents`
+            is `True`, the list will also include `ShallowProject` wrappers for all
+            parent directories. Returns an empty list if no directory is found.
         """
         try:
             path = Path(key)
@@ -61,13 +69,27 @@ class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
 
         project_dir = self._home / path
         if project_dir.is_dir():
-            return [DirectoryProject(
+            projects = [DirectoryProject(
                 project_dir,
                 prefix=key,
                 whitelist=self._whitelist,
                 blacklist=self._blacklist,
                 mutable=self._mutable
             )]
+            if self._parents:
+                current = path
+                while current.parent != Path('.'):
+                    current = current.parent
+                    parent_dir = self._home / current
+                    parent_project = DirectoryProject(
+                        parent_dir,
+                        prefix=str(current),
+                        whitelist=self._whitelist,
+                        blacklist=self._blacklist,
+                        mutable=self._mutable
+                    )
+                    projects.append(ShallowProject(parent_project))
+            return projects
         return []
 
 __all__ = ['HomeProjectLibrary']
