@@ -69,16 +69,11 @@ class LinkCommentSubmessageFormat(SubmessageFormat, ValueTypeMixin):
             close_comment = f'[//]: # ({msg_id})'
 
             if message.intent not in [ChatIntent.RESPONSE, ChatIntent.STATUS]:
-                if message.content:
-                    content = f'<details>\n<summary>{message.intent}</summary>\n\n{message.content}\n\n</details>'
-                else:
-                    content = f'<details>\n<summary>{message.intent}</summary>\n\n</details>'
+                content = f'<details>\n<summary>{message.intent}</summary>\n\n{message.content}\n\n</details>'
             else:
                 content = message.content
 
-            content_block = f'\n\n{content}\n\n' if content else '\n\n'
-
-            block = f'{open_comment}{content_block}{close_comment}'
+            block = f'{open_comment}\n\n{content}\n\n{close_comment}'
             submessages.append(block)
 
         return '\n\n'.join(submessages)
@@ -97,7 +92,6 @@ class LinkCommentSubmessageFormat(SubmessageFormat, ValueTypeMixin):
         is_first_message = True
         current_id = ''
         current_intent: ChatIntent | None = None
-        has_content = False
 
         yield ChatIntent.RESPONSE
 
@@ -105,8 +99,7 @@ class LinkCommentSubmessageFormat(SubmessageFormat, ValueTypeMixin):
             if isinstance(item, ChatIntent):
                 if in_message:
                     # Close previous message
-                    if has_content:
-                        yield '\n\n'
+                    yield '\n\n'
                     if current_intent and current_intent not in [ChatIntent.RESPONSE, ChatIntent.STATUS]:
                         yield '</details>\n\n'
 
@@ -120,7 +113,6 @@ class LinkCommentSubmessageFormat(SubmessageFormat, ValueTypeMixin):
                 current_intent = item
                 current_id = _new_id()
                 in_message = True
-                has_content = False
 
                 open_comment = f'[//]: # ({current_intent}: {current_id})'
                 yield f'{open_comment}\n\n'
@@ -129,12 +121,10 @@ class LinkCommentSubmessageFormat(SubmessageFormat, ValueTypeMixin):
                     yield f'<details>\n<summary>{current_intent}</summary>\n\n'
 
             elif isinstance(item, str) and item:
-                has_content = True
                 yield item
 
         if in_message:
-            if has_content:
-                yield '\n\n'
+            yield '\n\n'
             if current_intent and current_intent not in [ChatIntent.RESPONSE, ChatIntent.STATUS]:
                 yield '</details>\n\n'
             yield f'[//]: # ({current_id})'

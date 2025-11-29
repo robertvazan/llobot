@@ -104,15 +104,9 @@ def test_output_format(chat: ChatThread):
         pattern += fr"\[//\]: # \({intent}: (?P<id_{i}>{id_pattern})\)"
 
         if is_wrapped:
-            if message.content:
-                pattern += fr"\n\n<details>\n<summary>{intent}</summary>\n\n{content}\n\n</details>\n\n"
-            else:
-                pattern += fr"\n\n<details>\n<summary>{intent}</summary>\n\n</details>\n\n"
+            pattern += fr"\n\n<details>\n<summary>{intent}</summary>\n\n{content}\n\n</details>\n\n"
         else:
-            if message.content:
-                pattern += fr"\n\n{content}\n\n"
-            else:
-                pattern += r"\n\n"
+            pattern += fr"\n\n{content}\n\n"
 
         # Closing comment matching ID
         pattern += fr"\[//\]: # \((?P=id_{i})\)"
