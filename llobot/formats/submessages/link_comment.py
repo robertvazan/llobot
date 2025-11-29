@@ -141,55 +141,59 @@ class LinkCommentSubmessageFormat(SubmessageFormat, ValueTypeMixin):
         """
         builder = ChatBuilder()
         lines = formatted.splitlines()
-        i = 0
-        while i < len(lines):
-            line = lines[i]
-            match = _OPEN_RE.fullmatch(line)
-            if match:
-                intent_str, msg_id = match.groups()
-                try:
-                    intent = ChatIntent.parse(intent_str)
-                    start_content = i + 1
-                    # Look for closing tag
-                    close_comment = f'[//]: # ({msg_id})'
-                    found_close = False
-                    while i < len(lines):
-                        if lines[i] == close_comment:
-                            found_close = True
-                            break
-                        i += 1
 
-                    if found_close:
-                        # Assume strict format:
-                        # OPEN
+        current_intent: ChatIntent | None = None
+        current_msg_id: str | None = None
+        buffer: list[str] = []
+
+        for line in lines:
+            if current_intent is None:
+                match = _OPEN_RE.fullmatch(line)
+                if match:
+                    intent_str, msg_id = match.groups()
+                    try:
+                        current_intent = ChatIntent.parse(intent_str)
+                        current_msg_id = msg_id
+                        buffer = []
+                    except ValueError:
+                        # Not a valid intent, ignore.
+                        pass
+            else:
+                close_comment = f'[//]: # ({current_msg_id})'
+                if line == close_comment:
+                    # Assume strict format:
+                    # OPEN
+                    # (empty line)
+                    # content...
+                    # (empty line)
+                    # CLOSE
+                    content_lines = buffer[1:-1] if len(buffer) >= 2 else []
+
+                    if current_intent not in [ChatIntent.RESPONSE, ChatIntent.STATUS]:
+                        # Assume strict format for details:
+                        # <details>
+                        # <summary>Intent</summary>
                         # (empty line)
                         # content...
                         # (empty line)
-                        # CLOSE
-                        content_lines = lines[start_content + 1:i - 1]
+                        # </details>
+                        if (len(content_lines) >= 5 and
+                            content_lines[0] == '<details>' and
+                            content_lines[-1] == '</details>' and
+                            content_lines[1].startswith('<summary>') and
+                            content_lines[2] == '' and
+                            content_lines[-2] == ''):
+                            content_lines = content_lines[3:-2]
 
-                        if intent not in [ChatIntent.RESPONSE, ChatIntent.STATUS]:
-                            # Assume strict format for details:
-                            # <details>
-                            # <summary>Intent</summary>
-                            # (empty line)
-                            # content...
-                            # (empty line)
-                            # </details>
-                            if (len(content_lines) >= 5 and
-                                content_lines[0] == '<details>' and
-                                content_lines[-1] == '</details>' and
-                                content_lines[1].startswith('<summary>') and
-                                content_lines[2] == '' and
-                                content_lines[-2] == ''):
-                                content_lines = content_lines[3:-2]
+                    content = '\n'.join(content_lines)
+                    builder.add(ChatMessage(current_intent, content))
 
-                        content = '\n'.join(content_lines)
-                        builder.add(ChatMessage(intent, content))
-                except ValueError:
-                    # Not a valid intent, ignore.
-                    pass
-            i += 1
+                    current_intent = None
+                    current_msg_id = None
+                    buffer = []
+                else:
+                    buffer.append(line)
+
         return builder.build()
 
 __all__ = [
