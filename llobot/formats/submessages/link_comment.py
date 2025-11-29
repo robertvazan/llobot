@@ -36,16 +36,16 @@ class LinkCommentSubmessageFormat(SubmessageFormat, ValueTypeMixin):
     For example:
 
     ```markdown
+    [//]: # (System: abcdef1234)
+
     <details>
     <summary>System</summary>
 
-    [//]: # (System: abcdef1234)
-
     Nested message content
 
-    [//]: # (abcdef1234)
-
     </details>
+
+    [//]: # (abcdef1234)
     ```
 
     `RESPONSE` and `STATUS` messages are not wrapped in `<details>`. Consecutive
@@ -68,13 +68,17 @@ class LinkCommentSubmessageFormat(SubmessageFormat, ValueTypeMixin):
             open_comment = f'[//]: # ({message.intent}: {msg_id})'
             close_comment = f'[//]: # ({msg_id})'
 
-            content_block = f'\n\n{message.content}\n\n' if message.content else '\n\n'
+            if message.intent not in [ChatIntent.RESPONSE, ChatIntent.STATUS]:
+                if message.content:
+                    content = f'<details>\n<summary>{message.intent}</summary>\n\n{message.content}\n\n</details>'
+                else:
+                    content = f'<details>\n<summary>{message.intent}</summary>\n\n</details>'
+            else:
+                content = message.content
+
+            content_block = f'\n\n{content}\n\n' if content else '\n\n'
 
             block = f'{open_comment}{content_block}{close_comment}'
-
-            if message.intent not in [ChatIntent.RESPONSE, ChatIntent.STATUS]:
-                block = f'<details>\n<summary>{message.intent}</summary>\n\n{block}\n\n</details>'
-
             submessages.append(block)
 
         return '\n\n'.join(submessages)
@@ -103,9 +107,10 @@ class LinkCommentSubmessageFormat(SubmessageFormat, ValueTypeMixin):
                     # Close previous message
                     if has_content:
                         yield '\n\n'
-                    yield f'[//]: # ({current_id})'
                     if current_intent and current_intent not in [ChatIntent.RESPONSE, ChatIntent.STATUS]:
-                        yield '\n\n</details>'
+                        yield '</details>\n\n'
+
+                    yield f'[//]: # ({current_id})'
                     in_message = False
 
                 if not is_first_message:
@@ -118,11 +123,10 @@ class LinkCommentSubmessageFormat(SubmessageFormat, ValueTypeMixin):
                 has_content = False
 
                 open_comment = f'[//]: # ({current_intent}: {current_id})'
+                yield f'{open_comment}\n\n'
 
                 if current_intent not in [ChatIntent.RESPONSE, ChatIntent.STATUS]:
-                    yield f'<details>\n<summary>{current_intent}</summary>\n\n{open_comment}\n\n'
-                else:
-                    yield f'{open_comment}\n\n'
+                    yield f'<details>\n<summary>{current_intent}</summary>\n\n'
 
             elif isinstance(item, str) and item:
                 has_content = True
@@ -131,9 +135,9 @@ class LinkCommentSubmessageFormat(SubmessageFormat, ValueTypeMixin):
         if in_message:
             if has_content:
                 yield '\n\n'
-            yield f'[//]: # ({current_id})'
             if current_intent and current_intent not in [ChatIntent.RESPONSE, ChatIntent.STATUS]:
-                yield '\n\n</details>'
+                yield '</details>\n\n'
+            yield f'[//]: # ({current_id})'
 
     def parse(self, formatted: str) -> ChatThread:
         """
@@ -172,6 +176,19 @@ class LinkCommentSubmessageFormat(SubmessageFormat, ValueTypeMixin):
                             content_lines = content_lines[1:]
                         if content_lines and not content_lines[-1]:
                             content_lines = content_lines[:-1]
+
+                        if intent not in [ChatIntent.RESPONSE, ChatIntent.STATUS]:
+                            if (len(content_lines) >= 4 and
+                                content_lines[0].strip() == '<details>' and
+                                content_lines[-1].strip() == '</details>' and
+                                content_lines[1].strip().startswith('<summary>')):
+
+                                if len(content_lines) == 4 and not content_lines[2].strip():
+                                    content_lines = []
+                                elif (len(content_lines) >= 6 and
+                                      not content_lines[2].strip() and
+                                      not content_lines[-2].strip()):
+                                    content_lines = content_lines[3:-2]
 
                         content = '\n'.join(content_lines)
                         builder.add(ChatMessage(intent, content))

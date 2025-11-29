@@ -97,25 +97,25 @@ def test_output_format(chat: ChatThread):
 
         is_wrapped = message.intent not in [ChatIntent.RESPONSE, ChatIntent.STATUS]
 
-        if is_wrapped:
-            pattern += fr"<details>\n<summary>{intent}</summary>\n\n"
-
         # ID is 20 chars base64url-safe
         id_pattern = r"[a-zA-Z0-9_-]{20}"
 
         # Open comment
         pattern += fr"\[//\]: # \({intent}: (?P<id_{i}>{id_pattern})\)"
 
-        if message.content:
-            pattern += fr"\n\n{content}\n\n"
+        if is_wrapped:
+            if message.content:
+                pattern += fr"\n\n<details>\n<summary>{intent}</summary>\n\n{content}\n\n</details>\n\n"
+            else:
+                pattern += fr"\n\n<details>\n<summary>{intent}</summary>\n\n</details>\n\n"
         else:
-            pattern += r"\n\n"
+            if message.content:
+                pattern += fr"\n\n{content}\n\n"
+            else:
+                pattern += r"\n\n"
 
         # Closing comment matching ID
         pattern += fr"\[//\]: # \((?P=id_{i})\)"
-
-        if is_wrapped:
-            pattern += r"\n\n</details>"
 
         match = re.match(pattern, remaining)
         assert match, f"Pattern match failed for message {i} ({message.intent}).\nRemaining: {remaining[:100]!r}"
