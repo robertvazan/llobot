@@ -160,25 +160,29 @@ class LinkCommentSubmessageFormat(SubmessageFormat, ValueTypeMixin):
                         i += 1
 
                     if found_close:
-                        content_lines = lines[start_content:i]
-                        # strip at most one empty line from start and end
-                        if content_lines and not content_lines[0]:
-                            content_lines = content_lines[1:]
-                        if content_lines and not content_lines[-1]:
-                            content_lines = content_lines[:-1]
+                        # Assume strict format:
+                        # OPEN
+                        # (empty line)
+                        # content...
+                        # (empty line)
+                        # CLOSE
+                        content_lines = lines[start_content + 1:i - 1]
 
                         if intent not in [ChatIntent.RESPONSE, ChatIntent.STATUS]:
-                            if (len(content_lines) >= 4 and
-                                content_lines[0].strip() == '<details>' and
-                                content_lines[-1].strip() == '</details>' and
-                                content_lines[1].strip().startswith('<summary>')):
-
-                                if len(content_lines) == 4 and not content_lines[2].strip():
-                                    content_lines = []
-                                elif (len(content_lines) >= 6 and
-                                      not content_lines[2].strip() and
-                                      not content_lines[-2].strip()):
-                                    content_lines = content_lines[3:-2]
+                            # Assume strict format for details:
+                            # <details>
+                            # <summary>Intent</summary>
+                            # (empty line)
+                            # content...
+                            # (empty line)
+                            # </details>
+                            if (len(content_lines) >= 5 and
+                                content_lines[0] == '<details>' and
+                                content_lines[-1] == '</details>' and
+                                content_lines[1].startswith('<summary>') and
+                                content_lines[2] == '' and
+                                content_lines[-2] == ''):
+                                content_lines = content_lines[3:-2]
 
                         content = '\n'.join(content_lines)
                         builder.add(ChatMessage(intent, content))
