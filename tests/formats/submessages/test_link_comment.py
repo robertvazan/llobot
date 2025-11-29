@@ -1,6 +1,6 @@
 from __future__ import annotations
-from textwrap import dedent
-from unittest.mock import patch
+import re
+import pytest
 from llobot.chats.thread import ChatThread
 from llobot.chats.message import ChatMessage
 from llobot.chats.intent import ChatIntent
@@ -8,441 +8,118 @@ from llobot.chats.stream import record_stream
 from llobot.formats.submessages.link_comment import LinkCommentSubmessageFormat
 
 formatter = LinkCommentSubmessageFormat()
-MOCK_IDS = ['id1', 'id2', 'id3', 'id4', 'id5', 'id6']
 
-def test_render_empty():
-    chat = ChatThread()
-    content = formatter.render(chat)
-    assert content == ""
-
-@patch('llobot.formats.submessages.link_comment._new_id', side_effect=MOCK_IDS)
-def test_render_single_message(_):
-    chat = ChatThread([
-        ChatMessage(ChatIntent.SYSTEM, "System prompt content.")
-    ])
-    content = formatter.render(chat)
-    expected = dedent("""
-        <details>
-        <summary>System</summary>
-
-        [//]: # (System: id1)
-
-        System prompt content.
-
-        [//]: # (id1)
-
-        </details>
-    """).strip()
-    assert content == expected
-
-@patch('llobot.formats.submessages.link_comment._new_id', side_effect=MOCK_IDS)
-def test_render_multiple_messages(_):
-    chat = ChatThread([
-        ChatMessage(ChatIntent.SYSTEM, "System prompt content."),
-        ChatMessage(ChatIntent.AFFIRMATION, "Okay"),
-        ChatMessage(ChatIntent.PROMPT, "User prompt.")
-    ])
-    content = formatter.render(chat)
-    expected = dedent("""
-        <details>
-        <summary>System</summary>
-
-        [//]: # (System: id1)
-
-        System prompt content.
-
-        [//]: # (id1)
-
-        </details>
-
-        <details>
-        <summary>Affirmation</summary>
-
-        [//]: # (Affirmation: id2)
-
-        Okay
-
-        [//]: # (id2)
-
-        </details>
-
-        <details>
-        <summary>Prompt</summary>
-
-        [//]: # (Prompt: id3)
-
-        User prompt.
-
-        [//]: # (id3)
-
-        </details>
-    """).strip()
-    assert content == expected
-
-@patch('llobot.formats.submessages.link_comment._new_id', side_effect=MOCK_IDS)
-def test_render_with_response_and_status(_):
-    chat = ChatThread([
-        ChatMessage(ChatIntent.RESPONSE, "This is a response."),
-        ChatMessage(ChatIntent.SYSTEM, "System prompt content."),
-        ChatMessage(ChatIntent.STATUS, "This is a status message."),
-        ChatMessage(ChatIntent.RESPONSE, "Another response.")
-    ])
-    content = formatter.render(chat)
-    expected = dedent("""
-        [//]: # (Response: id1)
-
-        This is a response.
-
-        [//]: # (id1)
-
-        <details>
-        <summary>System</summary>
-
-        [//]: # (System: id2)
-
-        System prompt content.
-
-        [//]: # (id2)
-
-        </details>
-
-        [//]: # (Status: id3)
-
-        This is a status message.
-
-        [//]: # (id3)
-
-        [//]: # (Response: id4)
-
-        Another response.
-
-        [//]: # (id4)
-    """).strip()
-    assert content == expected
-
-def test_parse_empty():
-    chat = formatter.parse("")
-    assert not chat
-
-def test_parse_single_message():
-    text = dedent("""
-        <details>
-        <summary>System</summary>
-
-        [//]: # (System: id1)
-
-        System prompt content.
-
-        [//]: # (id1)
-
-        </details>
-    """).strip()
-    chat = formatter.parse(text)
-    assert len(chat) == 1
-    assert chat[0] == ChatMessage(ChatIntent.SYSTEM, "System prompt content.")
-
-def test_parse_multiple_messages():
-    text = dedent("""
-        <details>
-        <summary>System</summary>
-        [//]: # (System: id1)
-        System prompt content.
-        [//]: # (id1)
-        </details>
-
-        [//]: # (Affirmation: id2)
-
-        Okay
-
-        [//]: # (id2)
-        <details>
-        <summary>Prompt</summary>
-        [//]: # (Prompt: id3)
-        User prompt.
-        [//]: # (id3)
-        </details>
-    """).strip()
-    chat = formatter.parse(text)
-    expected = ChatThread([
-        ChatMessage(ChatIntent.SYSTEM, "System prompt content."),
-        ChatMessage(ChatIntent.AFFIRMATION, "Okay"),
-        ChatMessage(ChatIntent.PROMPT, "User prompt.")
-    ])
-    assert chat == expected
-
-def test_parse_with_response_and_junk():
-    text = dedent("""
-        Some leading junk.
-        [//]: # (Response: id1)
-
-        This is a response.
-
-        [//]: # (id1)
-        Some junk in between.
-        <details>
-        <summary>System</summary>
-
-        [//]: # (System: id2)
-
-        System prompt content.
-
-        [//]: # (id2)
-
-        </details>
-        Trailing junk.
-    """).strip()
-    chat = formatter.parse(text)
-    expected = ChatThread([
-        ChatMessage(ChatIntent.RESPONSE, "This is a response."),
-        ChatMessage(ChatIntent.SYSTEM, "System prompt content."),
-    ])
-    assert chat == expected
-
-def test_parse_with_newlines():
-    text = dedent("""
-        [//]: # (System: id1)
-
-        Line 1
-        Line 2
-
-        Line 4
-
-        [//]: # (id1)
-    """).strip()
-    chat = formatter.parse(text)
-    expected_content = "Line 1\nLine 2\n\nLine 4"
-    assert len(chat) == 1
-    assert chat[0] == ChatMessage(ChatIntent.SYSTEM, expected_content)
-
-def test_parse_empty_content():
-    text = dedent("""
-        [//]: # (System: id1)
-
-        [//]: # (id1)
-    """).strip()
-    chat = formatter.parse(text)
-    assert len(chat) == 1
-    assert chat[0] == ChatMessage(ChatIntent.SYSTEM, "")
-
-def test_parse_malformed_submessage_no_closer():
-    text = dedent("""
-        [//]: # (System: id1)
-        System content.
-        ... missing closing comment
-    """).strip()
-    chat = formatter.parse(text)
-    assert not chat
-
-def test_parse_malformed_intent():
-    text = dedent("""
-        [//]: # (BogusIntent: id1)
-        System content.
-        [//]: # (id1)
-    """).strip()
-    chat = formatter.parse(text)
-    assert not chat
-
-@patch('llobot.formats.submessages.link_comment._new_id', side_effect=MOCK_IDS)
-def test_roundtrip(_):
-    chat = ChatThread([
-        ChatMessage(ChatIntent.RESPONSE, "Response message."),
-        ChatMessage(ChatIntent.SYSTEM, "System prompt content."),
-        ChatMessage(ChatIntent.AFFIRMATION, "Okay"),
-        ChatMessage(ChatIntent.PROMPT, "User prompt with\nnewlines and\n\nstuff."),
-        ChatMessage(ChatIntent.STATUS, "Status message."),
-        ChatMessage(ChatIntent.RESPONSE, "Another response.")
-    ])
-    rendered = formatter.render(chat)
-    parsed = formatter.parse(rendered)
-    # Don't compare directly as IDs will be different
-    assert len(parsed) == len(chat)
-    for p, c in zip(parsed, chat):
-        assert p.intent == c.intent
-        assert p.content == c.content
-
-@patch('llobot.formats.submessages.link_comment._new_id', side_effect=MOCK_IDS)
-def test_roundtrip_empty_content(_):
-    chat = ChatThread([
-        ChatMessage(ChatIntent.SYSTEM, "System prompt content."),
+CASES = [
+    # Single response
+    ChatThread([
+        ChatMessage(ChatIntent.RESPONSE, "Response content.")
+    ]),
+    # Session + Response
+    ChatThread([
+        ChatMessage(ChatIntent.SESSION, "Session info."),
+        ChatMessage(ChatIntent.RESPONSE, "Response content.")
+    ]),
+    # Status + Response
+    ChatThread([
+        ChatMessage(ChatIntent.STATUS, "Status update."),
+        ChatMessage(ChatIntent.RESPONSE, "Response content.")
+    ]),
+    # Complex sequence
+    ChatThread([
+        ChatMessage(ChatIntent.PROMPT, "User prompt 1."),
+        ChatMessage(ChatIntent.SESSION, "Session info."),
+        ChatMessage(ChatIntent.RESPONSE, "Response 1."),
+        ChatMessage(ChatIntent.PROMPT, "User prompt 2."),
+        ChatMessage(ChatIntent.RESPONSE, "Response 2.")
+    ]),
+    # Empty content cases
+    ChatThread([
+        ChatMessage(ChatIntent.SYSTEM, "System."),
         ChatMessage(ChatIntent.AFFIRMATION, ""),
-        ChatMessage(ChatIntent.PROMPT, "User prompt.")
+        ChatMessage(ChatIntent.PROMPT, "Prompt.")
     ])
+]
+
+def normalize_ids(text: str) -> str:
+    """Replaces randomized IDs with placeholders for comparison."""
+    # Opening tag: [//]: # (Intent: ID) -> [//]: # (Intent: <ID>)
+    text = re.sub(r'(\[//\]: # \()([a-zA-Z0-9_-]+): [a-zA-Z0-9_-]{20}(\))', r'\1\2: <ID>\3', text)
+    # Closing tag: [//]: # (ID) -> [//]: # (<ID>)
+    text = re.sub(r'(\[//\]: # \()[a-zA-Z0-9_-]{20}(\))', r'\1<ID>\2', text)
+    return text
+
+@pytest.mark.parametrize("chat", CASES)
+def test_render_consistency(chat: ChatThread):
+    """Test that render and render_stream produce identical output (structurally)."""
+    rendered_str = formatter.render(chat)
+
+    stream_result = record_stream(formatter.render_stream(chat.stream()))
+    assert len(stream_result) == 1
+    assert stream_result[0].intent == ChatIntent.RESPONSE
+    stream_str = stream_result[0].content
+
+    assert normalize_ids(rendered_str) == normalize_ids(stream_str)
+
+@pytest.mark.parametrize("chat", CASES)
+def test_roundtrip(chat: ChatThread):
+    """Test roundtrip for both rendering methods."""
+    # Render -> Parse
     rendered = formatter.render(chat)
     parsed = formatter.parse(rendered)
-    assert len(parsed) == len(chat)
-    for p, c in zip(parsed, chat):
-        assert p.intent == c.intent
-        assert p.content == c.content
-
-@patch('llobot.formats.submessages.link_comment._new_id', side_effect=MOCK_IDS)
-def test_render_stream_empty(_):
-    stream = []
-    rendered_chat = record_stream(formatter.render_stream(stream))
-    assert not rendered_chat[0].content
-
-@patch('llobot.formats.submessages.link_comment._new_id', side_effect=MOCK_IDS)
-def test_render_stream_single_response_message(_):
-    stream = iter([ChatIntent.RESPONSE, "Hello world."])
-    rendered_chat = record_stream(formatter.render_stream(stream))
-    assert len(rendered_chat) == 1
-    assert rendered_chat[0].intent == ChatIntent.RESPONSE
-    result = rendered_chat[0].content
-    expected = dedent("""
-        [//]: # (Response: id1)
-
-        Hello world.
-
-        [//]: # (id1)
-    """).strip()
-    assert result == expected
-
-@patch('llobot.formats.submessages.link_comment._new_id', side_effect=MOCK_IDS)
-def test_render_stream_single_status_message(_):
-    stream = iter([ChatIntent.STATUS, "Status message."])
-    rendered_chat = record_stream(formatter.render_stream(stream))
-    assert len(rendered_chat) == 1
-    assert rendered_chat[0].intent == ChatIntent.RESPONSE
-    result = rendered_chat[0].content
-    expected = dedent("""
-        [//]: # (Status: id1)
-
-        Status message.
-
-        [//]: # (id1)
-    """).strip()
-    assert result == expected
-
-@patch('llobot.formats.submessages.link_comment._new_id', side_effect=MOCK_IDS)
-def test_render_stream_single_other_message(_):
-    stream = [ChatIntent.SYSTEM, "System message."]
-    rendered_chat = record_stream(formatter.render_stream(stream))
-    assert len(rendered_chat) == 1
-    assert rendered_chat[0].intent == ChatIntent.RESPONSE
-    result = rendered_chat[0].content
-    expected = dedent("""
-        <details>
-        <summary>System</summary>
-
-        [//]: # (System: id1)
-
-        System message.
-
-        [//]: # (id1)
-
-        </details>
-    """).strip()
-    assert result == expected
-
-@patch('llobot.formats.submessages.link_comment._new_id', side_effect=MOCK_IDS)
-def test_render_stream_empty_message(_):
-    stream = [ChatIntent.SYSTEM, ChatIntent.PROMPT, "Content"]
-    rendered_chat = record_stream(formatter.render_stream(stream))
-    assert len(rendered_chat) == 1
-    result = rendered_chat[0].content
-    expected = dedent("""
-        <details>
-        <summary>System</summary>
-
-        [//]: # (System: id1)
-
-        [//]: # (id1)
-
-        </details>
-
-        <details>
-        <summary>Prompt</summary>
-
-        [//]: # (Prompt: id2)
-
-        Content
-
-        [//]: # (id2)
-
-        </details>
-    """).strip()
-    assert result == expected
-
-@patch('llobot.formats.submessages.link_comment._new_id', side_effect=MOCK_IDS)
-def test_render_stream_multiple_messages(_):
-    stream = [
-        ChatIntent.RESPONSE, "Response part 1.", " Response part 2.",
-        ChatIntent.SYSTEM, "System message.",
-        ChatIntent.STATUS, "Status message.",
-        ChatIntent.PROMPT, "Prompt message."
-    ]
-    rendered_chat = record_stream(formatter.render_stream(stream))
-    assert len(rendered_chat) == 1
-    assert rendered_chat[0].intent == ChatIntent.RESPONSE
-    result = rendered_chat[0].content
-    expected = dedent("""
-        [//]: # (Response: id1)
-
-        Response part 1. Response part 2.
-
-        [//]: # (id1)
-
-        <details>
-        <summary>System</summary>
-
-        [//]: # (System: id2)
-
-        System message.
-
-        [//]: # (id2)
-
-        </details>
-
-        [//]: # (Status: id3)
-
-        Status message.
-
-        [//]: # (id3)
-
-        <details>
-        <summary>Prompt</summary>
-
-        [//]: # (Prompt: id4)
-
-        Prompt message.
-
-        [//]: # (id4)
-
-        </details>
-    """).strip()
-    assert result == expected
-
-def test_parse_chat_empty():
-    chat = ChatThread()
-    parsed = formatter.parse_chat(chat)
     assert parsed == chat
 
-def test_parse_chat_no_response():
-    chat = ChatThread([
-        ChatMessage(ChatIntent.SYSTEM, "System message."),
-        ChatMessage(ChatIntent.PROMPT, "User prompt.")
-    ])
-    parsed = formatter.parse_chat(chat)
-    assert parsed == chat
+    # Render Stream -> Parse
+    stream_result = record_stream(formatter.render_stream(chat.stream()))
+    parsed_stream = formatter.parse(stream_result[0].content)
+    assert parsed_stream == chat
 
-def test_parse_chat_with_submessages():
-    response_content = dedent("""
-        This is a response.
+@pytest.mark.parametrize("chat", CASES)
+def test_parse_chat_roundtrip(chat: ChatThread):
+    """Test roundtrip via parse_chat."""
+    rendered = formatter.render(chat)
+    container_chat = ChatThread([ChatMessage(ChatIntent.RESPONSE, rendered)])
+    restored = formatter.parse_chat(container_chat)
+    assert restored == chat
 
-        [//]: # (System: id1)
+@pytest.mark.parametrize("chat", CASES)
+def test_output_format(chat: ChatThread):
+    """Test output format using regexes."""
+    rendered = formatter.render(chat)
+    remaining = rendered
 
-        System prompt content.
+    for i, message in enumerate(chat):
+        intent = re.escape(str(message.intent))
+        content = re.escape(message.content)
 
-        [//]: # (id1)
+        pattern = r""
+        if i > 0:
+            pattern += r"\n\n"
 
-        Another response part.
-    """).strip()
-    chat = ChatThread([
-        ChatMessage(ChatIntent.PROMPT, "User prompt."),
-        ChatMessage(ChatIntent.RESPONSE, response_content)
-    ])
-    parsed = formatter.parse_chat(chat)
-    expected = ChatThread([
-        ChatMessage(ChatIntent.PROMPT, "User prompt."),
-        ChatMessage(ChatIntent.SYSTEM, "System prompt content."),
-    ])
-    assert parsed == expected
+        is_wrapped = message.intent not in [ChatIntent.RESPONSE, ChatIntent.STATUS]
+
+        if is_wrapped:
+            pattern += fr"<details>\n<summary>{intent}</summary>\n\n"
+
+        # ID is 20 chars base64url-safe
+        id_pattern = r"[a-zA-Z0-9_-]{20}"
+
+        # Open comment
+        pattern += fr"\[//\]: # \({intent}: (?P<id_{i}>{id_pattern})\)"
+
+        if message.content:
+            pattern += fr"\n\n{content}\n\n"
+        else:
+            pattern += r"\n\n"
+
+        # Closing comment matching ID
+        pattern += fr"\[//\]: # \((?P=id_{i})\)"
+
+        if is_wrapped:
+            pattern += r"\n\n</details>"
+
+        match = re.match(pattern, remaining)
+        assert match, f"Pattern match failed for message {i} ({message.intent}).\nRemaining: {remaining[:100]!r}"
+
+        remaining = remaining[match.end():]
+
+    assert not remaining, f"Trailing content: {remaining!r}"

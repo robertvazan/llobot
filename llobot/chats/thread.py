@@ -1,8 +1,11 @@
 from __future__ import annotations
-from typing import Iterator, Iterable
+from typing import Iterator, Iterable, TYPE_CHECKING
 from llobot.utils.values import ValueTypeMixin
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
+
+if TYPE_CHECKING:
+    from llobot.chats.stream import ChatStream
 
 class ChatThread(ValueTypeMixin):
     """
@@ -48,6 +51,11 @@ class ChatThread(ValueTypeMixin):
 
     def __iter__(self) -> Iterator[ChatMessage]:
         return iter(self._messages)
+
+    def stream(self) -> ChatStream:
+        """Creates a stream that yields all messages in the thread."""
+        for message in self:
+            yield from message.stream()
 
     def __contains__(self, text: str) -> bool:
         return any((text in message.content) for message in self)
