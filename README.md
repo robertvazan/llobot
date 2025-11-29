@@ -120,7 +120,19 @@ NB: Response this informative relies on using a large model. For comparison, res
 >
 > This will give you an endpoint string that you can use to interact with the remote Ollama instance.
 
-If the context does not already include the file you need, just mention it in the prompt, for example as `@README.md` or `` @`ollama/listeners.py` ``, and llobot will include it in the context in addition to default knowledge.
+If the context does not already include the file you need, just mention it in the prompt, for example as `@README.md`, and llobot will include it in the context in addition to default knowledge.
+
+## Commands
+
+Llobot recognizes several commands in the form of `@mentions`. These can be placed anywhere in the prompt.
+
+- **`@<project>`**: Selects a project to use as a knowledge base. Example: `@myproject`.
+- **`@<model>`**: Selects a backend model for the response. Example: `@gemini`.
+- **`@<file>`**: Adds a specific file to the context. Initial path segments can be omitted. Example: `@README.md` or `@src/main.rs`.
+- **`@<pattern>`**: Adds files matching a glob pattern. Example: `@tests/*.py`.
+- **`@approve`**: Approves the previous response as a correct example and saves prompt-response pair to example memory for roles that support it. If any content is provided with the command, it is used instead of the last response.
+
+Mentions can be unquoted as in `@lib.rs` or quoted as in `` @`src/**/*.rs` ``. Quoted mentions are useful when including special symbols in the mention.
 
 ## Best practices
 

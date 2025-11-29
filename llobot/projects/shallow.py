@@ -61,9 +61,7 @@ class ShallowProject(Project, ValueTypeMixin):
         underlying project tracks it. Directories are never tracked in a
         shallow project to prevent recursion in `read_all()`.
         """
-        if isinstance(item, ProjectFile):
-            return self._is_shallow_file(item.path) and self._project.tracked(item)
-        return False
+        return self._is_shallow_file(item.path) and self._project.tracked(item)
 
     def mutable(self, path: Path) -> bool:
         """
