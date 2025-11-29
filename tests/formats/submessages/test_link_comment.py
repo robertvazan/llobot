@@ -37,20 +37,20 @@ CASES = [
         ChatMessage(ChatIntent.SYSTEM, "System."),
         ChatMessage(ChatIntent.AFFIRMATION, ""),
         ChatMessage(ChatIntent.PROMPT, "Prompt.")
+    ]),
+    # Escaping test cases
+    ChatThread([
+        ChatMessage(ChatIntent.RESPONSE, "Contains [//]: # (End) marker."),
+        ChatMessage(ChatIntent.SYSTEM, "Contains [//]: # (System) marker."),
+        ChatMessage(ChatIntent.PROMPT, "Contains [//]: # (Escaped-End) marker."),
+        ChatMessage(ChatIntent.RESPONSE, "Contains [//]: # (End) with trailing space. "),
+        ChatMessage(ChatIntent.RESPONSE, " Contains leading space [//]: # (End)."),
     ])
 ]
 
-def normalize_ids(text: str) -> str:
-    """Replaces randomized IDs with placeholders for comparison."""
-    # Opening tag: [//]: # (Intent: ID) -> [//]: # (Intent: <ID>)
-    text = re.sub(r'(\[//\]: # \()([a-zA-Z0-9_-]+): [a-zA-Z0-9_-]{20}(\))', r'\1\2: <ID>\3', text)
-    # Closing tag: [//]: # (ID) -> [//]: # (<ID>)
-    text = re.sub(r'(\[//\]: # \()[a-zA-Z0-9_-]{20}(\))', r'\1<ID>\2', text)
-    return text
-
 @pytest.mark.parametrize("chat", CASES)
 def test_render_consistency(chat: ChatThread):
-    """Test that render and render_stream produce identical output (structurally)."""
+    """Test that render and render_stream produce identical output."""
     rendered_str = formatter.render(chat)
 
     stream_result = record_stream(formatter.render_stream(chat.stream()))
@@ -58,7 +58,7 @@ def test_render_consistency(chat: ChatThread):
     assert stream_result[0].intent == ChatIntent.RESPONSE
     stream_str = stream_result[0].content
 
-    assert normalize_ids(rendered_str) == normalize_ids(stream_str)
+    assert rendered_str == stream_str
 
 @pytest.mark.parametrize("chat", CASES)
 def test_roundtrip(chat: ChatThread):
@@ -89,7 +89,18 @@ def test_output_format(chat: ChatThread):
 
     for i, message in enumerate(chat):
         intent = re.escape(str(message.intent))
-        content = re.escape(message.content)
+
+        # Determine expected content with escaping applied
+        expected_content_lines = []
+        for line in message.content.splitlines():
+            # Strict regex matching for escaping
+            match = re.fullmatch(r'\[//\]: # \(([a-zA-Z0-9-]+)\)', line)
+            if match:
+                expected_content_lines.append(f'[//]: # (Escaped-{match.group(1)})')
+            else:
+                expected_content_lines.append(line)
+        content = "\n".join(expected_content_lines)
+        content = re.escape(content)
 
         pattern = r""
         if i > 0:
@@ -97,19 +108,16 @@ def test_output_format(chat: ChatThread):
 
         is_wrapped = message.intent not in [ChatIntent.RESPONSE, ChatIntent.STATUS]
 
-        # ID is 20 chars base64url-safe
-        id_pattern = r"[a-zA-Z0-9_-]{20}"
-
-        # Open comment
-        pattern += fr"\[//\]: # \({intent}: (?P<id_{i}>{id_pattern})\)"
+        # Open marker
+        pattern += fr"\[//\]: # \({intent}\)"
 
         if is_wrapped:
             pattern += fr"\n\n<details>\n<summary>{intent}</summary>\n\n{content}\n\n</details>\n\n"
         else:
             pattern += fr"\n\n{content}\n\n"
 
-        # Closing comment matching ID
-        pattern += fr"\[//\]: # \((?P=id_{i})\)"
+        # Closing marker
+        pattern += r"\[//\]: # \(End\)"
 
         match = re.match(pattern, remaining)
         assert match, f"Pattern match failed for message {i} ({message.intent}).\nRemaining: {remaining[:100]!r}"
