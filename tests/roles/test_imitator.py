@@ -35,14 +35,16 @@ def test_imitator_approve(tmp_path: Path):
     thread1 = record_stream(imitator.chat(prompt1))
     session_cmd = get_session_command(thread1)
 
+    # Extract response for history consistency
+    response1_content = get_response_content(thread1)
+
     # 2. Turn 2: User says "@approve".
-    # We must pass the session ID to resume the session where the previous interaction happened.
-    # NOTE: Since EchoModel echoes "Say B", the response is effectively "Say B" (plus system prompt).
-    # Ideally, we want to approve specific content. @approve uses the last RESPONSE in context.
-    # In EchoModel case, the RESPONSE contains "Say B".
+    # We must pass the session ID AND the previous history to ensure context alignment.
 
     prompt2 = ChatThread([
+        ChatMessage(ChatIntent.PROMPT, "Say B"),
         ChatMessage(ChatIntent.SESSION, session_cmd),
+        ChatMessage(ChatIntent.RESPONSE, response1_content),
         ChatMessage(ChatIntent.PROMPT, "@approve")
     ])
 
@@ -75,10 +77,13 @@ def test_imitator_approve_correction(tmp_path: Path):
     prompt1 = ChatThread([ChatMessage(ChatIntent.PROMPT, "Say C")])
     thread1 = record_stream(imitator.chat(prompt1))
     session_cmd = get_session_command(thread1)
+    response1_content = get_response_content(thread1)
 
     # Turn 2: "@approve C" (providing explicit correction because EchoModel output is messy)
     prompt2 = ChatThread([
+        ChatMessage(ChatIntent.PROMPT, "Say C"),
         ChatMessage(ChatIntent.SESSION, session_cmd),
+        ChatMessage(ChatIntent.RESPONSE, response1_content),
         ChatMessage(ChatIntent.PROMPT, "@approve C")
     ])
 

@@ -78,21 +78,46 @@ class Agent(Role):
     def name(self) -> str:
         return self._name
 
+    def parse_prompt(self, env: Environment, prompt: ChatThread):
+        """
+        Parses the prompt, loads session, and prepares environment.
+
+        This method handles session commands, loads session history, coerces
+        the context to match visible history, and sets up the prompt for the
+        current turn.
+
+        Args:
+            env: The environment to populate.
+            prompt: The full chat history from the user's client.
+        """
+        # Parse and process session commands from the whole prompt history.
+        for m in prompt:
+            if m.intent == ChatIntent.SESSION:
+                env[CommandsEnv].add(parse_mentions(m))
+        handle_session_commands(env)
+        handle_unrecognized_commands(env)
+
+        # Ensure session ID is present, creating it if necessary.
+        ensure_session_command(env)
+        # Load session history for the current session ID.
+        self._session_history.load(env)
+        # Coerce loaded context to match visible history.
+        env[ContextEnv].coerce(prompt[:-1])
+
+        # Set up current prompt message and its commands.
+        env[PromptEnv].set(prompt[-1].content)
+        env[CommandsEnv].add(parse_mentions(prompt[-1]))
+
     def handle_prompt(self, env: Environment):
         """
         Processes commands and populates the environment.
 
-        This method orchestrates command handling by ensuring a session is active,
-        loading session history, and then delegating to `handle_setup`,
+        This method orchestrates command handling by delegating to `handle_setup`,
         `stuff`, and `handle_commands` for role-specific logic.
 
         Args:
             env: The environment to process commands in.
         """
-        ensure_session_command(env)
-        # Load session history (if any) for the current session ID.
-        self._session_history.load(env)
-
         handle_model_commands(env)
 
         self.handle_setup(env)
@@ -158,8 +183,9 @@ class Agent(Role):
         Processes a user's prompt and returns a response stream.
 
         This method implements the main interaction loop for the agent:
-        1. It sets up the environment and processes any session commands from the prompt.
-        2. It parses commands from the user's latest message.
+        1. It sets up the environment.
+        2. It calls `parse_prompt()` to load session, coerce context, and handle
+           session commands from the prompt.
         3. It calls `handle_prompt()` to execute commands and populate the context.
         4. It handles unrecognized commands.
         5. If it's the first message, it adds a reminder prompt.
@@ -179,14 +205,7 @@ class Agent(Role):
         env[ProjectEnv].configure(self._project_library)
         env[ModelEnv].configure(self._model_library, self._model)
 
-        for m in prompt:
-            if m.intent == ChatIntent.SESSION:
-                env[CommandsEnv].add(parse_mentions(m))
-        handle_session_commands(env)
-        handle_unrecognized_commands(env)
-
-        env[PromptEnv].set(prompt[-1].content)
-        env[CommandsEnv].add(parse_mentions(prompt[-1]))
+        self.parse_prompt(env, prompt)
         self.handle_prompt(env)
         handle_unrecognized_commands(env)
 

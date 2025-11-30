@@ -84,3 +84,31 @@ def test_agent_reminder(tmp_path: Path):
     # Reminder should be extracted and included
     assert "Reminder:" in response
     assert "- Do this." in response
+
+def test_agent_coercion(tmp_path: Path):
+    """Tests that Agent coerces context to match altered history."""
+    model = EchoModel('echo')
+    agent = Agent('agent', model, prompt="System", session_history=tmp_path)
+
+    # Turn 1
+    prompt1 = ChatThread([ChatMessage(ChatIntent.PROMPT, "Original")])
+    thread1 = record_stream(agent.chat(prompt1))
+    session_id = extract_session_id(thread1)
+    # thread1 content: [System, Reminder, Prompt(Original), Session, Response(Original)]
+
+    # Turn 2: User edits "Original" to "Edited" in the history
+    prompt2 = ChatThread([
+        ChatMessage(ChatIntent.SESSION, f"Session: @{session_id}"), # Reused session
+        ChatMessage(ChatIntent.PROMPT, "Edited"), # This replaces "Original" in user's view
+        ChatMessage(ChatIntent.RESPONSE, "New Response"), # User fabricated a response
+        ChatMessage(ChatIntent.PROMPT, "Next")
+    ])
+
+    # Agent should detect mismatch in history (Original vs Edited), truncate context, and append Edited.
+    stream2 = agent.chat(prompt2)
+    response2 = get_response_content(record_stream(stream2))
+
+    # The EchoModel echoes the context. We expect "Edited" to be present, and "Original" to be gone.
+    assert "Edited" in response2
+    assert "Original" not in response2
+    assert "New Response" in response2
