@@ -16,9 +16,25 @@ CASES = [
             ChatMessage(ChatIntent.RESPONSE, "Response content.")
         ]),
         """
-        [//]: # (Response)
-
         Response content.
+        """
+    ),
+    (
+        ChatThread([
+            ChatMessage(ChatIntent.RESPONSE, "Response content."),
+            ChatMessage(ChatIntent.SYSTEM, "System info.")
+        ]),
+        """
+        Response content.
+
+        [//]: # (System)
+
+        <details>
+        <summary>System</summary>
+
+        System info.
+
+        </details>
         """
     ),
     (
@@ -142,8 +158,6 @@ CASES = [
             ChatMessage(ChatIntent.PROMPT, "[//]: # (Escaped-System)"),
         ]),
         """
-        [//]: # (Response)
-
         [//]: # (Escaped-System)
         Normal content
 
@@ -207,3 +221,27 @@ def test_parse_raises_on_invalid_intent():
     text = "[//]: # (InvalidIntent)\nContent"
     with pytest.raises(ValueError, match="Unknown intent: InvalidIntent"):
         formatter.parse(text)
+
+def test_implicit_empty_response():
+    """Test that implicit empty response is parsed correctly."""
+    chat = ChatThread([
+        ChatMessage(ChatIntent.RESPONSE, ""),
+        ChatMessage(ChatIntent.SYSTEM, "Sys")
+    ])
+    # Render should produce empty string followed by separator and system message
+    rendered = formatter.render(chat)
+    # Expect: "\n\n[//]: # (System)\n\n<details>\n<summary>System</summary>\n\nSys\n\n</details>"
+    assert rendered.startswith("\n\n")
+    parsed = formatter.parse(rendered)
+    assert parsed == chat
+
+def test_system_start_no_implicit_response():
+    """Test that a chat starting with SYSTEM does not create an empty default response."""
+    chat = ChatThread([
+        ChatMessage(ChatIntent.SYSTEM, "Sys"),
+        ChatMessage(ChatIntent.RESPONSE, "Resp")
+    ])
+    rendered = formatter.render(chat)
+    assert rendered.strip().startswith("[//]: # (System)")
+    parsed = formatter.parse(rendered)
+    assert parsed == chat

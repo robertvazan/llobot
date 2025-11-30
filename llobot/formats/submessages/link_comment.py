@@ -24,9 +24,15 @@ class LinkCommentSubmessageFormat(SubmessageFormat, ValueTypeMixin):
     wrapped in collapsible `<details>` blocks. This allows embedding structured
     messages in a single response message without cluttering the UI.
 
+    If the first message has `RESPONSE` intent, it is treated as the
+    default response and its header is omitted. This makes the output identical
+    to the input for simple responses. Empty chats are not supported.
+
     For example:
 
     ```markdown
+    Response content...
+
     [//]: # (System)
 
     <details>
@@ -67,18 +73,27 @@ class LinkCommentSubmessageFormat(SubmessageFormat, ValueTypeMixin):
         Renders a chat thread into a single string using link-comment delimiters.
 
         Args:
-            chat: The chat thread to render.
+            chat: The chat thread to render. Must not be empty.
 
         Returns:
             A single string representing the thread with nested messages.
+
+        Raises:
+            ValueError: If the chat is empty.
         """
+        if not chat:
+            raise ValueError("Chat cannot be empty")
+
         submessages = []
-        for message in chat:
+        for i, message in enumerate(chat):
             lines = []
 
-            # Header
-            lines.append(f'[//]: # ({message.intent})')
-            lines.append('')
+            is_default_response = (i == 0 and message.intent == ChatIntent.RESPONSE)
+
+            if not is_default_response:
+                # Header
+                lines.append(f'[//]: # ({message.intent})')
+                lines.append('')
 
             # Content
             # Split content into lines. split('\n') returns an empty string as the last element
@@ -186,6 +201,7 @@ class LinkCommentSubmessageFormat(SubmessageFormat, ValueTypeMixin):
             A new stream containing the formatted output as a single message.
         """
         current_intent: ChatIntent | None = None
+        is_start_of_stream = True
 
         yield ChatIntent.RESPONSE
 
@@ -204,10 +220,13 @@ class LinkCommentSubmessageFormat(SubmessageFormat, ValueTypeMixin):
                     yield '\n\n'
 
                 current_intent = item
+                is_default_response = is_start_of_stream and current_intent == ChatIntent.RESPONSE
+                is_start_of_stream = False
 
-                yield f'[//]: # ({current_intent})\n\n'
-                if current_intent not in [ChatIntent.RESPONSE, ChatIntent.STATUS]:
-                    yield f'<details>\n<summary>{current_intent}</summary>\n\n'
+                if not is_default_response:
+                    yield f'[//]: # ({current_intent})\n\n'
+                    if current_intent not in [ChatIntent.RESPONSE, ChatIntent.STATUS]:
+                        yield f'<details>\n<summary>{current_intent}</summary>\n\n'
 
             else:
                 yield item
@@ -231,7 +250,7 @@ class LinkCommentSubmessageFormat(SubmessageFormat, ValueTypeMixin):
         # which matches our expectation for line processing.
         raw_lines = formatted.split('\n')
 
-        blocks: list[tuple[ChatIntent, list[str]]] = []
+        blocks: list[tuple[ChatIntent | None, list[str]]] = []
         current_intent: ChatIntent | None = None
         current_lines: list[str] = []
 
@@ -240,7 +259,7 @@ class LinkCommentSubmessageFormat(SubmessageFormat, ValueTypeMixin):
             match = _COMMENT_RE.fullmatch(line)
             # Ensure we don't treat escaped lines as headers
             if match and not match.group(1).startswith('Escaped-'):
-                if current_intent:
+                if current_intent or current_lines:
                     blocks.append((current_intent, current_lines))
 
                 current_intent = ChatIntent.parse(match.group(1))
@@ -248,14 +267,20 @@ class LinkCommentSubmessageFormat(SubmessageFormat, ValueTypeMixin):
             else:
                 current_lines.append(line)
 
-        if current_intent:
+        # Finish last block
+        if current_intent or current_lines:
             blocks.append((current_intent, current_lines))
 
         # Phase 2: Process each block
         for i, (intent, lines) in enumerate(blocks):
-            # Remove empty line after header (inserted by render)
-            if lines and lines[0] == '':
-                lines.pop(0)
+            if intent is None:
+                # Default response (implicit)
+                intent = ChatIntent.RESPONSE
+            else:
+                # Explicit response or other intent
+                # Remove empty line after header (inserted by render)
+                if lines and lines[0] == '':
+                    lines.pop(0)
 
             # Remove separator empty line at the end, except for the very last block
             # which doesn't have a separator appended in the formatted string logic

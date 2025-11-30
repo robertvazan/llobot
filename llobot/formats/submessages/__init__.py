@@ -18,11 +18,16 @@ class SubmessageFormat:
         """
         Renders a chat thread into a single string.
 
+        The chat thread must not be empty.
+
         Args:
             chat: The chat thread to render.
 
         Returns:
             A single string representing the thread.
+
+        Raises:
+            ValueError: If the chat thread is empty.
         """
         raise NotImplementedError
 
