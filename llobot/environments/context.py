@@ -73,8 +73,8 @@ class ContextEnv(PersistentEnv):
         context_cursor = 0
         for visible_idx, visible_msg in enumerate(visible):
             found_match = False
-            for context_idx, context_msg in enumerate(context_messages[context_cursor:], start=context_cursor):
-                if context_msg.intent == visible_msg.intent:
+            for context_idx in range(context_cursor, len(context_messages)):
+                if context_messages[context_idx].intent == visible_msg.intent:
                     # Check if we skipped any conversational messages
                     skipped = context_messages[context_cursor:context_idx]
                     if any(m.intent in conv_intents for m in skipped):
