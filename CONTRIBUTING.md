@@ -17,6 +17,22 @@ Both bug reports and feature requests are welcome. There is no free support, but
 
 Pull requests are generally welcome. If you would like to make large or controversial changes, please open an issue first to discuss your idea.
 
+## Terminology
+
+The following terms are used throughout the code:
+
+- Thread: An immutable sequence of messages represented by `ChatThread`.
+- Prompt: The content submitted by the user to a role. This is usually the full thread visible in the client. We sometimes distinguish:
+  - Initial prompt: The first message in the thread.
+  - Current/last prompt: The last message in the thread.
+  - Full prompt: The entire submitted thread.
+- Context: The final message sequence assembled by the role and sent to the backend model. It includes the system prompt, knowledge, examples, and user's prompt.
+- Session: Persisted state for a conversation. Besides context, session can persist wider environment associated with the conversation. Session ID is a hash of the initial prompt.
+- History: An on-disk archive of past sessions managed by `SessionHistory`.
+- Example memory: Approved and archived prompt-response message pairs used for few-shot prompting.
+
+The term “chat” is ambiguous and typically refers to either the thread or the full prompt.
+
 ## Structure
 
 The project root directory is organized as follows:
@@ -32,7 +48,9 @@ The project root directory is organized as follows:
 
 Llobot is designed to be modular and configurable with reasonable defaults.
 
-The core interaction is orchestrated by a [`Role`](llobot/roles/__init__.py). When a user sends a prompt, the `Role` processes it by calling a sequence of functions from the [`commands`](llobot/commands/__init__.py) package. These functions parse `@mentions` from the prompt and perform various actions, for example retrieving documents from the knowledge base. These functions manipulate a shared [`Environment`](llobot/environments/__init__.py), which is a container for stateful components like the selected [`Project`](llobot/projects/__init__.py), the loaded [`Knowledge`](llobot/knowledge/__init__.py), and the [`ContextEnv`](llobot/environments/context.py) that accumulates chat messages.
+The core interaction is orchestrated by a [`Role`](llobot/roles/__init__.py). When a user sends a prompt (a thread of messages), the `Role` processes it by calling a sequence of functions from the [`commands`](llobot/commands/__init__.py) package. These functions parse `@mentions` from the prompt and perform various actions, for example retrieving documents from the knowledge base. These functions manipulate a shared [`Environment`](llobot/environments/__init__.py), which is a container for stateful components like the selected [`Project`](llobot/projects/__init__.py), the loaded [`Knowledge`](llobot/knowledge/__init__.py), and the [`ContextEnv`](llobot/environments/context.py) that accumulates messages for the assembled context.
+
+Session persistence is keyed by the initial prompt. The session ID is a filename/URL-safe Base64-encoded SHA-256 hash of the UTF-8 bytes of the initial prompt, truncated to 40 characters. [`SessionHistory`](llobot/environments/history.py) stores and loads environment state under this hash. There are no explicit session messages and no session commands in the prompt.
 
 The `Role` performs "context stuffing". It uses [`Crammer`s](llobot/crammers/__init__.py) to select the most relevant information (e.g., knowledge documents, few-shot examples from [`ExampleMemory`](llobot/memories/examples.py)) that fits within the [`Model`'s](llobot/models/__init__.py) context budget. This content is rendered into clean, human-readable Markdown by components from the [`formats`](llobot/formats/__init__.py) package.
 

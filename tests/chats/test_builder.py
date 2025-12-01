@@ -113,7 +113,7 @@ def test_record_empty_stream():
 def test_record_multiple_messages():
     """Tests recording a stream with multiple messages."""
     builder = ChatBuilder()
-    msg1 = ChatMessage(ChatIntent.SESSION, "info")
+    msg1 = ChatMessage(ChatIntent.STATUS, "info")
     msg2 = ChatMessage(ChatIntent.AFFIRMATION, "OK")
     def source_stream():
         yield from msg1.stream()
@@ -126,12 +126,12 @@ def test_record_multiple_messages():
 def test_record_stream_is_pass_through():
     """Tests that record() yields exactly what it consumes."""
     builder = ChatBuilder()
-    source = [ChatIntent.SESSION, "s1", " and s2", ChatIntent.RESPONSE, "r1"]
+    source = [ChatIntent.STATUS, "s1", " and s2", ChatIntent.RESPONSE, "r1"]
     recorded_stream = builder.record(iter(source))
     output_list = list(recorded_stream)
     assert output_list == source
     assert builder.messages == [
-        ChatMessage(ChatIntent.SESSION, "s1 and s2"),
+        ChatMessage(ChatIntent.STATUS, "s1 and s2"),
         ChatMessage(ChatIntent.RESPONSE, "r1"),
     ]
 
@@ -139,9 +139,9 @@ def test_record_stream_is_pass_through():
 def test_record_empty_message_in_stream():
     """Tests recording a stream with an empty message."""
     builder = ChatBuilder()
-    source = [ChatIntent.SESSION, ChatIntent.RESPONSE, "r1"]
+    source = [ChatIntent.STATUS, ChatIntent.RESPONSE, "r1"]
     list(builder.record(iter(source)))
     assert builder.messages == [
-        ChatMessage(ChatIntent.SESSION, ""),
+        ChatMessage(ChatIntent.STATUS, ""),
         ChatMessage(ChatIntent.RESPONSE, "r1"),
     ]

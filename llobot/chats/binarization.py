@@ -13,7 +13,7 @@ def binarize_intent(intent: ChatIntent) -> ChatIntent:
     """
     Reduces the intent to either PROMPT or RESPONSE.
     """
-    if intent in [ChatIntent.SYSTEM, ChatIntent.SESSION, ChatIntent.EXAMPLE_PROMPT, ChatIntent.PROMPT]:
+    if intent in [ChatIntent.SYSTEM, ChatIntent.EXAMPLE_PROMPT, ChatIntent.PROMPT]:
         return ChatIntent.PROMPT
     if intent in [ChatIntent.AFFIRMATION, ChatIntent.EXAMPLE_RESPONSE, ChatIntent.RESPONSE, ChatIntent.STATUS]:
         return ChatIntent.RESPONSE
@@ -30,7 +30,6 @@ def binarize_chat(chat: ChatThread, *, last: ChatIntent | None = None) -> ChatTh
     Normalizes a chat thread into a strict alternating sequence of PROMPT and RESPONSE messages.
 
     This method performs several normalization steps:
-    - Reorders prompt-session message pairs to session-prompt pairs.
     - Binarizes message intents to either PROMPT or RESPONSE.
     - Inserts "Okay" (RESPONSE) between consecutive PROMPT messages.
     - Inserts "Go on" (PROMPT) between consecutive RESPONSE messages.
@@ -46,23 +45,10 @@ def binarize_chat(chat: ChatThread, *, last: ChatIntent | None = None) -> ChatTh
     # Use local import to avoid circular dependency
     from llobot.formats.affirmations import affirmation_message
 
-    # Reorder prompt-session pairs
-    reordered = []
-    i = 0
     messages = chat.messages
-    while i < len(messages):
-        if (i + 1 < len(messages) and
-                messages[i].intent == ChatIntent.PROMPT and
-                messages[i+1].intent == ChatIntent.SESSION):
-            reordered.append(messages[i+1])
-            reordered.append(messages[i])
-            i += 2
-        else:
-            reordered.append(messages[i])
-            i += 1
 
     # Binarize all messages
-    binarized_messages = [binarize_message(message) for message in reordered]
+    binarized_messages = [binarize_message(message) for message in messages]
 
     # Insert fillers for consecutive messages of the same intent
     final_messages = []

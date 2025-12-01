@@ -1,4 +1,3 @@
-import re
 from pathlib import Path
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
@@ -16,21 +15,15 @@ def get_response_content(thread: ChatThread) -> str:
             return msg.content
     return ""
 
-def extract_session_id(thread: ChatThread) -> str:
-    """Helper to extract session ID from the thread."""
-    session_msg = next((m for m in thread if m.intent == ChatIntent.SESSION), None)
-    assert session_msg, "No SESSION message found"
-    session_match = re.search(r'Session: @(\d{8}-\d{6})', session_msg.content)
-    assert session_match, "No session ID found in SESSION message"
-    return session_match.group(1)
-
 def setup_test_project(tmp_path: Path) -> tuple[Path, HomeProjectLibrary]:
     """Sets up a test project with files."""
     projects_dir = tmp_path / "projects"
     project_a = projects_dir / "project_a"
     project_a.mkdir(parents=True)
     write_text(project_a / "README.md", "# Project A")
+    project_a.joinpath("src").mkdir()
     write_text(project_a / "src" / "main.py", "print('hello')")
+    project_a.joinpath("tests").mkdir()
     write_text(project_a / "tests" / "test_main.py", "def test(): pass")
 
     library = HomeProjectLibrary(projects_dir)
@@ -60,7 +53,6 @@ def test_editor_file_retrieval(tmp_path: Path):
     prompt1 = ChatThread([ChatMessage(ChatIntent.PROMPT, "@project_a @src/main.py Read code")])
     thread1 = record_stream(editor.chat(prompt1))
     response1 = get_response_content(thread1)
-    session_id = extract_session_id(thread1)
 
     # The content should be present
     assert "File: project_a/src/main.py" in response1

@@ -14,8 +14,6 @@ knowledge
     Function to load project knowledge.
 retrievals
     Commands and functions for document retrieval.
-session
-    Commands and functions to manage session state.
 unrecognized
     Command to handle unrecognized commands.
 approve

@@ -6,7 +6,6 @@ from llobot.chats.binarization import binarize_chat, binarize_intent, binarize_m
 def test_binarize_intent():
     """Tests that intents are correctly mapped to PROMPT or RESPONSE."""
     assert binarize_intent(ChatIntent.SYSTEM) == ChatIntent.PROMPT
-    assert binarize_intent(ChatIntent.SESSION) == ChatIntent.PROMPT
     assert binarize_intent(ChatIntent.EXAMPLE_PROMPT) == ChatIntent.PROMPT
     assert binarize_intent(ChatIntent.PROMPT) == ChatIntent.PROMPT
     assert binarize_intent(ChatIntent.AFFIRMATION) == ChatIntent.RESPONSE
@@ -37,34 +36,6 @@ def test_binarize_chat_empty():
     assert binarize_chat(chat).messages == ()
     assert binarize_chat(chat, last=ChatIntent.PROMPT).messages == (ChatMessage(ChatIntent.PROMPT, "Go on"),)
     assert binarize_chat(chat, last=ChatIntent.RESPONSE).messages == (ChatMessage(ChatIntent.RESPONSE, "Okay"),)
-
-def test_binarize_chat_reorders_prompt_session():
-    """Tests that PROMPT-SESSION pairs are reordered to SESSION-PROMPT."""
-    chat = ChatThread([
-        ChatMessage(ChatIntent.PROMPT, "p1"),
-        ChatMessage(ChatIntent.SESSION, "s1"),
-    ])
-    binarized = binarize_chat(chat)
-    assert binarized.messages == (
-        ChatMessage(ChatIntent.PROMPT, "s1"),
-        ChatMessage(ChatIntent.RESPONSE, "Okay"),
-        ChatMessage(ChatIntent.PROMPT, "p1"),
-    )
-
-def test_binarize_chat_reorders_prompt_session_at_end():
-    """Tests reordering of PROMPT-SESSION pair at the end of a chat."""
-    chat = ChatThread([
-        ChatMessage(ChatIntent.RESPONSE, "r1"),
-        ChatMessage(ChatIntent.PROMPT, "p1"),
-        ChatMessage(ChatIntent.SESSION, "s1"),
-    ])
-    binarized = binarize_chat(chat)
-    assert binarized.messages == (
-        ChatMessage(ChatIntent.RESPONSE, "r1"),
-        ChatMessage(ChatIntent.PROMPT, "s1"),
-        ChatMessage(ChatIntent.RESPONSE, "Okay"),
-        ChatMessage(ChatIntent.PROMPT, "p1"),
-    )
 
 def test_binarize_chat_consecutive_prompts():
     """Tests that a filler RESPONSE is inserted between consecutive PROMPTs."""
@@ -124,7 +95,6 @@ def test_binarize_chat_complex_case():
     chat = ChatThread([
         ChatMessage(ChatIntent.SYSTEM, "system"),
         ChatMessage(ChatIntent.PROMPT, "p1"),
-        ChatMessage(ChatIntent.SESSION, "s1"),
         ChatMessage(ChatIntent.RESPONSE, "r1"),
         ChatMessage(ChatIntent.AFFIRMATION, "a1"),
         ChatMessage(ChatIntent.STATUS, "status"),
@@ -132,8 +102,6 @@ def test_binarize_chat_complex_case():
     binarized = binarize_chat(chat, last=ChatIntent.PROMPT)
     assert binarized.messages == (
         ChatMessage(ChatIntent.PROMPT, "system"),
-        ChatMessage(ChatIntent.RESPONSE, "Okay"),
-        ChatMessage(ChatIntent.PROMPT, "s1"),
         ChatMessage(ChatIntent.RESPONSE, "Okay"),
         ChatMessage(ChatIntent.PROMPT, "p1"),
         ChatMessage(ChatIntent.RESPONSE, "r1"),

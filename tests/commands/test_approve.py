@@ -2,9 +2,9 @@ from pathlib import Path
 from llobot.chats.history import standard_chat_history
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
+from llobot.chats.thread import ChatThread
 from llobot.commands.approve import handle_approve_command
 from llobot.environments import Environment
-from llobot.environments.context import ContextEnv
 from llobot.environments.prompt import PromptEnv
 from llobot.environments.status import StatusEnv
 from llobot.memories.examples import ExampleMemory
@@ -14,13 +14,12 @@ def test_approve_command(tmp_path: Path):
     examples = ExampleMemory('test-role', history=history)
     env = Environment()
 
-    # Setup context
-    context = env[ContextEnv]
-    context.add(ChatMessage(ChatIntent.PROMPT, "User prompt"))
-
     # Setup prompt
     prompt_env = env[PromptEnv]
-    prompt_env.set("Approved response. @approve")
+    prompt_env.set(ChatThread([
+        ChatMessage(ChatIntent.PROMPT, "User prompt"),
+        ChatMessage(ChatIntent.PROMPT, "Approved response. @approve"),
+    ]))
 
     # Handle
     assert handle_approve_command('approve', env, examples)
@@ -45,16 +44,15 @@ def test_approve_command_full_chat(tmp_path: Path):
     examples = ExampleMemory('test-role', history=history)
     env = Environment()
 
-    # Setup context with intermediate conversation
-    context = env[ContextEnv]
-    context.add(ChatMessage(ChatIntent.PROMPT, "User prompt 1"))
-    context.add(ChatMessage(ChatIntent.RESPONSE, "Model response 1"))
-    context.add(ChatMessage(ChatIntent.PROMPT, "Refinement prompt"))
-    context.add(ChatMessage(ChatIntent.RESPONSE, "Final model response"))
-
-    # Setup prompt that is empty after stripping, to use the last response from context
+    # Setup prompt with intermediate conversation
     prompt_env = env[PromptEnv]
-    prompt_env.set("@approve")
+    prompt_env.set(ChatThread([
+        ChatMessage(ChatIntent.PROMPT, "User prompt 1"),
+        ChatMessage(ChatIntent.RESPONSE, "Model response 1"),
+        ChatMessage(ChatIntent.PROMPT, "Refinement prompt"),
+        ChatMessage(ChatIntent.RESPONSE, "Final model response"),
+        ChatMessage(ChatIntent.PROMPT, "@approve"),
+    ]))
 
     # Handle
     assert handle_approve_command('approve', env, examples)
@@ -77,14 +75,13 @@ def test_approve_command_empty_stripped_prompt(tmp_path: Path):
     examples = ExampleMemory('test-role', history=history)
     env = Environment()
 
-    # Setup context
-    context = env[ContextEnv]
-    context.add(ChatMessage(ChatIntent.PROMPT, "User prompt 1"))
-    context.add(ChatMessage(ChatIntent.RESPONSE, "Model response 1"))
-
     # Setup prompt that is empty after stripping
     prompt_env = env[PromptEnv]
-    prompt_env.set("@approve")
+    prompt_env.set(ChatThread([
+        ChatMessage(ChatIntent.PROMPT, "User prompt 1"),
+        ChatMessage(ChatIntent.RESPONSE, "Model response 1"),
+        ChatMessage(ChatIntent.PROMPT, "@approve"),
+    ]))
 
     # Handle
     assert handle_approve_command('approve', env, examples)

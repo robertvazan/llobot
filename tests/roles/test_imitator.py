@@ -1,4 +1,3 @@
-import re
 from pathlib import Path
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
@@ -14,15 +13,6 @@ def get_response_content(thread: ChatThread) -> str:
             return msg.content
     return ""
 
-def get_session_command(thread: ChatThread) -> str:
-    """Helper to extract session command from the thread."""
-    for msg in thread:
-        if msg.intent == ChatIntent.SESSION:
-            match = re.search(r'Session: @(\d{8}-\d{6})', msg.content)
-            if match:
-                return f"Session: @{match.group(1)}"
-    raise ValueError("No session ID found in thread")
-
 def test_imitator_approve(tmp_path: Path):
     model = EchoModel('echo')
     # Imitator saves examples to example_history.
@@ -30,24 +20,18 @@ def test_imitator_approve(tmp_path: Path):
                         example_history=tmp_path / "examples",
                         session_history=tmp_path / "sessions")
 
-    # 1. Turn 1: User asks "Say B", Model says "B" (EchoModel will actually echo the prompt)
+    # 1. Turn 1: User asks "Say B"
     prompt1 = ChatThread([ChatMessage(ChatIntent.PROMPT, "Say B")])
     thread1 = record_stream(imitator.chat(prompt1))
-    session_cmd = get_session_command(thread1)
-
-    # Extract response for history consistency
     response1_content = get_response_content(thread1)
 
     # 2. Turn 2: User says "@approve".
-    # We must pass the session ID AND the previous history to ensure context alignment.
-
+    # We must pass the full history to ensure context alignment.
     prompt2 = ChatThread([
         ChatMessage(ChatIntent.PROMPT, "Say B"),
-        ChatMessage(ChatIntent.SESSION, session_cmd),
         ChatMessage(ChatIntent.RESPONSE, response1_content),
         ChatMessage(ChatIntent.PROMPT, "@approve")
     ])
-
     thread2 = record_stream(imitator.chat(prompt2))
 
     # Check for success status
@@ -76,13 +60,11 @@ def test_imitator_approve_correction(tmp_path: Path):
     # Turn 1: "Say C"
     prompt1 = ChatThread([ChatMessage(ChatIntent.PROMPT, "Say C")])
     thread1 = record_stream(imitator.chat(prompt1))
-    session_cmd = get_session_command(thread1)
     response1_content = get_response_content(thread1)
 
     # Turn 2: "@approve C" (providing explicit correction because EchoModel output is messy)
     prompt2 = ChatThread([
         ChatMessage(ChatIntent.PROMPT, "Say C"),
-        ChatMessage(ChatIntent.SESSION, session_cmd),
         ChatMessage(ChatIntent.RESPONSE, response1_content),
         ChatMessage(ChatIntent.PROMPT, "@approve C")
     ])

@@ -10,11 +10,10 @@ from llobot.environments.persistent import PersistentEnv
 
 class ContextEnv(PersistentEnv):
     """
-    An environment component for accumulating chat messages.
-    The accumulated context can be persisted to disk.
+    An environment component for accumulating messages in the assembled context.
 
-    Last prompt message is only kept in PromptEnv while it is being processed,
-    so that the context can be populated before the prompt message is added.
+    The current (last) prompt message is only held in PromptEnv while it is being
+    processed, so that the context can be populated before the prompt message is added.
     """
     _builder: ChatBuilder
 
@@ -43,30 +42,29 @@ class ContextEnv(PersistentEnv):
 
     def coerce(self, visible: ChatThread):
         """
-        Coerces the context to match visible conversation history.
+        Coerces the context to match the visible thread.
 
-        This method is intended to help roles respond reasonably when a user edits
-        the chat history or navigates back in time. It aligns the persisted
-        context with the visible history from the user's client.
+        This method helps roles respond reasonably when a user edits the prompt
+        thread or navigates back in time. It aligns the persisted context with
+        the visible thread from the user's client.
 
-        The method works by pairing messages from the visible history with
+        The method works by pairing messages from the visible thread with
         messages in the current context based on matching intents in sequence.
         If a content mismatch is found in a pair, the context is truncated
-        at that point and the remainder of the visible history is appended.
+        at that point and the remainder of the visible thread is appended.
 
-        If the visible history is a prefix of the context, any remaining
-        "conversational" messages (PROMPT, RESPONSE, SESSION, STATUS) in the
-        context are truncated.
+        If the visible thread is a prefix of the context, any remaining
+        conversational messages (PROMPT, RESPONSE, STATUS) in the context
+        are truncated.
 
-        If the context is a prefix of the visible history, the extra messages
-        from the visible history are appended to the context.
+        If the context is a prefix of the visible thread, the extra messages
+        from the visible thread are appended to the context.
 
         Args:
-            visible: The chat history visible to the user, excluding the latest
-                     prompt.
+            visible: The thread visible to the user, excluding the latest prompt.
         """
         context_messages = self._builder.build()
-        conv_intents = {ChatIntent.PROMPT, ChatIntent.RESPONSE, ChatIntent.SESSION, ChatIntent.STATUS}
+        conv_intents = {ChatIntent.PROMPT, ChatIntent.RESPONSE, ChatIntent.STATUS}
 
         # Find corresponding messages by intent.
         pairs: list[tuple[int, int]] = []  # (visible_idx, context_idx)
@@ -92,7 +90,7 @@ class ContextEnv(PersistentEnv):
         # Check for content mismatch.
         for visible_idx, context_idx in pairs:
             if visible[visible_idx].content != context_messages[context_idx].content:
-                # Mismatch found. Truncate context and append rest of visible history.
+                # Mismatch found. Truncate context and append rest of visible thread.
                 self._builder.undo(mark=context_idx)
                 self._builder.add(visible[visible_idx:])
                 return
@@ -116,7 +114,7 @@ class ContextEnv(PersistentEnv):
 
     def build(self) -> ChatThread:
         """
-        Builds the final `ChatThread` from the accumulated messages.
+        Builds the final `ChatThread` representing the assembled context.
         """
         return self._builder.build()
 

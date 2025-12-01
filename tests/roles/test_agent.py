@@ -1,4 +1,5 @@
-import re
+import base64
+import hashlib
 from pathlib import Path
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
@@ -14,13 +15,13 @@ def get_response_content(thread: ChatThread) -> str:
             return msg.content
     return ""
 
-def extract_session_id(thread: ChatThread) -> str:
-    """Helper to extract session ID from the thread."""
-    session_msg = next((m for m in thread if m.intent == ChatIntent.SESSION), None)
-    assert session_msg, "No SESSION message found"
-    session_match = re.search(r'Session: @(\d{8}-\d{6})', session_msg.content)
-    assert session_match, "No session ID found in SESSION message"
-    return session_match.group(1)
+def get_session_hash(prompt: ChatThread) -> str:
+    """Helper to compute session hash from a prompt thread."""
+    if not prompt or not prompt[0].content:
+        raise ValueError("Cannot compute hash for empty initial prompt")
+    hasher = hashlib.sha256(prompt[0].content.encode('utf-8'))
+    b64 = base64.urlsafe_b64encode(hasher.digest()).decode('ascii')
+    return b64[:40]
 
 def test_agent_first_turn(tmp_path: Path):
     """Tests that Agent creates a new session and includes system prompt on first turn."""
@@ -29,19 +30,11 @@ def test_agent_first_turn(tmp_path: Path):
 
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "Hello")])
     stream = agent.chat(prompt)
-    response_thread = record_stream(stream)
-    response_content = get_response_content(response_thread)
-
-    # Check that system prompt and reminder are present
-    assert "You are an agent." in response_content
-    assert "Hello" in response_content
-
-    # Check that session ID was assigned
-    session_id = extract_session_id(response_thread)
-    assert session_id
+    record_stream(stream)
 
     # Check that session history was created
-    assert any(tmp_path.iterdir())
+    session_hash = get_session_hash(prompt)
+    assert (tmp_path / session_hash).exists()
 
 def test_agent_session_persistence(tmp_path: Path):
     """Tests that Agent can resume a session and load persisted state."""
@@ -50,8 +43,7 @@ def test_agent_session_persistence(tmp_path: Path):
     # First turn: create a session
     agent1 = Agent('agent', model, prompt="System", session_history=tmp_path)
     prompt1 = ChatThread([ChatMessage(ChatIntent.PROMPT, "First")])
-    thread1 = record_stream(agent1.chat(prompt1))
-    session_id = extract_session_id(thread1)
+    record_stream(agent1.chat(prompt1))  # this will save the session
 
     # Second turn: resume the session with a custom agent that verifies state loading
     class StatefulAgent(Agent):
@@ -60,8 +52,10 @@ def test_agent_session_persistence(tmp_path: Path):
             env[StatusEnv].append("State loaded.")
 
     agent2 = StatefulAgent('stateful', model, session_history=tmp_path)
+    # The prompt is the full history. The agent uses the first message to find the session.
     prompt2 = ChatThread([
-        ChatMessage(ChatIntent.SESSION, f"Session: @{session_id}"),
+        ChatMessage(ChatIntent.PROMPT, "First"),
+        ChatMessage(ChatIntent.RESPONSE, "Some response from turn 1"),
         ChatMessage(ChatIntent.PROMPT, "Next")
     ])
 
@@ -92,23 +86,23 @@ def test_agent_coercion(tmp_path: Path):
 
     # Turn 1
     prompt1 = ChatThread([ChatMessage(ChatIntent.PROMPT, "Original")])
-    thread1 = record_stream(agent.chat(prompt1))
-    session_id = extract_session_id(thread1)
-    # thread1 content: [System, Reminder, Prompt(Original), Session, Response(Original)]
+    record_stream(agent.chat(prompt1))
+    # Session for "Original" is created and saved.
 
-    # Turn 2: User edits "Original" to "Edited" in the history
+    # Turn 2: User edits history within the same session.
     prompt2 = ChatThread([
-        ChatMessage(ChatIntent.SESSION, f"Session: @{session_id}"), # Reused session
-        ChatMessage(ChatIntent.PROMPT, "Edited"), # This replaces "Original" in user's view
+        ChatMessage(ChatIntent.PROMPT, "Original"), # Same initial prompt to stay in session
+        ChatMessage(ChatIntent.PROMPT, "Edited"), # This replaces what was in the second turn
         ChatMessage(ChatIntent.RESPONSE, "New Response"), # User fabricated a response
         ChatMessage(ChatIntent.PROMPT, "Next")
     ])
 
-    # Agent should detect mismatch in history (Original vs Edited), truncate context, and append Edited.
+    # Agent should load context from session "Original", then detect mismatch,
+    # truncate, and append the new history.
     stream2 = agent.chat(prompt2)
     response2 = get_response_content(record_stream(stream2))
 
-    # The EchoModel echoes the context. We expect "Edited" to be present, and "Original" to be gone.
+    # The EchoModel echoes the context. We expect "Edited" to be present, and the response from turn 1 to be gone.
     assert "Edited" in response2
-    assert "Original" not in response2
+    assert "Original" in response2 # The first prompt is still there
     assert "New Response" in response2

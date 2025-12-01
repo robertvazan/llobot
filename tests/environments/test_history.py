@@ -1,16 +1,19 @@
 from __future__ import annotations
-from datetime import datetime
+import base64
+import hashlib
 from pathlib import Path
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
+from llobot.chats.thread import ChatThread
 from llobot.environments import Environment
 from llobot.environments.history import SessionHistory
 from llobot.environments.persistent import PersistentEnv
-from llobot.environments.session import SessionEnv
-from llobot.utils.time import format_time
+from llobot.environments.prompt import PromptEnv
 
 class DummyPersistent(PersistentEnv):
     """
     A simple persistent component used to verify that SessionHistory
-    saves and loads environment state to the path derived from SessionEnv.
+    saves and loads environment state to the path derived from PromptEnv.
     """
     filename = 'dummy.txt'
     loaded_value: str | None
@@ -28,13 +31,21 @@ class DummyPersistent(PersistentEnv):
         else:
             self.loaded_value = None
 
+def _session_hash(text: str) -> str:
+    hasher = hashlib.sha256(text.encode('utf-8'))
+    b64 = base64.urlsafe_b64encode(hasher.digest()).decode('ascii')
+    return b64[:40]
+
 def test_save_uses_session_id_and_persists_component(tmp_path: Path):
     env = Environment()
     # Register persistent component so Environment.save() has something to write.
     env[DummyPersistent]
-    # Set session ID.
-    session_id = datetime(2025, 5, 6, 7, 46, 8)
-    env[SessionEnv].set_id(session_id)
+    # Set prompt to derive session ID.
+    prompt_env = env[PromptEnv]
+    prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "initial prompt")])
+    prompt_env.set(prompt)
+    session_id = prompt_env.hash
+    assert session_id
 
     history = SessionHistory(tmp_path)
 
@@ -42,19 +53,23 @@ def test_save_uses_session_id_and_persists_component(tmp_path: Path):
     history.save(env)
 
     # Verify file written at path derived from the session ID.
-    session_dir = tmp_path / format_time(session_id)
+    session_dir = tmp_path / session_id
     assert (session_dir / DummyPersistent.filename).exists()
 
 def test_load_uses_session_id_and_loads_component(tmp_path: Path):
-    # Prepare saved state.
-    session_id = datetime(2025, 5, 6, 7, 46, 8)
-    session_dir = tmp_path / format_time(session_id)
+    # Prepare saved state using computed session ID for "initial prompt".
+    session_id = _session_hash("initial prompt")
+    session_dir = tmp_path / session_id
     session_dir.mkdir(parents=True, exist_ok=True)
     (session_dir / DummyPersistent.filename).write_text('saved', encoding='utf-8')
 
-    # Create fresh environment and set same session ID.
+    # Create fresh environment and set same prompt.
     env = Environment()
-    env[SessionEnv].set_id(session_id)
+    prompt_env = env[PromptEnv]
+    prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "initial prompt")])
+    prompt_env.set(prompt)
+    assert prompt_env.hash == session_id
+
     # Ensure the component exists so Environment.load() can load it immediately.
     dp = env[DummyPersistent]
 

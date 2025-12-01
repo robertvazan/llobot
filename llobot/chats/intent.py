@@ -14,11 +14,6 @@ class ChatIntent(Enum):
             knowledge base, file lists, and other project information. They are
             prepended to the user prompt and are not directly part of the
             conversational history.
-        SESSION: Session messages are appended to processed prompt messages to
-            record session information captured during prompt processing, such as
-            the knowledge cutoff time. Models see session messages prepended to
-            the user's prompt, so that the user's prompt is immediately followed
-            by the model's response in the final context.
         AFFIRMATION: Short, generic responses like "Okay" or "I see." They are
             inserted after system messages to maintain the user-model turn-taking
             sequence when there are several consecutive system messages.
@@ -35,7 +30,6 @@ class ChatIntent(Enum):
             are prominently displayed in the chat UI.
     """
     SYSTEM = 'System'
-    SESSION = 'Session'
     AFFIRMATION = 'Affirmation'
     EXAMPLE_PROMPT = 'Example-Prompt'
     EXAMPLE_RESPONSE = 'Example-Response'
@@ -55,8 +49,6 @@ class ChatIntent(Enum):
         """
         if codename == 'System':
             return ChatIntent.SYSTEM
-        if codename == 'Session':
-            return ChatIntent.SESSION
         if codename == 'Affirmation':
             return ChatIntent.AFFIRMATION
         if codename == 'Example-Prompt':

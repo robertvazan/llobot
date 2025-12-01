@@ -39,26 +39,6 @@ CASES = [
     ),
     (
         ChatThread([
-            ChatMessage(ChatIntent.SESSION, "Session info."),
-            ChatMessage(ChatIntent.RESPONSE, "Response content.")
-        ]),
-        """
-        [//]: # (Session)
-
-        <details>
-        <summary>Session</summary>
-
-        Session info.
-
-        </details>
-
-        [//]: # (Response)
-
-        Response content.
-        """
-    ),
-    (
-        ChatThread([
             ChatMessage(ChatIntent.STATUS, "Status update."),
             ChatMessage(ChatIntent.RESPONSE, "Response content.")
         ]),
@@ -75,7 +55,6 @@ CASES = [
     (
         ChatThread([
             ChatMessage(ChatIntent.PROMPT, "User prompt 1."),
-            ChatMessage(ChatIntent.SESSION, "Session info."),
             ChatMessage(ChatIntent.RESPONSE, "Response 1."),
             ChatMessage(ChatIntent.PROMPT, "User prompt 2."),
             ChatMessage(ChatIntent.RESPONSE, "Response 2.")
@@ -87,15 +66,6 @@ CASES = [
         <summary>Prompt</summary>
 
         User prompt 1.
-
-        </details>
-
-        [//]: # (Session)
-
-        <details>
-        <summary>Session</summary>
-
-        Session info.
 
         </details>
 

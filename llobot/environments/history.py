@@ -4,9 +4,8 @@ Session history management.
 from __future__ import annotations
 from pathlib import Path
 from llobot.environments import Environment
-from llobot.environments.session import SessionEnv
+from llobot.environments.prompt import PromptEnv
 from llobot.utils.fs import data_home
-from llobot.utils.time import format_time
 from llobot.utils.zones import Zoning, coerce_zoning
 
 
@@ -14,9 +13,9 @@ class SessionHistory:
     """
     Manages persistence of Environment states for sessions.
 
-    The session ID is obtained from the provided Environment's SessionEnv.
-    If the Environment has no session ID configured, save/load operations
-    are no-ops.
+    The session ID is a hash of the initial prompt, obtained from the
+    provided Environment's PromptEnv. If the Environment has no session ID
+    (e.g., empty prompt), save/load operations are no-ops.
     """
     _location: Zoning
 
@@ -33,16 +32,16 @@ class SessionHistory:
         """
         Saves an environment state for the current session.
 
-        The session ID is read from env[SessionEnv]. If there is no session ID,
+        The session ID is read from env[PromptEnv]. If there is no session ID,
         this method does nothing.
 
         Args:
             env: The environment to save.
         """
-        session_id = env[SessionEnv].get_id()
+        session_id = env[PromptEnv].hash
         if not session_id:
             return
-        zone = Path(format_time(session_id))
+        zone = Path(session_id)
         path = self._location.resolve(zone)
         env.save(path)
 
@@ -50,16 +49,16 @@ class SessionHistory:
         """
         Loads an environment state for the current session.
 
-        The session ID is read from env[SessionEnv]. If the session does not
+        The session ID is read from env[PromptEnv]. If the session does not
         exist or there is no session ID, the environment is not modified.
 
         Args:
             env: The environment to load into.
         """
-        session_id = env[SessionEnv].get_id()
+        session_id = env[PromptEnv].hash
         if not session_id:
             return
-        zone = Path(format_time(session_id))
+        zone = Path(session_id)
         path = self._location.resolve(zone)
         env.load(path)
 

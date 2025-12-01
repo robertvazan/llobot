@@ -4,7 +4,6 @@ from llobot.chats.thread import ChatThread
 from llobot.chats.intent import ChatIntent
 from llobot.chats.stream import ChatStream
 from llobot.commands.model import handle_model_commands
-from llobot.commands.session import ensure_session_command, handle_session_commands
 from llobot.commands.unrecognized import handle_unrecognized_commands
 from llobot.environments import Environment
 from llobot.environments.commands import CommandsEnv
@@ -13,7 +12,6 @@ from llobot.environments.history import SessionHistory, coerce_session_history, 
 from llobot.environments.model import ModelEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.prompt import PromptEnv
-from llobot.environments.session import SessionEnv
 from llobot.environments.status import StatusEnv
 from llobot.formats.mentions import parse_mentions
 from llobot.formats.prompts import PromptFormat, standard_prompt_format
@@ -31,8 +29,8 @@ class Agent(Role):
     A base role for agents that handle sessions, environment, and command execution.
 
     This class provides a framework for creating roles that interact with a user
-    through a chat interface. It manages session state, command parsing, and
-    context assembly. Subclasses can customize behavior by overriding methods
+    through a prompt thread. It manages session persistence, command parsing,
+    and context assembly. Subclasses can customize behavior by overriding methods
     for context stuffing, command handling, and prompt generation.
     """
     _name: str
@@ -80,32 +78,27 @@ class Agent(Role):
 
     def parse_prompt(self, env: Environment, prompt: ChatThread):
         """
-        Parses the prompt, loads session, and prepares environment.
+        Parses the full prompt thread, loads session, and prepares environment.
 
-        This method handles session commands, loads session history, coerces
-        the context to match visible history, and sets up the prompt for the
-        current turn.
+        This method sets the full prompt thread (which also computes the session
+        ID), loads the corresponding session from history, coerces the context
+        to match the visible portion of the prompt, and extracts commands from
+        the current (last) prompt message.
 
         Args:
             env: The environment to populate.
-            prompt: The full chat history from the user's client.
+            prompt: The full prompt thread from the user's client.
         """
-        # Parse and process session commands from the whole prompt history.
-        for m in prompt:
-            if m.intent == ChatIntent.SESSION:
-                env[CommandsEnv].add(parse_mentions(m))
-        handle_session_commands(env)
-        handle_unrecognized_commands(env)
+        prompt_env = env[PromptEnv]
+        prompt_env.set(prompt)
 
-        # Ensure session ID is present, creating it if necessary.
-        ensure_session_command(env)
-        # Load session history for the current session ID.
+        # Load session data for the current session ID.
         self._session_history.load(env)
-        # Coerce loaded context to match visible history.
+
+        # Coerce loaded context to match the visible part of the prompt (excluding the current prompt).
         env[ContextEnv].coerce(prompt[:-1])
 
-        # Set up current prompt message and its commands.
-        env[PromptEnv].set(prompt[-1].content)
+        # Parse commands from the current prompt message.
         env[CommandsEnv].add(parse_mentions(prompt[-1]))
 
     def handle_prompt(self, env: Environment):
@@ -157,8 +150,7 @@ class Agent(Role):
         """
         Adds a reminder prompt to the context.
 
-        This is typically used for the first turn in a conversation to reinforce
-        the system prompt.
+        This is typically used for the first turn to reinforce the system prompt.
 
         Args:
             env: The environment to add the reminder to.
@@ -184,22 +176,22 @@ class Agent(Role):
 
         This method implements the main interaction loop for the agent:
         1. It sets up the environment.
-        2. It calls `parse_prompt()` to load session, coerce context, and handle
-           session commands from the prompt.
+        2. It calls `parse_prompt()` to set the full prompt thread, load session
+           data from history, coerce context, and extract commands from the prompt.
         3. It calls `handle_prompt()` to execute commands and populate the context.
         4. It handles unrecognized commands.
         5. If it's the first message, it adds a reminder prompt.
-        6. It sends the final assembled context to the model and streams the response.
+        6. It sends the assembled context to the model and streams the response.
         7. It saves the session state.
 
         Args:
-            prompt: The user's prompt as a chat thread.
+            prompt: The full prompt thread from the user's client.
 
         Returns:
             A model stream with the generated response.
         """
         if not prompt or prompt[-1].intent != ChatIntent.PROMPT:
-            raise ValueError("The last message in the chat thread must be a PROMPT.")
+            raise ValueError("The last message in the thread must be a PROMPT.")
 
         env = Environment()
         env[ProjectEnv].configure(self._project_library)
@@ -214,7 +206,6 @@ class Agent(Role):
             self.remind(env)
         context_env.add(prompt[-1])
 
-        yield from context_env.record(env[SessionEnv].stream())
         if env[StatusEnv].populated:
             yield from context_env.record(env[StatusEnv].stream())
         else:

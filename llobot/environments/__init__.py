@@ -15,8 +15,6 @@ knowledge
     Knowledge base for selected project.
 retrievals
     Document retrievals.
-session
-    Session messages.
 cutoff
     Knowledge cutoff timestamp.
 commands
