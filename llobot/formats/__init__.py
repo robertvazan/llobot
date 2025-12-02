@@ -9,6 +9,10 @@ Subpackages
 -----------
 affirmations
     Utilities for creating standard affirmation messages.
+documents
+    Formats for rendering individual documents.
+knowledge
+    Formats for rendering `Knowledge` objects.
 deltas
     Formats for rendering `KnowledgeDelta` and `DocumentDelta` objects.
 languages

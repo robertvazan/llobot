@@ -1,7 +1,7 @@
 from __future__ import annotations
 from llobot.chats.builder import ChatBuilder
 from llobot.crammers.knowledge import KnowledgeCrammer
-from llobot.formats.deltas.knowledge import KnowledgeDeltaFormat, standard_knowledge_delta_format
+from llobot.formats.knowledge import KnowledgeFormat, standard_knowledge_format
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.ranking import KnowledgeRanking
@@ -26,12 +26,12 @@ class RankedKnowledgeCrammer(KnowledgeCrammer, ValueTypeMixin):
     """
     _ranker: KnowledgeRanker
     _blacklist: KnowledgeSubset
-    _knowledge_delta_format: KnowledgeDeltaFormat
+    _knowledge_format: KnowledgeFormat
 
     def __init__(self, *,
         ranker: KnowledgeRanker | None = None,
         blacklist: KnowledgeSubset = blacklist_subset(),
-        knowledge_delta_format: KnowledgeDeltaFormat = standard_knowledge_delta_format(),
+        knowledge_format: KnowledgeFormat = standard_knowledge_format(),
     ):
         """
         Creates a new ranked knowledge crammer.
@@ -40,11 +40,11 @@ class RankedKnowledgeCrammer(KnowledgeCrammer, ValueTypeMixin):
             ranker: The ranker to establish the document order. Defaults to
                     `OverviewsFirstRanker` over `DescendingRanker`.
             blacklist: A subset of documents to exclude from the final context.
-            knowledge_delta_format: The format for rendering knowledge.
+            knowledge_format: The format for rendering knowledge.
         """
         self._ranker = ranker if ranker is not None else _default_ranker()
         self._blacklist = blacklist
-        self._knowledge_delta_format = knowledge_delta_format
+        self._knowledge_format = knowledge_format
 
     def cram(self, builder: ChatBuilder, knowledge: Knowledge) -> KnowledgeIndex:
         """
@@ -76,7 +76,7 @@ class RankedKnowledgeCrammer(KnowledgeCrammer, ValueTypeMixin):
             candidate_knowledge = knowledge & selection_ranking
 
             builder.mark()
-            formatted = self._knowledge_delta_format.render_fresh_chat(candidate_knowledge, selection_ranking)
+            formatted = self._knowledge_format.render_chat(candidate_knowledge, selection_ranking)
             builder.add(formatted)
 
             if builder.unused >= 0:
