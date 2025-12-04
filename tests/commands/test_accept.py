@@ -1,0 +1,143 @@
+from __future__ import annotations
+import textwrap
+from pathlib import Path
+import pytest
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
+from llobot.chats.thread import ChatThread
+from llobot.commands.accept import handle_accept_command
+from llobot.environments import Environment
+from llobot.environments.projects import ProjectEnv
+from llobot.environments.prompt import PromptEnv
+from llobot.environments.status import StatusEnv
+from llobot.projects.library.home import HomeProjectLibrary
+from llobot.tools.code import CodeBlockTool
+from llobot.tools.files import FileTool
+from llobot.tools.move import MoveTool
+from llobot.tools.remove import RemoveTool
+
+TOOLS = [FileTool(), MoveTool(), RemoveTool(), CodeBlockTool()]
+
+def test_accept_command_success(tmp_path: Path):
+    # Setup project
+    sources_dir = tmp_path / "sources"
+    project_dir = sources_dir / "myproject"
+    project_dir.mkdir(parents=True)
+    (project_dir / "file1.txt").write_text("content1")
+
+    # Setup environment
+    env = Environment()
+    project_library = HomeProjectLibrary(sources_dir, mutable=True)
+    env[ProjectEnv].configure(project_library)
+    env[ProjectEnv].add("myproject")
+
+    # Setup prompt with a model response containing tool calls
+    response_content = textwrap.dedent("""
+        Okay, I will perform the requested file operations.
+
+        <details>
+        <summary>File: myproject/file2.txt</summary>
+
+        ```
+        new content
+        ```
+
+        </details>
+
+        ```tool
+        rm myproject/file1.txt
+        ```
+    """)
+    prompt = ChatThread([
+        ChatMessage(ChatIntent.PROMPT, "do stuff"),
+        ChatMessage(ChatIntent.RESPONSE, response_content),
+        ChatMessage(ChatIntent.PROMPT, "@accept"),
+    ])
+    env[PromptEnv].set(prompt)
+
+    # Execute command
+    handled = handle_accept_command("accept", env, TOOLS)
+    assert handled
+
+    # Verify project state
+    assert not (project_dir / "file1.txt").exists()
+    assert (project_dir / "file2.txt").is_file()
+    assert (project_dir / "file2.txt").read_text() == "new content\n"
+
+    # Verify status messages
+    status_env = env[StatusEnv]
+    content = status_env.content()
+    assert "Success: file myproject/file2.txt" in content
+    assert "Writing myproject/file2.txt..." in content
+    assert "File was written." in content
+    assert "Success: rm myproject/file1.txt" in content
+    assert "Removing myproject/file1.txt..." in content
+    assert "File was removed." in content
+    assert "✅ All 2 tool calls executed." in content
+
+def test_accept_command_failure(tmp_path: Path):
+    # Setup project
+    sources_dir = tmp_path / "sources"
+    project_dir = sources_dir / "myproject"
+    project_dir.mkdir(parents=True)
+
+    # Setup environment
+    env = Environment()
+    project_library = HomeProjectLibrary(sources_dir, mutable=True)
+    env[ProjectEnv].configure(project_library)
+    env[ProjectEnv].add("myproject")
+
+    # Setup prompt with a model response containing a failing tool call
+    response_content = textwrap.dedent("""
+        ```tool
+        rm myproject/nonexistent.txt
+        ```
+    """)
+    prompt = ChatThread([
+        ChatMessage(ChatIntent.PROMPT, "do stuff"),
+        ChatMessage(ChatIntent.RESPONSE, response_content),
+        ChatMessage(ChatIntent.PROMPT, "@accept"),
+    ])
+    env[PromptEnv].set(prompt)
+
+    # Execute command
+    handled = handle_accept_command("accept", env, TOOLS)
+    assert handled
+
+    # Verify status messages
+    status_env = env[StatusEnv]
+    content = status_env.content()
+    assert "Failure: rm myproject/nonexistent.txt" in content
+    assert "Removing myproject/nonexistent.txt..." in content
+    assert "Error executing:" in content
+    assert "❌ 0 of 1 tool calls executed." in content
+
+def test_accept_command_no_tool_calls():
+    # Setup environment
+    env = Environment()
+
+    # Setup prompt with a model response without tool calls
+    response_content = "I'm not sure what to do."
+    prompt = ChatThread([
+        ChatMessage(ChatIntent.PROMPT, "do stuff"),
+        ChatMessage(ChatIntent.RESPONSE, response_content),
+        ChatMessage(ChatIntent.PROMPT, "@accept"),
+    ])
+    env[PromptEnv].set(prompt)
+
+    with pytest.raises(ValueError, match="No tool calls to execute."):
+        handle_accept_command("accept", env, TOOLS)
+
+def test_accept_command_no_response():
+    env = Environment()
+    prompt = ChatThread([
+        ChatMessage(ChatIntent.PROMPT, "do stuff"),
+        ChatMessage(ChatIntent.PROMPT, "@accept"),
+    ])
+    env[PromptEnv].set(prompt)
+    with pytest.raises(ValueError, match="Nothing to accept."):
+        handle_accept_command("accept", env, TOOLS)
+
+def test_accept_command_not_accept():
+    env = Environment()
+    assert not handle_accept_command("not-accept", env, TOOLS)

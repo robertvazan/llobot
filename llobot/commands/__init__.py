@@ -18,6 +18,8 @@ unrecognized
     Command to handle unrecognized commands.
 approve
     Command to save an example.
+accept
+    Command to execute tool calls from model response.
 """
 from __future__ import annotations
 from typing import Callable
