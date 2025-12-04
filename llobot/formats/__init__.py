@@ -13,8 +13,6 @@ documents
     Formats for rendering individual documents.
 knowledge
     Formats for rendering `Knowledge` objects.
-deltas
-    Formats for rendering `KnowledgeDelta` and `DocumentDelta` objects.
 languages
     Language detection for syntax highlighting in code blocks.
 mentions

@@ -28,8 +28,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Iterable
 from llobot.knowledge import Knowledge
-from llobot.knowledge.deltas.documents import DocumentDelta
-from llobot.knowledge.deltas.knowledge import KnowledgeDelta
 from llobot.projects.items import ProjectDirectory, ProjectFile, ProjectItem
 
 
@@ -201,25 +199,6 @@ class Project:
 
         self.write(destination, content)
         self.remove(source)
-
-    def update(self, delta: DocumentDelta | KnowledgeDelta):
-        """
-        Applies a document or knowledge delta to the project.
-
-        Args:
-            delta: The delta to apply.
-        """
-        deltas = [delta] if isinstance(delta, DocumentDelta) else delta
-        for d in deltas:
-            if d.removed:
-                self.remove(d.path)
-            elif d.moved_from:
-                self.move(d.moved_from, d.path)
-            elif d.content is not None:
-                self.write(d.path, d.content)
-            else:
-                # A document delta must represent some change.
-                assert False, f"Invalid DocumentDelta with no action: {d}"
 
 type ProjectPrecursor = Project | Path | str
 

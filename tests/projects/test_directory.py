@@ -8,7 +8,6 @@ from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.subsets.suffix import SuffixSubset
 from llobot.knowledge.subsets.parsing import parse_pattern
 from llobot.projects.items import ProjectDirectory, ProjectFile
-from llobot.knowledge.deltas.documents import DocumentDelta
 
 def test_directory_project_simple(tmp_path: Path):
     (tmp_path / "file1.txt").write_text("content1")
@@ -150,15 +149,6 @@ def test_directory_project_mutable(tmp_path: Path):
     assert stat.S_IMODE(dest_mode) == stat.S_IMODE(src_mode)
     assert os.access(executable_move_dest_path, os.X_OK)
 
-    # Test update
-    delta_add = DocumentDelta(Path("p/delta_add.txt"), "delta content")
-    project.update(delta_add)
-    assert (project_dir / "delta_add.txt").read_text() == "delta content"
-
-    delta_rem = DocumentDelta(Path("p/delta_add.txt"), None, removed=True)
-    project.update(delta_rem)
-    assert not (project_dir / "delta_add.txt").exists()
-
 def test_directory_project_immutable_write_fails(tmp_path: Path):
     project_dir = tmp_path / "immutable_project"
     project_dir.mkdir()
@@ -188,27 +178,6 @@ def test_directory_project_write_preserves_executable(tmp_path: Path):
     project.write(Path("p/run.sh"), "#!/bin/bash\necho world")
 
     assert (project_dir / "run.sh").read_text() == "#!/bin/bash\necho world"
-    new_mode = exe_path.stat().st_mode
-    assert stat.S_IMODE(new_mode) == stat.S_IMODE(original_mode)
-    assert os.access(exe_path, os.X_OK)
-
-def test_directory_project_update_preserves_executable(tmp_path: Path):
-    """
-    Updating an existing executable file via DocumentDelta must preserve the executable bit.
-    """
-    project_dir = tmp_path / "exec_update_project"
-    project_dir.mkdir()
-    exe_path = project_dir / "tool.sh"
-    exe_path.write_text("#!/bin/bash\necho old")
-    exe_path.chmod(0o755)
-    original_mode = exe_path.stat().st_mode
-    assert os.access(exe_path, os.X_OK)
-
-    project = DirectoryProject(project_dir, prefix="p", mutable=True)
-    delta = DocumentDelta(Path("p/tool.sh"), "#!/bin/bash\necho new")
-    project.update(delta)
-
-    assert (project_dir / "tool.sh").read_text() == "#!/bin/bash\necho new"
     new_mode = exe_path.stat().st_mode
     assert stat.S_IMODE(new_mode) == stat.S_IMODE(original_mode)
     assert os.access(exe_path, os.X_OK)

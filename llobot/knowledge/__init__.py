@@ -24,9 +24,6 @@ trees/
     KnowledgeTree for hierarchical directory tree representations
 subsets/
     Pattern-based filtering and selection with KnowledgeSubset
-deltas/
-    Change tracking for knowledge states. See `deltas.documents`,
-    `deltas.knowledge`, `deltas.builder`, and `deltas.diffs`.
 resolver
     `KnowledgeResolver` for efficient, proximity-based path resolution.
 """
