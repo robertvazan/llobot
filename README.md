@@ -131,6 +131,7 @@ Llobot recognizes several commands in the form of `@mentions`. These can be plac
 - **`@<file>`**: Adds a specific file to the context. Initial path segments can be omitted. Example: `@README.md` or `@src/main.rs`.
 - **`@<pattern>`**: Adds files matching a glob pattern. Example: `@tests/*.py`.
 - **`@approve`**: Approves the previous response as a correct example and saves prompt-response pair to example memory for roles that support it. If any content is provided with the command, it is used instead of the last response.
+- **`@accept`**: Executes tool calls proposed by the model in the last response.
 
 Mentions can be unquoted as in `@lib.rs` or quoted as in `` @`src/**/*.rs` ``. Quoted mentions are useful when including special symbols in the mention.
 
