@@ -1,12 +1,14 @@
 import base64
 import hashlib
 from pathlib import Path
+from textwrap import dedent
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
 from llobot.chats.stream import record_stream
 from llobot.chats.thread import ChatThread
 from llobot.models.echo import EchoModel
 from llobot.roles.agent import Agent
+from llobot.tools.files import FileTool
 
 def get_response_content(thread: ChatThread) -> str:
     """Helper to extract model response content from the thread."""
@@ -47,7 +49,8 @@ def test_agent_session_persistence(tmp_path: Path):
 
     # Second turn: resume the session with a custom agent that verifies state loading
     class StatefulAgent(Agent):
-        def handle_commands(self, env):
+        def handle_setup(self, env):
+            super().handle_setup(env)
             from llobot.environments.status import StatusEnv
             env[StatusEnv].append("State loaded.")
 
@@ -106,3 +109,47 @@ def test_agent_coercion(tmp_path: Path):
     assert "Edited" in response2
     assert "Original" in response2 # The first prompt is still there
     assert "New Response" in response2
+
+def test_agent_accept_command(tmp_path: Path):
+    """Tests that Agent can execute tool calls with @accept command."""
+    model = EchoModel('echo')
+    # Agent needs a project to write files to.
+    from llobot.projects.directory import DirectoryProject
+    project = DirectoryProject(tmp_path / 'project', mutable=True)
+    from llobot.projects.library.zone import ZoneKeyedProjectLibrary
+    library = ZoneKeyedProjectLibrary(project)
+
+    # Agent base class doesn't handle project commands by default. We add it for this test.
+    class ProjectAwareAgent(Agent):
+        def handle_setup(self, env):
+            super().handle_setup(env)
+            from llobot.commands.project import handle_project_commands
+            handle_project_commands(env)
+
+    agent = ProjectAwareAgent('agent', model, tools=[FileTool()], session_history=tmp_path / 'sessions', projects=library)
+
+    file_tool_call_str = dedent("""\
+        <details>
+        <summary>File: project/test.txt</summary>
+
+        ```
+        content
+        ```
+
+        </details>""")
+
+    # A project must be selected for its files to be writable.
+    prompt = ChatThread([
+        ChatMessage(ChatIntent.PROMPT, "Initial prompt"),
+        ChatMessage(ChatIntent.RESPONSE, file_tool_call_str),
+        ChatMessage(ChatIntent.PROMPT, "@project @accept"),
+    ])
+
+    stream = agent.chat(prompt)
+    response_thread = record_stream(stream)
+
+    status_msg = next((m for m in response_thread if m.intent == ChatIntent.STATUS), None)
+    assert status_msg
+    assert "✅ All 1 tool calls executed." in status_msg.content
+    assert "Success: file project/test.txt" in status_msg.content
+    assert (tmp_path / 'project/test.txt').read_text().strip() == 'content'

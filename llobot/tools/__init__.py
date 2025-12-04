@@ -20,6 +20,7 @@ remove
     A tool for removing files.
 """
 from __future__ import annotations
+from functools import cache
 from llobot.environments import Environment
 from llobot.environments.tools import ToolEnv
 from llobot.utils.values import ValueTypeMixin
@@ -135,8 +136,34 @@ class Tool:
         except Exception as e:
             return InvalidToolCall(e)
 
+@cache
+def standard_tools() -> tuple[Tool, ...]:
+    """
+    Returns a standard set of tools for file manipulation.
+
+    The standard toolset includes tools for creating/updating files, moving
+    files, removing files, and a fallback tool to skip generic code blocks.
+    The order is important: more specific tools are first.
+
+    Returns:
+        A tuple of standard tool instances.
+    """
+    from llobot.tools.code import CodeBlockTool
+    from llobot.tools.files import FileTool
+    from llobot.tools.move import MoveTool
+    from llobot.tools.remove import RemoveTool
+    return (
+        FileTool(),
+        MoveTool(),
+        RemoveTool(),
+        # CodeBlockTool must be last to act as a fallback for unrecognized code blocks.
+        CodeBlockTool(),
+    )
+
+
 __all__ = [
     'Tool',
     'ToolCall',
     'InvalidToolCall',
+    'standard_tools',
 ]

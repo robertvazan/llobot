@@ -22,5 +22,6 @@ def test_coder_instantiation(tmp_path: Path):
 
     # Check that coder-specific system prompts are present
     assert "Software developer's guidelines" in response
+    assert "File manipulation tools" in response
     assert "Code blocks" in response
     assert "File listings" in response

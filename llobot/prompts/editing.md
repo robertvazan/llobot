@@ -1,6 +1,6 @@
 ## When asked to edit files
 
-- Use the file delta format to describe all file changes
+- Use file manipulation tools to describe all file changes
 - For changes spanning multiple files, provide listings for all affected files
 - Perform file edits as requested without asking questions
 - Assume probable defaults when edit request is underspecified and note your choices in your response

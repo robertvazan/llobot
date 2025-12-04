@@ -1,8 +1,10 @@
 from __future__ import annotations
 from pathlib import Path
+from typing import Iterable
 from llobot.chats.thread import ChatThread
 from llobot.chats.intent import ChatIntent
 from llobot.chats.stream import ChatStream
+from llobot.commands.accept import handle_accept_commands
 from llobot.commands.model import handle_model_commands
 from llobot.commands.unrecognized import handle_unrecognized_commands
 from llobot.environments import Environment
@@ -22,6 +24,7 @@ from llobot.models.library.empty import EmptyModelLibrary
 from llobot.projects.library import ProjectLibrary, ProjectLibraryPrecursor, coerce_project_library
 from llobot.prompts import Prompt
 from llobot.roles import Role
+from llobot.tools import Tool
 from llobot.utils.zones import Zoning
 
 class Agent(Role):
@@ -41,11 +44,13 @@ class Agent(Role):
     _reminder_format: PromptFormat
     _project_library: ProjectLibrary
     _model_library: ModelLibrary
+    _tools: tuple[Tool, ...]
 
     def __init__(self, name: str, model: Model, *,
         prompt: str | Prompt = '',
         projects: ProjectLibraryPrecursor = (),
         models: ModelLibrary | None = None,
+        tools: Iterable[Tool] = (),
         session_history: SessionHistory | Zoning | Path | str = standard_session_history(),
         prompt_format: PromptFormat = standard_prompt_format(),
         reminder_format: PromptFormat = ReminderPromptFormat(),
@@ -59,6 +64,7 @@ class Agent(Role):
             prompt: The system prompt.
             projects: A project library or a precursor for one.
             models: A model library.
+            tools: An iterable of tools available to the agent.
             session_history: Session history storage.
             prompt_format: Format for the main system prompt.
             reminder_format: Format for reminder prompts.
@@ -68,6 +74,7 @@ class Agent(Role):
         self._system = str(prompt)
         self._project_library = coerce_project_library(projects)
         self._model_library = models or EmptyModelLibrary()
+        self._tools = tuple(tools)
         self._session_history = coerce_session_history(session_history)
         self._prompt_format = prompt_format
         self._reminder_format = reminder_format
@@ -163,12 +170,13 @@ class Agent(Role):
 
         This method is called after stuffing and before unrecognized commands are
         handled. It is the primary extension point for adding role-specific
-        command logic.
+        command logic. It also handles the `@accept` command if tools are enabled.
 
         Args:
             env: The environment.
         """
-        pass
+        if self._tools:
+            handle_accept_commands(env, self._tools)
 
     def chat(self, prompt: ChatThread) -> ChatStream:
         """

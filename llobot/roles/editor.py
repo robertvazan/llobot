@@ -1,5 +1,6 @@
 from __future__ import annotations
 from functools import cache
+from typing import Iterable
 from llobot.commands.knowledge import populate_knowledge_env
 from llobot.commands.project import handle_project_commands
 from llobot.commands.retrievals import handle_retrieval_commands
@@ -18,6 +19,7 @@ from llobot.prompts import (
     read_prompt,
 )
 from llobot.roles.agent import Agent
+from llobot.tools import Tool, standard_tools
 
 @cache
 def editor_system_prompt() -> SystemPrompt:
@@ -46,6 +48,7 @@ class Editor(Agent):
 
     def __init__(self, name: str, model: Model, *,
         prompt: str | Prompt = editor_system_prompt(),
+        tools: Iterable[Tool] = standard_tools(),
         knowledge_crammer: KnowledgeCrammer = standard_knowledge_crammer(),
         index_crammer: IndexCrammer = standard_index_crammer(),
         **kwargs,
@@ -57,11 +60,12 @@ class Editor(Agent):
             name: The name of the role.
             model: The language model to use.
             prompt: The system prompt. Defaults to `editor_system_prompt()`.
+            tools: An iterable of tools available to the agent.
             knowledge_crammer: Crammer for knowledge documents.
             index_crammer: Crammer for the file index.
             **kwargs: Additional arguments for the base `Agent` class.
         """
-        super().__init__(name, model, prompt=prompt, **kwargs)
+        super().__init__(name, model, prompt=prompt, tools=tools, **kwargs)
         self._knowledge_crammer = knowledge_crammer
         self._index_crammer = index_crammer
 

@@ -128,12 +128,12 @@ def knowledge_prompt_section() -> PromptSection:
     return PromptSection(read_prompt('knowledge.md'), listings_prompt_section())
 
 @cache
-def deltas_prompt_section() -> PromptSection:
-    return PromptSection(read_prompt('deltas.md'), knowledge_prompt_section())
+def tools_prompt_section() -> PromptSection:
+    return PromptSection(read_prompt('tools.md'), knowledge_prompt_section())
 
 @cache
 def editing_prompt_section() -> PromptSection:
-    return PromptSection(read_prompt('editing.md'), deltas_prompt_section())
+    return PromptSection(read_prompt('editing.md'), tools_prompt_section())
 
 @cache
 def answering_prompt_section() -> PromptSection:
@@ -164,7 +164,7 @@ __all__ = [
     'blocks_prompt_section',
     'listings_prompt_section',
     'knowledge_prompt_section',
-    'deltas_prompt_section',
+    'tools_prompt_section',
     'editing_prompt_section',
     'answering_prompt_section',
     'overviews_prompt_section',

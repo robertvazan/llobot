@@ -94,3 +94,16 @@ def test_editor_overviews(tmp_path: Path):
     assert "File: project_b/doc/README.md" in response
     assert "Doc Overview" in response
     assert "File: project_b/doc/api.py" in response
+
+def test_editor_system_prompt(tmp_path: Path):
+    """Tests that Editor includes the tool usage instructions in its prompt."""
+    projects_dir, library = setup_test_project(tmp_path)
+    model = EchoModel('echo')
+    editor = Editor('editor', model, projects=library, session_history=tmp_path / "sessions")
+    prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "@project_a some prompt")])
+    response = get_response_content(record_stream(editor.chat(prompt)))
+
+    assert "File manipulation tools" in response
+    assert "New or modified file" in response
+    assert "Removed file" in response
+    assert "Moved file" in response
