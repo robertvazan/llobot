@@ -2,7 +2,7 @@
 Subsets that match paths against glob-like patterns.
 """
 from __future__ import annotations
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.utils.values import ValueTypeMixin
 from llobot.knowledge.subsets import KnowledgeSubset
 
@@ -11,7 +11,7 @@ class PatternSubset(KnowledgeSubset, ValueTypeMixin):
     A subset containing paths that fully match a glob-like pattern.
 
     This subset is for complex patterns that might contain `**` or are
-    absolute. It uses `pathlib.Path.full_match` for matching, which supports
+    absolute. It uses `pathlib.PurePosixPath.full_match` for matching, which supports
     `*`, `?`, `[]`, and `**` against the entire path string.
     """
     _pattern: str
@@ -25,7 +25,7 @@ class PatternSubset(KnowledgeSubset, ValueTypeMixin):
         """
         self._pattern = pattern
 
-    def contains(self, path: Path) -> bool:
+    def contains(self, path: PurePosixPath) -> bool:
         """
         Checks if the path fully matches the pattern.
 
@@ -42,7 +42,7 @@ class SimplePatternSubset(KnowledgeSubset, ValueTypeMixin):
     """
     A subset containing paths that match a simple, relative glob-like pattern.
 
-    This uses `pathlib.Path.match` for matching, which is suitable for simple
+    This uses `pathlib.PurePosixPath.match` for matching, which is suitable for simple
     patterns that do not start with `/` and do not contain `**`. For example,
     `*.py` or `docs/*.md`.
     """
@@ -57,7 +57,7 @@ class SimplePatternSubset(KnowledgeSubset, ValueTypeMixin):
         """
         self._pattern = pattern
 
-    def contains(self, path: Path) -> bool:
+    def contains(self, path: PurePosixPath) -> bool:
         """
         Checks if the path matches the pattern using `path.match`.
 

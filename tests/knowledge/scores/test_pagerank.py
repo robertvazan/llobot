@@ -1,4 +1,4 @@
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.knowledge import Knowledge
 from llobot.knowledge.graphs import KnowledgeGraph
 from llobot.knowledge.graphs.crawler import KnowledgeCrawler
@@ -7,7 +7,7 @@ from llobot.knowledge.scores import KnowledgeScores
 from llobot.knowledge.scores.pagerank import PageRankScorer
 from llobot.utils.values import ValueTypeMixin
 
-p = lambda s: Path(s)
+p = lambda s: PurePosixPath(s)
 
 class ConstantGraphCrawler(KnowledgeCrawler, ValueTypeMixin):
     _graph: KnowledgeGraph

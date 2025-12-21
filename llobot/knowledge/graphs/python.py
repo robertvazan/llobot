@@ -4,7 +4,7 @@ Crawlers for Python source code.
 from __future__ import annotations
 from functools import cache
 import re
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.utils.values import ValueTypeMixin
 from llobot.knowledge import Knowledge
 from llobot.knowledge.graphs import KnowledgeGraph
@@ -12,14 +12,14 @@ from llobot.knowledge.graphs.builder import KnowledgeGraphBuilder
 from llobot.knowledge.graphs.crawler import KnowledgeCrawler
 from llobot.knowledge.resolver import KnowledgeResolver, cached_knowledge_resolver
 
-def _python_module_paths(module: str) -> tuple[Path, Path]:
+def _python_module_paths(module: str) -> tuple[PurePosixPath, PurePosixPath]:
     """
     Returns the two possible paths for a Python module: module.py and module/__init__.py
     """
-    module_path = Path(module.replace('.', '/'))
+    module_path = PurePosixPath(module.replace('.', '/'))
     return (module_path.with_suffix('.py'), module_path / '__init__.py')
 
-def _parse_path(path: Path) -> Path:
+def _parse_path(path: PurePosixPath) -> PurePosixPath:
     """
     Converts a file path to its module path.
     Examples:
@@ -32,7 +32,7 @@ def _parse_path(path: Path) -> Path:
         path = path.parent
     return path
 
-def _parse_relative_import(module: str, source: Path) -> Path | None:
+def _parse_relative_import(module: str, source: PurePosixPath) -> PurePosixPath | None:
     """
     Parses a relative import module string relative to source path.
     Returns absolute path or None if cannot be resolved.
@@ -44,9 +44,9 @@ def _parse_relative_import(module: str, source: Path) -> Path | None:
     dots = 0
     while dots < len(module) and module[dots] == '.':
         dots += 1
-    
+
     module_name = module[dots:]
-    
+
     # For relative imports, we start from the source file's directory.
     # `dots`=1 means same directory, `dots`=2 means parent, etc.
     # So we go up `dots - 1` levels.
@@ -57,14 +57,14 @@ def _parse_relative_import(module: str, source: Path) -> Path | None:
         else:
             # Too many dots, can't resolve
             return None
-            
+
     # Add the module name if present
     if module_name:
         current = current / module_name.replace('.', '/')
-    
+
     return current
 
-def _resolve_python_module(knowledge: Knowledge, source: Path, module: str, resolver: KnowledgeResolver) -> Path | None:
+def _resolve_python_module(knowledge: Knowledge, source: PurePosixPath, module: str, resolver: KnowledgeResolver) -> PurePosixPath | None:
     """
     Resolves a Python module import to a target path.
     Uses direct lookup for relative imports, KnowledgeResolver for absolute imports.

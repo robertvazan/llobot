@@ -1,12 +1,12 @@
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.subsets.solo import SoloSubset
 
 KNOWLEDGE = Knowledge({
-    Path('a/b.txt'): 'content b',
-    Path('a/c.txt'): 'content c',
-    Path('d.txt'): 'content d',
+    PurePosixPath('a/b.txt'): 'content b',
+    PurePosixPath('a/c.txt'): 'content c',
+    PurePosixPath('d.txt'): 'content d',
 })
 
 def test_knowledge_init():
@@ -21,44 +21,44 @@ def test_knowledge_cost():
 
 def test_knowledge_eq_hash():
     k2 = Knowledge({
-        Path('a/c.txt'): 'content c',
-        Path('d.txt'): 'content d',
-        Path('a/b.txt'): 'content b',
+        PurePosixPath('a/c.txt'): 'content c',
+        PurePosixPath('d.txt'): 'content d',
+        PurePosixPath('a/b.txt'): 'content b',
     })
     assert KNOWLEDGE == k2
     assert hash(KNOWLEDGE) == hash(k2)
-    assert KNOWLEDGE != Knowledge({Path('a/b.txt'): 'changed'})
+    assert KNOWLEDGE != Knowledge({PurePosixPath('a/b.txt'): 'changed'})
     assert {KNOWLEDGE, k2} == {KNOWLEDGE}
 
 def test_knowledge_contains():
-    assert Path('a/b.txt') in KNOWLEDGE
+    assert PurePosixPath('a/b.txt') in KNOWLEDGE
     assert 'a/b.txt' in KNOWLEDGE
-    assert Path('x.txt') not in KNOWLEDGE
+    assert PurePosixPath('x.txt') not in KNOWLEDGE
 
 def test_knowledge_getitem():
-    assert KNOWLEDGE[Path('a/b.txt')] == 'content b'
-    assert KNOWLEDGE[Path('x.txt')] == ''
+    assert KNOWLEDGE[PurePosixPath('a/b.txt')] == 'content b'
+    assert KNOWLEDGE[PurePosixPath('x.txt')] == ''
 
 def test_knowledge_transform():
     transformed = KNOWLEDGE.transform(lambda path, content: content.upper())
-    assert transformed[Path('a/b.txt')] == 'CONTENT B'
+    assert transformed[PurePosixPath('a/b.txt')] == 'CONTENT B'
 
 def test_knowledge_filter():
-    filtered = KNOWLEDGE & SoloSubset(Path('a/b.txt'))
+    filtered = KNOWLEDGE & SoloSubset(PurePosixPath('a/b.txt'))
     assert filtered.keys() == KnowledgeIndex(['a/b.txt'])
 
 def test_knowledge_union():
-    other = Knowledge({Path('x.txt'): 'content x', Path('a/b.txt'): 'overwritten'})
+    other = Knowledge({PurePosixPath('x.txt'): 'content x', PurePosixPath('a/b.txt'): 'overwritten'})
     merged = KNOWLEDGE | other
     assert merged.keys() == KnowledgeIndex(['a/b.txt', 'a/c.txt', 'd.txt', 'x.txt'])
-    assert merged[Path('a/b.txt')] == 'overwritten'
+    assert merged[PurePosixPath('a/b.txt')] == 'overwritten'
 
 def test_knowledge_subtract():
-    subtracted = KNOWLEDGE - SoloSubset(Path('d.txt'))
+    subtracted = KNOWLEDGE - SoloSubset(PurePosixPath('d.txt'))
     assert subtracted.keys() == KnowledgeIndex(['a/b.txt', 'a/c.txt'])
 
 def test_knowledge_paths():
-    prefixed = 'a' / Knowledge({Path('b.txt'): 'content'})
+    prefixed = 'a' / Knowledge({PurePosixPath('b.txt'): 'content'})
     assert prefixed.keys() == KnowledgeIndex(['a/b.txt'])
     subtree = KNOWLEDGE / 'a'
     assert subtree.keys() == KnowledgeIndex(['b.txt', 'c.txt'])

@@ -1,7 +1,7 @@
 from __future__ import annotations
 import os
 import stat
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import pytest
 from llobot.knowledge import Knowledge
 from llobot.projects import Project
@@ -13,20 +13,20 @@ from llobot.utils.values import ValueTypeMixin
 
 class MockProject(Project, ValueTypeMixin):
     def __init__(self, zones: set[str], prefixes: set[str], files: dict[str, str | dict]):
-        self._zones = {Path(z) for z in zones}
-        self._prefixes = {Path(p) for p in prefixes}
+        self._zones = {PurePosixPath(z) for z in zones}
+        self._prefixes = {PurePosixPath(p) for p in prefixes}
         self._files = files
         self._tracked = True
 
     @property
-    def zones(self) -> set[Path]:
+    def zones(self) -> set[PurePosixPath]:
         return self._zones
 
     @property
-    def prefixes(self) -> set[Path]:
+    def prefixes(self) -> set[PurePosixPath]:
         return self._prefixes
 
-    def _get_at(self, path: Path):
+    def _get_at(self, path: PurePosixPath):
         node = self._files
         try:
             for part in path.parts:
@@ -36,7 +36,7 @@ class MockProject(Project, ValueTypeMixin):
             return None
         return node
 
-    def items(self, path: Path) -> list[ProjectItem]:
+    def items(self, path: PurePosixPath) -> list[ProjectItem]:
         for prefix in self.prefixes:
             if path == prefix or path.is_relative_to(prefix):
                 local_path = path.relative_to(prefix)
@@ -52,7 +52,7 @@ class MockProject(Project, ValueTypeMixin):
                     return sorted(result, key=lambda i: i.path)
         return []
 
-    def read(self, path: Path) -> str | None:
+    def read(self, path: PurePosixPath) -> str | None:
         for prefix in self.prefixes:
             if path == prefix or path.is_relative_to(prefix):
                 local_path = path.relative_to(prefix)
@@ -70,20 +70,20 @@ def test_union_project():
     union = union_project(p1, p2)
     assert (union | p1) is not None # test operator
 
-    assert union.zones == {Path("p1z"), Path("p2z")}
-    assert union.prefixes == {Path("p1"), Path("p2")}
+    assert union.zones == {PurePosixPath("p1z"), PurePosixPath("p2z")}
+    assert union.prefixes == {PurePosixPath("p1"), PurePosixPath("p2")}
 
     expected_knowledge = Knowledge({
-        Path("p1/a.txt"): "a",
-        Path("p1/b.py"): "b",
-        Path("p2/c.txt"): "c",
-        Path("p2/d.py"): "d",
+        PurePosixPath("p1/a.txt"): "a",
+        PurePosixPath("p1/b.py"): "b",
+        PurePosixPath("p2/c.txt"): "c",
+        PurePosixPath("p2/d.py"): "d",
     })
     assert union.read_all() == expected_knowledge
 
-    assert union.read(Path("p1/a.txt")) == "a"
-    assert union.read(Path("p2/c.txt")) == "c"
-    assert union.read(Path("nonexistent")) is None
+    assert union.read(PurePosixPath("p1/a.txt")) == "a"
+    assert union.read(PurePosixPath("p2/c.txt")) == "c"
+    assert union.read(PurePosixPath("nonexistent")) is None
 
 def test_union_project_factory():
     p1 = MockProject({"p1z"}, {"p1"}, {})
@@ -110,9 +110,9 @@ def test_union_nested_prefix_allowed():
     p1 = MockProject(zones={'z1'}, prefixes={'p/a'}, files={'x': 'y'})
     p2 = MockProject(zones={'z2'}, prefixes={'p'}, files={'a': {}})
     union = union_project(p1, p2)
-    assert union.read(Path('p/a/x')) == 'y'
-    assert union.items(Path('p')) == [ProjectDirectory(Path('p/a'))]
-    assert union.items(Path('p/a')) == [ProjectFile(Path('p/a/x'))]
+    assert union.read(PurePosixPath('p/a/x')) == 'y'
+    assert union.items(PurePosixPath('p')) == [ProjectDirectory(PurePosixPath('p/a'))]
+    assert union.items(PurePosixPath('p/a')) == [ProjectFile(PurePosixPath('p/a/x'))]
 
 def test_union_project_mutable(tmp_path: Path):
     dir1 = tmp_path / "p1"
@@ -126,20 +126,20 @@ def test_union_project_mutable(tmp_path: Path):
     p2 = DirectoryProject(dir2, prefix="p2", mutable=False)
     union = union_project(p1, p2)
 
-    assert union.mutable(Path("p1/a.txt"))
-    assert not union.mutable(Path("p2/b.txt"))
-    assert not union.mutable(Path("p3/c.txt"))
+    assert union.mutable(PurePosixPath("p1/a.txt"))
+    assert not union.mutable(PurePosixPath("p2/b.txt"))
+    assert not union.mutable(PurePosixPath("p3/c.txt"))
 
-    union.write(Path("p1/c.txt"), "c")
+    union.write(PurePosixPath("p1/c.txt"), "c")
     assert (dir1 / "c.txt").read_text() == "c"
 
     with pytest.raises(PermissionError):
-        union.write(Path("p2/d.txt"), "d")
+        union.write(PurePosixPath("p2/d.txt"), "d")
 
-    union.remove(Path("p1/a.txt"))
+    union.remove(PurePosixPath("p1/a.txt"))
     assert not (dir1 / "a.txt").exists()
 
-    union.move(Path("p1/c.txt"), Path("p1/d.txt"))
+    union.move(PurePosixPath("p1/c.txt"), PurePosixPath("p1/d.txt"))
     assert not (dir1 / "c.txt").exists()
     assert (dir1 / "d.txt").read_text() == "c"
 
@@ -154,7 +154,7 @@ def test_union_project_move_across_projects(tmp_path: Path):
     p2 = DirectoryProject(dir2, prefix="p2", mutable=True)
     union = union_project(p1, p2)
 
-    union.move(Path("p1/a.txt"), Path("p2/b.txt"))
+    union.move(PurePosixPath("p1/a.txt"), PurePosixPath("p2/b.txt"))
     assert not (dir1 / "a.txt").exists()
     assert (dir2 / "b.txt").read_text() == "a\n"
 
@@ -163,7 +163,7 @@ def test_union_project_move_across_projects(tmp_path: Path):
     union_mixed = union_project(p1, p2_immutable)
     (dir1 / "x.txt").write_text("x")
     with pytest.raises(PermissionError, match="Destination path is not mutable"):
-        union_mixed.move(Path("p1/x.txt"), Path("p2/y.txt"))
+        union_mixed.move(PurePosixPath("p1/x.txt"), PurePosixPath("p2/y.txt"))
     assert (dir1 / "x.txt").exists()
     assert not (dir2 / "y.txt").exists()
 
@@ -180,7 +180,7 @@ def test_union_project_move_within_project_preserves_permissions(tmp_path: Path)
     src_mode = executable_path.stat().st_mode
     assert os.access(executable_path, os.X_OK)
 
-    union.move(Path("p1/executable.sh"), Path("p1/moved.sh"))
+    union.move(PurePosixPath("p1/executable.sh"), PurePosixPath("p1/moved.sh"))
 
     dest_path = dir1 / "moved.sh"
     assert not executable_path.exists()

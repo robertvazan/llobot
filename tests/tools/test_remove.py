@@ -1,4 +1,4 @@
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from textwrap import dedent
 import pytest
 from llobot.environments import Environment
@@ -42,14 +42,14 @@ def test_remove_tool_slice_and_parse():
 
     call = tool.parse(text)
     assert isinstance(call, RemoveToolCall)
-    assert call._path == Path("myproject/a.txt")
+    assert call._path == PurePosixPath("myproject/a.txt")
 
 def test_remove_tool_execute(env: Environment):
-    call = RemoveToolCall(Path("myproject/a.txt"))
+    call = RemoveToolCall(PurePosixPath("myproject/a.txt"))
     call.execute(env)
 
     project = env[ProjectEnv].union
-    assert project.read(Path("myproject/a.txt")) is None
+    assert project.read(PurePosixPath("myproject/a.txt")) is None
     log = env[ToolEnv].flush_log()
     assert "Removing myproject/a.txt..." in log
     assert "File was removed." in log

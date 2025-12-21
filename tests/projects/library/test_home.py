@@ -1,4 +1,4 @@
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 import pytest
 
@@ -20,8 +20,8 @@ def test_home_project_library(tmp_path: Path):
     project = found[0]
     assert isinstance(project, DirectoryProject)
     assert project._directory == (tmp_path / 'project1').absolute()
-    assert project.prefixes == {Path('project1')}
-    assert project.read(Path('project1/file.txt')) == 'content\n'
+    assert project.prefixes == {PurePosixPath('project1')}
+    assert project.read(PurePosixPath('project1/file.txt')) == 'content\n'
 
     assert lib.lookup('nonexistent') == []
     assert lib.lookup('/absolute/path') == []
@@ -40,19 +40,19 @@ def test_home_project_library_with_parents(tmp_path: Path):
 
     main_project = found[0]
     assert isinstance(main_project, DirectoryProject)
-    assert main_project.prefixes == {Path('p/sub')}
-    assert main_project.read_all() == Knowledge({Path('p/sub/file2.txt'): '2\n'})
+    assert main_project.prefixes == {PurePosixPath('p/sub')}
+    assert main_project.read_all() == Knowledge({PurePosixPath('p/sub/file2.txt'): '2\n'})
 
     parent_project = found[1]
     assert isinstance(parent_project, ShallowProject)
-    assert parent_project.prefixes == {Path('p')}
-    assert parent_project.read_all() == Knowledge({Path('p/file1.txt'): '1\n'})
+    assert parent_project.prefixes == {PurePosixPath('p')}
+    assert parent_project.read_all() == Knowledge({PurePosixPath('p/file1.txt'): '1\n'})
 
     # Test with no parents (stops at home)
     found_no_parents = lib.lookup('p')
     assert len(found_no_parents) == 1
     assert isinstance(found_no_parents[0], DirectoryProject)
-    assert found_no_parents[0].prefixes == {Path('p')}
+    assert found_no_parents[0].prefixes == {PurePosixPath('p')}
 
 def test_home_project_library_with_filters(tmp_path: Path):
     (tmp_path / 'project2').mkdir()
@@ -63,7 +63,7 @@ def test_home_project_library_with_filters(tmp_path: Path):
     lib = HomeProjectLibrary(tmp_path, whitelist=whitelist, parents=False)
     project = lib.lookup('project2')[0]
     assert isinstance(project, DirectoryProject)
-    assert project.read_all().keys() == KnowledgeIndex([Path('project2/a.txt')])
+    assert project.read_all().keys() == KnowledgeIndex([PurePosixPath('project2/a.txt')])
 
 def test_home_project_library_default_home():
     lib = HomeProjectLibrary()
@@ -77,16 +77,16 @@ def test_home_project_library_mutable(tmp_path: Path):
     mutable_project = mutable_lib.lookup('project3')[0]
 
     assert isinstance(mutable_project, DirectoryProject)
-    assert mutable_project.mutable(Path('project3/new.txt'))
+    assert mutable_project.mutable(PurePosixPath('project3/new.txt'))
 
-    mutable_project.write(Path('project3/new.txt'), 'new')
+    mutable_project.write(PurePosixPath('project3/new.txt'), 'new')
     assert (tmp_path / 'project3' / 'new.txt').read_text() == 'new'
 
     # Test default is not mutable
     immutable_lib = HomeProjectLibrary(tmp_path, parents=False)
     immutable_project = immutable_lib.lookup('project3')[0]
 
-    assert not immutable_project.mutable(Path('project3/another.txt'))
+    assert not immutable_project.mutable(PurePosixPath('project3/another.txt'))
     with pytest.raises(PermissionError):
-        immutable_project.write(Path('project3/another.txt'), 'fail')
+        immutable_project.write(PurePosixPath('project3/another.txt'), 'fail')
     assert not (tmp_path / 'project3' / 'another.txt').exists()

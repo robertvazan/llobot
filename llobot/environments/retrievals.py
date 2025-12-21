@@ -2,19 +2,19 @@
 Document retrievals.
 """
 from __future__ import annotations
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.knowledge.indexes import KnowledgeIndex
 
 class RetrievalsEnv:
     """
     An environment component that holds a set of paths for documents to be retrieved.
     """
-    _paths: set[Path]
+    _paths: set[PurePosixPath]
 
     def __init__(self):
         self._paths = set()
 
-    def add(self, path: Path):
+    def add(self, path: PurePosixPath):
         """
         Adds a path to the set of retrieved documents.
 

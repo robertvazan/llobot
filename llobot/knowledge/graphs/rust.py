@@ -4,25 +4,25 @@ Crawlers for Rust source code.
 from __future__ import annotations
 from functools import cache
 import re
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.utils.values import ValueTypeMixin
 from llobot.knowledge import Knowledge
 from llobot.knowledge.graphs import KnowledgeGraph
 from llobot.knowledge.graphs.builder import KnowledgeGraphBuilder
 from llobot.knowledge.graphs.crawler import KnowledgeCrawler
 
-def _source_path(source: Path) -> Path:
+def _source_path(source: PurePosixPath) -> PurePosixPath:
     """Convert a Rust file path to its module path."""
     if source.name == 'mod.rs':
         return source.parent
     else:
         return source.with_suffix('')
 
-def _rust_module_paths(module_path: Path) -> tuple[Path, Path]:
+def _rust_module_paths(module_path: PurePosixPath) -> tuple[PurePosixPath, PurePosixPath]:
     """Returns the two possible paths for a Rust module: module.rs and module/mod.rs"""
     return (module_path.with_suffix('.rs'), module_path / 'mod.rs')
 
-def _resolve_use_path(source: Path, path: str, knowledge: Knowledge) -> Path | None:
+def _resolve_use_path(source: PurePosixPath, path: str, knowledge: Knowledge) -> PurePosixPath | None:
     """Resolve a use statement path to a target path."""
     if not path:
         return None

@@ -2,7 +2,7 @@
 Tool for writing files from document listings.
 """
 from __future__ import annotations
-from pathlib import Path
+from pathlib import PurePosixPath
 import re
 from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
@@ -11,10 +11,10 @@ from llobot.tools import Tool, ToolCall
 from llobot.utils.text import normalize_document
 
 class FileToolCall(ToolCall):
-    _path: Path
+    _path: PurePosixPath
     _content: str
 
-    def __init__(self, path: Path, content: str):
+    def __init__(self, path: PurePosixPath, content: str):
         self._path = path
         self._content = content
 
@@ -57,9 +57,12 @@ class FileTool(Tool):
 
     def parse(self, source: str) -> ToolCall:
         match = _FILE_DETAILS_RE.fullmatch(source)
-        assert match, "source for parse() must have been validated by slice()"
+        assert match, "source for parse() must be validated by slice()"
 
-        path = Path(match.group('path').strip())
+        path = PurePosixPath(match.group('path').strip())
+        if path.is_absolute():
+            raise ValueError(f"Path must be relative: {path}")
+
         content = match.group('content')
 
         return FileToolCall(path, content)

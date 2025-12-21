@@ -1,5 +1,5 @@
 from __future__ import annotations
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.knowledge.subsets.standard import blacklist_subset, whitelist_subset
 from llobot.projects import Project
@@ -14,8 +14,8 @@ class DirectoryProject(Project, ValueTypeMixin):
     Can be configured to be mutable.
     """
     _directory: Path
-    _zones: frozenset[Path]
-    _prefix: Path
+    _zones: frozenset[PurePosixPath]
+    _prefix: PurePosixPath
     _whitelist: KnowledgeSubset
     _blacklist: KnowledgeSubset
     _mutable: bool
@@ -24,8 +24,8 @@ class DirectoryProject(Project, ValueTypeMixin):
         self,
         directory: Path | str,
         *,
-        zones: set[str | Path] | None = None,
-        prefix: Path | str | None = None,
+        zones: set[str | PurePosixPath] | None = None,
+        prefix: PurePosixPath | str | None = None,
         whitelist: KnowledgeSubset | None = None,
         blacklist: KnowledgeSubset | None = None,
         mutable: bool = False,
@@ -44,15 +44,19 @@ class DirectoryProject(Project, ValueTypeMixin):
             mutable: If `True`, the project allows write operations. Defaults to `False`.
         """
         self._directory = Path(directory).expanduser().absolute()
-        self._prefix = Path(prefix) if prefix is not None else Path(self._directory.name)
+        self._prefix = PurePosixPath(prefix) if prefix is not None else PurePosixPath(self._directory.name)
+        if self._prefix.is_absolute():
+            raise ValueError(f"Project prefix must be relative: {self._prefix}")
         validate_zone(self._prefix)
 
         if zones is not None:
-            self._zones = frozenset(Path(z) for z in zones)
+            self._zones = frozenset(PurePosixPath(z) for z in zones)
         else:
             self._zones = frozenset([self._prefix])
 
         for zone in self._zones:
+            if zone.is_absolute():
+                raise ValueError(f"Project zone must be relative: {zone}")
             validate_zone(zone)
 
         self._whitelist = whitelist or whitelist_subset()
@@ -60,21 +64,21 @@ class DirectoryProject(Project, ValueTypeMixin):
         self._mutable = mutable
 
     @property
-    def zones(self) -> set[Path]:
+    def zones(self) -> set[PurePosixPath]:
         return set(self._zones)
 
     @property
-    def prefixes(self) -> set[Path]:
+    def prefixes(self) -> set[PurePosixPath]:
         return {self._prefix}
 
-    def _to_local_path(self, path: Path) -> Path | None:
+    def _to_local_path(self, path: PurePosixPath) -> PurePosixPath | None:
         """Strips the project prefix from a path. Returns None if path is not under the prefix."""
         try:
             return path.relative_to(self._prefix)
         except ValueError:
             return None
 
-    def items(self, path: Path) -> list[ProjectItem]:
+    def items(self, path: PurePosixPath) -> list[ProjectItem]:
         local_path = self._to_local_path(path)
         if local_path is None:
             return []
@@ -90,10 +94,10 @@ class DirectoryProject(Project, ValueTypeMixin):
             elif p.is_dir():
                 result.append(ProjectDirectory(item_path))
             elif p.is_symlink():
-                result.append(ProjectLink(item_path, p.readlink()))
+                result.append(ProjectLink(item_path, PurePosixPath(p.readlink())))
         return result
 
-    def read(self, path: Path) -> str | None:
+    def read(self, path: PurePosixPath) -> str | None:
         local_path = self._to_local_path(path)
         if local_path is None:
             return None
@@ -112,7 +116,7 @@ class DirectoryProject(Project, ValueTypeMixin):
             return item.path not in self._blacklist
         return False
 
-    def mutable(self, path: Path) -> bool:
+    def mutable(self, path: PurePosixPath) -> bool:
         """
         Checks if the path is mutable.
 
@@ -121,7 +125,7 @@ class DirectoryProject(Project, ValueTypeMixin):
         """
         return self._mutable and self._to_local_path(path) is not None
 
-    def write(self, path: Path, content: str):
+    def write(self, path: PurePosixPath, content: str):
         """
         Writes content to a file in the project directory.
 
@@ -141,7 +145,7 @@ class DirectoryProject(Project, ValueTypeMixin):
         real_path = self._directory / local_path
         write_text(real_path, content)
 
-    def remove(self, path: Path):
+    def remove(self, path: PurePosixPath):
         """
         Removes a file from the project directory.
 
@@ -162,7 +166,7 @@ class DirectoryProject(Project, ValueTypeMixin):
         real_path = self._directory / local_path
         real_path.unlink()
 
-    def move(self, source: Path, destination: Path):
+    def move(self, source: PurePosixPath, destination: PurePosixPath):
         """
         Moves a file within the project directory using a filesystem move.
 

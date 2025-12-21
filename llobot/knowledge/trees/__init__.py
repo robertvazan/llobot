@@ -17,7 +17,7 @@ overviews
     `overviews_first_tree` for building a tree with overview files prioritized.
 """
 from __future__ import annotations
-from pathlib import Path
+from pathlib import PurePosixPath
 from typing import Iterable
 from llobot.utils.values import ValueTypeMixin
 from llobot.knowledge import Knowledge
@@ -33,12 +33,12 @@ class KnowledgeTree(ValueTypeMixin):
     representing subdirectories. This structure preserves the original order of files and directories.
     It is a value-like object.
     """
-    _base: Path
+    _base: PurePosixPath
     _files: tuple[str, ...]
     _subtrees: tuple[KnowledgeTree, ...]
     _subtrees_by_name: dict[str, KnowledgeTree]
 
-    def __init__(self, base: Path | str = '.', files: list[str] = [], subtrees: list[KnowledgeTree] = []):
+    def __init__(self, base: PurePosixPath | str = '.', files: list[str] = [], subtrees: list[KnowledgeTree] = []):
         """
         Creates a new knowledge tree.
 
@@ -51,7 +51,7 @@ class KnowledgeTree(ValueTypeMixin):
             ValueError: If base path is absolute, if there are name conflicts between files
                        and subtrees, or if subtree base paths are not one level below parent.
         """
-        self._base = Path(base)
+        self._base = PurePosixPath(base)
         self._files = tuple(files)
         self._subtrees = tuple(subtrees)
 
@@ -76,7 +76,7 @@ class KnowledgeTree(ValueTypeMixin):
         return ['_subtrees_by_name']
 
     @property
-    def base(self) -> Path:
+    def base(self) -> PurePosixPath:
         """The base path of this tree node."""
         return self._base
 
@@ -100,16 +100,16 @@ class KnowledgeTree(ValueTypeMixin):
         return [subtree.base.name for subtree in self._subtrees]
 
     @property
-    def file_paths(self) -> list[Path]:
+    def file_paths(self) -> list[PurePosixPath]:
         """Full paths of all files in this directory (base path plus file name)."""
         return [self._base / filename for filename in self._files]
 
     @property
-    def directory_paths(self) -> list[Path]:
+    def directory_paths(self) -> list[PurePosixPath]:
         """Full paths of all direct subdirectories."""
         return [self._base / subtree.base.name for subtree in self._subtrees]
 
-    def __getitem__(self, path: Path | str) -> KnowledgeTree:
+    def __getitem__(self, path: PurePosixPath | str) -> KnowledgeTree:
         """
         Returns the descendant tree node with the given base path, or an empty tree if not found.
 
@@ -122,7 +122,7 @@ class KnowledgeTree(ValueTypeMixin):
         Raises:
             ValueError: If the path is outside this tree.
         """
-        path = Path(path)
+        path = PurePosixPath(path)
 
         # If path matches our base, return self
         if path == self._base:
@@ -153,7 +153,7 @@ class KnowledgeTree(ValueTypeMixin):
         return result
 
     @property
-    def all_paths(self) -> list[Path]:
+    def all_paths(self) -> list[PurePosixPath]:
         """All file paths in the tree, visiting tree's files before its subtrees."""
         result = []
         for tree in self.all_trees:

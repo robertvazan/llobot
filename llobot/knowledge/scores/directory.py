@@ -2,7 +2,7 @@
 Functions to aggregate scores by directory.
 """
 from __future__ import annotations
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex, KnowledgeIndexPrecursor
 from llobot.knowledge.scores import KnowledgeScores
@@ -24,11 +24,11 @@ def directory_max_scores(scores: KnowledgeScores, *, recursive: bool = True) -> 
     for path, score in scores:
         if recursive:
             # Include all parent directories except root
-            directories = [p for p in path.parents if p != Path('.')]
+            directories = [p for p in path.parents if p != PurePosixPath('.')]
         else:
             # Include only immediate parent if it's not root
             parent = path.parent
-            directories = [parent] if parent != Path('.') else []
+            directories = [parent] if parent != PurePosixPath('.') else []
 
         for directory in directories:
             current_max = directory_scores.get(directory, float('-inf'))
@@ -52,11 +52,11 @@ def directory_sum_scores(scores: KnowledgeScores, *, recursive: bool = True) -> 
     for path, score in scores:
         if recursive:
             # Include all parent directories except root
-            directories = [p for p in path.parents if p != Path('.')]
+            directories = [p for p in path.parents if p != PurePosixPath('.')]
         else:
             # Include only immediate parent if it's not root
             parent = path.parent
-            directories = [parent] if parent != Path('.') else []
+            directories = [parent] if parent != PurePosixPath('.') else []
 
         for directory in directories:
             directory_scores[directory] = directory_scores.get(directory, 0) + score

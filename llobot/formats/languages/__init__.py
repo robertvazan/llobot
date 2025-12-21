@@ -12,13 +12,13 @@ first checks for specific filenames (e.g., `Makefile`) and then falls back to
 file extensions (e.g., `.py`).
 """
 from __future__ import annotations
-from pathlib import Path
+from pathlib import PurePosixPath
 
 class LanguageMapping:
     """
     Base class for language mappings.
     """
-    def resolve(self, path: Path) -> str:
+    def resolve(self, path: PurePosixPath) -> str:
         """
         Resolves the language for a given path.
 

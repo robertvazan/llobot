@@ -2,7 +2,7 @@
 A subset that matches paths within specified directories.
 """
 from __future__ import annotations
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.utils.values import ValueTypeMixin
 from llobot.knowledge.subsets import KnowledgeSubset
 
@@ -24,7 +24,7 @@ class DirectorySubset(KnowledgeSubset, ValueTypeMixin):
         """
         self._directories = frozenset(directories)
 
-    def contains(self, path: Path) -> bool:
+    def contains(self, path: PurePosixPath) -> bool:
         """
         Checks if the path is in any of the specified directories.
 

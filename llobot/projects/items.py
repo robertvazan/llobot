@@ -2,7 +2,7 @@
 Project item types.
 """
 from __future__ import annotations
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.utils.values import ValueTypeMixin
 
 class ProjectItem:
@@ -10,7 +10,7 @@ class ProjectItem:
     Abstract base class for items (files, directories, links) in a project.
     """
     @property
-    def path(self) -> Path:
+    def path(self) -> PurePosixPath:
         """
         The path of the item within the project.
         """
@@ -20,9 +20,9 @@ class ProjectFile(ProjectItem, ValueTypeMixin):
     """
     Represents a file within a project.
     """
-    _path: Path
+    _path: PurePosixPath
 
-    def __init__(self, path: Path):
+    def __init__(self, path: PurePosixPath):
         """
         Initializes a new project file.
 
@@ -32,16 +32,16 @@ class ProjectFile(ProjectItem, ValueTypeMixin):
         self._path = path
 
     @property
-    def path(self) -> Path:
+    def path(self) -> PurePosixPath:
         return self._path
 
 class ProjectDirectory(ProjectItem, ValueTypeMixin):
     """
     Represents a directory within a project.
     """
-    _path: Path
+    _path: PurePosixPath
 
-    def __init__(self, path: Path):
+    def __init__(self, path: PurePosixPath):
         """
         Initializes a new project directory.
 
@@ -51,17 +51,17 @@ class ProjectDirectory(ProjectItem, ValueTypeMixin):
         self._path = path
 
     @property
-    def path(self) -> Path:
+    def path(self) -> PurePosixPath:
         return self._path
 
 class ProjectLink(ProjectItem, ValueTypeMixin):
     """
     Represents a symbolic link within a project.
     """
-    _path: Path
-    _target: Path
+    _path: PurePosixPath
+    _target: PurePosixPath
 
-    def __init__(self, path: Path, target: Path):
+    def __init__(self, path: PurePosixPath, target: PurePosixPath):
         """
         Initializes a new project link.
 
@@ -73,11 +73,11 @@ class ProjectLink(ProjectItem, ValueTypeMixin):
         self._target = target
 
     @property
-    def path(self) -> Path:
+    def path(self) -> PurePosixPath:
         return self._path
 
     @property
-    def target(self) -> Path:
+    def target(self) -> PurePosixPath:
         """
         The target path of the link.
         """

@@ -2,7 +2,7 @@
 Union of language mappings.
 """
 from __future__ import annotations
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.formats.languages import LanguageMapping
 from llobot.utils.values import ValueTypeMixin
 
@@ -27,7 +27,7 @@ class LanguageMappingUnion(LanguageMapping, ValueTypeMixin):
                 flattened.append(mapping)
         self._mappings = tuple(flattened)
 
-    def resolve(self, path: Path) -> str:
+    def resolve(self, path: PurePosixPath) -> str:
         """
         Resolves the language by trying each mapping in order.
 

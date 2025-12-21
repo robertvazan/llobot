@@ -7,7 +7,7 @@ named after their creation time.
 """
 from __future__ import annotations
 from datetime import datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Iterable
 from llobot.utils.time import format_time, parse_time, try_parse_time
 from llobot.utils.fs import path_stem
@@ -39,7 +39,7 @@ def format_history_path(directory: Path | str, time: datetime, suffix: str = '')
     """
     return Path(directory)/format_history_filename(time, suffix)
 
-def parse_history_path(path: Path | str) -> datetime:
+def parse_history_path(path: Path | PurePosixPath | str) -> datetime:
     """
     Extracts the timestamp from a history file path.
 
@@ -56,7 +56,7 @@ def parse_history_path(path: Path | str) -> datetime:
     """
     return parse_time(path_stem(path))
 
-def try_parse_history_path(path: Path | str) -> datetime | None:
+def try_parse_history_path(path: Path | PurePosixPath | str) -> datetime | None:
     """
     Extracts the timestamp from a history file path, returning None on failure.
 

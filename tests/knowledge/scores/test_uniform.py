@@ -1,32 +1,32 @@
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.scores.uniform import uniform_scores, UniformScorer
 
 knowledge = Knowledge({
-    Path('a.txt'): 'A',
-    Path('b.txt'): 'BB',
-    Path('c.txt'): 'CCC',
+    PurePosixPath('a.txt'): 'A',
+    PurePosixPath('b.txt'): 'BB',
+    PurePosixPath('c.txt'): 'CCC',
 })
 
 def test_uniform_scores():
     scores = uniform_scores(knowledge, 12.0)
-    assert scores[Path('a.txt')] == 4.0
-    assert scores[Path('b.txt')] == 4.0
-    assert scores[Path('c.txt')] == 4.0
+    assert scores[PurePosixPath('a.txt')] == 4.0
+    assert scores[PurePosixPath('b.txt')] == 4.0
+    assert scores[PurePosixPath('c.txt')] == 4.0
 
 def test_uniform_scores_from_index():
-    index = KnowledgeIndex([Path('a.txt'), Path('b.txt')])
+    index = KnowledgeIndex([PurePosixPath('a.txt'), PurePosixPath('b.txt')])
     scores = uniform_scores(index, 10.0)
-    assert scores[Path('a.txt')] == 5.0
-    assert scores[Path('b.txt')] == 5.0
+    assert scores[PurePosixPath('a.txt')] == 5.0
+    assert scores[PurePosixPath('b.txt')] == 5.0
 
 def test_uniform_scorer():
     scorer = UniformScorer(6.0)
     scores = scorer.score(knowledge)
-    assert scores[Path('a.txt')] == 2.0
-    assert scores[Path('b.txt')] == 2.0
-    assert scores[Path('c.txt')] == 2.0
+    assert scores[PurePosixPath('a.txt')] == 2.0
+    assert scores[PurePosixPath('b.txt')] == 2.0
+    assert scores[PurePosixPath('c.txt')] == 2.0
 
 def test_uniform_scorer_default():
     scorer = UniformScorer()
@@ -36,7 +36,7 @@ def test_uniform_scorer_default():
 def test_uniform_scores_invalid_type():
     from llobot.knowledge.scores import KnowledgeScores
     try:
-        uniform_scores(KnowledgeScores({Path('a.txt'): 1.0}))
+        uniform_scores(KnowledgeScores({PurePosixPath('a.txt'): 1.0}))
         assert False, "Should have raised TypeError"
     except TypeError:
         pass

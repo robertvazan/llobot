@@ -1,4 +1,4 @@
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.ranking import KnowledgeRanking
@@ -18,38 +18,38 @@ def test_preorder_ranking_from_tree():
     )
     ranking = preorder_ranking(tree)
     assert ranking == KnowledgeRanking([
-        Path('f1'),
-        Path('d1/f2'),
-        Path('d2/f3'),
+        PurePosixPath('f1'),
+        PurePosixPath('d1/f2'),
+        PurePosixPath('d2/f3'),
     ])
 
 def test_preorder_ranking_from_ranking():
-    initial = KnowledgeRanking([Path('d1/f2'), Path('f1'), Path('d2/f3')])
+    initial = KnowledgeRanking([PurePosixPath('d1/f2'), PurePosixPath('f1'), PurePosixPath('d2/f3')])
     ranking = preorder_ranking(initial)
     # The tree-based reordering places root files before subdirectory files.
     assert ranking == KnowledgeRanking([
-        Path('f1'),
-        Path('d1/f2'),
-        Path('d2/f3'),
+        PurePosixPath('f1'),
+        PurePosixPath('d1/f2'),
+        PurePosixPath('d2/f3'),
     ])
 
 def test_preorder_lexicographical_ranking():
-    index = KnowledgeIndex([Path('d1/f2'), Path('f1'), Path('d2/f3')])
+    index = KnowledgeIndex([PurePosixPath('d1/f2'), PurePosixPath('f1'), PurePosixPath('d2/f3')])
     ranking = preorder_lexicographical_ranking(index)
     # Lexicographical sort first: d1/f2, d2/f3, f1.
     # Tree from that: d1/ with f2, d2/ with f3, then f1.
     # Preorder traversal of the tree: f1, d1/f2, d2/f3.
     assert ranking == KnowledgeRanking([
-        Path('f1'),
-        Path('d1/f2'),
-        Path('d2/f3'),
+        PurePosixPath('f1'),
+        PurePosixPath('d1/f2'),
+        PurePosixPath('d2/f3'),
     ])
 
 def test_preorder_ranker():
     knowledge = Knowledge({
-        Path('d1/f2'): '',
-        Path('f1'): '',
-        Path('d2/f3'): '',
+        PurePosixPath('d1/f2'): '',
+        PurePosixPath('f1'): '',
+        PurePosixPath('d2/f3'): '',
     })
     # Initial ranking from LexicographicalRanker will be d1/f2, d2/f3, f1.
     ranker = PreorderRanker(tiebreaker=LexicographicalRanker())
@@ -57,9 +57,9 @@ def test_preorder_ranker():
     # The tree built from lex order is: d1 dir with f2, then d2 dir with f3, then f1.
     # Preorder traversal is f1, d1/f2, d2/f3.
     assert ranking == KnowledgeRanking([
-        Path('f1'),
-        Path('d1/f2'),
-        Path('d2/f3'),
+        PurePosixPath('f1'),
+        PurePosixPath('d1/f2'),
+        PurePosixPath('d2/f3'),
     ])
 
     # Test with a different tiebreaker ranker that reverses order.
@@ -74,9 +74,9 @@ def test_preorder_ranker():
     # ranked_tree(['f1', 'd2/f3', 'd1/f2'])
     # Preorder traversal: f1, d2/f3, d1/f2.
     assert ranking == KnowledgeRanking([
-        Path('f1'),
-        Path('d2/f3'),
-        Path('d1/f2'),
+        PurePosixPath('f1'),
+        PurePosixPath('d2/f3'),
+        PurePosixPath('d1/f2'),
     ])
 
     # test value semantics

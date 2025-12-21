@@ -1,11 +1,11 @@
-from pathlib import Path
+from pathlib import PurePosixPath
 import pytest
 from llobot.knowledge import Knowledge
 from llobot.projects.zone import ZoneProject
 
 def test_zone_project():
     project = ZoneProject("zone1", "zone2/sub")
-    assert project.zones == {Path("zone1"), Path("zone2/sub")}
+    assert project.zones == {PurePosixPath("zone1"), PurePosixPath("zone2/sub")}
     assert project.prefixes == set()
     assert project.read_all() == Knowledge()
     assert project == ZoneProject("zone2/sub", "zone1")

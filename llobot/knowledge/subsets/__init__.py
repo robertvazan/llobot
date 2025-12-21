@@ -2,7 +2,7 @@
 Defines the `KnowledgeSubset` interface for filtering knowledge paths.
 
 This package provides the `KnowledgeSubset` base class, which represents a
-predicate that can be applied to a `pathlib.Path` to determine membership in a
+predicate that can be applied to a `pathlib.PurePosixPath` to determine membership in a
 set. It also provides `coerce_subset` to convert various types into subsets.
 
 Implementations of `KnowledgeSubset` for various matching strategies (e.g., by
@@ -43,7 +43,7 @@ universal
     A subset that matches everything.
 """
 from __future__ import annotations
-from pathlib import Path
+from pathlib import PurePosixPath
 from typing import Iterable
 
 class KnowledgeSubset:
@@ -54,15 +54,15 @@ class KnowledgeSubset:
     subset. They can be combined using logical operators (`|`, `&`, `-`, `~`).
     Subsets cache their results for performance.
     """
-    _memory: dict[Path, bool]
+    _memory: dict[PurePosixPath, bool]
 
-    def contains(self, path: Path) -> bool:
+    def contains(self, path: PurePosixPath) -> bool:
         """
         Checks if a path is in the subset. Subclasses must implement this.
         """
         raise NotImplementedError
 
-    def __contains__(self, path: Path) -> bool:
+    def __contains__(self, path: PurePosixPath) -> bool:
         try:
             memory = self._memory
         except AttributeError:
@@ -97,13 +97,13 @@ class KnowledgeSubset:
         return ['_memory']
 
 
-def coerce_subset(material: KnowledgeSubset | str | Path | 'KnowledgeIndex' | 'KnowledgeRanking' | 'KnowledgeScores' | 'Knowledge') -> KnowledgeSubset:
+def coerce_subset(material: KnowledgeSubset | str | PurePosixPath | 'KnowledgeIndex' | 'KnowledgeRanking' | 'KnowledgeScores' | 'Knowledge') -> KnowledgeSubset:
     """
     Coerces various objects into a KnowledgeSubset.
 
     - `KnowledgeSubset` is returned as is.
     - `str` is parsed as a glob pattern.
-    - `Path` is treated as a subset containing only that path.
+    - `PurePosixPath` is treated as a subset containing only that path.
     - Knowledge containers (`KnowledgeIndex`, `Knowledge`, etc.) are converted
       to a subset containing their paths.
     """
@@ -112,7 +112,7 @@ def coerce_subset(material: KnowledgeSubset | str | Path | 'KnowledgeIndex' | 'K
     if isinstance(material, str):
         from llobot.knowledge.subsets.parsing import parse_pattern
         return parse_pattern(material)
-    if isinstance(material, Path):
+    if isinstance(material, PurePosixPath):
         from llobot.knowledge.subsets.solo import SoloSubset
         return SoloSubset(material)
 

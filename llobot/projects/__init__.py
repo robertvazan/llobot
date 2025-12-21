@@ -25,7 +25,7 @@ items
     Defines item types that can be part of a project (file, directory, link).
 """
 from __future__ import annotations
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Iterable
 from llobot.knowledge import Knowledge
 from llobot.projects.items import ProjectDirectory, ProjectFile, ProjectItem
@@ -37,7 +37,7 @@ class Project:
     also be mutable, allowing for file modifications.
     """
     @property
-    def zones(self) -> set[Path]:
+    def zones(self) -> set[PurePosixPath]:
         """
         A set of zone identifiers associated with the project.
 
@@ -46,7 +46,7 @@ class Project:
         return set()
 
     @property
-    def prefixes(self) -> set[Path]:
+    def prefixes(self) -> set[PurePosixPath]:
         """
         A set of relative path prefixes that define the project's content scope.
 
@@ -54,7 +54,7 @@ class Project:
         """
         return set()
 
-    def items(self, path: Path) -> list[ProjectItem]:
+    def items(self, path: PurePosixPath) -> list[ProjectItem]:
         """
         Returns a list of items in a directory.
 
@@ -69,7 +69,7 @@ class Project:
         """
         return []
 
-    def read(self, path: Path) -> str | None:
+    def read(self, path: PurePosixPath) -> str | None:
         """
         Reads a file if it exists.
 
@@ -93,7 +93,7 @@ class Project:
         """
         return False
 
-    def _walk(self, directory: Path) -> Iterable[ProjectFile]:
+    def _walk(self, directory: PurePosixPath) -> Iterable[ProjectFile]:
         """Recursively walks the project to find all tracked files."""
         # Sort items for consistent order
         sorted_items = sorted(self.items(directory), key=lambda i: i.path)
@@ -124,7 +124,7 @@ class Project:
         from llobot.projects.union import union_project
         return union_project(self, other)
 
-    def mutable(self, path: Path) -> bool:
+    def mutable(self, path: PurePosixPath) -> bool:
         """
         Checks whether the given path is mutable.
 
@@ -140,7 +140,7 @@ class Project:
         """
         return False
 
-    def write(self, path: Path, content: str):
+    def write(self, path: PurePosixPath, content: str):
         """
         Writes content to a file at the given path.
 
@@ -156,7 +156,7 @@ class Project:
             raise PermissionError(f"Path is not mutable: {path}")
         raise NotImplementedError(f"Project type {self.__class__.__name__} does not support writing.")
 
-    def remove(self, path: Path):
+    def remove(self, path: PurePosixPath):
         """
         Removes a file at the given path.
 
@@ -171,7 +171,7 @@ class Project:
             raise PermissionError(f"Path is not mutable: {path}")
         raise NotImplementedError(f"Project type {self.__class__.__name__} does not support removing files.")
 
-    def move(self, source: Path, destination: Path):
+    def move(self, source: PurePosixPath, destination: PurePosixPath):
         """
         Moves a file from a source path to a destination path.
 
@@ -200,7 +200,7 @@ class Project:
         self.write(destination, content)
         self.remove(source)
 
-type ProjectPrecursor = Project | Path | str
+type ProjectPrecursor = Project | PurePosixPath | Path | str
 
 def coerce_project(precursor: ProjectPrecursor) -> Project:
     """
@@ -210,9 +210,10 @@ def coerce_project(precursor: ProjectPrecursor) -> Project:
     - `Path` is coerced to `DirectoryProject`.
     - `str` starting with `/` or `~` is coerced to `DirectoryProject`.
     - Other `str` values are coerced to `ZoneProject`.
+    - `PurePosixPath` is coerced to `ZoneProject`.
 
     Args:
-        precursor: The object to coerce. Can be a `Project`, `Path`, or `str`.
+        precursor: The object to coerce. Can be a `Project`, `Path`, `PurePosixPath`, or `str`.
 
     Returns:
         A `Project` instance.
@@ -225,6 +226,9 @@ def coerce_project(precursor: ProjectPrecursor) -> Project:
     if isinstance(precursor, str):
         if precursor.startswith('/') or precursor.startswith('~'):
             return DirectoryProject(precursor)
+        from llobot.projects.zone import ZoneProject
+        return ZoneProject(precursor)
+    if isinstance(precursor, PurePosixPath):
         from llobot.projects.zone import ZoneProject
         return ZoneProject(precursor)
     raise TypeError(f"Cannot coerce {precursor} to Project")

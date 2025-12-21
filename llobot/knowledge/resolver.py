@@ -3,7 +3,7 @@ Index for efficient, proximity-based path resolution.
 """
 from __future__ import annotations
 from functools import lru_cache
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.knowledge.indexes import KnowledgeIndex, KnowledgeIndexPrecursor, coerce_index
 
 @lru_cache(maxsize=2)
@@ -33,8 +33,8 @@ class KnowledgeResolver:
     Index for efficient path resolution, with disambiguation based on source
     path proximity.
     """
-    _names: dict[str, set[Path]]
-    _tails: dict[Path, set[Path]]
+    _names: dict[str, set[PurePosixPath]]
+    _tails: dict[PurePosixPath, set[PurePosixPath]]
 
     def __init__(self, index: KnowledgeIndex):
         """
@@ -60,12 +60,12 @@ class KnowledgeResolver:
             # Build _tails mapping (last two segments)
             parts = path.parts
             if len(parts) >= 2:
-                tail = Path(*parts[-2:])
+                tail = PurePosixPath(*parts[-2:])
                 if tail not in self._tails:
                     self._tails[tail] = set()
                 self._tails[tail].add(path)
 
-    def resolve_all(self, *targets: Path) -> KnowledgeIndex:
+    def resolve_all(self, *targets: PurePosixPath) -> KnowledgeIndex:
         """
         Resolves abbreviated paths to all possible full target paths.
 
@@ -91,7 +91,7 @@ class KnowledgeResolver:
                 candidates.extend(list(self._names.get(target.name, set())))
             else:
                 # Multi-part path, use _tails with last two segments
-                tail = Path(*target.parts[-2:]) if len(target.parts) >= 2 else target
+                tail = PurePosixPath(*target.parts[-2:]) if len(target.parts) >= 2 else target
                 potentials = self._tails.get(tail, set())
                 # Filter candidates to ensure right side matches abbreviated path exactly
                 for potential in potentials:
@@ -102,7 +102,7 @@ class KnowledgeResolver:
                             candidates.append(potential)
         return KnowledgeIndex(candidates)
 
-    def resolve(self, *targets: Path) -> Path | None:
+    def resolve(self, *targets: PurePosixPath) -> PurePosixPath | None:
         """
         Resolves abbreviated paths to a single full target path.
 
@@ -121,7 +121,7 @@ class KnowledgeResolver:
             return list(results)[0]
         return None
 
-    def resolve_all_near(self, source: Path, *targets: Path) -> KnowledgeIndex:
+    def resolve_all_near(self, source: PurePosixPath, *targets: PurePosixPath) -> KnowledgeIndex:
         """
         Resolves abbreviated paths, disambiguating by proximity to a source path.
 
@@ -146,7 +146,7 @@ class KnowledgeResolver:
         tied_targets = [t for t in ranking if self._common_prefix_length(source, t) == best_prefix_length]
         return KnowledgeIndex(tied_targets)
 
-    def resolve_near(self, source: Path, *targets: Path) -> Path | None:
+    def resolve_near(self, source: PurePosixPath, *targets: PurePosixPath) -> PurePosixPath | None:
         """
         Resolves abbreviated paths to a single full path, using proximity.
 
@@ -166,7 +166,7 @@ class KnowledgeResolver:
         return None
 
     @staticmethod
-    def _common_prefix_length(path1: Path, path2: Path) -> int:
+    def _common_prefix_length(path1: PurePosixPath, path2: PurePosixPath) -> int:
         """
         Returns the length of the common prefix between two paths.
         """

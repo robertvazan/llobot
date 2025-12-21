@@ -1,4 +1,4 @@
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import pytest
 from llobot.environments.projects import ProjectEnv
 from llobot.projects.empty import EmptyProject
@@ -108,8 +108,8 @@ def test_project_env_persistence(tmp_path: Path):
     assert env2._keys == {"p1", "p2"}
     assert len(env2.selected) == 2
     # .selected is sorted by zone
-    assert env2.selected[0].zones == {Path("p1")}
-    assert env2.selected[1].zones == {Path("p2")}
+    assert env2.selected[0].zones == {PurePosixPath("p1")}
+    assert env2.selected[1].zones == {PurePosixPath("p2")}
 
 def test_project_env_load_not_found_fails(tmp_path: Path):
     library = ZoneKeyedProjectLibrary(ZoneProject("p1"))

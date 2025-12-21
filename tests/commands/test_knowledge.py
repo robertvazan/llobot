@@ -1,4 +1,4 @@
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from unittest.mock import patch, Mock
 
 from llobot.commands.knowledge import populate_knowledge_env
@@ -14,13 +14,13 @@ from llobot.projects.union import union_project
 def test_populate_knowledge_env(tmp_path: Path):
     env = Environment()
 
-    p1_prefix = Path('p1')
+    p1_prefix = PurePosixPath('p1')
     p1_path = tmp_path / 'p1'
     p1_path.mkdir()
     (p1_path / 'a.txt').write_text('hello')
     p1 = DirectoryProject(p1_path, prefix=p1_prefix)
 
-    p2_prefix = Path('p2')
+    p2_prefix = PurePosixPath('p2')
     p2_path = tmp_path / 'p2'
     p2_path.mkdir()
     (p2_path / 'b.txt').write_text('world')
@@ -36,8 +36,8 @@ def test_populate_knowledge_env(tmp_path: Path):
     populate_knowledge_env(env)
 
     expected_knowledge = Knowledge({
-        Path('p1/a.txt'): 'hello\n',
-        Path('p2/b.txt'): 'world\n',
+        PurePosixPath('p1/a.txt'): 'hello\n',
+        PurePosixPath('p2/b.txt'): 'world\n',
     })
     assert env[KnowledgeEnv].get() == expected_knowledge
 

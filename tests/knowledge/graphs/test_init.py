@@ -1,30 +1,30 @@
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.knowledge.graphs import KnowledgeGraph
 from llobot.knowledge.graphs.builder import KnowledgeGraphBuilder
 from llobot.knowledge.indexes import KnowledgeIndex
 
 def test_graph_init():
     graph = KnowledgeGraph({
-        Path('a'): KnowledgeIndex(['b', 'c']),
-        Path('b'): KnowledgeIndex(['c']),
+        PurePosixPath('a'): KnowledgeIndex(['b', 'c']),
+        PurePosixPath('b'): KnowledgeIndex(['c']),
     })
     assert len(graph) == 2
-    assert Path('a') in graph
-    assert Path('c') not in graph
+    assert PurePosixPath('a') in graph
+    assert PurePosixPath('c') not in graph
 
 def test_graph_eq_hash():
     g1 = KnowledgeGraphBuilder()
-    g1.add(Path('a'), Path('b'))
-    g1.add(Path('a'), Path('c'))
+    g1.add(PurePosixPath('a'), PurePosixPath('b'))
+    g1.add(PurePosixPath('a'), PurePosixPath('c'))
     graph1 = g1.build()
 
     g2 = KnowledgeGraphBuilder()
-    g2.add(Path('a'), Path('c'))
-    g2.add(Path('a'), Path('b'))
+    g2.add(PurePosixPath('a'), PurePosixPath('c'))
+    g2.add(PurePosixPath('a'), PurePosixPath('b'))
     graph2 = g2.build()
 
     g3 = KnowledgeGraphBuilder()
-    g3.add(Path('a'), Path('b'))
+    g3.add(PurePosixPath('a'), PurePosixPath('b'))
     graph3 = g3.build()
 
     assert graph1 == graph2
@@ -34,51 +34,51 @@ def test_graph_eq_hash():
 
 def test_graph_keys():
     graph = KnowledgeGraph({
-        Path('a'): KnowledgeIndex(['b']),
-        Path('b'): KnowledgeIndex(['c']),
+        PurePosixPath('a'): KnowledgeIndex(['b']),
+        PurePosixPath('b'): KnowledgeIndex(['c']),
     })
     assert graph.keys() == KnowledgeIndex(['a', 'b'])
 
 def test_graph_links():
     builder = KnowledgeGraphBuilder()
-    builder.add(Path('a'), Path('b'))
-    builder.add(Path('a'), Path('c'))
+    builder.add(PurePosixPath('a'), PurePosixPath('b'))
+    builder.add(PurePosixPath('a'), PurePosixPath('c'))
     graph = builder.build()
     links = set(graph.links())
-    assert links == {(Path('a'), Path('b')), (Path('a'), Path('c'))}
+    assert links == {(PurePosixPath('a'), PurePosixPath('b')), (PurePosixPath('a'), PurePosixPath('c'))}
 
 def test_graph_union():
     g1 = KnowledgeGraphBuilder()
-    g1.add(Path('a'), Path('b'))
+    g1.add(PurePosixPath('a'), PurePosixPath('b'))
     graph1 = g1.build()
 
     g2 = KnowledgeGraphBuilder()
-    g2.add(Path('b'), Path('c'))
+    g2.add(PurePosixPath('b'), PurePosixPath('c'))
     graph2 = g2.build()
 
     merged = graph1 | graph2
     assert merged.keys() == KnowledgeIndex(['a', 'b'])
-    assert merged[Path('a')] == KnowledgeIndex(['b'])
-    assert merged[Path('b')] == KnowledgeIndex(['c'])
+    assert merged[PurePosixPath('a')] == KnowledgeIndex(['b'])
+    assert merged[PurePosixPath('b')] == KnowledgeIndex(['c'])
 
 def test_graph_reverse():
     builder = KnowledgeGraphBuilder()
-    builder.add(Path('a'), Path('b'))
-    builder.add(Path('a'), Path('c'))
+    builder.add(PurePosixPath('a'), PurePosixPath('b'))
+    builder.add(PurePosixPath('a'), PurePosixPath('c'))
     graph = builder.build()
     reversed_graph = graph.reverse()
 
     assert reversed_graph.keys() == KnowledgeIndex(['b', 'c'])
-    assert reversed_graph[Path('a')] == KnowledgeIndex()
-    assert reversed_graph[Path('b')] == KnowledgeIndex(['a'])
-    assert reversed_graph[Path('c')] == KnowledgeIndex(['a'])
+    assert reversed_graph[PurePosixPath('a')] == KnowledgeIndex()
+    assert reversed_graph[PurePosixPath('b')] == KnowledgeIndex(['a'])
+    assert reversed_graph[PurePosixPath('c')] == KnowledgeIndex(['a'])
 
 def test_graph_symmetrical():
     builder = KnowledgeGraphBuilder()
-    builder.add(Path('a'), Path('b'))
+    builder.add(PurePosixPath('a'), PurePosixPath('b'))
     graph = builder.build()
     symmetrical = graph.symmetrical()
 
     assert symmetrical.keys() == KnowledgeIndex(['a', 'b'])
-    assert symmetrical[Path('a')] == KnowledgeIndex(['b'])
-    assert symmetrical[Path('b')] == KnowledgeIndex(['a'])
+    assert symmetrical[PurePosixPath('a')] == KnowledgeIndex(['b'])
+    assert symmetrical[PurePosixPath('b')] == KnowledgeIndex(['a'])

@@ -2,7 +2,7 @@
 Prefix-based zoning.
 """
 from __future__ import annotations
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from llobot.utils.values import ValueTypeMixin
 from llobot.utils.zones import Zoning, validate_zone
 
@@ -10,7 +10,7 @@ class PrefixZoning(Zoning, ValueTypeMixin):
     """
     Resolves zones as subdirectories of a prefix.
 
-    For example, `PrefixZoning('/data').resolve(Path('cache'))` returns `/data/cache`.
+    For example, `PrefixZoning('/data').resolve(PurePosixPath('cache'))` returns `/data/cache`.
     """
     _prefix: Path
 
@@ -23,7 +23,7 @@ class PrefixZoning(Zoning, ValueTypeMixin):
         """
         self._prefix = Path(prefix).expanduser()
 
-    def resolve(self, zone: Path) -> Path:
+    def resolve(self, zone: PurePosixPath) -> Path:
         """
         Resolves a zone by appending it to the prefix.
 
@@ -34,7 +34,8 @@ class PrefixZoning(Zoning, ValueTypeMixin):
             The resolved path.
         """
         validate_zone(zone)
-        return self._prefix / zone
+        # Convert zone to string to allow joining PurePosixPath to WindowsPath
+        return self._prefix / str(zone)
 
 __all__ = [
     'PrefixZoning',

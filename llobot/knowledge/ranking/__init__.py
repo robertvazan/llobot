@@ -18,7 +18,7 @@ trees
     Rankers that reorder documents based on their position in the directory tree.
 """
 from __future__ import annotations
-from pathlib import Path
+from pathlib import PurePosixPath
 from typing import Iterable, Iterator
 from llobot.utils.values import ValueTypeMixin
 from llobot.knowledge import Knowledge
@@ -29,16 +29,19 @@ class KnowledgeRanking(ValueTypeMixin):
     """
     Represents an immutable, ordered sequence of document paths.
     """
-    _paths: tuple[Path, ...]
+    _paths: tuple[PurePosixPath, ...]
 
-    def __init__(self, paths: Iterable[Path | str] = []):
+    def __init__(self, paths: Iterable[PurePosixPath | str] = []):
         """
         Initializes a new KnowledgeRanking.
 
         Args:
             paths: An iterable of paths or path strings.
         """
-        self._paths = tuple(Path(path) for path in paths)
+        self._paths = tuple(PurePosixPath(path) for path in paths)
+        for path in self._paths:
+            if path.is_absolute():
+                raise ValueError(f"Path must be relative: {path}")
 
     def __repr__(self) -> str:
         return str(list(self._paths))
@@ -49,15 +52,15 @@ class KnowledgeRanking(ValueTypeMixin):
     def __bool__(self) -> bool:
         return bool(self._paths)
 
-    def __contains__(self, path: Path | str) -> bool:
-        return Path(path) in self._paths
+    def __contains__(self, path: PurePosixPath | str) -> bool:
+        return PurePosixPath(path) in self._paths
 
-    def __getitem__(self, spec: int | slice) -> Path | KnowledgeRanking:
+    def __getitem__(self, spec: int | slice) -> PurePosixPath | KnowledgeRanking:
         if isinstance(spec, slice):
             return KnowledgeRanking(self._paths[spec])
         return self._paths[spec]
 
-    def __iter__(self) -> Iterator[Path]:
+    def __iter__(self) -> Iterator[PurePosixPath]:
         return iter(self._paths)
 
     def reversed(self) -> KnowledgeRanking:
@@ -73,7 +76,7 @@ class KnowledgeRanking(ValueTypeMixin):
         whitelist = coerce_subset(whitelist)
         return KnowledgeRanking(path for path in self if path in whitelist)
 
-    def __sub__(self, blacklist: KnowledgeSubset | str | KnowledgeIndex | Path) -> KnowledgeRanking:
+    def __sub__(self, blacklist: KnowledgeSubset | str | KnowledgeIndex | PurePosixPath) -> KnowledgeRanking:
         """
         Filters the ranking, removing paths in the given blacklist.
         """
@@ -81,7 +84,7 @@ class KnowledgeRanking(ValueTypeMixin):
 
 type KnowledgeRankingPrecursor = KnowledgeRanking | KnowledgeIndex | Knowledge
 
-def coerce_ranking(what: KnowledgeRankingPrecursor | Iterable[Path | str]) -> KnowledgeRanking:
+def coerce_ranking(what: KnowledgeRankingPrecursor | Iterable[PurePosixPath | str]) -> KnowledgeRanking:
     """
     Coerces various objects into a `KnowledgeRanking`.
 

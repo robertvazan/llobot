@@ -1,7 +1,7 @@
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.knowledge.subsets.universal import UniversalSubset
 
 def test_universal_subset():
     subset = UniversalSubset()
-    assert Path('any/path.txt') in subset
-    assert Path('another/file.py') in subset
+    assert PurePosixPath('any/path.txt') in subset
+    assert PurePosixPath('another/file.py') in subset

@@ -30,7 +30,7 @@ normal
 """
 from __future__ import annotations
 import math
-from pathlib import Path
+from pathlib import PurePosixPath
 from typing import Iterator
 from llobot.utils.values import ValueTypeMixin
 from llobot.knowledge import Knowledge
@@ -45,9 +45,9 @@ class KnowledgeScores(ValueTypeMixin):
     methods for arithmetic operations and filtering. Scores of zero and non-finite
     scores are not stored. It is immutable.
     """
-    _scores: dict[Path, float]
+    _scores: dict[PurePosixPath, float]
 
-    def __init__(self, scores: dict[Path, float] = {}):
+    def __init__(self, scores: dict[PurePosixPath, float] = {}):
         """
         Initializes a `KnowledgeScores` object.
 
@@ -55,7 +55,10 @@ class KnowledgeScores(ValueTypeMixin):
             scores: A dictionary of paths and their corresponding scores.
                     Scores that are zero or non-finite are filtered out.
         """
-        self._scores = {path: float(score) for path, score in scores.items() if math.isfinite(score) and score != 0}
+        self._scores = {PurePosixPath(path): float(score) for path, score in scores.items() if math.isfinite(score) and score != 0}
+        for path in self._scores:
+            if path.is_absolute():
+                raise ValueError(f"Path must be relative: {path}")
 
     def __repr__(self) -> str:
         return str(self._scores)
@@ -70,13 +73,13 @@ class KnowledgeScores(ValueTypeMixin):
     def __bool__(self) -> bool:
         return bool(self._scores)
 
-    def __contains__(self, path: Path | str) -> bool:
-        return Path(path) in self._scores
+    def __contains__(self, path: PurePosixPath | str) -> bool:
+        return PurePosixPath(path) in self._scores
 
-    def __getitem__(self, path: Path) -> float:
+    def __getitem__(self, path: PurePosixPath) -> float:
         return self._scores.get(path, 0)
 
-    def __iter__(self) -> Iterator[(Path, float)]:
+    def __iter__(self) -> Iterator[(PurePosixPath, float)]:
         return iter(self._scores.items())
 
     def _coerce_operand(self, other: int | float | KnowledgeScores | Knowledge) -> KnowledgeScores:

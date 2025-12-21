@@ -1,5 +1,5 @@
 from __future__ import annotations
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.knowledge.trees import KnowledgeTree
 
 class KnowledgeTreeBuilder:
@@ -9,26 +9,28 @@ class KnowledgeTreeBuilder:
     The builder automatically creates the necessary directory structure as paths are added,
     maintaining the order in which files and directories are first encountered.
     """
-    _base: Path
+    _base: PurePosixPath
     _files: list[str]
     _file_names: set[str]
     _subtree_builders: list[KnowledgeTreeBuilder]
     _subtree_names: dict[str, KnowledgeTreeBuilder]
 
-    def __init__(self, base: Path | str = '.'):
+    def __init__(self, base: PurePosixPath | str = '.'):
         """
         Creates a new tree builder with the given base path.
 
         Args:
             base: Base path for the root of the tree being built.
         """
-        self._base = Path(base)
+        self._base = PurePosixPath(base)
+        if self._base.is_absolute():
+            raise ValueError(f"Base path must be relative: {self._base}")
         self._files = []
         self._file_names = set()
         self._subtree_builders = []
         self._subtree_names = {}
 
-    def add(self, path: Path | str) -> None:
+    def add(self, path: PurePosixPath | str) -> None:
         """
         Adds a file path to the tree, creating nested builders as necessary.
 
@@ -38,7 +40,7 @@ class KnowledgeTreeBuilder:
         Raises:
             ValueError: If the path is not relative to the base path.
         """
-        path = Path(path)
+        path = PurePosixPath(path)
 
         # If path is not relative to our base, we need to find the right place for it
         if not path.is_relative_to(self._base):

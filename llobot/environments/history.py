@@ -2,7 +2,7 @@
 Session history management.
 """
 from __future__ import annotations
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from llobot.environments import Environment
 from llobot.environments.prompt import PromptEnv
 from llobot.utils.fs import data_home
@@ -41,7 +41,7 @@ class SessionHistory:
         session_id = env[PromptEnv].hash
         if not session_id:
             return
-        zone = Path(session_id)
+        zone = PurePosixPath(session_id)
         path = self._location.resolve(zone)
         env.save(path)
 
@@ -58,7 +58,7 @@ class SessionHistory:
         session_id = env[PromptEnv].hash
         if not session_id:
             return
-        zone = Path(session_id)
+        zone = PurePosixPath(session_id)
         path = self._location.resolve(zone)
         env.load(path)
 

@@ -26,21 +26,21 @@ rust
     Crawlers for Rust source code.
 """
 from __future__ import annotations
-from pathlib import Path
+from pathlib import PurePosixPath
 from typing import Iterator
 from llobot.utils.values import ValueTypeMixin
 from llobot.knowledge.indexes import KnowledgeIndex
 
 class KnowledgeGraph(ValueTypeMixin):
     """
-    An immutable directed graph where nodes are `pathlib.Path` objects.
+    An immutable directed graph where nodes are `pathlib.PurePosixPath` objects.
 
     The graph is represented as a dictionary mapping source nodes to a
     `KnowledgeIndex` of their target nodes.
     """
-    _graph: dict[Path, KnowledgeIndex]
+    _graph: dict[PurePosixPath, KnowledgeIndex]
 
-    def __init__(self, graph: dict[Path, KnowledgeIndex] = {}):
+    def __init__(self, graph: dict[PurePosixPath, KnowledgeIndex] = {}):
         """
         Initializes a new `KnowledgeGraph`.
 
@@ -62,10 +62,10 @@ class KnowledgeGraph(ValueTypeMixin):
     def __bool__(self) -> bool:
         return bool(self._graph)
 
-    def __contains__(self, source: Path) -> bool:
+    def __contains__(self, source: PurePosixPath) -> bool:
         return source in self._graph
 
-    def __getitem__(self, source: Path) -> KnowledgeIndex:
+    def __getitem__(self, source: PurePosixPath) -> KnowledgeIndex:
         """
         Gets the `KnowledgeIndex` of targets for a given source node.
 
@@ -73,10 +73,10 @@ class KnowledgeGraph(ValueTypeMixin):
         """
         return self._graph.get(source, KnowledgeIndex())
 
-    def __iter__(self) -> Iterator[(Path, KnowledgeIndex)]:
+    def __iter__(self) -> Iterator[(PurePosixPath, KnowledgeIndex)]:
         return iter(self._graph.items())
 
-    def links(self) -> Iterator[(Path, Path)]:
+    def links(self) -> Iterator[(PurePosixPath, PurePosixPath)]:
         """
         Iterates over all links (edges) in the graph.
 

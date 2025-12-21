@@ -2,7 +2,7 @@
 Wildcard-based zoning.
 """
 from __future__ import annotations
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from llobot.utils.values import ValueTypeMixin
 from llobot.utils.zones import Zoning, validate_zone
 
@@ -10,7 +10,7 @@ class WildcardZoning(Zoning, ValueTypeMixin):
     """
     Replaces a wildcard in a path pattern with the zone name.
 
-    For example, `WildcardZoning('/data/*/files').resolve(Path('images'))`
+    For example, `WildcardZoning('/data/*/files').resolve(PurePosixPath('images'))`
     returns `/data/images/files`.
     """
     _pattern: Path
@@ -29,7 +29,7 @@ class WildcardZoning(Zoning, ValueTypeMixin):
         if '*' not in str(self._pattern):
             raise ValueError(f"Wildcard pattern must contain '*': {self._pattern}")
 
-    def resolve(self, zone: Path) -> Path:
+    def resolve(self, zone: PurePosixPath) -> Path:
         """
         Resolves a zone by replacing the wildcard in the pattern.
 

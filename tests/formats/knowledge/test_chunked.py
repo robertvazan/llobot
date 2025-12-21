@@ -1,13 +1,13 @@
 from __future__ import annotations
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.chats.intent import ChatIntent
 from llobot.knowledge import Knowledge
 from llobot.formats.knowledge.chunked import ChunkedKnowledgeFormat
 
 def test_render_chat_single_chunk():
     knowledge = Knowledge({
-        Path('a.txt'): 'content a',
-        Path('b.txt'): 'content b',
+        PurePosixPath('a.txt'): 'content a',
+        PurePosixPath('b.txt'): 'content b',
     })
     fmt = ChunkedKnowledgeFormat(min_size=1000)
     chat = fmt.render_chat(knowledge)
@@ -19,9 +19,9 @@ def test_render_chat_single_chunk():
 
 def test_render_chat_multiple_chunks():
     knowledge = Knowledge({
-        Path('a.txt'): 'a' * 500,
-        Path('b.txt'): 'b' * 500,
-        Path('c.txt'): 'c' * 500,
+        PurePosixPath('a.txt'): 'a' * 500,
+        PurePosixPath('b.txt'): 'b' * 500,
+        PurePosixPath('c.txt'): 'c' * 500,
     })
     fmt = ChunkedKnowledgeFormat(min_size=1000)
     chat = fmt.render_chat(knowledge)

@@ -1,5 +1,5 @@
 """Tests for filesystem utilities."""
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from llobot.utils.fs import (
     user_home, data_home, cache_home, create_parents,
     write_bytes, write_text, read_text, read_document, path_stem
@@ -33,6 +33,7 @@ def test_file_io(tmp_path: Path):
 def test_path_stem():
     assert path_stem("a/b/c.tar.gz") == "c"
     assert path_stem(Path("a/b/c.tar.gz")) == "c"
+    assert path_stem(PurePosixPath("a/b/c.tar.gz")) == "c"
     assert path_stem("file.txt") == "file"
     assert path_stem("file") == "file"
     assert path_stem(".bashrc") == ".bashrc"

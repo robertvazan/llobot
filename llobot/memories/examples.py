@@ -1,7 +1,7 @@
 from __future__ import annotations
 import logging
 from datetime import datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Iterable
 from heapq import merge
 from itertools import chain
@@ -44,17 +44,17 @@ class ExampleMemory:
         self._role_name = role_name
         self._history = coerce_chat_history(history)
 
-    def _zones(self, env: Environment) -> list[Path]:
+    def _zones(self, env: Environment) -> list[PurePosixPath]:
         """
         Determines the zone names based on the current environment.
         """
         project_zones = env[ProjectEnv].union.zones
-        zones: list[Path] = []
+        zones: list[PurePosixPath] = []
 
         if self._role_name:
             for pz in sorted(list(project_zones)):
-                zones.append(Path(self._role_name) / pz)
-            zones.append(Path(self._role_name))
+                zones.append(PurePosixPath(self._role_name) / pz)
+            zones.append(PurePosixPath(self._role_name))
         else:
             zones.extend(sorted(list(project_zones)))
         return zones
@@ -120,7 +120,7 @@ class ExampleMemory:
         role_zone_iter = []
 
         if self._role_name:
-            role_path = Path(self._role_name)
+            role_path = PurePosixPath(self._role_name)
             if role_path in project_zones:
                 project_zones.remove(role_path)
                 role_zone_iter = self._history.recent(role_path)

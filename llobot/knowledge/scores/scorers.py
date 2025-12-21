@@ -3,7 +3,7 @@ Base `KnowledgeScorer` and standard scorer implementations.
 """
 from __future__ import annotations
 from functools import cache
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.scores import KnowledgeScores
@@ -58,7 +58,7 @@ class KnowledgeScorer:
         from llobot.knowledge.scores.chain import KnowledgeScorerChain
         return KnowledgeScorerChain(self, other)
 
-def coerce_scorer(material: KnowledgeScorer | KnowledgeSubset | str | Path | KnowledgeIndex) -> KnowledgeScorer:
+def coerce_scorer(material: KnowledgeScorer | KnowledgeSubset | str | PurePosixPath | KnowledgeIndex) -> KnowledgeScorer:
     """
     Coerces various objects into a KnowledgeScorer.
 

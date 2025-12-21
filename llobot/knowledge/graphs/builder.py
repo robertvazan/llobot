@@ -3,7 +3,7 @@ A mutable builder for `KnowledgeGraph`.
 """
 from __future__ import annotations
 from collections import defaultdict
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.knowledge.graphs import KnowledgeGraph
 from llobot.knowledge.indexes import KnowledgeIndex
 
@@ -11,13 +11,13 @@ class KnowledgeGraphBuilder:
     """
     A mutable builder for constructing `KnowledgeGraph` instances.
     """
-    _graph: defaultdict[Path, set[Path]]
+    _graph: defaultdict[PurePosixPath, set[PurePosixPath]]
 
     def __init__(self):
         """Initializes an empty `KnowledgeGraphBuilder`."""
         self._graph = defaultdict(set)
 
-    def add(self, source: Path, target: Path):
+    def add(self, source: PurePosixPath, target: PurePosixPath):
         """
         Adds a directed link to the graph.
 

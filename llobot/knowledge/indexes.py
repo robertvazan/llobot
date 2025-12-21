@@ -1,26 +1,29 @@
 from __future__ import annotations
-from pathlib import Path
+from pathlib import PurePosixPath
 from typing import Iterable, Iterator
 from llobot.utils.values import ValueTypeMixin
 from llobot.knowledge.subsets import KnowledgeSubset, coerce_subset
 
 class KnowledgeIndex(ValueTypeMixin):
     """
-    An immutable, unordered collection of unique `pathlib.Path` objects.
+    An immutable, unordered collection of unique `pathlib.PurePosixPath` objects.
 
     This class behaves like a read-only set of paths, providing set operations
     and path manipulation methods.
     """
-    _paths: frozenset[Path]
+    _paths: frozenset[PurePosixPath]
 
-    def __init__(self, paths: Iterable[Path | str] = set()):
+    def __init__(self, paths: Iterable[PurePosixPath | str] = set()):
         """
         Initializes a new `KnowledgeIndex`.
 
         Args:
             paths: An iterable of paths or path strings.
         """
-        self._paths = frozenset(Path(path) for path in paths)
+        self._paths = frozenset(PurePosixPath(path) for path in paths)
+        for path in self._paths:
+            if path.is_absolute():
+                raise ValueError(f"Path must be relative: {path}")
 
     def __repr__(self) -> str:
         return str(self.sorted())
@@ -31,10 +34,10 @@ class KnowledgeIndex(ValueTypeMixin):
     def __bool__(self) -> bool:
         return bool(self._paths)
 
-    def __contains__(self, path: Path | str) -> bool:
-        return Path(path) in self._paths
+    def __contains__(self, path: PurePosixPath | str) -> bool:
+        return PurePosixPath(path) in self._paths
 
-    def __iter__(self) -> Iterator[Path]:
+    def __iter__(self) -> Iterator[PurePosixPath]:
         return iter(self._paths)
 
     def sorted(self) -> 'KnowledgeRanking':
@@ -60,36 +63,36 @@ class KnowledgeIndex(ValueTypeMixin):
         whitelist = coerce_subset(whitelist)
         return KnowledgeIndex(path for path in self if path in whitelist)
 
-    def __or__(self, addition: Path | KnowledgeIndex) -> KnowledgeIndex:
+    def __or__(self, addition: PurePosixPath | KnowledgeIndex) -> KnowledgeIndex:
         """
         Returns a new index with paths from both this index and the addition.
         """
-        if isinstance(addition, Path):
+        if isinstance(addition, PurePosixPath):
             return self | KnowledgeIndex([addition])
         if isinstance(addition, KnowledgeIndex):
             return KnowledgeIndex(self._paths | addition._paths)
         raise TypeError
 
-    def __sub__(self, blacklist: KnowledgeSubset | str | KnowledgeIndex | Path) -> KnowledgeIndex:
+    def __sub__(self, blacklist: KnowledgeSubset | str | KnowledgeIndex | PurePosixPath) -> KnowledgeIndex:
         """
         Returns a new index with paths from this index that are not in the blacklist.
         """
         return self & ~coerce_subset(blacklist)
 
-    def __rtruediv__(self, prefix: Path | str) -> KnowledgeIndex:
+    def __rtruediv__(self, prefix: PurePosixPath | str) -> KnowledgeIndex:
         """
         Creates a new `KnowledgeIndex` with a prefix prepended to all paths.
         """
-        prefix = Path(prefix)
+        prefix = PurePosixPath(prefix)
         return KnowledgeIndex(prefix/path for path in self)
 
-    def __truediv__(self, subtree: Path | str) -> KnowledgeIndex:
+    def __truediv__(self, subtree: PurePosixPath | str) -> KnowledgeIndex:
         """
         Creates a new `KnowledgeIndex` with a prefix stripped from all paths.
 
         Only paths within the `subtree` are kept.
         """
-        subtree = Path(subtree)
+        subtree = PurePosixPath(subtree)
         return KnowledgeIndex(path.relative_to(subtree) for path in self if path.is_relative_to(subtree))
 
 type KnowledgeIndexPrecursor = KnowledgeIndex | 'Knowledge' | 'KnowledgeRanking'
@@ -109,7 +112,7 @@ def coerce_index(what: KnowledgeIndexPrecursor) -> KnowledgeIndex:
     from llobot.knowledge.ranking import KnowledgeRanking
     if isinstance(what, KnowledgeRanking):
         return KnowledgeIndex(what)
-    raise TypeError
+    raise TypeError(what)
 
 __all__ = [
     'KnowledgeIndex',

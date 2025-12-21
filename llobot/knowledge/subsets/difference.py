@@ -2,7 +2,7 @@
 A subset that is a difference of two other subsets.
 """
 from __future__ import annotations
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.utils.values import ValueTypeMixin
 from llobot.knowledge.subsets import KnowledgeSubset
 
@@ -26,7 +26,7 @@ class DifferenceSubset(KnowledgeSubset, ValueTypeMixin):
         self._minuend = minuend
         self._subtrahend = subtrahend
 
-    def contains(self, path: Path) -> bool:
+    def contains(self, path: PurePosixPath) -> bool:
         """
         Checks if a path is in the first subset and not in the second.
 

@@ -1,4 +1,4 @@
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from textwrap import dedent
 import pytest
 from llobot.environments import Environment
@@ -42,28 +42,28 @@ def test_move_tool_slice_and_parse():
 
     call = tool.parse(text)
     assert isinstance(call, MoveToolCall)
-    assert call._source == Path("myproject/a.txt")
-    assert call._destination == Path("myproject/b.txt")
+    assert call._source == PurePosixPath("myproject/a.txt")
+    assert call._destination == PurePosixPath("myproject/b.txt")
 
 def test_move_tool_execute(env: Environment):
-    call = MoveToolCall(Path("myproject/a.txt"), Path("myproject/b.txt"))
+    call = MoveToolCall(PurePosixPath("myproject/a.txt"), PurePosixPath("myproject/b.txt"))
     call.execute(env)
 
     project = env[ProjectEnv].union
-    assert project.read(Path("myproject/a.txt")) is None
-    assert project.read(Path("myproject/b.txt")) == "content\n"
+    assert project.read(PurePosixPath("myproject/a.txt")) is None
+    assert project.read(PurePosixPath("myproject/b.txt")) == "content\n"
     log = env[ToolEnv].flush_log()
     assert "Moving myproject/a.txt to myproject/b.txt..." in log
     assert "File was moved." in log
 
 def test_move_tool_overwrite(env: Environment):
     project = env[ProjectEnv].union
-    project.write(Path("myproject/b.txt"), "old content")
-    call = MoveToolCall(Path("myproject/a.txt"), Path("myproject/b.txt"))
+    project.write(PurePosixPath("myproject/b.txt"), "old content")
+    call = MoveToolCall(PurePosixPath("myproject/a.txt"), PurePosixPath("myproject/b.txt"))
     call.execute(env)
     log = env[ToolEnv].flush_log()
     assert "Warning: Overwriting myproject/b.txt" in log
-    assert project.read(Path("myproject/b.txt")) == "content\n"
+    assert project.read(PurePosixPath("myproject/b.txt")) == "content\n"
 
 def test_move_tool_no_match():
     tool = MoveTool()

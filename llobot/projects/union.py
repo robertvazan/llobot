@@ -1,5 +1,5 @@
 from __future__ import annotations
-from pathlib import Path
+from pathlib import PurePosixPath
 from typing import Iterable
 from llobot.projects import Project
 from llobot.projects.empty import EmptyProject
@@ -14,7 +14,7 @@ class UnionProject(Project, ValueTypeMixin):
     project routes method calls to the appropriate member based on path prefixes.
     """
     _projects: tuple[Project, ...]
-    _routing: dict[Path, Project]
+    _routing: dict[PurePosixPath, Project]
 
     def __init__(self, *projects: Project):
         """
@@ -46,28 +46,28 @@ class UnionProject(Project, ValueTypeMixin):
         return ['_routing']
 
     @property
-    def zones(self) -> set[Path]:
+    def zones(self) -> set[PurePosixPath]:
         all_zones = set()
         for p in self._projects:
             all_zones.update(p.zones)
         return all_zones
 
     @property
-    def prefixes(self) -> set[Path]:
+    def prefixes(self) -> set[PurePosixPath]:
         return set(self._routing.keys())
 
-    def _find_project(self, path: Path) -> Project | None:
+    def _find_project(self, path: PurePosixPath) -> Project | None:
         """Finds the project responsible for a given path based on the longest matching prefix."""
         for p in [path] + list(path.parents):
             if p in self._routing:
                 return self._routing[p]
         return None
 
-    def items(self, path: Path) -> list[ProjectItem]:
+    def items(self, path: PurePosixPath) -> list[ProjectItem]:
         project = self._find_project(path)
         return project.items(path) if project else []
 
-    def read(self, path: Path) -> str | None:
+    def read(self, path: PurePosixPath) -> str | None:
         project = self._find_project(path)
         return project.read(path) if project else None
 
@@ -75,14 +75,14 @@ class UnionProject(Project, ValueTypeMixin):
         project = self._find_project(item.path)
         return project.tracked(item) if project else False
 
-    def mutable(self, path: Path) -> bool:
+    def mutable(self, path: PurePosixPath) -> bool:
         """
         Checks if a path is mutable by delegating to the appropriate member project.
         """
         project = self._find_project(path)
         return project.mutable(path) if project else False
 
-    def write(self, path: Path, content: str):
+    def write(self, path: PurePosixPath, content: str):
         """
         Writes to a file by delegating to the appropriate member project.
         """
@@ -93,7 +93,7 @@ class UnionProject(Project, ValueTypeMixin):
         assert project, f"Path {path} is mutable but has no project."
         project.write(path, content)
 
-    def remove(self, path: Path):
+    def remove(self, path: PurePosixPath):
         """
         Removes a file by delegating to the appropriate member project.
         """
@@ -104,7 +104,7 @@ class UnionProject(Project, ValueTypeMixin):
         assert project, f"Path {path} is mutable but has no project."
         project.remove(path)
 
-    def move(self, source: Path, destination: Path):
+    def move(self, source: PurePosixPath, destination: PurePosixPath):
         """
         Moves a file from a source path to a destination path.
 

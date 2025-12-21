@@ -2,7 +2,7 @@
 Tool for removing files.
 """
 from __future__ import annotations
-from pathlib import Path
+from pathlib import PurePosixPath
 import re
 from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
@@ -16,9 +16,9 @@ class RemoveToolCall(ToolCall):
     """
     A tool call for removing a file.
     """
-    _path: Path
+    _path: PurePosixPath
 
-    def __init__(self, path: Path):
+    def __init__(self, path: PurePosixPath):
         self._path = path
 
     @property
@@ -44,7 +44,10 @@ class RemoveTool(FencedTool):
     def parse_content(self, source: str) -> ToolCall:
         match = _RM_COMMAND_RE.fullmatch(source)
         assert match, "source for parse_content() must be valid"
-        return RemoveToolCall(Path(match.group(1)))
+        path = PurePosixPath(match.group(1))
+        if path.is_absolute():
+            raise ValueError(f"Path must be relative: {path}")
+        return RemoveToolCall(path)
 
 __all__ = [
     'RemoveTool',

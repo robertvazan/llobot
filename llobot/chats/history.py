@@ -8,7 +8,7 @@ Within each zone, chats are stored by timestamp.
 from __future__ import annotations
 from datetime import datetime
 from typing import Iterable
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from llobot.chats.thread import ChatThread
 from llobot.utils.zones import Zoning
 from llobot.utils.fs import data_home
@@ -20,7 +20,7 @@ class ChatHistory:
     Chat histories are organized into zones, which are relative paths.
     Within each zone, chats are stored by timestamp.
     """
-    def add(self, zone: Path, time: datetime, chat: ChatThread):
+    def add(self, zone: PurePosixPath, time: datetime, chat: ChatThread):
         """
         Adds a chat to the history.
 
@@ -31,7 +31,7 @@ class ChatHistory:
         """
         pass
 
-    def scatter(self, zones: Iterable[Path], time: datetime, chat: ChatThread):
+    def scatter(self, zones: Iterable[PurePosixPath], time: datetime, chat: ChatThread):
         """
         Adds the same chat to multiple zones.
 
@@ -45,7 +45,7 @@ class ChatHistory:
         for zone in zones:
             self.add(zone, time, chat)
 
-    def remove(self, zone: Path, time: datetime):
+    def remove(self, zone: PurePosixPath, time: datetime):
         """
         Removes a chat from the history.
 
@@ -55,7 +55,7 @@ class ChatHistory:
         """
         pass
 
-    def read(self, zone: Path, time: datetime) -> ChatThread | None:
+    def read(self, zone: PurePosixPath, time: datetime) -> ChatThread | None:
         """
         Reads a specific chat from the history.
 
@@ -68,7 +68,7 @@ class ChatHistory:
         """
         return None
 
-    def contains(self, zone: Path, time: datetime) -> bool:
+    def contains(self, zone: PurePosixPath, time: datetime) -> bool:
         """
         Checks if a specific chat exists in the history.
 
@@ -81,7 +81,7 @@ class ChatHistory:
         """
         return self.read(zone, time) is not None
 
-    def recent(self, zone: Path, cutoff: datetime | None = None) -> Iterable[tuple[datetime, ChatThread]]:
+    def recent(self, zone: PurePosixPath, cutoff: datetime | None = None) -> Iterable[tuple[datetime, ChatThread]]:
         """
         Retrieves recent chats from a zone, newest first.
 
@@ -94,7 +94,7 @@ class ChatHistory:
         """
         return []
 
-    def last(self, zone: Path, cutoff: datetime | None = None) -> tuple[datetime | None, ChatThread | None]:
+    def last(self, zone: PurePosixPath, cutoff: datetime | None = None) -> tuple[datetime | None, ChatThread | None]:
         """
         Retrieves the most recent chat from a zone.
 

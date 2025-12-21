@@ -10,7 +10,7 @@ details
     An implementation of `DocumentFormat` using HTML `<details>` tags.
 """
 from __future__ import annotations
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.chats.thread import ChatThread
 from llobot.formats.affirmations import affirmation_turn
 
@@ -19,7 +19,7 @@ class DocumentFormat:
     Base class for document formats that handle document serialization.
     """
 
-    def render(self, path: Path, content: str) -> str:
+    def render(self, path: PurePosixPath, content: str) -> str:
         """
         Renders a document into a string representation.
 
@@ -32,7 +32,7 @@ class DocumentFormat:
         """
         raise NotImplementedError
 
-    def render_chat(self, path: Path, content: str) -> ChatThread:
+    def render_chat(self, path: PurePosixPath, content: str) -> ChatThread:
         """
         Renders a document as a chat thread.
 

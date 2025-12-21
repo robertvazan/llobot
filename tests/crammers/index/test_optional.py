@@ -1,4 +1,4 @@
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.chats.builder import ChatBuilder
 from llobot.crammers.index.optional import OptionalIndexCrammer
 from llobot.formats.indexes import IndexFormat
@@ -14,7 +14,7 @@ def test_cram_fits():
     crammer = OptionalIndexCrammer(index_format=MockIndexFormat())
     builder = ChatBuilder()
     builder.budget = 1000
-    knowledge = Knowledge({Path("file.txt"): "content"})
+    knowledge = Knowledge({PurePosixPath("file.txt"): "content"})
 
     added = crammer.cram(builder, knowledge)
     assert added == knowledge.keys()
@@ -25,7 +25,7 @@ def test_cram_does_not_fit():
     crammer = OptionalIndexCrammer(index_format=MockIndexFormat())
     builder = ChatBuilder()
     builder.budget = 10 # Too small
-    knowledge = Knowledge({Path("file.txt"): "content"})
+    knowledge = Knowledge({PurePosixPath("file.txt"): "content"})
 
     added = crammer.cram(builder, knowledge)
     assert added == KnowledgeIndex()

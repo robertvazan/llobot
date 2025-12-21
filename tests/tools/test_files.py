@@ -1,5 +1,5 @@
 import pytest
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from textwrap import dedent
 from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
@@ -48,12 +48,12 @@ def test_file_tool_slice_and_parse(env: Environment):
 
     call = tool.parse(text)
     assert isinstance(call, FileToolCall)
-    assert call._path == Path("myproject/foo.txt")
+    assert call._path == PurePosixPath("myproject/foo.txt")
     assert call._content == "content\nof the file\n"
 
     call.execute(env)
     project = env[ProjectEnv].union
-    assert project.read(Path("myproject/foo.txt")) == "content\nof the file\n"
+    assert project.read(PurePosixPath("myproject/foo.txt")) == "content\nof the file\n"
 
     log = env[ToolEnv].flush_log()
     assert "Writing myproject/foo.txt..." in log
@@ -77,7 +77,7 @@ def test_file_tool_slice_extra_whitespace(env: Environment):
 
     call = tool.parse(text)
     assert isinstance(call, FileToolCall)
-    assert call._path == Path("myproject/bar.py")
+    assert call._path == PurePosixPath("myproject/bar.py")
     assert call._content == 'print("hello")\n'
 
 def test_file_tool_no_match():
@@ -100,9 +100,9 @@ def test_file_tool_empty_code_block(env: Environment):
 
     call = tool.parse(text)
     assert isinstance(call, FileToolCall)
-    assert call._path == Path("myproject/empty.txt")
+    assert call._path == PurePosixPath("myproject/empty.txt")
     assert call._content == ""
 
     call.execute(env)
     project = env[ProjectEnv].union
-    assert project.read(Path("myproject/empty.txt")) == ""
+    assert project.read(PurePosixPath("myproject/empty.txt")) == ""

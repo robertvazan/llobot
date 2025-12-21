@@ -2,8 +2,9 @@
 Knowledge management system for llobot.
 
 This module provides the core Knowledge class and directory loading functionality.
-Knowledge represents a collection of documents indexed by Path, supporting various
-operations like filtering, transformation, and combination with other knowledge sets.
+Knowledge represents a collection of documents indexed by PurePosixPath, supporting
+various operations like filtering, transformation, and combination with other knowledge
+sets.
 
 Submodules and Subpackages
 ---------------------------
@@ -28,29 +29,32 @@ resolver
     `KnowledgeResolver` for efficient, proximity-based path resolution.
 """
 from __future__ import annotations
-from pathlib import Path
+from pathlib import PurePosixPath
 from typing import Callable, Iterator
 from llobot.utils.fs import read_document
 from llobot.utils.values import ValueTypeMixin
 
 class Knowledge(ValueTypeMixin):
     """
-    An immutable collection of documents, indexed by `pathlib.Path`.
+    An immutable collection of documents, indexed by `pathlib.PurePosixPath`.
 
     Knowledge objects behave like a read-only dictionary mapping paths to
     their string content. They support various operations for filtering,
     transforming, and combining knowledge bases.
     """
-    _documents: dict[Path, str]
+    _documents: dict[PurePosixPath, str]
 
-    def __init__(self, documents: dict[Path, str] = {}):
+    def __init__(self, documents: dict[PurePosixPath, str] = {}):
         """
         Initializes a new Knowledge object.
 
         Args:
             documents: A dictionary of paths and their content.
         """
-        self._documents = dict(documents)
+        self._documents = {PurePosixPath(p): c for p, c in documents.items()}
+        for path in self._documents:
+            if path.is_absolute():
+                raise ValueError(f"Path must be relative: {path}")
 
     def __repr__(self) -> str:
         return str(self.keys())
@@ -71,25 +75,25 @@ class Knowledge(ValueTypeMixin):
     def __bool__(self) -> bool:
         return bool(self._documents)
 
-    def __contains__(self, path: Path | str) -> bool:
-        return Path(path) in self._documents
+    def __contains__(self, path: PurePosixPath | str) -> bool:
+        return PurePosixPath(path) in self._documents
 
-    def __getitem__(self, path: Path) -> str:
+    def __getitem__(self, path: PurePosixPath) -> str:
         """
         Gets the content of a document. Returns an empty string if not found.
         """
         return self._documents.get(path, '')
 
-    def __iter__(self) -> Iterator[(Path, str)]:
+    def __iter__(self) -> Iterator[(PurePosixPath, str)]:
         return iter(self._documents.items())
 
-    def transform(self, operation: Callable[[Path, str], str]) -> Knowledge:
+    def transform(self, operation: Callable[[PurePosixPath, str], str]) -> Knowledge:
         """
         Creates a new `Knowledge` object by applying an operation to each document.
         """
         return Knowledge({path: operation(path, content) for path, content in self})
 
-    def __and__(self, subset: 'KnowledgeSubset' | str | Path | 'KnowledgeIndex' | 'KnowledgeRanking' | 'KnowledgeScores') -> Knowledge:
+    def __and__(self, subset: 'KnowledgeSubset' | str | PurePosixPath | 'KnowledgeIndex' | 'KnowledgeRanking' | 'KnowledgeScores') -> Knowledge:
         """
         Filters the knowledge, keeping only documents in the given subset.
         """
@@ -103,27 +107,27 @@ class Knowledge(ValueTypeMixin):
         """
         return Knowledge(self._documents | addition._documents)
 
-    def __sub__(self, subset: 'KnowledgeSubset' | str | Path | 'KnowledgeIndex' | Path | 'KnowledgeRanking' | 'KnowledgeScores') -> Knowledge:
+    def __sub__(self, subset: 'KnowledgeSubset' | str | PurePosixPath | 'KnowledgeIndex' | PurePosixPath | 'KnowledgeRanking' | 'KnowledgeScores') -> Knowledge:
         """
         Filters the knowledge, removing documents in the given subset.
         """
         from llobot.knowledge.subsets import coerce_subset
         return self & ~coerce_subset(subset)
 
-    def __rtruediv__(self, prefix: Path | str) -> Knowledge:
+    def __rtruediv__(self, prefix: PurePosixPath | str) -> Knowledge:
         """
         Creates a new `Knowledge` with a prefix prepended to all paths.
         """
-        prefix = Path(prefix)
+        prefix = PurePosixPath(prefix)
         return Knowledge({prefix/path: content for path, content in self})
 
-    def __truediv__(self, subtree: Path | str) -> Knowledge:
+    def __truediv__(self, subtree: PurePosixPath | str) -> Knowledge:
         """
         Creates a new `Knowledge` with a prefix stripped from all paths.
 
         Only paths within the `subtree` are kept.
         """
-        subtree = Path(subtree)
+        subtree = PurePosixPath(subtree)
         return Knowledge({path.relative_to(subtree): content for path, content in self if path.is_relative_to(subtree)})
 
 __all__ = [

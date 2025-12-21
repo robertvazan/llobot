@@ -2,7 +2,7 @@
 Index format that groups files by directory.
 """
 from __future__ import annotations
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.formats.indexes import IndexFormat
 from llobot.knowledge import Knowledge
 from llobot.knowledge.ranking.rankers import KnowledgeRanker, standard_ranker
@@ -51,7 +51,7 @@ class GroupedIndexFormat(IndexFormat, ValueTypeMixin):
             lines = []
 
             # Add header unless this is root with base path '.'
-            if subtree.base != Path('.'):
+            if subtree.base != PurePosixPath('.'):
                 lines.append(f'In {subtree.base}:')
 
             # Add files

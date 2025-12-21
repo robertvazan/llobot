@@ -1,4 +1,4 @@
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.knowledge.subsets.standard import (
     ancillary_subset,
     blacklist_subset,
@@ -9,34 +9,34 @@ from llobot.knowledge.subsets.standard import (
 
 def test_ancillary_subset():
     ancillary = ancillary_subset()
-    assert Path('test/some_test.py') in ancillary
-    assert Path('resources/data.xml') in ancillary
-    assert Path('jest.config.js') in ancillary
-    assert Path('README.md') not in ancillary
-    assert Path('.gitignore') in ancillary
+    assert PurePosixPath('test/some_test.py') in ancillary
+    assert PurePosixPath('resources/data.xml') in ancillary
+    assert PurePosixPath('jest.config.js') in ancillary
+    assert PurePosixPath('README.md') not in ancillary
+    assert PurePosixPath('.gitignore') in ancillary
 
 def test_blacklist_subset():
     blacklist = blacklist_subset()
-    assert Path('.git/config') in blacklist
-    assert Path('node_modules/dep/index.js') in blacklist
-    assert Path('target/classes/Main.class') in blacklist
-    assert Path('src/main.py') not in blacklist
+    assert PurePosixPath('.git/config') in blacklist
+    assert PurePosixPath('node_modules/dep/index.js') in blacklist
+    assert PurePosixPath('target/classes/Main.class') in blacklist
+    assert PurePosixPath('src/main.py') not in blacklist
 
 def test_boilerplate_subset():
     boilerplate = boilerplate_subset()
-    assert Path('.gitignore') in boilerplate
-    assert Path('LICENSE') in boilerplate
-    assert Path('README.md') not in boilerplate
+    assert PurePosixPath('.gitignore') in boilerplate
+    assert PurePosixPath('LICENSE') in boilerplate
+    assert PurePosixPath('README.md') not in boilerplate
 
 def test_overviews_subset():
     overviews = overviews_subset()
-    assert Path('README.md') in overviews
-    assert Path('__init__.py') in overviews
-    assert Path('pom.xml') in overviews
-    assert Path('src/main.py') not in overviews
+    assert PurePosixPath('README.md') in overviews
+    assert PurePosixPath('__init__.py') in overviews
+    assert PurePosixPath('pom.xml') in overviews
+    assert PurePosixPath('src/main.py') not in overviews
 
 def test_whitelist_subset():
     whitelist = whitelist_subset()
-    assert Path('src/main.py') in whitelist
-    assert Path('README.md') in whitelist
-    assert Path('image.png') not in whitelist
+    assert PurePosixPath('src/main.py') in whitelist
+    assert PurePosixPath('README.md') in whitelist
+    assert PurePosixPath('image.png') not in whitelist

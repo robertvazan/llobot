@@ -1,6 +1,6 @@
 """A project library that filters keys before lookup."""
 from __future__ import annotations
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.projects import Project
 from llobot.projects.library import ProjectLibrary
 from llobot.knowledge.subsets import KnowledgeSubset
@@ -41,7 +41,7 @@ class FilteredProjectLibrary(ProjectLibrary, ValueTypeMixin):
             or not in the whitelist.
         """
         try:
-            path = Path(key)
+            path = PurePosixPath(key)
             if path.is_absolute() or '..' in path.parts:
                 return []
         except Exception:

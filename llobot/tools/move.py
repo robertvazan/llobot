@@ -2,7 +2,7 @@
 Tool for moving files.
 """
 from __future__ import annotations
-from pathlib import Path
+from pathlib import PurePosixPath
 import re
 from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
@@ -16,10 +16,10 @@ class MoveToolCall(ToolCall):
     """
     A tool call for moving a file.
     """
-    _source: Path
-    _destination: Path
+    _source: PurePosixPath
+    _destination: PurePosixPath
 
-    def __init__(self, source: Path, destination: Path):
+    def __init__(self, source: PurePosixPath, destination: PurePosixPath):
         self._source = source
         self._destination = destination
 
@@ -48,7 +48,13 @@ class MoveTool(FencedTool):
     def parse_content(self, source: str) -> ToolCall:
         match = _MV_COMMAND_RE.fullmatch(source)
         assert match, "source for parse_content() must be valid"
-        return MoveToolCall(Path(match.group(1)), Path(match.group(2)))
+        source_path = PurePosixPath(match.group(1))
+        dest_path = PurePosixPath(match.group(2))
+        if source_path.is_absolute():
+            raise ValueError(f"Source path must be relative: {source_path}")
+        if dest_path.is_absolute():
+            raise ValueError(f"Destination path must be relative: {dest_path}")
+        return MoveToolCall(source_path, dest_path)
 
 __all__ = [
     'MoveTool',

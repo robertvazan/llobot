@@ -1,4 +1,4 @@
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.chats.builder import ChatBuilder
 from llobot.crammers.knowledge.ranked import RankedKnowledgeCrammer
 from llobot.knowledge import Knowledge
@@ -9,8 +9,8 @@ from llobot.knowledge.subsets.empty import EmptySubset
 def test_cram_all_fit():
     """Tests cramming when all documents fit."""
     k = Knowledge({
-        Path("a.txt"): "aaa",
-        Path("b.txt"): "bbb",
+        PurePosixPath("a.txt"): "aaa",
+        PurePosixPath("b.txt"): "bbb",
     })
     crammer = RankedKnowledgeCrammer(
         ranker=LexicographicalRanker(),
@@ -29,9 +29,9 @@ def test_cram_some_fit():
     """Tests cramming when only some documents fit."""
     # Use long content to make budget calculations predictable
     k = Knowledge({
-        Path("a.txt"): "a" * 500,
-        Path("b.txt"): "b" * 500,
-        Path("c.txt"): "c" * 500,
+        PurePosixPath("a.txt"): "a" * 500,
+        PurePosixPath("b.txt"): "b" * 500,
+        PurePosixPath("c.txt"): "c" * 500,
     })
     # Lexicographical ranker will order them a, b, c
     crammer = RankedKnowledgeCrammer(
@@ -46,9 +46,9 @@ def test_cram_some_fit():
 
     added = crammer.cram(builder, k)
     assert len(added) == 2
-    assert Path("a.txt") in added
-    assert Path("b.txt") in added
-    assert Path("c.txt") not in added
+    assert PurePosixPath("a.txt") in added
+    assert PurePosixPath("b.txt") in added
+    assert PurePosixPath("c.txt") not in added
     chat = builder.build()
     assert any("File: a.txt" in msg.content for msg in chat)
     assert any("File: b.txt" in msg.content for msg in chat)
@@ -57,8 +57,8 @@ def test_cram_some_fit():
 def test_cram_refinement():
     """Tests the iterative refinement phase of cramming."""
     k = Knowledge({
-        Path("a.txt"): "a" * 500,
-        Path("b.txt"): "b" * 500,
+        PurePosixPath("a.txt"): "a" * 500,
+        PurePosixPath("b.txt"): "b" * 500,
     })
     # Lexicographical ranker will order them a, b
     crammer = RankedKnowledgeCrammer(
@@ -72,23 +72,23 @@ def test_cram_refinement():
 
     added = crammer.cram(builder, k)
     assert len(added) == 1
-    assert Path("a.txt") in added
-    assert Path("b.txt") not in added
+    assert PurePosixPath("a.txt") in added
+    assert PurePosixPath("b.txt") not in added
 
 def test_cram_with_blacklist():
     """Tests that blacklisted documents are not included."""
     k = Knowledge({
-        Path("a.txt"): "aaa",
-        Path("b.txt"): "bbb",
+        PurePosixPath("a.txt"): "aaa",
+        PurePosixPath("b.txt"): "bbb",
     })
     crammer = RankedKnowledgeCrammer(
         ranker=LexicographicalRanker(),
-        blacklist=KnowledgeRanking([Path("a.txt")]) # blacklist a.txt
+        blacklist=KnowledgeRanking([PurePosixPath("a.txt")]) # blacklist a.txt
     )
     builder = ChatBuilder()
     builder.budget = 1000
 
     added = crammer.cram(builder, k)
     assert len(added) == 1
-    assert Path("b.txt") in added
-    assert Path("a.txt") not in added
+    assert PurePosixPath("b.txt") in added
+    assert PurePosixPath("a.txt") not in added

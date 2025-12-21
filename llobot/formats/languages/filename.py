@@ -2,7 +2,7 @@
 Language mapping based on filename.
 """
 from __future__ import annotations
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.formats.languages import LanguageMapping
 from llobot.utils.values import ValueTypeMixin
 
@@ -32,7 +32,7 @@ class FilenameLanguageMapping(LanguageMapping, ValueTypeMixin):
         """
         self._filenames = LANGUAGES_BY_FILENAME if filenames is None else filenames
 
-    def resolve(self, path: Path) -> str:
+    def resolve(self, path: PurePosixPath) -> str:
         """
         Resolves the language from the file's name.
 

@@ -1,4 +1,4 @@
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.knowledge import Knowledge
 from llobot.knowledge.ranking import KnowledgeRanking
 from llobot.knowledge.ranking.lexicographical import LexicographicalRanker
@@ -9,9 +9,9 @@ from llobot.knowledge.scores.scorers import KnowledgeScorer, standard_scorer
 from llobot.utils.values import ValueTypeMixin
 
 SCORES = KnowledgeScores({
-    Path('a.txt'): 10,
-    Path('b.txt'): 30,
-    Path('c.txt'): 20,
+    PurePosixPath('a.txt'): 10,
+    PurePosixPath('b.txt'): 30,
+    PurePosixPath('c.txt'): 20,
 })
 KNOWLEDGE = Knowledge({p: '' for p in SCORES.keys()})
 
@@ -21,33 +21,33 @@ class MockScorer(KnowledgeScorer, ValueTypeMixin):
 
 def test_rank_ascending_no_initial():
     ranking = rank_ascending(SCORES)
-    assert ranking == KnowledgeRanking([Path('a.txt'), Path('c.txt'), Path('b.txt')])
+    assert ranking == KnowledgeRanking([PurePosixPath('a.txt'), PurePosixPath('c.txt'), PurePosixPath('b.txt')])
 
 def test_rank_descending_no_initial():
     ranking = rank_descending(SCORES)
-    assert ranking == KnowledgeRanking([Path('b.txt'), Path('c.txt'), Path('a.txt')])
+    assert ranking == KnowledgeRanking([PurePosixPath('b.txt'), PurePosixPath('c.txt'), PurePosixPath('a.txt')])
 
 def test_rank_ascending_with_initial():
-    initial = KnowledgeRanking([Path('c.txt'), Path('b.txt'), Path('a.txt')])
+    initial = KnowledgeRanking([PurePosixPath('c.txt'), PurePosixPath('b.txt'), PurePosixPath('a.txt')])
     ranking = rank_ascending(SCORES, initial=initial)
-    assert ranking == KnowledgeRanking([Path('a.txt'), Path('c.txt'), Path('b.txt')])
+    assert ranking == KnowledgeRanking([PurePosixPath('a.txt'), PurePosixPath('c.txt'), PurePosixPath('b.txt')])
 
 def test_rank_descending_with_initial():
-    initial = KnowledgeRanking([Path('c.txt'), Path('b.txt'), Path('a.txt')])
+    initial = KnowledgeRanking([PurePosixPath('c.txt'), PurePosixPath('b.txt'), PurePosixPath('a.txt')])
     ranking = rank_descending(SCORES, initial=initial)
-    assert ranking == KnowledgeRanking([Path('b.txt'), Path('c.txt'), Path('a.txt')])
+    assert ranking == KnowledgeRanking([PurePosixPath('b.txt'), PurePosixPath('c.txt'), PurePosixPath('a.txt')])
 
 def test_rank_ascending_stable_sort():
-    scores = KnowledgeScores({Path('a.txt'): 10, Path('b.txt'): 20, Path('c.txt'): 10})
-    initial = KnowledgeRanking([Path('c.txt'), Path('a.txt'), Path('b.txt')])
+    scores = KnowledgeScores({PurePosixPath('a.txt'): 10, PurePosixPath('b.txt'): 20, PurePosixPath('c.txt'): 10})
+    initial = KnowledgeRanking([PurePosixPath('c.txt'), PurePosixPath('a.txt'), PurePosixPath('b.txt')])
     ranking = rank_ascending(scores, initial=initial)
     # c.txt comes before a.txt in initial, so it should be first among equals
-    assert ranking == KnowledgeRanking([Path('c.txt'), Path('a.txt'), Path('b.txt')])
+    assert ranking == KnowledgeRanking([PurePosixPath('c.txt'), PurePosixPath('a.txt'), PurePosixPath('b.txt')])
 
 def test_ascending_ranker():
     ranker = AscendingRanker(scorer=MockScorer(), tiebreaker=LexicographicalRanker())
     ranking = ranker.rank(KNOWLEDGE)
-    assert ranking == KnowledgeRanking([Path('a.txt'), Path('c.txt'), Path('b.txt')])
+    assert ranking == KnowledgeRanking([PurePosixPath('a.txt'), PurePosixPath('c.txt'), PurePosixPath('b.txt')])
     # Test value semantics
     default_tiebreaker = PreorderRanker(tiebreaker=LexicographicalRanker())
     assert AscendingRanker(scorer=MockScorer()) == AscendingRanker(scorer=MockScorer(), tiebreaker=default_tiebreaker)
@@ -58,7 +58,7 @@ def test_ascending_ranker():
 def test_descending_ranker():
     ranker = DescendingRanker(scorer=MockScorer(), tiebreaker=LexicographicalRanker())
     ranking = ranker.rank(KNOWLEDGE)
-    assert ranking == KnowledgeRanking([Path('b.txt'), Path('c.txt'), Path('a.txt')])
+    assert ranking == KnowledgeRanking([PurePosixPath('b.txt'), PurePosixPath('c.txt'), PurePosixPath('a.txt')])
     # Test value semantics
     default_tiebreaker = PreorderRanker(tiebreaker=LexicographicalRanker())
     assert DescendingRanker(scorer=MockScorer()) == DescendingRanker(scorer=MockScorer(), tiebreaker=default_tiebreaker)

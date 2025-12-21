@@ -2,7 +2,7 @@
 Document format using HTML details blocks.
 """
 from __future__ import annotations
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.formats.documents import DocumentFormat
 from llobot.formats.languages import LanguageMapping, standard_language_mapping
 from llobot.utils.text import markdown_code_details
@@ -32,7 +32,7 @@ class DetailsDocumentFormat(DocumentFormat, ValueTypeMixin):
         self._languages = languages
         self._quad_backticks = quad_backticks
 
-    def render(self, path: Path, content: str) -> str:
+    def render(self, path: PurePosixPath, content: str) -> str:
         """
         Renders a document using HTML details/summary tags with a code block inside.
         """

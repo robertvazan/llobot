@@ -1,6 +1,6 @@
 """A project library that finds projects in a home directory."""
 from __future__ import annotations
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from llobot.projects import Project
 from llobot.projects.directory import DirectoryProject
 from llobot.projects.library import ProjectLibrary
@@ -61,7 +61,7 @@ class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
             parent directories. Returns an empty list if no directory is found.
         """
         try:
-            path = Path(key)
+            path = PurePosixPath(key)
             if path.is_absolute() or '..' in path.parts:
                 return []
         except Exception:
@@ -78,7 +78,7 @@ class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
             )]
             if self._parents:
                 current = path
-                while current.parent != Path('.'):
+                while current.parent != PurePosixPath('.'):
                     current = current.parent
                     parent_dir = self._home / current
                     parent_project = DirectoryProject(

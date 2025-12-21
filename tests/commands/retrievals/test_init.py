@@ -1,4 +1,4 @@
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.commands.retrievals import flush_retrieval_commands
 from llobot.environments import Environment
 from llobot.environments.knowledge import KnowledgeEnv
@@ -16,9 +16,9 @@ class ReversedLexicographicalRanker(KnowledgeRanker):
 
 
 KNOWLEDGE = Knowledge({
-    Path('a.txt'): 'content a',
-    Path('b.txt'): 'content b',
-    Path('c.txt'): 'content c',
+    PurePosixPath('a.txt'): 'content a',
+    PurePosixPath('b.txt'): 'content b',
+    PurePosixPath('c.txt'): 'content c',
 })
 
 def create_env() -> Environment:
@@ -34,7 +34,7 @@ def test_no_retrievals():
 
 def test_one_retrieval():
     env = create_env()
-    env[RetrievalsEnv].add(Path('a.txt'))
+    env[RetrievalsEnv].add(PurePosixPath('a.txt'))
     flush_retrieval_commands(env)
     context = env[ContextEnv]
     assert context.populated
@@ -45,8 +45,8 @@ def test_one_retrieval():
 
 def test_multiple_retrievals():
     env = create_env()
-    env[RetrievalsEnv].add(Path('b.txt'))
-    env[RetrievalsEnv].add(Path('a.txt'))
+    env[RetrievalsEnv].add(PurePosixPath('b.txt'))
+    env[RetrievalsEnv].add(PurePosixPath('a.txt'))
     flush_retrieval_commands(env)
     context = env[ContextEnv]
     context_chat = context.build()
@@ -62,9 +62,9 @@ def test_multiple_retrievals():
 
 def test_ranking_order():
     env = create_env()
-    env[RetrievalsEnv].add(Path('a.txt'))
-    env[RetrievalsEnv].add(Path('c.txt'))
-    env[RetrievalsEnv].add(Path('b.txt'))
+    env[RetrievalsEnv].add(PurePosixPath('a.txt'))
+    env[RetrievalsEnv].add(PurePosixPath('c.txt'))
+    env[RetrievalsEnv].add(PurePosixPath('b.txt'))
     flush_retrieval_commands(env, ranker=ReversedLexicographicalRanker())
     context = env[ContextEnv]
     context_chat = context.build()
@@ -82,11 +82,11 @@ def test_ranking_order():
 
 def test_duplicate_retrieval_prevention():
     env = create_env()
-    env[RetrievalsEnv].add(Path('a.txt'))
+    env[RetrievalsEnv].add(PurePosixPath('a.txt'))
     flush_retrieval_commands(env)
     context = env[ContextEnv]
     initial_messages_count = len(context.build())
-    env[RetrievalsEnv].add(Path('a.txt'))
+    env[RetrievalsEnv].add(PurePosixPath('a.txt'))
     flush_retrieval_commands(env)
     assert len(context.build()) == initial_messages_count
     assert not env[RetrievalsEnv].get()

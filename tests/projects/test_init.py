@@ -1,4 +1,4 @@
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from llobot.projects.directory import DirectoryProject
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
@@ -18,7 +18,7 @@ def test_project_read_all(tmp_path: Path):
         blacklist=FilenameSubset("blacklisted.txt"),
         whitelist=SuffixSubset(".txt"),
     )
-    prefix = Path(tmp_path.name)
+    prefix = PurePosixPath(tmp_path.name)
 
     expected_knowledge = Knowledge({
         prefix / "file1.txt": "content1\n",

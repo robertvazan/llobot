@@ -4,7 +4,7 @@ An implementation of `ChatHistory` that stores chats as Markdown files.
 from __future__ import annotations
 import logging
 import re
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from datetime import datetime
 from typing import Iterable
 from llobot.utils.zones import Zoning, coerce_zoning
@@ -35,13 +35,13 @@ class MarkdownChatHistory(ChatHistory, ValueTypeMixin):
         """
         self._location = coerce_zoning(location)
 
-    def _path(self, zone: Path, time: datetime) -> Path:
+    def _path(self, zone: PurePosixPath, time: datetime) -> Path:
         return format_history_path(self._location[zone], time, '.md')
 
-    def add(self, zone: Path, time: datetime, chat: ChatThread):
+    def add(self, zone: PurePosixPath, time: datetime, chat: ChatThread):
         save_chat_to_markdown(self._path(zone, time), chat)
 
-    def scatter(self, zones: Iterable[Path], time: datetime, chat: ChatThread):
+    def scatter(self, zones: Iterable[PurePosixPath], time: datetime, chat: ChatThread):
         zones = list(zones)
         if not zones:
             return
@@ -57,17 +57,17 @@ class MarkdownChatHistory(ChatHistory, ValueTypeMixin):
                 _logger.warning(f"Failed to create hardlink from {source_path} to {target_path}: {ex}")
                 self.add(zone, time, chat)
 
-    def remove(self, zone: Path, time: datetime):
+    def remove(self, zone: PurePosixPath, time: datetime):
         self._path(zone, time).unlink(missing_ok=True)
 
-    def read(self, zone: Path, time: datetime) -> ChatThread | None:
+    def read(self, zone: PurePosixPath, time: datetime) -> ChatThread | None:
         path = self._path(zone, time)
         return load_chat_from_markdown(path) if path.exists() else None
 
-    def contains(self, zone: Path, time: datetime) -> bool:
+    def contains(self, zone: PurePosixPath, time: datetime) -> bool:
         return self._path(zone, time).exists()
 
-    def recent(self, zone: Path, cutoff: datetime | None = None) -> Iterable[tuple[datetime, ChatThread]]:
+    def recent(self, zone: PurePosixPath, cutoff: datetime | None = None) -> Iterable[tuple[datetime, ChatThread]]:
         for path in recent_history_paths(self._location[zone], '.md', cutoff):
             yield (parse_history_path(path), load_chat_from_markdown(path))
 

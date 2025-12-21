@@ -4,7 +4,7 @@ Crawlers for Java source code.
 from __future__ import annotations
 from functools import cache
 import re
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.utils.values import ValueTypeMixin
 from llobot.knowledge import Knowledge
 from llobot.knowledge.graphs import KnowledgeGraph
@@ -51,7 +51,7 @@ class JavaPascalCaseCrawler(KnowledgeCrawler, ValueTypeMixin):
                 for name in names:
                     # Require at least one lowercase letter to avoid matching enums and constants.
                     if not name.isupper():
-                        target = resolver.resolve_near(path, Path(f'{name}.java'))
+                        target = resolver.resolve_near(path, PurePosixPath(f'{name}.java'))
                         if target:
                             builder.add(path, target)
         return builder.build()

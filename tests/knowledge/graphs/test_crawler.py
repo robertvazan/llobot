@@ -1,4 +1,4 @@
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.knowledge import Knowledge
 from llobot.knowledge.graphs import KnowledgeGraph
 from llobot.knowledge.graphs.builder import KnowledgeGraphBuilder
@@ -14,7 +14,7 @@ class SimpleCrawler(KnowledgeCrawler, ValueTypeMixin):
         self._target = target
     def crawl(self, knowledge: Knowledge) -> KnowledgeGraph:
         builder = KnowledgeGraphBuilder()
-        builder.add(Path(self._source), Path(self._target))
+        builder.add(PurePosixPath(self._source), PurePosixPath(self._target))
         return builder.build()
 
 def test_or():
@@ -23,8 +23,8 @@ def test_or():
     chain = c1 | c2
     graph = chain.crawl(Knowledge())
     assert len(graph) == 2
-    assert list(graph[Path('a')].sorted()) == [Path('b')]
-    assert list(graph[Path('b')].sorted()) == [Path('c')]
+    assert list(graph[PurePosixPath('a')].sorted()) == [PurePosixPath('b')]
+    assert list(graph[PurePosixPath('b')].sorted()) == [PurePosixPath('c')]
 
 def test_dummy_crawler():
     crawler = DummyCrawler()

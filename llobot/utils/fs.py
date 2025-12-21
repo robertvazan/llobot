@@ -4,7 +4,7 @@ Filesystem utilities.
 This module provides functions for interacting with the filesystem, including
 path manipulation, file I/O, and path component extraction.
 """
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from llobot.utils.text import normalize_document
 
 def user_home() -> Path:
@@ -86,7 +86,7 @@ def read_document(path: Path) -> str:
     """
     return normalize_document(read_text(path))
 
-def path_stem(path: Path | str) -> str:
+def path_stem(path: Path | PurePosixPath | str) -> str:
     """
     Gets the stem of a path, removing all extensions.
 
@@ -100,7 +100,7 @@ def path_stem(path: Path | str) -> str:
     Returns:
         The stem of the path.
     """
-    path = Path(path)
+    path = PurePosixPath(path)
     while path.suffix:
         path = path.with_suffix('')
     return path.name

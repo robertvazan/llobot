@@ -2,9 +2,9 @@
 A project wrapper that exposes only files directly under prefixes.
 """
 from __future__ import annotations
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.projects import Project
-from llobot.projects.items import ProjectFile, ProjectItem
+from llobot.projects.items import ProjectItem
 from llobot.utils.values import ValueTypeMixin
 
 class ShallowProject(Project, ValueTypeMixin):
@@ -25,14 +25,14 @@ class ShallowProject(Project, ValueTypeMixin):
         self._project = project
 
     @property
-    def zones(self) -> set[Path]:
+    def zones(self) -> set[PurePosixPath]:
         return self._project.zones
 
     @property
-    def prefixes(self) -> set[Path]:
+    def prefixes(self) -> set[PurePosixPath]:
         return self._project.prefixes
 
-    def items(self, path: Path) -> list[ProjectItem]:
+    def items(self, path: PurePosixPath) -> list[ProjectItem]:
         """
         Returns a list of items if the path is a prefix.
 
@@ -43,11 +43,11 @@ class ShallowProject(Project, ValueTypeMixin):
             return self._project.items(path)
         return []
 
-    def _is_shallow_file(self, path: Path) -> bool:
+    def _is_shallow_file(self, path: PurePosixPath) -> bool:
         """Checks if a file path is directly under a project prefix."""
         return path.parent in self.prefixes
 
-    def read(self, path: Path) -> str | None:
+    def read(self, path: PurePosixPath) -> str | None:
         """Reads a file if it is directly under a project prefix."""
         if self._is_shallow_file(path):
             return self._project.read(path)
@@ -63,13 +63,13 @@ class ShallowProject(Project, ValueTypeMixin):
         """
         return self._is_shallow_file(item.path) and self._project.tracked(item)
 
-    def mutable(self, path: Path) -> bool:
+    def mutable(self, path: PurePosixPath) -> bool:
         """
         Checks if a path is mutable and directly under a project prefix.
         """
         return self._is_shallow_file(path) and self._project.mutable(path)
 
-    def write(self, path: Path, content: str):
+    def write(self, path: PurePosixPath, content: str):
         """
         Writes to a file if it is directly under a project prefix.
 
@@ -81,7 +81,7 @@ class ShallowProject(Project, ValueTypeMixin):
             raise PermissionError(f"Path is not shallow: {path}")
         self._project.write(path, content)
 
-    def remove(self, path: Path):
+    def remove(self, path: PurePosixPath):
         """
         Removes a file if it is directly under a project prefix.
 

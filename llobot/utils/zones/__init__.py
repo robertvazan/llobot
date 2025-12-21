@@ -19,13 +19,13 @@ wildcard
     Wildcard-based zoning.
 """
 from __future__ import annotations
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 
 # For validation of zone IDs.
 _ZONE_PART_RE = re.compile(r'^[a-zA-Z0-9_.-]+$')
 
-def validate_zone(zone: Path):
+def validate_zone(zone: PurePosixPath):
     """
     Validates that a zone ID is a valid relative path.
 
@@ -43,7 +43,7 @@ def validate_zone(zone: Path):
     """
     if zone.is_absolute():
         raise ValueError(f"Zone must be a relative path: {zone}")
-    if not zone.parts or zone == Path('.'):
+    if not zone.parts or zone == PurePosixPath('.'):
         raise ValueError("Zone must be a non-empty relative path other than '.'")
     for part in zone.parts:
         if part == '..':
@@ -53,7 +53,7 @@ def validate_zone(zone: Path):
 
 class Zoning:
     """Base class for zone resolvers."""
-    def resolve(self, zone: Path) -> Path:
+    def resolve(self, zone: PurePosixPath) -> Path:
         """
         Resolves a zone name to a filesystem path.
 
@@ -68,7 +68,7 @@ class Zoning:
         """
         raise NotImplementedError
 
-    def __getitem__(self, zone: Path) -> Path:
+    def __getitem__(self, zone: PurePosixPath) -> Path:
         """Convenience method to resolve a zone using dictionary-like access."""
         return self.resolve(zone)
 

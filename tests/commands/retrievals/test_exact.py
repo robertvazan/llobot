@@ -1,4 +1,4 @@
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.commands.retrievals.exact import handle_exact_retrieval_command
 from llobot.environments import Environment
 from llobot.environments.knowledge import KnowledgeEnv
@@ -7,9 +7,9 @@ from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 
 KNOWLEDGE = Knowledge({
-    Path('a/b.txt'): 'content',
-    Path('a/c.txt'): 'another',
-    Path('d.txt'): 'root file',
+    PurePosixPath('a/b.txt'): 'content',
+    PurePosixPath('a/c.txt'): 'another',
+    PurePosixPath('d.txt'): 'root file',
 })
 
 def create_env() -> Environment:
@@ -24,8 +24,8 @@ def test_no_match():
 
 def test_multiple_matches():
     knowledge = Knowledge({
-        Path('a/b.txt'): 'content',
-        Path('x/b.txt'): 'another content',
+        PurePosixPath('a/b.txt'): 'content',
+        PurePosixPath('x/b.txt'): 'another content',
     })
     env = Environment()
     env[KnowledgeEnv].set(knowledge)
@@ -45,12 +45,12 @@ def test_invalid_characters():
 def test_exact_match():
     env = create_env()
     assert handle_exact_retrieval_command('d.txt', env)
-    assert env[RetrievalsEnv].get() == KnowledgeIndex([Path('d.txt')])
+    assert env[RetrievalsEnv].get() == KnowledgeIndex([PurePosixPath('d.txt')])
 
 def test_absolute_path_match():
     env = create_env()
     assert handle_exact_retrieval_command('/a/b.txt', env)
-    assert env[RetrievalsEnv].get() == KnowledgeIndex([Path('a/b.txt')])
+    assert env[RetrievalsEnv].get() == KnowledgeIndex([PurePosixPath('a/b.txt')])
 
 def test_wildcard_is_ignored():
     env = create_env()

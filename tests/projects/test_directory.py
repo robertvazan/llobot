@@ -1,6 +1,6 @@
 import os
 import stat
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import pytest
 from llobot.projects.directory import DirectoryProject
 from llobot.knowledge import Knowledge
@@ -16,7 +16,7 @@ def test_directory_project_simple(tmp_path: Path):
     (tmp_path / "subdir" / "file3.py").write_text("content3")
 
     project = DirectoryProject(tmp_path)
-    prefix = Path(tmp_path.name)
+    prefix = PurePosixPath(tmp_path.name)
     assert project.zones == {prefix}
     assert project.prefixes == {prefix}
 
@@ -37,7 +37,7 @@ def test_directory_project_simple(tmp_path: Path):
 def test_directory_project_dot_prefix_fails(tmp_path: Path):
     (tmp_path / "file1.txt").write_text("content1")
     with pytest.raises(ValueError, match="Zone must be a non-empty relative path other than '.'"):
-        DirectoryProject(tmp_path, prefix=Path('.'))
+        DirectoryProject(tmp_path, prefix=PurePosixPath('.'))
 
 def test_directory_project_home_expansion():
     project = DirectoryProject('~/project', prefix='p')
@@ -46,8 +46,8 @@ def test_directory_project_home_expansion():
 def test_directory_project_custom_zones(tmp_path: Path):
     (tmp_path / "file1.txt").write_text("content1")
     project = DirectoryProject(tmp_path, zones={"my-proj-zone"})
-    prefix = Path(tmp_path.name)
-    assert project.zones == {Path("my-proj-zone")}
+    prefix = PurePosixPath(tmp_path.name)
+    assert project.zones == {PurePosixPath("my-proj-zone")}
     assert project.prefixes == {prefix}
     assert {file.path for file in project._walk(prefix)} == {prefix / 'file1.txt'}
 
@@ -61,21 +61,21 @@ def test_directory_project_filtering(tmp_path: Path):
 
     project = DirectoryProject(
         tmp_path,
-        prefix=Path('p'),
+        prefix=PurePosixPath('p'),
         whitelist=SuffixSubset(".txt"),
         blacklist=parse_pattern('**/blacklisted*')
     )
 
-    assert {file.path for file in project._walk(Path('p'))} == {Path('p/file1.txt')}
-    assert project.read_all() == Knowledge({Path('p/file1.txt'): 'content1\n'})
+    assert {file.path for file in project._walk(PurePosixPath('p'))} == {PurePosixPath('p/file1.txt')}
+    assert project.read_all() == Knowledge({PurePosixPath('p/file1.txt'): 'content1\n'})
 
 def test_items(tmp_path: Path):
     (tmp_path / "file.txt").write_text("content")
     (tmp_path / "subdir").mkdir()
     project = DirectoryProject(tmp_path)
-    prefix = Path(tmp_path.name)
+    prefix = PurePosixPath(tmp_path.name)
 
-    assert project.items(Path(tmp_path.name, 'nonexistent')) == []
+    assert project.items(PurePosixPath(tmp_path.name, 'nonexistent')) == []
 
     prefix_items = project.items(prefix)
     assert set(prefix_items) == {
@@ -89,34 +89,34 @@ def test_directory_project_mutable(tmp_path: Path):
     (project_dir / "file.txt").write_text("initial")
 
     project = DirectoryProject(project_dir, prefix="p", mutable=True)
-    assert project.mutable(Path("p/file.txt"))
-    assert not project.mutable(Path("q/file.txt"))
+    assert project.mutable(PurePosixPath("p/file.txt"))
+    assert not project.mutable(PurePosixPath("q/file.txt"))
 
     # Test write
-    project.write(Path("p/new_file.txt"), "new content")
+    project.write(PurePosixPath("p/new_file.txt"), "new content")
     assert (project_dir / "new_file.txt").read_text() == "new content"
 
     # Test update (via write)
-    project.write(Path("p/file.txt"), "updated")
+    project.write(PurePosixPath("p/file.txt"), "updated")
     assert (project_dir / "file.txt").read_text() == "updated"
 
     # Test remove
     assert (project_dir / "file.txt").exists()
-    project.remove(Path("p/file.txt"))
+    project.remove(PurePosixPath("p/file.txt"))
     assert not (project_dir / "file.txt").exists()
 
     # Test remove non-existent
     with pytest.raises(FileNotFoundError):
-        project.remove(Path("p/non_existent_file.txt"))
+        project.remove(PurePosixPath("p/non_existent_file.txt"))
 
     # Test remove directory
     (project_dir / "subdir").mkdir()
     with pytest.raises(IsADirectoryError):
-        project.remove(Path("p/subdir"))
+        project.remove(PurePosixPath("p/subdir"))
 
     # Test move
     (project_dir / "source.txt").write_text("move me")
-    project.move(Path("p/source.txt"), Path("p/dest.txt"))
+    project.move(PurePosixPath("p/source.txt"), PurePosixPath("p/dest.txt"))
     assert not (project_dir / "source.txt").exists()
     assert (project_dir / "dest.txt").read_text() == "move me"
 
@@ -127,7 +127,7 @@ def test_directory_project_mutable(tmp_path: Path):
     original_mode = executable_path.stat().st_mode
     assert os.access(executable_path, os.X_OK)
 
-    project.write(Path("p/executable.sh"), "#!/bin/bash\necho world")
+    project.write(PurePosixPath("p/executable.sh"), "#!/bin/bash\necho world")
     assert (project_dir / "executable.sh").read_text() == "#!/bin/bash\necho world"
     new_mode = executable_path.stat().st_mode
     assert stat.S_IMODE(new_mode) == stat.S_IMODE(original_mode)
@@ -140,7 +140,7 @@ def test_directory_project_mutable(tmp_path: Path):
     src_mode = executable_move_src_path.stat().st_mode
     assert os.access(executable_move_src_path, os.X_OK)
 
-    project.move(Path("p/executable_move_src.sh"), Path("p/executable_move_dest.sh"))
+    project.move(PurePosixPath("p/executable_move_src.sh"), PurePosixPath("p/executable_move_dest.sh"))
 
     executable_move_dest_path = project_dir / "executable_move_dest.sh"
     assert not executable_move_src_path.exists()
@@ -154,13 +154,13 @@ def test_directory_project_immutable_write_fails(tmp_path: Path):
     project_dir.mkdir()
 
     project = DirectoryProject(project_dir, prefix="p")
-    assert not project.mutable(Path("p/some_file.txt"))
+    assert not project.mutable(PurePosixPath("p/some_file.txt"))
 
     with pytest.raises(PermissionError):
-        project.write(Path("p/file.txt"), "content")
+        project.write(PurePosixPath("p/file.txt"), "content")
 
     with pytest.raises(PermissionError):
-        project.remove(Path("p/file.txt"))
+        project.remove(PurePosixPath("p/file.txt"))
 
 def test_directory_project_write_preserves_executable(tmp_path: Path):
     """
@@ -175,7 +175,7 @@ def test_directory_project_write_preserves_executable(tmp_path: Path):
     assert os.access(exe_path, os.X_OK)
 
     project = DirectoryProject(project_dir, prefix="p", mutable=True)
-    project.write(Path("p/run.sh"), "#!/bin/bash\necho world")
+    project.write(PurePosixPath("p/run.sh"), "#!/bin/bash\necho world")
 
     assert (project_dir / "run.sh").read_text() == "#!/bin/bash\necho world"
     new_mode = exe_path.stat().st_mode

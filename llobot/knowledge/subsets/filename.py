@@ -2,7 +2,7 @@
 A subset that matches paths by filename.
 """
 from __future__ import annotations
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.utils.values import ValueTypeMixin
 from llobot.knowledge.subsets import KnowledgeSubset
 
@@ -21,7 +21,7 @@ class FilenameSubset(KnowledgeSubset, ValueTypeMixin):
         """
         self._names = frozenset(names)
 
-    def contains(self, path: Path) -> bool:
+    def contains(self, path: PurePosixPath) -> bool:
         """
         Checks if the path's filename is in the set of specified names.
 

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import pytest
 from llobot.chats.markdown import MarkdownChatHistory
 from llobot.chats.thread import ChatThread
@@ -70,8 +70,8 @@ def test_zones_with_path_like_zone(tmp_path: Path):
     assert (tmp_path / 'test_role').exists()
 
     # Check if they have content
-    assert len(list(history.recent(Path('test_role/my/project')))) == 1
-    assert len(list(history.recent(Path('test_role')))) == 1
+    assert len(list(history.recent(PurePosixPath('test_role/my/project')))) == 1
+    assert len(list(history.recent(PurePosixPath('test_role')))) == 1
 
 def test_save_with_project_only(tmp_path: Path):
     history = MarkdownChatHistory(tmp_path)
@@ -135,11 +135,11 @@ def test_recent_merges_examples(tmp_path: Path):
     chat_role = ChatThread([ChatMessage(ChatIntent.PROMPT, "role prompt")])
     chat_both = ChatThread([ChatMessage(ChatIntent.PROMPT, "both prompt")])
 
-    history.add(Path('test_role/p1'), parse_time('20240101-120000'), chat_p1)
-    history.add(Path('test_role/p2'), parse_time('20240101-140000'), chat_p2)
-    history.add(Path('test_role'), parse_time('20240101-100000'), chat_role)
+    history.add(PurePosixPath('test_role/p1'), parse_time('20240101-120000'), chat_p1)
+    history.add(PurePosixPath('test_role/p2'), parse_time('20240101-140000'), chat_p2)
+    history.add(PurePosixPath('test_role'), parse_time('20240101-100000'), chat_role)
     # this will be in two zones, but recent should deduplicate it
-    history.scatter([Path('test_role/p1'), Path('test_role/p2')], parse_time('20240101-130000'), chat_both)
+    history.scatter([PurePosixPath('test_role/p1'), PurePosixPath('test_role/p2')], parse_time('20240101-130000'), chat_both)
 
     recent = [c[0].content for c in memory.recent(env)]
     assert recent == [

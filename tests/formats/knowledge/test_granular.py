@@ -1,13 +1,13 @@
 from __future__ import annotations
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.chats.intent import ChatIntent
 from llobot.knowledge import Knowledge
 from llobot.formats.knowledge.granular import GranularKnowledgeFormat
 
 def test_render_chat():
     knowledge = Knowledge({
-        Path('a.txt'): 'content a',
-        Path('b.txt'): 'content b',
+        PurePosixPath('a.txt'): 'content a',
+        PurePosixPath('b.txt'): 'content b',
     })
     fmt = GranularKnowledgeFormat()
     chat = fmt.render_chat(knowledge)
@@ -26,8 +26,8 @@ def test_render_chat_empty_knowledge():
 
 def test_render_string():
     knowledge = Knowledge({
-        Path('a.txt'): 'content a',
-        Path('b.txt'): 'content b',
+        PurePosixPath('a.txt'): 'content a',
+        PurePosixPath('b.txt'): 'content b',
     })
     fmt = GranularKnowledgeFormat()
     rendered = fmt.render(knowledge)

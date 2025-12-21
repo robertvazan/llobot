@@ -2,7 +2,7 @@
 A subset that is an intersection of two other subsets.
 """
 from __future__ import annotations
-from pathlib import Path
+from pathlib import PurePosixPath
 from llobot.utils.values import ValueTypeMixin
 from llobot.knowledge.subsets import KnowledgeSubset
 
@@ -30,7 +30,7 @@ class IntersectionSubset(KnowledgeSubset, ValueTypeMixin):
                 flattened.append(subset)
         self._subsets = tuple(flattened)
 
-    def contains(self, path: Path) -> bool:
+    def contains(self, path: PurePosixPath) -> bool:
         """
         Checks if a path is in all of the component subsets.
 

@@ -1,4 +1,4 @@
-from pathlib import Path
+from pathlib import PurePosixPath
 
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
@@ -9,42 +9,42 @@ from llobot.knowledge.ranking import (
 )
 
 KNOWLEDGE_INDEX = KnowledgeIndex([
-    Path("a/b/c.txt"),
-    Path("a/README.md"),
-    Path("main.py"),
-    Path("README.md"),
-    Path("a/b/__init__.py"),
+    PurePosixPath("a/b/c.txt"),
+    PurePosixPath("a/README.md"),
+    PurePosixPath("main.py"),
+    PurePosixPath("README.md"),
+    PurePosixPath("a/b/__init__.py"),
 ])
 
 KNOWLEDGE = Knowledge({path: "" for path in KNOWLEDGE_INDEX})
 
 
 def test_coerce_ranking_from_ranking():
-    ranking = KnowledgeRanking([Path("b"), Path("a")])
+    ranking = KnowledgeRanking([PurePosixPath("b"), PurePosixPath("a")])
     assert coerce_ranking(ranking) is ranking
 
 
 def test_coerce_ranking_from_index():
-    index = KnowledgeIndex([Path("b"), Path("a")])
+    index = KnowledgeIndex([PurePosixPath("b"), PurePosixPath("a")])
     ranking = coerce_ranking(index)
-    assert ranking == KnowledgeRanking([Path("a"), Path("b")])
+    assert ranking == KnowledgeRanking([PurePosixPath("a"), PurePosixPath("b")])
 
 
 def test_coerce_ranking_from_knowledge():
-    knowledge = Knowledge({Path("b"): "", Path("a"): ""})
+    knowledge = Knowledge({PurePosixPath("b"): "", PurePosixPath("a"): ""})
     ranking = coerce_ranking(knowledge)
-    assert ranking == KnowledgeRanking([Path("a"), Path("b")])
+    assert ranking == KnowledgeRanking([PurePosixPath("a"), PurePosixPath("b")])
 
 
 def test_standard_ranking_from_index():
     ranking = standard_ranking(KNOWLEDGE_INDEX)
     assert ranking == KnowledgeRanking(
         [
-            Path("README.md"),
-            Path("main.py"),
-            Path("a/README.md"),
-            Path("a/b/__init__.py"),
-            Path("a/b/c.txt"),
+            PurePosixPath("README.md"),
+            PurePosixPath("main.py"),
+            PurePosixPath("a/README.md"),
+            PurePosixPath("a/b/__init__.py"),
+            PurePosixPath("a/b/c.txt"),
         ]
     )
 
@@ -53,10 +53,10 @@ def test_standard_ranking_from_knowledge():
     ranking = standard_ranking(KNOWLEDGE)
     assert ranking == KnowledgeRanking(
         [
-            Path("README.md"),
-            Path("main.py"),
-            Path("a/README.md"),
-            Path("a/b/__init__.py"),
-            Path("a/b/c.txt"),
+            PurePosixPath("README.md"),
+            PurePosixPath("main.py"),
+            PurePosixPath("a/README.md"),
+            PurePosixPath("a/b/__init__.py"),
+            PurePosixPath("a/b/c.txt"),
         ]
     )
