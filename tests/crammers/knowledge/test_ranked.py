@@ -22,8 +22,8 @@ def test_cram_all_fit():
     added = crammer.cram(builder, k)
     assert added == k.keys()
     chat = builder.build()
-    assert any("File: a.txt" in msg.content for msg in chat)
-    assert any("File: b.txt" in msg.content for msg in chat)
+    assert any("File: ~/a.txt" in msg.content for msg in chat)
+    assert any("File: ~/b.txt" in msg.content for msg in chat)
 
 def test_cram_some_fit():
     """Tests cramming when only some documents fit."""
@@ -50,9 +50,9 @@ def test_cram_some_fit():
     assert PurePosixPath("b.txt") in added
     assert PurePosixPath("c.txt") not in added
     chat = builder.build()
-    assert any("File: a.txt" in msg.content for msg in chat)
-    assert any("File: b.txt" in msg.content for msg in chat)
-    assert not any("File: c.txt" in msg.content for msg in chat)
+    assert any("File: ~/a.txt" in msg.content for msg in chat)
+    assert any("File: ~/b.txt" in msg.content for msg in chat)
+    assert not any("File: ~/c.txt" in msg.content for msg in chat)
 
 def test_cram_refinement():
     """Tests the iterative refinement phase of cramming."""

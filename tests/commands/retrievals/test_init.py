@@ -39,7 +39,7 @@ def test_one_retrieval():
     context = env[ContextEnv]
     assert context.populated
     context_chat = context.build()
-    assert any('File: a.txt' in msg.content for msg in context_chat)
+    assert any('File: ~/a.txt' in msg.content for msg in context_chat)
     assert any('content a' in msg.content for msg in context_chat)
     assert not env[RetrievalsEnv].get()
 
@@ -50,9 +50,9 @@ def test_multiple_retrievals():
     flush_retrieval_commands(env)
     context = env[ContextEnv]
     context_chat = context.build()
-    assert any('File: a.txt' in msg.content for msg in context_chat)
+    assert any('File: ~/a.txt' in msg.content for msg in context_chat)
     assert any('content a' in msg.content for msg in context_chat)
-    assert any('File: b.txt' in msg.content for msg in context_chat)
+    assert any('File: ~/b.txt' in msg.content for msg in context_chat)
     assert any('content b' in msg.content for msg in context_chat)
 
     # Cannot easily check order without monolithic string.
@@ -74,9 +74,9 @@ def test_ranking_order():
     contents = [msg.content for msg in context_chat if 'File:' in msg.content]
     assert len(contents) == 1
     content = contents[0]
-    c_pos = content.find('File: c.txt')
-    b_pos = content.find('File: b.txt')
-    a_pos = content.find('File: a.txt')
+    c_pos = content.find('File: ~/c.txt')
+    b_pos = content.find('File: ~/b.txt')
+    a_pos = content.find('File: ~/a.txt')
     assert -1 < c_pos < b_pos < a_pos
     assert not env[RetrievalsEnv].get()
 

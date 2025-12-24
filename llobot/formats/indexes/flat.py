@@ -27,7 +27,8 @@ class FlatIndexFormat(IndexFormat, ValueTypeMixin):
         """
         Renders a knowledge index as a flat list of paths.
 
-        The paths are sorted using the configured ranker.
+        The paths are sorted using the configured ranker. All paths are prefixed
+        with `~/` to indicate they are absolute within the virtual filesystem.
 
         Args:
             knowledge: The knowledge to render.
@@ -40,7 +41,7 @@ class FlatIndexFormat(IndexFormat, ValueTypeMixin):
         ranking = self._ranker.rank(knowledge)
         if not ranking:
             return ''
-        return '\n'.join(str(path) for path in ranking)
+        return '\n'.join(f'~/{path}' for path in ranking)
 
 __all__ = [
     'FlatIndexFormat',

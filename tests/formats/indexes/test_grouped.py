@@ -9,14 +9,15 @@ def test_render():
     # The default ranker sorts paths lexicographically. The grouped format
     # then lists files and directories for each tree level.
     expected = """
+In ~:
 - c.txt
 - a/
 
-In a:
+In ~/a:
 - b.txt
 - d/
 
-In a/d:
+In ~/a/d:
 - e.txt
     """
     assert normalize_document(result) == normalize_document(expected)

@@ -9,7 +9,7 @@
 Example of a file listing:
 
 <details>
-<summary>File: path/to/file.py</summary>
+<summary>File: ~/path/to/file.py</summary>
 
 ```python
 # ... python code here ...

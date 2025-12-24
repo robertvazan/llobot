@@ -16,7 +16,7 @@ class GroupedIndexFormat(IndexFormat, ValueTypeMixin):
 
     The format renders files grouped by their containing directory, with
     directory headers and files listed underneath. Groups are separated by
-    empty lines. Root directory files (base path '.') are listed without a header.
+    empty lines. All paths are presented as absolute paths starting with `~/`.
     """
     _ranker: KnowledgeRanker
 
@@ -50,9 +50,11 @@ class GroupedIndexFormat(IndexFormat, ValueTypeMixin):
         for subtree in tree.all_trees:
             lines = []
 
-            # Add header unless this is root with base path '.'
-            if subtree.base != PurePosixPath('.'):
-                lines.append(f'In {subtree.base}:')
+            # Add header
+            if subtree.base == PurePosixPath('.'):
+                lines.append('In ~:')
+            else:
+                lines.append(f'In ~/{subtree.base}:')
 
             # Add files
             for filename in subtree.files:

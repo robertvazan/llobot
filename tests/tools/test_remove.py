@@ -33,7 +33,7 @@ def test_remove_tool_slice_and_parse():
     tool = RemoveTool()
     text = dedent("""
         ```tool
-        rm myproject/a.txt
+        rm ~/myproject/a.txt
         ```
     """).strip()
 
@@ -51,10 +51,16 @@ def test_remove_tool_execute(env: Environment):
     project = env[ProjectEnv].union
     assert project.read(PurePosixPath("myproject/a.txt")) is None
     log = env[ToolEnv].flush_log()
-    assert "Removing myproject/a.txt..." in log
+    assert "Removing ~/myproject/a.txt..." in log
     assert "File was removed." in log
 
 def test_remove_tool_no_match():
     tool = RemoveTool()
     text = "```tool\nrm\n```"
     assert tool.slice(text, 0) == 0
+
+def test_remove_tool_missing_tilde():
+    tool = RemoveTool()
+    text = "```tool\nrm myproject/a.txt\n```"
+    with pytest.raises(ValueError, match="Path must start with ~/"):
+        tool.parse(text.strip())

@@ -36,7 +36,7 @@ def test_accept_command_success(tmp_path: Path):
         Okay, I will perform the requested file operations.
 
         <details>
-        <summary>File: myproject/file2.txt</summary>
+        <summary>File: ~/myproject/file2.txt</summary>
 
         ```
         new content
@@ -45,7 +45,7 @@ def test_accept_command_success(tmp_path: Path):
         </details>
 
         ```tool
-        rm myproject/file1.txt
+        rm ~/myproject/file1.txt
         ```
     """)
     prompt = ChatThread([
@@ -67,11 +67,11 @@ def test_accept_command_success(tmp_path: Path):
     # Verify status messages
     status_env = env[StatusEnv]
     content = status_env.content()
-    assert "Success: file myproject/file2.txt" in content
-    assert "Writing myproject/file2.txt..." in content
+    assert "Success: file ~/myproject/file2.txt" in content
+    assert "Writing ~/myproject/file2.txt..." in content
     assert "File was written." in content
-    assert "Success: rm myproject/file1.txt" in content
-    assert "Removing myproject/file1.txt..." in content
+    assert "Success: rm ~/myproject/file1.txt" in content
+    assert "Removing ~/myproject/file1.txt..." in content
     assert "File was removed." in content
     assert "✅ All 2 tool calls executed." in content
 
@@ -90,7 +90,7 @@ def test_accept_command_failure(tmp_path: Path):
     # Setup prompt with a model response containing a failing tool call
     response_content = textwrap.dedent("""
         ```tool
-        rm myproject/nonexistent.txt
+        rm ~/myproject/nonexistent.txt
         ```
     """)
     prompt = ChatThread([
@@ -107,8 +107,8 @@ def test_accept_command_failure(tmp_path: Path):
     # Verify status messages
     status_env = env[StatusEnv]
     content = status_env.content()
-    assert "Failure: rm myproject/nonexistent.txt" in content
-    assert "Removing myproject/nonexistent.txt..." in content
+    assert "Failure: rm ~/myproject/nonexistent.txt" in content
+    assert "Removing ~/myproject/nonexistent.txt..." in content
     assert "Error executing:" in content
     assert "❌ 0 of 1 tool calls executed." in content
 

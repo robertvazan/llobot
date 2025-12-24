@@ -13,8 +13,8 @@ def test_render_chat_single_chunk():
     chat = fmt.render_chat(knowledge)
     assert len(chat) == 2 # one affirmation turn
     assert chat[0].intent == ChatIntent.SYSTEM
-    assert '<summary>File: a.txt</summary>' in chat[0].content
-    assert '<summary>File: b.txt</summary>' in chat[0].content
+    assert '<summary>File: ~/a.txt</summary>' in chat[0].content
+    assert '<summary>File: ~/b.txt</summary>' in chat[0].content
     assert chat[1].intent == ChatIntent.AFFIRMATION
 
 def test_render_chat_multiple_chunks():
@@ -27,11 +27,11 @@ def test_render_chat_multiple_chunks():
     chat = fmt.render_chat(knowledge)
     assert len(chat) == 4 # two affirmation turns
     assert chat[0].intent == ChatIntent.SYSTEM
-    assert '<summary>File: a.txt</summary>' in chat[0].content
-    assert '<summary>File: b.txt</summary>' in chat[0].content
-    assert '<summary>File: c.txt</summary>' not in chat[0].content
+    assert '<summary>File: ~/a.txt</summary>' in chat[0].content
+    assert '<summary>File: ~/b.txt</summary>' in chat[0].content
+    assert '<summary>File: ~/c.txt</summary>' not in chat[0].content
     assert chat[2].intent == ChatIntent.SYSTEM
-    assert '<summary>File: c.txt</summary>' in chat[2].content
+    assert '<summary>File: ~/c.txt</summary>' in chat[2].content
 
 def test_render_chat_empty_knowledge():
     fmt = ChunkedKnowledgeFormat()

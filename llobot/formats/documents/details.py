@@ -13,7 +13,7 @@ class DetailsDocumentFormat(DocumentFormat, ValueTypeMixin):
     A document format using HTML details blocks.
 
     This format renders a document as:
-    <details><summary>File: path</summary>```content```</details>
+    <details><summary>File: ~/path</summary>```content```</details>
     """
     _languages: LanguageMapping
     _quad_backticks: tuple[str, ...]
@@ -36,7 +36,7 @@ class DetailsDocumentFormat(DocumentFormat, ValueTypeMixin):
         """
         Renders a document using HTML details/summary tags with a code block inside.
         """
-        summary = f'File: {path}'
+        summary = f'File: ~/{path}'
         lang = self._languages.resolve(path)
         backtick_count = 4 if lang in self._quad_backticks else 3
         return markdown_code_details(summary, lang, content, backtick_count=backtick_count)

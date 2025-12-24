@@ -7,4 +7,4 @@ def test_render():
     result = formatter.render(knowledge)
     # standard_ranker does a pre-order traversal of a tree built from
     # lexicographically sorted paths. 'c.txt' at root comes before 'a/b.txt'.
-    assert result == 'c.txt\na/b.txt'
+    assert result == '~/c.txt\n~/a/b.txt'

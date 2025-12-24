@@ -33,7 +33,7 @@ def test_move_tool_slice_and_parse():
     tool = MoveTool()
     text = dedent("""
         ```tool
-        mv myproject/a.txt myproject/b.txt
+        mv ~/myproject/a.txt ~/myproject/b.txt
         ```
     """).strip()
 
@@ -53,7 +53,7 @@ def test_move_tool_execute(env: Environment):
     assert project.read(PurePosixPath("myproject/a.txt")) is None
     assert project.read(PurePosixPath("myproject/b.txt")) == "content\n"
     log = env[ToolEnv].flush_log()
-    assert "Moving myproject/a.txt to myproject/b.txt..." in log
+    assert "Moving ~/myproject/a.txt to ~/myproject/b.txt..." in log
     assert "File was moved." in log
 
 def test_move_tool_overwrite(env: Environment):
@@ -62,10 +62,17 @@ def test_move_tool_overwrite(env: Environment):
     call = MoveToolCall(PurePosixPath("myproject/a.txt"), PurePosixPath("myproject/b.txt"))
     call.execute(env)
     log = env[ToolEnv].flush_log()
-    assert "Warning: Overwriting myproject/b.txt" in log
+    assert "Warning: Overwriting ~/myproject/b.txt" in log
     assert project.read(PurePosixPath("myproject/b.txt")) == "content\n"
 
 def test_move_tool_no_match():
     tool = MoveTool()
     text = "```tool\nmv a.txt\n```"
     assert tool.slice(text, 0) == 0
+
+def test_move_tool_missing_tilde():
+    tool = MoveTool()
+    text = "```tool\nmv myproject/a.txt ~/myproject/b.txt\n```"
+    # FencedTool regex matches generic block, but parse should fail
+    with pytest.raises(ValueError, match="Source path must start with ~/"):
+        tool.parse(text.strip())

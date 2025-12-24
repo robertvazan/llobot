@@ -33,7 +33,7 @@ def test_file_tool_slice_and_parse(env: Environment):
     tool = FileTool()
     text = dedent("""
         <details>
-        <summary>File: myproject/foo.txt</summary>
+        <summary>File: ~/myproject/foo.txt</summary>
 
         ```
         content
@@ -56,14 +56,14 @@ def test_file_tool_slice_and_parse(env: Environment):
     assert project.read(PurePosixPath("myproject/foo.txt")) == "content\nof the file\n"
 
     log = env[ToolEnv].flush_log()
-    assert "Writing myproject/foo.txt..." in log
+    assert "Writing ~/myproject/foo.txt..." in log
     assert "File was written." in log
 
 def test_file_tool_slice_extra_whitespace(env: Environment):
     tool = FileTool()
     text = dedent("""
         <details>
-          <summary>  File:   myproject/bar.py   </summary>
+          <summary>  File:   ~/myproject/bar.py   </summary>
 
         ````python
         print("hello")
@@ -85,11 +85,28 @@ def test_file_tool_no_match():
     text = "<summary>File: foo.txt</summary>"
     assert tool.slice(text, 0) == 0
 
+def test_file_tool_missing_tilde_prefix():
+    tool = FileTool()
+    text = dedent("""
+        <details>
+        <summary>File: myproject/foo.txt</summary>
+        ```
+        ```
+        </details>
+    """).strip()
+
+    # Slice matches regex, but parse should fail
+    length = tool.slice(text, 0)
+    assert length == len(text)
+
+    with pytest.raises(ValueError, match="Path must start with ~/"):
+        tool.parse(text)
+
 def test_file_tool_empty_code_block(env: Environment):
     tool = FileTool()
     text = dedent("""
         <details>
-        <summary>File: myproject/empty.txt</summary>
+        <summary>File: ~/myproject/empty.txt</summary>
         ```
         ```
         </details>

@@ -12,7 +12,7 @@
 Example:
 
 <details>
-<summary>File: path/to/file.py</summary>
+<summary>File: ~/path/to/file.py</summary>
 
 ```python
 # ... entire content of the file ...
@@ -28,7 +28,7 @@ Example:
 Example:
 
 ```tool
-rm path/to/file.py
+rm ~/path/to/file.py
 ```
 
 ### Moved file
@@ -39,5 +39,5 @@ rm path/to/file.py
 Example:
 
 ```tool
-mv original/location.py path/to/file.py
+mv ~/original/location.py ~/path/to/file.py
 ```

@@ -8,7 +8,7 @@ def test_render_file_listing():
     rendered = fmt.render(PurePosixPath('file.py'), 'print("hello")')
     assert rendered == (
         '<details>\n'
-        '<summary>File: file.py</summary>\n\n'
+        '<summary>File: ~/file.py</summary>\n\n'
         '```python\n'
         'print("hello")\n'
         '```\n\n'

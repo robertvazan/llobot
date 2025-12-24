@@ -23,17 +23,17 @@ class RemoveToolCall(ToolCall):
 
     @property
     def title(self) -> str:
-        return f"rm {self._path}"
+        return f"rm ~/{self._path}"
 
     def execute(self, env: Environment):
         project = env[ProjectEnv].union
-        env[ToolEnv].log(f"Removing {self._path}...")
+        env[ToolEnv].log(f"Removing ~/{self._path}...")
         project.remove(self._path)
         env[ToolEnv].log("File was removed.")
 
 class RemoveTool(FencedTool):
     """
-    Tool that parses `rm path` commands inside `tool` code blocks.
+    Tool that parses `rm ~/path` commands inside `tool` code blocks.
     """
     def __init__(self):
         super().__init__()
@@ -44,9 +44,15 @@ class RemoveTool(FencedTool):
     def parse_content(self, source: str) -> ToolCall:
         match = _RM_COMMAND_RE.fullmatch(source)
         assert match, "source for parse_content() must be valid"
-        path = PurePosixPath(match.group(1))
+        path_str = match.group(1)
+
+        if not path_str.startswith('~/'):
+            raise ValueError(f"Path must start with ~/: {path_str}")
+
+        path = PurePosixPath(path_str[2:])
         if path.is_absolute():
-            raise ValueError(f"Path must be relative: {path}")
+            raise ValueError(f"Internal path must be relative: {path}")
+
         return RemoveToolCall(path)
 
 __all__ = [

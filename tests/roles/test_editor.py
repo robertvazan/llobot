@@ -55,7 +55,7 @@ def test_editor_file_retrieval(tmp_path: Path):
     response1 = get_response_content(thread1)
 
     # The content should be present
-    assert "File: project_a/src/main.py" in response1
+    assert "File: ~/project_a/src/main.py" in response1
     assert "print('hello')" in response1
 
 def test_editor_wildcard_retrieval(tmp_path: Path):
@@ -67,7 +67,7 @@ def test_editor_wildcard_retrieval(tmp_path: Path):
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "@project_a @tests/*.py Read tests")])
     response = get_response_content(record_stream(editor.chat(prompt)))
 
-    assert "File: project_a/tests/test_main.py" in response
+    assert "File: ~/project_a/tests/test_main.py" in response
     assert "def test(): pass" in response
 
 def test_editor_overviews(tmp_path: Path):
@@ -89,11 +89,11 @@ def test_editor_overviews(tmp_path: Path):
     response = get_response_content(record_stream(editor.chat(prompt)))
 
     # Check that overviews are pulled in automatically
-    assert "File: project_b/README.md" in response
+    assert "File: ~/project_b/README.md" in response
     assert "Main Overview" in response
-    assert "File: project_b/doc/README.md" in response
+    assert "File: ~/project_b/doc/README.md" in response
     assert "Doc Overview" in response
-    assert "File: project_b/doc/api.py" in response
+    assert "File: ~/project_b/doc/api.py" in response
 
 def test_editor_system_prompt(tmp_path: Path):
     """Tests that Editor includes the tool usage instructions in its prompt."""

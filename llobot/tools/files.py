@@ -20,11 +20,11 @@ class FileToolCall(ToolCall):
 
     @property
     def title(self) -> str:
-        return f"file {self._path}"
+        return f"file ~/{self._path}"
 
     def execute(self, env: Environment):
         project = env[ProjectEnv].union
-        env[ToolEnv].log(f"Writing {self._path}...")
+        env[ToolEnv].log(f"Writing ~/{self._path}...")
         project.write(self._path, normalize_document(self._content))
         env[ToolEnv].log("File was written.")
 
@@ -41,7 +41,7 @@ class FileTool(Tool):
     """
     Tool that parses document listings in the format:
     <details>
-    <summary>File: path/to/file</summary>
+    <summary>File: ~/path/to/file</summary>
 
     ```lang
     content
@@ -59,9 +59,16 @@ class FileTool(Tool):
         match = _FILE_DETAILS_RE.fullmatch(source)
         assert match, "source for parse() must be validated by slice()"
 
-        path = PurePosixPath(match.group('path').strip())
+        path_str = match.group('path').strip()
+        if not path_str.startswith('~/'):
+            raise ValueError(f"Path must start with ~/: {path_str}")
+
+        # Remove the leading ~/
+        path = PurePosixPath(path_str[2:])
         if path.is_absolute():
-            raise ValueError(f"Path must be relative: {path}")
+            # This should technically not happen for PurePosixPath('something')
+            # but acts as a safeguard.
+            raise ValueError(f"Internal path must be relative: {path}")
 
         content = match.group('content')
 

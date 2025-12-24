@@ -25,19 +25,19 @@ class MoveToolCall(ToolCall):
 
     @property
     def title(self) -> str:
-        return f"mv {self._source} {self._destination}"
+        return f"mv ~/{self._source} ~/{self._destination}"
 
     def execute(self, env: Environment):
         project = env[ProjectEnv].union
         if project.read(self._destination) is not None:
-            env[ToolEnv].log(f"Warning: Overwriting {self._destination}")
-        env[ToolEnv].log(f"Moving {self._source} to {self._destination}...")
+            env[ToolEnv].log(f"Warning: Overwriting ~/{self._destination}")
+        env[ToolEnv].log(f"Moving ~/{self._source} to ~/{self._destination}...")
         project.move(self._source, self._destination)
         env[ToolEnv].log("File was moved.")
 
 class MoveTool(FencedTool):
     """
-    Tool that parses `mv source dest` commands inside `tool` code blocks.
+    Tool that parses `mv ~/source ~/dest` commands inside `tool` code blocks.
     """
     def __init__(self):
         super().__init__()
@@ -48,12 +48,22 @@ class MoveTool(FencedTool):
     def parse_content(self, source: str) -> ToolCall:
         match = _MV_COMMAND_RE.fullmatch(source)
         assert match, "source for parse_content() must be valid"
-        source_path = PurePosixPath(match.group(1))
-        dest_path = PurePosixPath(match.group(2))
+        source_str = match.group(1)
+        dest_str = match.group(2)
+
+        if not source_str.startswith('~/'):
+            raise ValueError(f"Source path must start with ~/: {source_str}")
+        if not dest_str.startswith('~/'):
+            raise ValueError(f"Destination path must start with ~/: {dest_str}")
+
+        source_path = PurePosixPath(source_str[2:])
+        dest_path = PurePosixPath(dest_str[2:])
+
         if source_path.is_absolute():
-            raise ValueError(f"Source path must be relative: {source_path}")
+            raise ValueError(f"Internal source path must be relative: {source_path}")
         if dest_path.is_absolute():
-            raise ValueError(f"Destination path must be relative: {dest_path}")
+            raise ValueError(f"Internal destination path must be relative: {dest_path}")
+
         return MoveToolCall(source_path, dest_path)
 
 __all__ = [
