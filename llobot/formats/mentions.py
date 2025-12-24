@@ -26,7 +26,7 @@ _UNIFIED_RE = re.compile(
         `(?P<quoted_single>[^`\n]*?)`
         |
         # A bare mention.
-        (?P<bare>[a-zA-Z0-9-_/*?:=.]+)
+        (?P<bare>[a-zA-Z0-9-_/*?:=.~]+)
     )
     |
     # An inline code span. This is matched to be ignored, effectively stripping it
@@ -101,7 +101,7 @@ _MENTION_STRIP_RE_PART = r"""
     `[^`\n]*?`
     |
     # A bare mention.
-    [a-zA-Z0-9-_/*?:=.]+
+    [a-zA-Z0-9-_/*?:=.~]+
 )
 """
 

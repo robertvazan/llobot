@@ -22,7 +22,7 @@ def test_parse_bare_trailing_chars():
     assert parse_mentions('@cmd. in start') == ['cmd']
 
 def test_parse_bare_allowed_chars():
-    assert parse_mentions('@a-b/c*d?e:f=g.h') == ['a-b/c*d?e:f=g.h']
+    assert parse_mentions('@a-b/c*d?e:f=g.h~i') == ['a-b/c*d?e:f=g.h~i']
 
 def test_parse_quoted_single_backtick():
     assert parse_mentions('this is @`a quoted mention`') == ['a quoted mention']
