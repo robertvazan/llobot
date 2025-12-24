@@ -47,10 +47,15 @@ def test_exact_match():
     assert handle_solo_retrieval_command('d.txt', env)
     assert env[RetrievalsEnv].get() == KnowledgeIndex([PurePosixPath('d.txt')])
 
-def test_absolute_path_match():
+def test_tilde_path_match():
     env = create_env()
-    assert handle_solo_retrieval_command('/a/b.txt', env)
+    assert handle_solo_retrieval_command('~/a/b.txt', env)
     assert env[RetrievalsEnv].get() == KnowledgeIndex([PurePosixPath('a/b.txt')])
+
+def test_absolute_path_fails():
+    env = create_env()
+    assert not handle_solo_retrieval_command('/a/b.txt', env)
+    assert not env[RetrievalsEnv].get()
 
 def test_wildcard_is_ignored():
     env = create_env()

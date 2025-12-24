@@ -9,7 +9,7 @@ from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.retrievals import RetrievalsEnv
 from llobot.knowledge.subsets.parsing import parse_pattern
 
-_WILDCARD_PATH_RE = re.compile(r'^/?(?:[a-zA-Z0-9_.*?-]+/)*[a-zA-Z0-9_.*?-]+$')
+_WILDCARD_PATH_RE = re.compile(r'^(?:~/)?(?:[a-zA-Z0-9_.*?-]+/)*[a-zA-Z0-9_.*?-]+$')
 
 
 def handle_wildcard_retrieval_command(text: str, env: Environment) -> bool:
@@ -18,6 +18,7 @@ def handle_wildcard_retrieval_command(text: str, env: Environment) -> bool:
 
     The command text is treated as a glob pattern. If it matches one or more
     documents in the knowledge base, those documents are added to the retrievals.
+    The pattern can be relative or absolute (starting with '~/').
 
     Args:
         text: The glob pattern to match.
@@ -31,6 +32,9 @@ def handle_wildcard_retrieval_command(text: str, env: Environment) -> bool:
 
     if '*' not in text and '?' not in text:
         return False
+
+    if text.startswith('~/'):
+        text = '/' + text[2:]
 
     knowledge_index = env[KnowledgeEnv].index()
     subset = parse_pattern(text)

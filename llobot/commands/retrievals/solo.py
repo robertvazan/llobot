@@ -9,7 +9,7 @@ from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.retrievals import RetrievalsEnv
 from llobot.knowledge.subsets.parsing import parse_pattern
 
-_PATH_RE = re.compile(r'^/?(?:[a-zA-Z0-9_.-]+/)*[a-zA-Z0-9_.-]+$')
+_PATH_RE = re.compile(r'^(?:~/)?(?:[a-zA-Z0-9_.-]+/)*[a-zA-Z0-9_.-]+$')
 
 def handle_solo_retrieval_command(text: str, env: Environment) -> bool:
     """
@@ -17,7 +17,7 @@ def handle_solo_retrieval_command(text: str, env: Environment) -> bool:
 
     The command text is treated as a path pattern. If it matches a single
     document in the knowledge base, that document is added to the retrievals.
-    The pattern can be relative or absolute (starting with '/'). It cannot
+    The pattern can be relative or absolute (starting with '~/'). It cannot
     contain wildcards.
 
     Args:
@@ -29,6 +29,9 @@ def handle_solo_retrieval_command(text: str, env: Environment) -> bool:
     """
     if not _PATH_RE.fullmatch(text):
         return False
+
+    if text.startswith('~/'):
+        text = '/' + text[2:]
 
     knowledge_index = env[KnowledgeEnv].index()
     subset = parse_pattern(text)

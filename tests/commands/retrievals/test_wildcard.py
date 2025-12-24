@@ -43,10 +43,15 @@ def test_multiple_matches():
     assert handle_wildcard_retrieval_command('a/*.txt', env)
     assert env[RetrievalsEnv].get() == KnowledgeIndex([PurePosixPath('a/b.txt'), PurePosixPath('a/c.txt')])
 
-def test_absolute_path_match():
+def test_tilde_path_match():
     env = create_env()
-    assert handle_wildcard_retrieval_command('/a/*.txt', env)
+    assert handle_wildcard_retrieval_command('~/a/*.txt', env)
     assert env[RetrievalsEnv].get() == KnowledgeIndex([PurePosixPath('a/b.txt'), PurePosixPath('a/c.txt')])
+
+def test_absolute_path_fails():
+    env = create_env()
+    assert not handle_wildcard_retrieval_command('/a/*.txt', env)
+    assert not env[RetrievalsEnv].get()
 
 def test_deep_match():
     env = create_env()
