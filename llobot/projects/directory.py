@@ -7,6 +7,7 @@ from llobot.projects.items import ProjectDirectory, ProjectFile, ProjectItem, Pr
 from llobot.utils.fs import create_parents, read_document, write_text
 from llobot.utils.values import ValueTypeMixin
 from llobot.utils.zones import validate_zone
+from llobot.formats.paths import coerce_path
 
 class DirectoryProject(Project, ValueTypeMixin):
     """
@@ -44,19 +45,15 @@ class DirectoryProject(Project, ValueTypeMixin):
             mutable: If `True`, the project allows write operations. Defaults to `False`.
         """
         self._directory = Path(directory).expanduser().absolute()
-        self._prefix = PurePosixPath(prefix) if prefix is not None else PurePosixPath(self._directory.name)
-        if self._prefix.is_absolute():
-            raise ValueError(f"Project prefix must be relative: {self._prefix}")
+        self._prefix = coerce_path(prefix) if prefix is not None else coerce_path(self._directory.name)
         validate_zone(self._prefix)
 
         if zones is not None:
-            self._zones = frozenset(PurePosixPath(z) for z in zones)
+            self._zones = frozenset(coerce_path(z) for z in zones)
         else:
             self._zones = frozenset([self._prefix])
 
         for zone in self._zones:
-            if zone.is_absolute():
-                raise ValueError(f"Project zone must be relative: {zone}")
             validate_zone(zone)
 
         self._whitelist = whitelist or whitelist_subset()

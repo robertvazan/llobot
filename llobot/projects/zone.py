@@ -6,6 +6,7 @@ from pathlib import PurePosixPath
 from llobot.projects import Project
 from llobot.utils.values import ValueTypeMixin
 from llobot.utils.zones import validate_zone
+from llobot.formats.paths import coerce_path
 
 class ZoneProject(Project, ValueTypeMixin):
     """
@@ -28,10 +29,8 @@ class ZoneProject(Project, ValueTypeMixin):
         """
         if not zones:
             raise ValueError("ZoneProject must have at least one zone.")
-        self._zones = frozenset(PurePosixPath(z) for z in zones)
+        self._zones = frozenset(coerce_path(z) for z in zones)
         for zone in self._zones:
-            if zone.is_absolute():
-                raise ValueError(f"Project zone must be relative: {zone}")
             validate_zone(zone)
 
     @property

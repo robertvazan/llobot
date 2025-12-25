@@ -17,7 +17,7 @@ def test_zone_project_no_zones_fails():
 def test_zone_project_invalid_zone_fails():
     with pytest.raises(ValueError, match="absolute"):
         ZoneProject("/absolute/path")
-    with pytest.raises(ValueError, match="cannot be '..'"):
+    with pytest.raises(ValueError, match=r"must not contain '\.\.'"):
         ZoneProject("..")
-    with pytest.raises(ValueError, match="invalid characters"):
+    with pytest.raises(ValueError, match="wildcards"):
         ZoneProject("zone*")

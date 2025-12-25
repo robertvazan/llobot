@@ -7,6 +7,7 @@ from llobot.projects.library import ProjectLibrary
 from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.projects.shallow import ShallowProject
 from llobot.utils.values import ValueTypeMixin
+from llobot.formats.paths import coerce_path
 
 class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
     """
@@ -61,9 +62,7 @@ class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
             parent directories. Returns an empty list if no directory is found.
         """
         try:
-            path = PurePosixPath(key)
-            if path.is_absolute() or '..' in path.parts:
-                return []
+            path = coerce_path(key)
         except Exception:
             return []
 

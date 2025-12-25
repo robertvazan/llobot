@@ -24,6 +24,7 @@ from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.ranking import KnowledgeRanking, coerce_ranking
 from llobot.knowledge.subsets import KnowledgeSubset
+from llobot.formats.paths import coerce_path
 
 class KnowledgeTree(ValueTypeMixin):
     """
@@ -51,13 +52,9 @@ class KnowledgeTree(ValueTypeMixin):
             ValueError: If base path is absolute, if there are name conflicts between files
                        and subtrees, or if subtree base paths are not one level below parent.
         """
-        self._base = PurePosixPath(base)
+        self._base = coerce_path(base)
         self._files = tuple(files)
         self._subtrees = tuple(subtrees)
-
-        # Check that base path is relative
-        if self._base.is_absolute():
-            raise ValueError(f"Base path must be relative: {self._base}")
 
         # Check for name conflicts
         names = set(self._files) | set(subtree.base.name for subtree in self._subtrees)
@@ -122,7 +119,7 @@ class KnowledgeTree(ValueTypeMixin):
         Raises:
             ValueError: If the path is outside this tree.
         """
-        path = PurePosixPath(path)
+        path = coerce_path(path)
 
         # If path matches our base, return self
         if path == self._base:

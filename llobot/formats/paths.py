@@ -2,7 +2,40 @@
 Path parsing utilities.
 """
 from __future__ import annotations
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
+
+def coerce_path(path: str | Path | PurePosixPath) -> PurePosixPath:
+    """
+    Coerces a string or path object into a relative PurePosixPath.
+
+    Verifies that the path is relative and does not contain wildcards, `~`, or `..`.
+
+    Args:
+        path: The path to coerce.
+
+    Returns:
+        The coerced relative path.
+
+    Raises:
+        ValueError: If the path is absolute, contains wildcards, `~`, or `..`.
+    """
+    if isinstance(path, (Path, PurePosixPath)):
+        if path.is_absolute():
+            raise ValueError(f"Path must be relative: {path}")
+        result = PurePosixPath(path)
+    else:
+        result = PurePosixPath(path)
+        if result.is_absolute():
+            raise ValueError(f"Path must be relative: {path}")
+
+    if any(c in str(result) for c in '*?['):
+        raise ValueError(f"Path must not contain wildcards: {path}")
+
+    for part in result.parts:
+        if part == '..' or part == '~':
+            raise ValueError(f"Path must not contain '{part}': {path}")
+
+    return result
 
 def parse_path(text: str) -> PurePosixPath:
     """
@@ -25,31 +58,24 @@ def parse_path(text: str) -> PurePosixPath:
         raise ValueError(f"Path must start with ~/: {text}")
 
     clean_text = text[2:]
-
-    # Check for wildcards in string representation
-    if any(c in clean_text for c in '*?['):
-        raise ValueError(f"Path must not contain wildcards: {text}")
-
     path = PurePosixPath(clean_text)
 
-    # PurePosixPath collapses '.' but not '..'.
-    # If text is "~/", clean_text is "", path is ".".
-    # If text is "~/.", clean_text is ".", path is ".".
-    if path == PurePosixPath('.'):
-        raise ValueError(f"Path cannot be the root directory: {text}")
-
-    # Check for absolute path (should not happen if we strip ~/, unless user does ~//...)
     if path.is_absolute():
         raise ValueError(f"Path must be relative to project root: {text}")
 
+    if any(c in str(path) for c in '*?['):
+        raise ValueError(f"Path must not contain wildcards: {text}")
+
     for part in path.parts:
-        if part == '..':
-            raise ValueError(f"Path must not contain '..': {text}")
-        if part == '~':
-            raise ValueError(f"Path must not contain '~': {text}")
+        if part == '..' or part == '~':
+             raise ValueError(f"Path must not contain '{part}': {text}")
+
+    if path == PurePosixPath('.'):
+        raise ValueError(f"Path cannot be the root directory: {text}")
 
     return path
 
 __all__ = [
+    'coerce_path',
     'parse_path',
 ]

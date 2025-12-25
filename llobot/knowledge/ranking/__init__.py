@@ -24,6 +24,7 @@ from llobot.utils.values import ValueTypeMixin
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.subsets import KnowledgeSubset, coerce_subset
+from llobot.formats.paths import coerce_path
 
 class KnowledgeRanking(ValueTypeMixin):
     """
@@ -38,10 +39,7 @@ class KnowledgeRanking(ValueTypeMixin):
         Args:
             paths: An iterable of paths or path strings.
         """
-        self._paths = tuple(PurePosixPath(path) for path in paths)
-        for path in self._paths:
-            if path.is_absolute():
-                raise ValueError(f"Path must be relative: {path}")
+        self._paths = tuple(coerce_path(path) for path in paths)
 
     def __repr__(self) -> str:
         return str(list(self._paths))

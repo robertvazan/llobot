@@ -6,6 +6,7 @@ from llobot.projects.library import ProjectLibrary
 from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.knowledge.subsets.universal import UniversalSubset
 from llobot.utils.values import ValueTypeMixin
+from llobot.formats.paths import coerce_path
 
 class FilteredProjectLibrary(ProjectLibrary, ValueTypeMixin):
     """
@@ -41,9 +42,7 @@ class FilteredProjectLibrary(ProjectLibrary, ValueTypeMixin):
             or not in the whitelist.
         """
         try:
-            path = PurePosixPath(key)
-            if path.is_absolute() or '..' in path.parts:
-                return []
+            path = coerce_path(key)
         except Exception:
             return []
 

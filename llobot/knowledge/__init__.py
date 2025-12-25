@@ -33,6 +33,7 @@ from pathlib import PurePosixPath
 from typing import Callable, Iterator
 from llobot.utils.fs import read_document
 from llobot.utils.values import ValueTypeMixin
+from llobot.formats.paths import coerce_path
 
 class Knowledge(ValueTypeMixin):
     """
@@ -51,10 +52,7 @@ class Knowledge(ValueTypeMixin):
         Args:
             documents: A dictionary of paths and their content.
         """
-        self._documents = {PurePosixPath(p): c for p, c in documents.items()}
-        for path in self._documents:
-            if path.is_absolute():
-                raise ValueError(f"Path must be relative: {path}")
+        self._documents = {coerce_path(p): c for p, c in documents.items()}
 
     def __repr__(self) -> str:
         return str(self.keys())

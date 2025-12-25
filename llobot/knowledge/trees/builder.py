@@ -1,6 +1,7 @@
 from __future__ import annotations
 from pathlib import PurePosixPath
 from llobot.knowledge.trees import KnowledgeTree
+from llobot.formats.paths import coerce_path
 
 class KnowledgeTreeBuilder:
     """
@@ -22,9 +23,7 @@ class KnowledgeTreeBuilder:
         Args:
             base: Base path for the root of the tree being built.
         """
-        self._base = PurePosixPath(base)
-        if self._base.is_absolute():
-            raise ValueError(f"Base path must be relative: {self._base}")
+        self._base = coerce_path(base)
         self._files = []
         self._file_names = set()
         self._subtree_builders = []
@@ -40,7 +39,7 @@ class KnowledgeTreeBuilder:
         Raises:
             ValueError: If the path is not relative to the base path.
         """
-        path = PurePosixPath(path)
+        path = coerce_path(path)
 
         # If path is not relative to our base, we need to find the right place for it
         if not path.is_relative_to(self._base):

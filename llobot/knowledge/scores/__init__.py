@@ -36,6 +36,7 @@ from llobot.utils.values import ValueTypeMixin
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex, coerce_index
 from llobot.knowledge.subsets import KnowledgeSubset, coerce_subset
+from llobot.formats.paths import coerce_path
 
 class KnowledgeScores(ValueTypeMixin):
     """
@@ -55,10 +56,7 @@ class KnowledgeScores(ValueTypeMixin):
             scores: A dictionary of paths and their corresponding scores.
                     Scores that are zero or non-finite are filtered out.
         """
-        self._scores = {PurePosixPath(path): float(score) for path, score in scores.items() if math.isfinite(score) and score != 0}
-        for path in self._scores:
-            if path.is_absolute():
-                raise ValueError(f"Path must be relative: {path}")
+        self._scores = {coerce_path(path): float(score) for path, score in scores.items() if math.isfinite(score) and score != 0}
 
     def __repr__(self) -> str:
         return str(self._scores)
