@@ -7,6 +7,7 @@ import re
 from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.tools import ToolEnv
+from llobot.formats.paths import parse_path
 from llobot.tools import Tool, ToolCall
 from llobot.utils.text import normalize_document
 
@@ -60,15 +61,7 @@ class FileTool(Tool):
         assert match, "source for parse() must be validated by slice()"
 
         path_str = match.group('path').strip()
-        if not path_str.startswith('~/'):
-            raise ValueError(f"Path must start with ~/: {path_str}")
-
-        # Remove the leading ~/
-        path = PurePosixPath(path_str[2:])
-        if path.is_absolute():
-            # This should technically not happen for PurePosixPath('something')
-            # but acts as a safeguard.
-            raise ValueError(f"Internal path must be relative: {path}")
+        path = parse_path(path_str)
 
         content = match.group('content')
 

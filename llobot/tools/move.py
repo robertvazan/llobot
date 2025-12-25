@@ -7,6 +7,7 @@ import re
 from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.tools import ToolEnv
+from llobot.formats.paths import parse_path
 from llobot.tools import ToolCall
 from llobot.tools.fenced import FencedTool
 
@@ -51,18 +52,8 @@ class MoveTool(FencedTool):
         source_str = match.group(1)
         dest_str = match.group(2)
 
-        if not source_str.startswith('~/'):
-            raise ValueError(f"Source path must start with ~/: {source_str}")
-        if not dest_str.startswith('~/'):
-            raise ValueError(f"Destination path must start with ~/: {dest_str}")
-
-        source_path = PurePosixPath(source_str[2:])
-        dest_path = PurePosixPath(dest_str[2:])
-
-        if source_path.is_absolute():
-            raise ValueError(f"Internal source path must be relative: {source_path}")
-        if dest_path.is_absolute():
-            raise ValueError(f"Internal destination path must be relative: {dest_path}")
+        source_path = parse_path(source_str)
+        dest_path = parse_path(dest_str)
 
         return MoveToolCall(source_path, dest_path)
 

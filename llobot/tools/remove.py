@@ -7,6 +7,7 @@ import re
 from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.tools import ToolEnv
+from llobot.formats.paths import parse_path
 from llobot.tools import ToolCall
 from llobot.tools.fenced import FencedTool
 
@@ -46,12 +47,7 @@ class RemoveTool(FencedTool):
         assert match, "source for parse_content() must be valid"
         path_str = match.group(1)
 
-        if not path_str.startswith('~/'):
-            raise ValueError(f"Path must start with ~/: {path_str}")
-
-        path = PurePosixPath(path_str[2:])
-        if path.is_absolute():
-            raise ValueError(f"Internal path must be relative: {path}")
+        path = parse_path(path_str)
 
         return RemoveToolCall(path)
 

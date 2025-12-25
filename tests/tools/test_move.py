@@ -74,5 +74,5 @@ def test_move_tool_missing_tilde():
     tool = MoveTool()
     text = "```tool\nmv myproject/a.txt ~/myproject/b.txt\n```"
     # FencedTool regex matches generic block, but parse should fail
-    with pytest.raises(ValueError, match="Source path must start with ~/"):
+    with pytest.raises(ValueError, match="Path must start with ~/"):
         tool.parse(text.strip())

@@ -21,6 +21,8 @@ monolithic
     Formatting chats as a single monolithic string.
 prompts
     Prompt formats for assembling complete LLM prompts.
+paths
+    Path parsing utilities.
 submessages
     Submessage formats for rendering a chat branch into one message.
 indexes
