@@ -45,6 +45,48 @@ def test_move_tool_slice_and_parse():
     assert call._source == PurePosixPath("myproject/a.txt")
     assert call._destination == PurePosixPath("myproject/b.txt")
 
+def test_move_tool_quoted_paths():
+    tool = MoveTool()
+    text = dedent("""
+        ```tool
+        mv "~/myproject/foo bar.txt" '~/myproject/baz qux.txt'
+        ```
+    """).strip()
+
+    length = tool.slice(text, 0)
+    assert length == len(text)
+
+    call = tool.parse(text)
+    assert isinstance(call, MoveToolCall)
+    assert call._source == PurePosixPath("myproject/foo bar.txt")
+    assert call._destination == PurePosixPath("myproject/baz qux.txt")
+
+def test_move_tool_backslash_escape_space():
+    tool = MoveTool()
+    text = dedent(r"""
+        ```tool
+        mv ~/myproject/foo\ bar.txt ~/myproject/baz\ qux.txt
+        ```
+    """).strip()
+
+    length = tool.slice(text, 0)
+    assert length == len(text)
+
+    call = tool.parse(text)
+    assert isinstance(call, MoveToolCall)
+    assert call._source == PurePosixPath("myproject/foo bar.txt")
+    assert call._destination == PurePosixPath("myproject/baz qux.txt")
+
+def test_move_tool_rejects_newline_in_command():
+    tool = MoveTool()
+    text = dedent("""
+        ```tool
+        mv ~/myproject/a.txt
+        ~/myproject/b.txt
+        ```
+    """).strip()
+    assert tool.slice(text, 0) == 0
+
 def test_move_tool_execute(env: Environment):
     call = MoveToolCall(PurePosixPath("myproject/a.txt"), PurePosixPath("myproject/b.txt"))
     call.execute(env)
@@ -73,6 +115,10 @@ def test_move_tool_no_match():
 def test_move_tool_missing_tilde():
     tool = MoveTool()
     text = "```tool\nmv myproject/a.txt ~/myproject/b.txt\n```"
-    # FencedTool regex matches generic block, but parse should fail
+    # Slice matches because matches_content returns True (valid shlex command)
+    # But parse will fail because parse_path requires ~/
+    length = tool.slice(text.strip(), 0)
+    assert length == len(text.strip())
+
     with pytest.raises(ValueError, match="Path must start with ~/"):
         tool.parse(text.strip())

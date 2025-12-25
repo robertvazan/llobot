@@ -3,15 +3,13 @@ Tool for removing files.
 """
 from __future__ import annotations
 from pathlib import PurePosixPath
-import re
+import shlex
 from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.tools import ToolEnv
 from llobot.formats.paths import parse_path
 from llobot.tools import ToolCall
 from llobot.tools.fenced import FencedTool
-
-_RM_COMMAND_RE = re.compile(r'^\s*rm\s+([^\s]+)\s*$')
 
 class RemoveToolCall(ToolCall):
     """
@@ -40,14 +38,23 @@ class RemoveTool(FencedTool):
         super().__init__()
 
     def matches_content(self, source: str) -> bool:
-        return _RM_COMMAND_RE.fullmatch(source) is not None
+        if '\n' in source or '\r' in source:
+            return False
+        try:
+            parts = shlex.split(source)
+        except ValueError:
+            return False
+        return len(parts) == 2 and parts[0] == 'rm'
 
     def parse_content(self, source: str) -> ToolCall:
-        match = _RM_COMMAND_RE.fullmatch(source)
-        assert match, "source for parse_content() must be valid"
-        path_str = match.group(1)
+        if '\n' in source or '\r' in source:
+            raise ValueError("rm command must be single-line (raw newline is not allowed)")
+        parts = shlex.split(source)
+        # matches_content checks structure, but let's be safe
+        if len(parts) != 2 or parts[0] != 'rm':
+            raise ValueError(f"Invalid rm command: {source}")
 
-        path = parse_path(path_str)
+        path = parse_path(parts[1])
 
         return RemoveToolCall(path)
 

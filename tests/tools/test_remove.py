@@ -44,6 +44,46 @@ def test_remove_tool_slice_and_parse():
     assert isinstance(call, RemoveToolCall)
     assert call._path == PurePosixPath("myproject/a.txt")
 
+def test_remove_tool_quoted_path():
+    tool = RemoveTool()
+    text = dedent("""
+        ```tool
+        rm "~/myproject/foo bar.txt"
+        ```
+    """).strip()
+
+    length = tool.slice(text, 0)
+    assert length == len(text)
+
+    call = tool.parse(text)
+    assert isinstance(call, RemoveToolCall)
+    assert call._path == PurePosixPath("myproject/foo bar.txt")
+
+def test_remove_tool_backslash_escape_space():
+    tool = RemoveTool()
+    text = dedent(r"""
+        ```tool
+        rm ~/myproject/foo\ bar.txt
+        ```
+    """).strip()
+
+    length = tool.slice(text, 0)
+    assert length == len(text)
+
+    call = tool.parse(text)
+    assert isinstance(call, RemoveToolCall)
+    assert call._path == PurePosixPath("myproject/foo bar.txt")
+
+def test_remove_tool_rejects_newline_in_command():
+    tool = RemoveTool()
+    text = dedent("""
+        ```tool
+        rm
+        ~/myproject/a.txt
+        ```
+    """).strip()
+    assert tool.slice(text, 0) == 0
+
 def test_remove_tool_execute(env: Environment):
     call = RemoveToolCall(PurePosixPath("myproject/a.txt"))
     call.execute(env)
@@ -62,5 +102,9 @@ def test_remove_tool_no_match():
 def test_remove_tool_missing_tilde():
     tool = RemoveTool()
     text = "```tool\nrm myproject/a.txt\n```"
+    # Slice matches because matches_content returns True
+    length = tool.slice(text.strip(), 0)
+    assert length == len(text.strip())
+
     with pytest.raises(ValueError, match="Path must start with ~/"):
         tool.parse(text.strip())

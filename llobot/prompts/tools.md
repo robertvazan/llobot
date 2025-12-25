@@ -24,6 +24,8 @@ Example:
 
 - To remove a file, use the `rm` command in a `tool` code block
 - A directory is removed by removing all files within it
+- Arguments can be single-quoted, double-quoted, or backslash-escaped
+- Raw newlines are not allowed. Bash-style `$'...'` is not supported
 
 Example:
 
@@ -35,6 +37,8 @@ rm ~/path/to/file.py
 
 - To move a file, use the `mv` command in a `tool` code block
 - If a file needs to be moved and also modified, use two separate operations: first move, then modification
+- Arguments can be single-quoted, double-quoted, or backslash-escaped
+- Raw newlines are not allowed. Bash-style `$'...'` is not supported
 
 Example:
 

@@ -3,15 +3,13 @@ Tool for moving files.
 """
 from __future__ import annotations
 from pathlib import PurePosixPath
-import re
+import shlex
 from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.tools import ToolEnv
 from llobot.formats.paths import parse_path
 from llobot.tools import ToolCall
 from llobot.tools.fenced import FencedTool
-
-_MV_COMMAND_RE = re.compile(r'^\s*mv\s+([^\s]+)\s+([^\s]+)\s*$')
 
 class MoveToolCall(ToolCall):
     """
@@ -44,16 +42,24 @@ class MoveTool(FencedTool):
         super().__init__()
 
     def matches_content(self, source: str) -> bool:
-        return _MV_COMMAND_RE.fullmatch(source) is not None
+        if '\n' in source or '\r' in source:
+            return False
+        try:
+            parts = shlex.split(source)
+        except ValueError:
+            return False
+        return len(parts) == 3 and parts[0] == 'mv'
 
     def parse_content(self, source: str) -> ToolCall:
-        match = _MV_COMMAND_RE.fullmatch(source)
-        assert match, "source for parse_content() must be valid"
-        source_str = match.group(1)
-        dest_str = match.group(2)
+        if '\n' in source or '\r' in source:
+            raise ValueError("mv command must be single-line (raw newline is not allowed)")
+        parts = shlex.split(source)
+        # matches_content checks structure, but let's be safe
+        if len(parts) != 3 or parts[0] != 'mv':
+            raise ValueError(f"Invalid mv command: {source}")
 
-        source_path = parse_path(source_str)
-        dest_path = parse_path(dest_str)
+        source_path = parse_path(parts[1])
+        dest_path = parse_path(parts[2])
 
         return MoveToolCall(source_path, dest_path)
 
