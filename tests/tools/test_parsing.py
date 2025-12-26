@@ -1,5 +1,6 @@
 import pytest
 from textwrap import dedent
+from typing import Iterable
 from llobot.environments import Environment
 from llobot.environments.tools import ToolEnv
 from llobot.tools import Tool, ToolCall
@@ -27,8 +28,8 @@ class SimpleTool(BlockTool):
                 return len(source) - at
         return 0
 
-    def parse(self, env, formatted):
-        return SimpleToolCall(formatted[4:])
+    def parse(self, env, formatted) -> Iterable[ToolCall]:
+        yield SimpleToolCall(formatted[4:])
 
 def test_parse_tool_calls_basic():
     text = dedent("""
@@ -62,7 +63,7 @@ def test_parse_tool_calls_skips_none():
                 return 4
             return 0
         def parse(self, env, source):
-            return None
+            return [] # Empty iterable
 
     text = dedent("""
         CMD:one
@@ -103,7 +104,7 @@ def test_parse_tool_calls_no_extra_line_skip():
                     return len(source) - at
             return 0
         def parse(self, env, formatted):
-            return SimpleToolCall(formatted[4:].strip())
+            yield SimpleToolCall(formatted[4:].strip())
 
     text = dedent("""
         CMD:one

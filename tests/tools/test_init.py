@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Iterable
 import pytest
 from llobot.environments import Environment
 from llobot.environments.tools import ToolEnv
@@ -19,23 +20,26 @@ class MyTool(BlockTool):
             return 4
         return 0
 
-    def parse(self, env: Environment, source: str) -> ToolCall | None:
+    def parse(self, env: Environment, source: str) -> Iterable[ToolCall]:
         if source == "TOOL":
-            return MyToolCall()
+            yield MyToolCall()
+            return
         raise ValueError("bad tool")
 
 def test_try_parse_success():
     tool = MyTool()
-    call = tool.try_parse(Environment(), "TOOL")
-    assert isinstance(call, MyToolCall)
+    calls = list(tool.try_parse(Environment(), "TOOL"))
+    assert len(calls) == 1
+    assert isinstance(calls[0], MyToolCall)
 
 def test_try_parse_error():
     tool = MyTool()
-    call = tool.try_parse(Environment(), "TOOL-bad")
-    assert isinstance(call, InvalidToolCall)
-    assert call.title == "invalid tool call"
+    calls = list(tool.try_parse(Environment(), "TOOL-bad"))
+    assert len(calls) == 1
+    assert isinstance(calls[0], InvalidToolCall)
+    assert calls[0].title == "invalid tool call"
     with pytest.raises(ValueError, match="bad tool"):
-        call.execute(Environment())
+        calls[0].execute(Environment())
 
 def test_try_execute_success():
     class SuccessToolCall(ToolCall):

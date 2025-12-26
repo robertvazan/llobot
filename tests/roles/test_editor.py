@@ -105,5 +105,4 @@ def test_editor_system_prompt(tmp_path: Path):
 
     assert "File manipulation tools" in response
     assert "New or modified file" in response
-    assert "Removed file" in response
-    assert "Moved file" in response
+    assert "Tool script" in response

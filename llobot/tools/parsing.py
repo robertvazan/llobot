@@ -53,8 +53,7 @@ def parse_tool_calls(env: Environment, source: str) -> Iterator[ToolCall]:
         if matched_tool:
             if isinstance(matched_tool, BlockTool):
                 snippet = source[at:at+matched_len]
-                call = matched_tool.try_parse(env, snippet)
-                if call is not None:
+                for call in matched_tool.try_parse(env, snippet):
                     yield call
             at += matched_len
 

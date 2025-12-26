@@ -16,8 +16,9 @@ from llobot.tools.code import DummyCodeBlockTool
 from llobot.tools.files import FileTool
 from llobot.tools.move import MoveTool
 from llobot.tools.remove import RemoveTool
+from llobot.tools.script import ScriptTool
 
-TOOLS = [FileTool(), MoveTool(), RemoveTool(), DummyCodeBlockTool()]
+TOOLS = [FileTool(), MoveTool(), RemoveTool(), ScriptTool(), DummyCodeBlockTool()]
 
 def test_accept_command_success(tmp_path: Path):
     # Setup project
@@ -47,7 +48,7 @@ def test_accept_command_success(tmp_path: Path):
 
         </details>
 
-        ```tool
+        ```toolscript
         rm ~/myproject/file1.txt
         ```
     """)
@@ -94,7 +95,7 @@ def test_accept_command_failure(tmp_path: Path):
 
     # Setup prompt with a model response containing a failing tool call
     response_content = textwrap.dedent("""
-        ```tool
+        ```toolscript
         rm ~/myproject/nonexistent.txt
         ```
     """)

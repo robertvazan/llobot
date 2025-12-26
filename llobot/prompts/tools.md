@@ -3,11 +3,20 @@
 - Use tools to perform file modifications
 - Tool calls in your messages represent your actions
 
-### New or modified file
+### Tool script
 
-- To create a new file or modify an existing one, use a file listing
-- The code block contains the entire content of the file
-- IMPORTANT: Provide the entire new content of the file when adding or modifying files rather than just a diff or other partial representation
+Example:
+
+```toolscript
+rm ~/file/to/remove.txt
+mv ~/original/location.md ~/path/to/destination.md
+```
+
+- Tool script behaves like a shell script, but its content is limited to commands shown in the above example in that exact form without options
+- Tool script is parsed using Python's shlex and it supports single-quoted, double-quoted, and backslash-escaped arguments, but not raw newlines or bash-style `$'...'`
+- Tools in a tool script can be applied only to individual files, not whole directories
+
+### New or modified file
 
 Example:
 
@@ -20,28 +29,6 @@ Example:
 
 </details>
 
-### Removed file
-
-- To remove a file, use the `rm` command in a `tool` code block
-- A directory is removed by removing all files within it
-- Arguments can be single-quoted, double-quoted, or backslash-escaped
-- Raw newlines are not allowed. Bash-style `$'...'` is not supported
-
-Example:
-
-```tool
-rm ~/path/to/file.py
-```
-
-### Moved file
-
-- To move a file, use the `mv` command in a `tool` code block
-- If a file needs to be moved and also modified, use two separate operations: first move, then modification
-- Arguments can be single-quoted, double-quoted, or backslash-escaped
-- Raw newlines are not allowed. Bash-style `$'...'` is not supported
-
-Example:
-
-```tool
-mv ~/original/location.py ~/path/to/file.py
-```
+- Use file listing to create a new file or modify an existing one
+- The code block contains the entire content of the file
+- IMPORTANT: Provide the entire new content of the file when adding or modifying files rather than just a diff or other partial representation

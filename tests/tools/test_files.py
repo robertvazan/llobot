@@ -46,7 +46,9 @@ def test_file_tool_slice_and_parse(env: Environment):
     length = tool.slice(env, text, 0)
     assert length == len(text)
 
-    call = tool.parse(env, text)
+    calls = list(tool.parse(env, text))
+    assert len(calls) == 1
+    call = calls[0]
     assert isinstance(call, FileToolCall)
     assert call._path == PurePosixPath("myproject/foo.txt")
     assert call._content == "content\nof the file\n"
@@ -75,7 +77,9 @@ def test_file_tool_slice_extra_whitespace(env: Environment):
     length = tool.slice(env, text, 0)
     assert length == len(text)
 
-    call = tool.parse(env, text)
+    calls = list(tool.parse(env, text))
+    assert len(calls) == 1
+    call = calls[0]
     assert isinstance(call, FileToolCall)
     assert call._path == PurePosixPath("myproject/bar.py")
     assert call._content == 'print("hello")\n'
@@ -100,7 +104,7 @@ def test_file_tool_missing_tilde_prefix(env: Environment):
     assert length == len(text)
 
     with pytest.raises(ValueError, match="Path must start with ~/"):
-        tool.parse(env, text)
+        list(tool.parse(env, text))
 
 def test_file_tool_empty_code_block(env: Environment):
     tool = FileTool()
@@ -115,7 +119,9 @@ def test_file_tool_empty_code_block(env: Environment):
     length = tool.slice(env, text, 0)
     assert length == len(text)
 
-    call = tool.parse(env, text)
+    calls = list(tool.parse(env, text))
+    assert len(calls) == 1
+    call = calls[0]
     assert isinstance(call, FileToolCall)
     assert call._path == PurePosixPath("myproject/empty.txt")
     assert call._content == ""

@@ -16,12 +16,16 @@ fenced
     A base class for tools that use fenced code blocks.
 files
     A tool for creating or updating files from file listings.
+line
+    Base class for tools that parse single lines.
 move
     A tool for moving files.
 parsing
     A function to parse tool calls from text.
 remove
     A tool for removing files.
+script
+    A tool for executing scripts of line-based commands.
 """
 from __future__ import annotations
 from functools import cache
@@ -109,10 +113,12 @@ def standard_tools() -> tuple[Tool, ...]:
     from llobot.tools.files import FileTool
     from llobot.tools.move import MoveTool
     from llobot.tools.remove import RemoveTool
+    from llobot.tools.script import ScriptTool
     return (
         FileTool(),
         MoveTool(),
         RemoveTool(),
+        ScriptTool(),
         DummyCodeBlockTool(),
     )
 

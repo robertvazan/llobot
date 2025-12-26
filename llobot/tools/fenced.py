@@ -63,7 +63,7 @@ class FencedTool(BlockTool):
 
         return match.end() - at
 
-    def parse(self, env: Environment, source: str) -> ToolCall:
+    def parse(self, env: Environment, source: str) -> Iterable[ToolCall]:
         match = self._re.fullmatch(source)
         assert match, "source for parse() must have been validated by slice()"
 
@@ -83,16 +83,16 @@ class FencedTool(BlockTool):
         """
         raise NotImplementedError
 
-    def parse_content(self, env: Environment, source: str) -> ToolCall:
+    def parse_content(self, env: Environment, source: str) -> Iterable[ToolCall]:
         """
-        Parses the content into a ToolCall.
+        Parses the content into ToolCalls.
 
         Args:
             env: The environment.
             source: The content inside the fenced block.
 
         Returns:
-            A ToolCall instance.
+            An iterable of ToolCall instances.
         """
         raise NotImplementedError
 

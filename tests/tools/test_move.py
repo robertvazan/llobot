@@ -29,63 +29,38 @@ def env(home_library: HomeProjectLibrary, project: DirectoryProject) -> Environm
     penv.add("myproject")
     return environment
 
-def test_move_tool_slice_and_parse(env: Environment):
+def test_move_tool_matches_and_parses_line(env: Environment):
     tool = MoveTool()
-    text = dedent("""
-        ```tool
-        mv ~/myproject/a.txt ~/myproject/b.txt
-        ```
-    """).strip()
+    line = "mv ~/myproject/a.txt ~/myproject/b.txt"
 
-    length = tool.slice(env, text, 0)
-    assert length == len(text)
+    assert tool.matches_line(env, line)
 
-    call = tool.parse(env, text)
+    call = tool.parse_line(env, line)
     assert isinstance(call, MoveToolCall)
     assert call._source == PurePosixPath("myproject/a.txt")
     assert call._destination == PurePosixPath("myproject/b.txt")
 
 def test_move_tool_quoted_paths(env: Environment):
     tool = MoveTool()
-    text = dedent("""
-        ```tool
-        mv "~/myproject/foo bar.txt" '~/myproject/baz qux.txt'
-        ```
-    """).strip()
+    line = "mv \"~/myproject/foo bar.txt\" '~/myproject/baz qux.txt'"
 
-    length = tool.slice(env, text, 0)
-    assert length == len(text)
+    assert tool.matches_line(env, line)
 
-    call = tool.parse(env, text)
+    call = tool.parse_line(env, line)
     assert isinstance(call, MoveToolCall)
     assert call._source == PurePosixPath("myproject/foo bar.txt")
     assert call._destination == PurePosixPath("myproject/baz qux.txt")
 
 def test_move_tool_backslash_escape_space(env: Environment):
     tool = MoveTool()
-    text = dedent(r"""
-        ```tool
-        mv ~/myproject/foo\ bar.txt ~/myproject/baz\ qux.txt
-        ```
-    """).strip()
+    line = r"mv ~/myproject/foo\ bar.txt ~/myproject/baz\ qux.txt"
 
-    length = tool.slice(env, text, 0)
-    assert length == len(text)
+    assert tool.matches_line(env, line)
 
-    call = tool.parse(env, text)
+    call = tool.parse_line(env, line)
     assert isinstance(call, MoveToolCall)
     assert call._source == PurePosixPath("myproject/foo bar.txt")
     assert call._destination == PurePosixPath("myproject/baz qux.txt")
-
-def test_move_tool_rejects_newline_in_command(env: Environment):
-    tool = MoveTool()
-    text = dedent("""
-        ```tool
-        mv ~/myproject/a.txt
-        ~/myproject/b.txt
-        ```
-    """).strip()
-    assert tool.slice(env, text, 0) == 0
 
 def test_move_tool_execute(env: Environment):
     call = MoveToolCall(PurePosixPath("myproject/a.txt"), PurePosixPath("myproject/b.txt"))
@@ -109,16 +84,14 @@ def test_move_tool_overwrite(env: Environment):
 
 def test_move_tool_no_match(env: Environment):
     tool = MoveTool()
-    text = "```tool\nmv a.txt\n```"
-    assert tool.slice(env, text, 0) == 0
+    assert not tool.matches_line(env, "cp a b")
+    assert not tool.matches_line(env, "mv a b c")
 
 def test_move_tool_missing_tilde(env: Environment):
     tool = MoveTool()
-    text = "```tool\nmv myproject/a.txt ~/myproject/b.txt\n```"
-    # Slice matches because matches_content returns True (valid shlex command)
-    # But parse will fail because parse_path requires ~/
-    length = tool.slice(env, text.strip(), 0)
-    assert length == len(text.strip())
+    line = "mv myproject/a.txt ~/myproject/b.txt"
+    # matches_line should return True because it just checks shlex parts
+    assert tool.matches_line(env, line)
 
     with pytest.raises(ValueError, match="Path must start with ~/"):
-        tool.parse(env, text.strip())
+        tool.parse_line(env, line)

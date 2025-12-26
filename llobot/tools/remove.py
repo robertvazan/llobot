@@ -9,7 +9,7 @@ from llobot.environments.projects import ProjectEnv
 from llobot.environments.tools import ToolEnv
 from llobot.formats.paths import parse_path
 from llobot.tools import ToolCall
-from llobot.tools.fenced import FencedTool
+from llobot.tools.line import LineTool
 
 class RemoveToolCall(ToolCall):
     """
@@ -30,29 +30,22 @@ class RemoveToolCall(ToolCall):
         project.remove(self._path)
         env[ToolEnv].log("File was removed.")
 
-class RemoveTool(FencedTool):
+class RemoveTool(LineTool):
     """
-    Tool that parses `rm ~/path` commands inside `tool` code blocks.
+    Tool that parses `rm ~/path` commands.
     """
-    def __init__(self):
-        super().__init__()
-
-    def matches_content(self, env: Environment, source: str) -> bool:
-        if '\n' in source or '\r' in source:
-            return False
+    def matches_line(self, env: Environment, line: str) -> bool:
         try:
-            parts = shlex.split(source)
+            parts = shlex.split(line)
         except ValueError:
             return False
         return len(parts) == 2 and parts[0] == 'rm'
 
-    def parse_content(self, env: Environment, source: str) -> ToolCall:
-        if '\n' in source or '\r' in source:
-            raise ValueError("rm command must be single-line (raw newline is not allowed)")
-        parts = shlex.split(source)
-        # matches_content checks structure, but let's be safe
+    def parse_line(self, env: Environment, line: str) -> ToolCall:
+        parts = shlex.split(line)
+        # matches_line checks structure, but let's be safe
         if len(parts) != 2 or parts[0] != 'rm':
-            raise ValueError(f"Invalid rm command: {source}")
+            raise ValueError(f"Invalid rm command: {line}")
 
         path = parse_path(parts[1])
 

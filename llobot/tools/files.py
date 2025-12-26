@@ -4,6 +4,7 @@ Tool for writing files from document listings.
 from __future__ import annotations
 from pathlib import PurePosixPath
 import re
+from typing import Iterable
 from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.tools import ToolEnv
@@ -57,7 +58,7 @@ class FileTool(BlockTool):
             return 0
         return match.end() - at
 
-    def parse(self, env: Environment, source: str) -> ToolCall:
+    def parse(self, env: Environment, source: str) -> Iterable[ToolCall]:
         match = _FILE_DETAILS_RE.fullmatch(source)
         assert match, "source for parse() must be validated by slice()"
 
@@ -66,7 +67,7 @@ class FileTool(BlockTool):
 
         content = match.group('content')
 
-        return FileToolCall(path, content)
+        yield FileToolCall(path, content)
 
 __all__ = [
     'FileTool',

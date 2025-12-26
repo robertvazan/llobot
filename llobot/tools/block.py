@@ -2,6 +2,7 @@
 Defines the `BlockTool` interface.
 """
 from __future__ import annotations
+from typing import Iterable
 from llobot.environments import Environment
 from llobot.tools import Tool, ToolCall, InvalidToolCall
 
@@ -27,9 +28,9 @@ class BlockTool(Tool):
         """
         raise NotImplementedError
 
-    def parse(self, env: Environment, source: str) -> ToolCall | None:
+    def parse(self, env: Environment, source: str) -> Iterable[ToolCall]:
         """
-        Parses a source string into a `ToolCall`.
+        Parses a source string into `ToolCall`s.
 
         This method is only called with a `source` string that has been
         successfully matched by `slice()`.
@@ -39,26 +40,25 @@ class BlockTool(Tool):
             source: The string identified by `slice`.
 
         Returns:
-            A `ToolCall` instance, or `None` to indicate that this tool call
-            should be silently skipped.
+            An iterable of `ToolCall` instances.
         """
         raise NotImplementedError
 
-    def try_parse(self, env: Environment, source: str) -> ToolCall | None:
+    def try_parse(self, env: Environment, source: str) -> Iterable[ToolCall]:
         """
-        Attempts to parse a source string, returning an invalid call on failure.
+        Attempts to parse a source string, yielding an invalid call on failure.
 
         Args:
             env: The environment.
             source: The string identified by `slice`.
 
-        Returns:
-            A `ToolCall`, `InvalidToolCall`, or `None`.
+        Yields:
+            `ToolCall`s or `InvalidToolCall`.
         """
         try:
-            return self.parse(env, source)
+            yield from self.parse(env, source)
         except Exception as e:
-            return InvalidToolCall(e)
+            yield InvalidToolCall(e)
 
 __all__ = [
     'BlockTool',
