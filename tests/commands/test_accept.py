@@ -12,13 +12,14 @@ from llobot.environments.prompt import PromptEnv
 from llobot.environments.status import StatusEnv
 from llobot.environments.tools import ToolEnv
 from llobot.projects.library.home import HomeProjectLibrary
+from llobot.tools.cat import CatTool
 from llobot.tools.code import DummyCodeBlockTool
 from llobot.tools.files import FileTool
 from llobot.tools.move import MoveTool
 from llobot.tools.remove import RemoveTool
 from llobot.tools.script import ScriptTool
 
-TOOLS = [FileTool(), MoveTool(), RemoveTool(), ScriptTool(), DummyCodeBlockTool()]
+TOOLS = [FileTool(), MoveTool(), RemoveTool(), CatTool(), ScriptTool(), DummyCodeBlockTool()]
 
 def test_accept_command_success(tmp_path: Path):
     # Setup project
@@ -26,6 +27,7 @@ def test_accept_command_success(tmp_path: Path):
     project_dir = sources_dir / "myproject"
     project_dir.mkdir(parents=True)
     (project_dir / "file1.txt").write_text("content1")
+    (project_dir / "file3.txt").write_text("content3")
 
     # Setup environment
     env = Environment()
@@ -50,6 +52,7 @@ def test_accept_command_success(tmp_path: Path):
 
         ```toolscript
         rm ~/myproject/file1.txt
+        cat ~/myproject/file3.txt
         ```
     """)
     prompt = ChatThread([
@@ -77,7 +80,12 @@ def test_accept_command_success(tmp_path: Path):
     assert "Success: rm ~/myproject/file1.txt" in content
     assert "Removing ~/myproject/file1.txt..." in content
     assert "File was removed." in content
-    assert "✅ All 2 tool calls executed." in content
+    assert "Success: cat ~/myproject/file3.txt" in content
+    assert "Reading ~/myproject/file3.txt..." in content
+    assert "File was read." in content
+    assert "File: ~/myproject/file3.txt" in content
+    assert "content3" in content
+    assert "✅ All 3 tool calls executed." in content
 
 def test_accept_command_failure(tmp_path: Path):
     # Setup project

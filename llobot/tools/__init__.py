@@ -8,6 +8,8 @@ Submodules
 ----------
 block
     Base class for tools that parse content blocks.
+cat
+    A tool for reading files.
 dummy
     Base class for tools that skip content.
 code
@@ -104,11 +106,13 @@ def standard_tools() -> tuple[Tool, ...]:
     Returns a standard set of tools for file manipulation.
 
     The standard toolset includes tools for creating/updating files, moving
-    files, removing files, and a fallback tool to skip generic code blocks.
+    files, removing files, reading files, and a fallback tool to skip generic
+    code blocks.
 
     Returns:
         A tuple of standard tool instances.
     """
+    from llobot.tools.cat import CatTool
     from llobot.tools.code import DummyCodeBlockTool
     from llobot.tools.files import FileTool
     from llobot.tools.move import MoveTool
@@ -118,6 +122,7 @@ def standard_tools() -> tuple[Tool, ...]:
         FileTool(),
         MoveTool(),
         RemoveTool(),
+        CatTool(),
         ScriptTool(),
         DummyCodeBlockTool(),
     )

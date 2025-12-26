@@ -3,7 +3,6 @@ Tool execution environment.
 """
 from __future__ import annotations
 from typing import Iterable, TYPE_CHECKING
-from llobot.environments.persistent import PersistentEnv
 
 if TYPE_CHECKING:
     from llobot.tools import Tool
@@ -11,13 +10,19 @@ if TYPE_CHECKING:
 class ToolEnv:
     """
     Environment component for accumulating tool execution logs and managing tools.
+
+    This environment manages two streams of text produced by tools:
+    - Log: Internal execution details, errors, and status updates (via `log()`).
+    - Output: User-visible content produced by the tool, such as file listings (via `output()`).
     """
     _log: list[str]
+    _output: list[str]
     _tools: set[Tool]
     _cached_tools: list[Tool] | None
 
     def __init__(self):
         self._log = []
+        self._output = []
         self._tools = set()
         self._cached_tools = None
 
@@ -39,6 +44,29 @@ class ToolEnv:
         """
         result = '\n'.join(self._log)
         self._log.clear()
+        return result
+
+    def output(self, content: str):
+        """
+        Appends content to the tool execution output.
+
+        The output is intended to be displayed to the user, typically after the
+        execution log.
+
+        Args:
+            content: The content to append.
+        """
+        self._output.append(content)
+
+    def flush_output(self) -> str:
+        """
+        Returns the accumulated output and clears the buffer.
+
+        Returns:
+            The joined output strings separated by double newlines.
+        """
+        result = '\n\n'.join(self._output)
+        self._output.clear()
         return result
 
     def register(self, tool: Tool):

@@ -61,11 +61,16 @@ def handle_accept_command(text: str, env: Environment) -> bool:
             success_count += 1
 
         log_content = tool_env.flush_log()
+        output_content = tool_env.flush_output()
+
         summary = f"{'Success' if success else 'Failure'}: {call.title}"
 
         # Output a details/summary section with an untyped code block (no language).
         details = markdown_code_details(summary, '', log_content)
         status_env.append(details)
+
+        if success and output_content:
+            status_env.append(output_content)
 
     total_count = len(tool_calls)
     if success_count == total_count:
