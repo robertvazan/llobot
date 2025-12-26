@@ -8,7 +8,8 @@ from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.tools import ToolEnv
 from llobot.formats.paths import parse_path
-from llobot.tools import Tool, ToolCall
+from llobot.tools import ToolCall
+from llobot.tools.block import BlockTool
 from llobot.utils.text import normalize_document
 
 class FileToolCall(ToolCall):
@@ -38,7 +39,7 @@ _FILE_DETAILS_RE = re.compile(
 )
 
 
-class FileTool(Tool):
+class FileTool(BlockTool):
     """
     Tool that parses document listings in the format:
     <details>
@@ -50,13 +51,13 @@ class FileTool(Tool):
 
     </details>
     """
-    def slice(self, source: str, at: int) -> int:
+    def slice(self, env: Environment, source: str, at: int) -> int:
         match = _FILE_DETAILS_RE.match(source, pos=at)
         if not match:
             return 0
         return match.end() - at
 
-    def parse(self, source: str) -> ToolCall:
+    def parse(self, env: Environment, source: str) -> ToolCall:
         match = _FILE_DETAILS_RE.fullmatch(source)
         assert match, "source for parse() must be validated by slice()"
 

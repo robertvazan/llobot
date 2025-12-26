@@ -2,23 +2,21 @@
 Accept command for executing tool calls from model responses.
 """
 from __future__ import annotations
-from typing import Iterable
 from llobot.chats.intent import ChatIntent
 from llobot.commands import handle_commands
 from llobot.environments import Environment
 from llobot.environments.prompt import PromptEnv
 from llobot.environments.status import StatusEnv
 from llobot.environments.tools import ToolEnv
-from llobot.tools import Tool
 from llobot.tools.parsing import parse_tool_calls
 from llobot.utils.text import markdown_code_details
 
-def handle_accept_command(text: str, env: Environment, tools: Iterable[Tool]) -> bool:
+def handle_accept_command(text: str, env: Environment) -> bool:
     """
     Parses and executes tool calls from the last model response.
 
     This command finds the last model response, parses it for tool calls
-    (e.g., file edits, removals), and executes them. The results of each
+    using registered tools, and executes them. The results of each
     execution are reported in the `StatusEnv`.
 
     If no tool calls are found, or if there's no previous response, it's
@@ -27,7 +25,6 @@ def handle_accept_command(text: str, env: Environment, tools: Iterable[Tool]) ->
     Args:
         text: The command string. Must be "accept".
         env: The environment in which to execute the tool calls.
-        tools: Iterable of Tool implementations used to parse tool calls.
 
     Returns:
         `True` if the command was "accept", `False` otherwise.
@@ -48,8 +45,8 @@ def handle_accept_command(text: str, env: Environment, tools: Iterable[Tool]) ->
 
     response_content = last_response.content
 
-    # Parse tool calls from the last response using provided tools.
-    tool_calls = list(parse_tool_calls(response_content, tools))
+    # Parse tool calls from the last response using registered tools.
+    tool_calls = list(parse_tool_calls(env, response_content))
 
     if not tool_calls:
         raise ValueError("No tool calls to execute.")
@@ -80,15 +77,14 @@ def handle_accept_command(text: str, env: Environment, tools: Iterable[Tool]) ->
 
     return True
 
-def handle_accept_commands(env: Environment, tools: Iterable[Tool]):
+def handle_accept_commands(env: Environment):
     """
     Handles `@accept` commands in the environment.
 
     Args:
         env: The environment to handle commands in.
-        tools: Iterable of Tool implementations used to parse tool calls.
     """
-    handle_commands(env, lambda text, env: handle_accept_command(text, env, tools))
+    handle_commands(env, lambda text, env: handle_accept_command(text, env))
 
 __all__ = [
     'handle_accept_command',

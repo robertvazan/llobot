@@ -6,6 +6,10 @@ for various tools are available in submodules.
 
 Submodules
 ----------
+block
+    Base class for tools that parse content blocks.
+dummy
+    Base class for tools that skip content.
 code
     A tool for skipping code blocks.
 fenced
@@ -84,57 +88,11 @@ class InvalidToolCall(ToolCall):
     def execute(self, env: Environment):
         raise self._error
 
-class Tool:
+class Tool(ValueTypeMixin):
     """
-    Interface for parsing tool calls from text.
+    Marker interface for all tools.
     """
-
-    def slice(self, source: str, at: int) -> int:
-        """
-        Attempts to locate a tool call starting at the given position.
-
-        It is assumed that `at` is an index pointing to the start of a line.
-
-        Args:
-            source: The source text.
-            at: The index to start looking from.
-
-        Returns:
-            The length of the matching tool call substring, or 0 if no match.
-            The returned slice does not need to include a trailing newline.
-        """
-        raise NotImplementedError
-
-    def parse(self, source: str) -> ToolCall | None:
-        """
-        Parses a source string into a `ToolCall`.
-
-        This method is only called with a `source` string that has been
-        successfully matched by `slice()`.
-
-        Args:
-            source: The string identified by `slice`.
-
-        Returns:
-            A `ToolCall` instance, or `None` to indicate that this tool call
-            should be silently skipped.
-        """
-        raise NotImplementedError
-
-    def try_parse(self, source: str) -> ToolCall | None:
-        """
-        Attempts to parse a source string, returning an invalid call on failure.
-
-        Args:
-            source: The string identified by `slice`.
-
-        Returns:
-            A `ToolCall`, `InvalidToolCall`, or `None`.
-        """
-        try:
-            return self.parse(source)
-        except Exception as e:
-            return InvalidToolCall(e)
+    pass
 
 @cache
 def standard_tools() -> tuple[Tool, ...]:
@@ -143,12 +101,11 @@ def standard_tools() -> tuple[Tool, ...]:
 
     The standard toolset includes tools for creating/updating files, moving
     files, removing files, and a fallback tool to skip generic code blocks.
-    The order is important: more specific tools are first.
 
     Returns:
         A tuple of standard tool instances.
     """
-    from llobot.tools.code import CodeBlockTool
+    from llobot.tools.code import DummyCodeBlockTool
     from llobot.tools.files import FileTool
     from llobot.tools.move import MoveTool
     from llobot.tools.remove import RemoveTool
@@ -156,8 +113,7 @@ def standard_tools() -> tuple[Tool, ...]:
         FileTool(),
         MoveTool(),
         RemoveTool(),
-        # CodeBlockTool must be last to act as a fallback for unrecognized code blocks.
-        CodeBlockTool(),
+        DummyCodeBlockTool(),
     )
 
 

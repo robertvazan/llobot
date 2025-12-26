@@ -1,6 +1,9 @@
 import pytest
 from textwrap import dedent
+from llobot.environments import Environment
+from llobot.environments.tools import ToolEnv
 from llobot.tools import Tool, ToolCall
+from llobot.tools.block import BlockTool
 from llobot.tools.parsing import parse_tool_calls
 
 class SimpleToolCall(ToolCall):
@@ -14,8 +17,8 @@ class SimpleToolCall(ToolCall):
     def execute(self, env):
         pass
 
-class SimpleTool(Tool):
-    def slice(self, source, at):
+class SimpleTool(BlockTool):
+    def slice(self, env, source, at):
         if source.startswith("CMD:", at):
             try:
                 end = source.index("\n", at)
@@ -24,7 +27,7 @@ class SimpleTool(Tool):
                 return len(source) - at
         return 0
 
-    def parse(self, formatted):
+    def parse(self, env, formatted):
         return SimpleToolCall(formatted[4:])
 
 def test_parse_tool_calls_basic():
@@ -33,8 +36,10 @@ def test_parse_tool_calls_basic():
         ignored
         CMD:two
     """).lstrip()
-    tools = [SimpleTool()]
-    calls = list(parse_tool_calls(text, tools))
+    env = Environment()
+    env[ToolEnv].register(SimpleTool())
+
+    calls = list(parse_tool_calls(env, text))
 
     assert len(calls) == 2
     assert isinstance(calls[0], SimpleToolCall)
@@ -43,18 +48,20 @@ def test_parse_tool_calls_basic():
 
 def test_parse_tool_calls_no_newline_at_end():
     text = "CMD:one"
-    tools = [SimpleTool()]
-    calls = list(parse_tool_calls(text, tools))
+    env = Environment()
+    env[ToolEnv].register(SimpleTool())
+
+    calls = list(parse_tool_calls(env, text))
     assert len(calls) == 1
     assert calls[0].content == "one"
 
 def test_parse_tool_calls_skips_none():
-    class NoneTool(Tool):
-        def slice(self, source, at):
+    class NoneTool(BlockTool):
+        def slice(self, env, source, at):
             if source.startswith("SKIP", at):
                 return 4
             return 0
-        def parse(self, source):
+        def parse(self, env, source):
             return None
 
     text = dedent("""
@@ -62,8 +69,11 @@ def test_parse_tool_calls_skips_none():
         SKIP
         CMD:two
     """).lstrip()
-    tools = [SimpleTool(), NoneTool()]
-    calls = list(parse_tool_calls(text, tools))
+    env = Environment()
+    env[ToolEnv].register(SimpleTool())
+    env[ToolEnv].register(NoneTool())
+
+    calls = list(parse_tool_calls(env, text))
 
     assert len(calls) == 2
     assert calls[0].content == "one"
@@ -75,14 +85,16 @@ def test_skip_non_matching_lines():
         CMD:foo
         Line 3
     """).lstrip()
-    tools = [SimpleTool()]
-    calls = list(parse_tool_calls(text, tools))
+    env = Environment()
+    env[ToolEnv].register(SimpleTool())
+
+    calls = list(parse_tool_calls(env, text))
     assert len(calls) == 1
     assert calls[0].content == "foo"
 
 def test_parse_tool_calls_no_extra_line_skip():
-    class LineEatingTool(Tool):
-        def slice(self, source, at):
+    class LineEatingTool(BlockTool):
+        def slice(self, env, source, at):
             if source.startswith("CMD:", at):
                 try:
                     end = source.index("\n", at)
@@ -90,15 +102,17 @@ def test_parse_tool_calls_no_extra_line_skip():
                 except ValueError:
                     return len(source) - at
             return 0
-        def parse(self, formatted):
+        def parse(self, env, formatted):
             return SimpleToolCall(formatted[4:].strip())
 
     text = dedent("""
         CMD:one
         CMD:two
     """).lstrip()
-    tools = [LineEatingTool()]
-    calls = list(parse_tool_calls(text, tools))
+    env = Environment()
+    env[ToolEnv].register(LineEatingTool())
+
+    calls = list(parse_tool_calls(env, text))
     assert len(calls) == 2
     assert calls[0].content == "one"
     assert calls[1].content == "two"

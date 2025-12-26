@@ -2,37 +2,47 @@
 Tool call parsing logic.
 """
 from __future__ import annotations
-from typing import Iterable, Iterator
-from llobot.tools import Tool, ToolCall
+from typing import Iterator
+from llobot.environments import Environment
+from llobot.environments.tools import ToolEnv
+from llobot.tools import ToolCall
+from llobot.tools.block import BlockTool
+from llobot.tools.dummy import DummyTool
 
-def parse_tool_calls(source: str, tools: Iterable[Tool]) -> Iterator[ToolCall]:
+def parse_tool_calls(env: Environment, source: str) -> Iterator[ToolCall]:
     """
-    Parses tool calls from a source string using a list of tools.
+    Parses tool calls from a source string using registered tools.
 
     It scans the source string line by line. At each line, it attempts to match
-    against the provided tools in order. If a match is found, the tool call is
+    against the registered tools in order. If a match is found, the tool call is
     parsed and yielded (if not `None`), and scanning advances past the matched
     text. If the match does not consume the entire line, the rest of the line is
     skipped. If no match is found on a line, the parser skips to the next line.
 
     Args:
+        env: The environment containing registered tools.
         source: The text containing tool calls.
-        tools: The list of tools to attempt matching.
 
     Yields:
         Parsed `ToolCall` objects. `InvalidToolCall` is yielded for parse errors.
     """
     at = 0
     length = len(source)
-    tool_list = list(tools)
+    tools = env[ToolEnv].tools
 
     while at < length:
         matched_len = 0
         matched_tool = None
 
-        for tool in tool_list:
+        for tool in tools:
             try:
-                l = tool.slice(source, at)
+                if isinstance(tool, BlockTool):
+                    l = tool.slice(env, source, at)
+                elif isinstance(tool, DummyTool):
+                    l = tool.skip(env, source, at)
+                else:
+                    l = 0
+
                 if l > 0:
                     matched_len = l
                     matched_tool = tool
@@ -41,10 +51,11 @@ def parse_tool_calls(source: str, tools: Iterable[Tool]) -> Iterator[ToolCall]:
                 continue
 
         if matched_tool:
-            snippet = source[at:at+matched_len]
-            call = matched_tool.try_parse(snippet)
-            if call is not None:
-                yield call
+            if isinstance(matched_tool, BlockTool):
+                snippet = source[at:at+matched_len]
+                call = matched_tool.try_parse(env, snippet)
+                if call is not None:
+                    yield call
             at += matched_len
 
         # If the match didn't consume a full line, skip to the next one.

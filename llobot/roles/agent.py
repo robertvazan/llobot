@@ -15,6 +15,7 @@ from llobot.environments.model import ModelEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.prompt import PromptEnv
 from llobot.environments.status import StatusEnv
+from llobot.environments.tools import ToolEnv
 from llobot.formats.mentions import parse_mentions
 from llobot.formats.prompts import PromptFormat, standard_prompt_format
 from llobot.formats.prompts.reminder import ReminderPromptFormat
@@ -176,14 +177,14 @@ class Agent(Role):
             env: The environment.
         """
         if self._tools:
-            handle_accept_commands(env, self._tools)
+            handle_accept_commands(env)
 
     def chat(self, prompt: ChatThread) -> ChatStream:
         """
         Processes a user's prompt and returns a response stream.
 
         This method implements the main interaction loop for the agent:
-        1. It sets up the environment.
+        1. It sets up the environment and registers tools.
         2. It calls `parse_prompt()` to set the full prompt thread, load session
            data from history, coerce context, and extract commands from the prompt.
         3. It calls `handle_prompt()` to execute commands and populate the context.
@@ -204,6 +205,7 @@ class Agent(Role):
         env = Environment()
         env[ProjectEnv].configure(self._project_library)
         env[ModelEnv].configure(self._model_library, self._model)
+        env[ToolEnv].register_all(self._tools)
 
         self.parse_prompt(env, prompt)
         self.handle_prompt(env)

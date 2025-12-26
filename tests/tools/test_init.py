@@ -3,6 +3,7 @@ import pytest
 from llobot.environments import Environment
 from llobot.environments.tools import ToolEnv
 from llobot.tools import InvalidToolCall, Tool, ToolCall
+from llobot.tools.block import BlockTool
 
 class MyToolCall(ToolCall):
     @property
@@ -12,25 +13,25 @@ class MyToolCall(ToolCall):
     def execute(self, env: Environment):
         pass
 
-class MyTool(Tool):
-    def slice(self, source: str, at: int) -> int:
+class MyTool(BlockTool):
+    def slice(self, env: Environment, source: str, at: int) -> int:
         if source.startswith("TOOL", at):
             return 4
         return 0
 
-    def parse(self, source: str) -> ToolCall | None:
+    def parse(self, env: Environment, source: str) -> ToolCall | None:
         if source == "TOOL":
             return MyToolCall()
         raise ValueError("bad tool")
 
 def test_try_parse_success():
     tool = MyTool()
-    call = tool.try_parse("TOOL")
+    call = tool.try_parse(Environment(), "TOOL")
     assert isinstance(call, MyToolCall)
 
 def test_try_parse_error():
     tool = MyTool()
-    call = tool.try_parse("TOOL-bad")
+    call = tool.try_parse(Environment(), "TOOL-bad")
     assert isinstance(call, InvalidToolCall)
     assert call.title == "invalid tool call"
     with pytest.raises(ValueError, match="bad tool"):

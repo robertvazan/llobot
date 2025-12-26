@@ -41,7 +41,7 @@ class MoveTool(FencedTool):
     def __init__(self):
         super().__init__()
 
-    def matches_content(self, source: str) -> bool:
+    def matches_content(self, env: Environment, source: str) -> bool:
         if '\n' in source or '\r' in source:
             return False
         try:
@@ -50,7 +50,7 @@ class MoveTool(FencedTool):
             return False
         return len(parts) == 3 and parts[0] == 'mv'
 
-    def parse_content(self, source: str) -> ToolCall:
+    def parse_content(self, env: Environment, source: str) -> ToolCall:
         if '\n' in source or '\r' in source:
             raise ValueError("mv command must be single-line (raw newline is not allowed)")
         parts = shlex.split(source)

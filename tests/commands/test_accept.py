@@ -10,13 +10,14 @@ from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.prompt import PromptEnv
 from llobot.environments.status import StatusEnv
+from llobot.environments.tools import ToolEnv
 from llobot.projects.library.home import HomeProjectLibrary
-from llobot.tools.code import CodeBlockTool
+from llobot.tools.code import DummyCodeBlockTool
 from llobot.tools.files import FileTool
 from llobot.tools.move import MoveTool
 from llobot.tools.remove import RemoveTool
 
-TOOLS = [FileTool(), MoveTool(), RemoveTool(), CodeBlockTool()]
+TOOLS = [FileTool(), MoveTool(), RemoveTool(), DummyCodeBlockTool()]
 
 def test_accept_command_success(tmp_path: Path):
     # Setup project
@@ -30,6 +31,8 @@ def test_accept_command_success(tmp_path: Path):
     project_library = HomeProjectLibrary(sources_dir, mutable=True)
     env[ProjectEnv].configure(project_library)
     env[ProjectEnv].add("myproject")
+    for tool in TOOLS:
+        env[ToolEnv].register(tool)
 
     # Setup prompt with a model response containing tool calls
     response_content = textwrap.dedent("""
@@ -56,7 +59,7 @@ def test_accept_command_success(tmp_path: Path):
     env[PromptEnv].set(prompt)
 
     # Execute command
-    handled = handle_accept_command("accept", env, TOOLS)
+    handled = handle_accept_command("accept", env)
     assert handled
 
     # Verify project state
@@ -86,6 +89,8 @@ def test_accept_command_failure(tmp_path: Path):
     project_library = HomeProjectLibrary(sources_dir, mutable=True)
     env[ProjectEnv].configure(project_library)
     env[ProjectEnv].add("myproject")
+    for tool in TOOLS:
+        env[ToolEnv].register(tool)
 
     # Setup prompt with a model response containing a failing tool call
     response_content = textwrap.dedent("""
@@ -101,7 +106,7 @@ def test_accept_command_failure(tmp_path: Path):
     env[PromptEnv].set(prompt)
 
     # Execute command
-    handled = handle_accept_command("accept", env, TOOLS)
+    handled = handle_accept_command("accept", env)
     assert handled
 
     # Verify status messages
@@ -115,6 +120,8 @@ def test_accept_command_failure(tmp_path: Path):
 def test_accept_command_no_tool_calls():
     # Setup environment
     env = Environment()
+    for tool in TOOLS:
+        env[ToolEnv].register(tool)
 
     # Setup prompt with a model response without tool calls
     response_content = "I'm not sure what to do."
@@ -126,7 +133,7 @@ def test_accept_command_no_tool_calls():
     env[PromptEnv].set(prompt)
 
     with pytest.raises(ValueError, match="No tool calls to execute."):
-        handle_accept_command("accept", env, TOOLS)
+        handle_accept_command("accept", env)
 
 def test_accept_command_no_response():
     env = Environment()
@@ -136,8 +143,8 @@ def test_accept_command_no_response():
     ])
     env[PromptEnv].set(prompt)
     with pytest.raises(ValueError, match="Nothing to accept."):
-        handle_accept_command("accept", env, TOOLS)
+        handle_accept_command("accept", env)
 
 def test_accept_command_not_accept():
     env = Environment()
-    assert not handle_accept_command("not-accept", env, TOOLS)
+    assert not handle_accept_command("not-accept", env)

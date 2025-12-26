@@ -43,10 +43,10 @@ def test_file_tool_slice_and_parse(env: Environment):
         </details>
     """).strip()
 
-    length = tool.slice(text, 0)
+    length = tool.slice(env, text, 0)
     assert length == len(text)
 
-    call = tool.parse(text)
+    call = tool.parse(env, text)
     assert isinstance(call, FileToolCall)
     assert call._path == PurePosixPath("myproject/foo.txt")
     assert call._content == "content\nof the file\n"
@@ -72,20 +72,20 @@ def test_file_tool_slice_extra_whitespace(env: Environment):
         </details>
     """).strip()
 
-    length = tool.slice(text, 0)
+    length = tool.slice(env, text, 0)
     assert length == len(text)
 
-    call = tool.parse(text)
+    call = tool.parse(env, text)
     assert isinstance(call, FileToolCall)
     assert call._path == PurePosixPath("myproject/bar.py")
     assert call._content == 'print("hello")\n'
 
-def test_file_tool_no_match():
+def test_file_tool_no_match(env: Environment):
     tool = FileTool()
     text = "<summary>File: foo.txt</summary>"
-    assert tool.slice(text, 0) == 0
+    assert tool.slice(env, text, 0) == 0
 
-def test_file_tool_missing_tilde_prefix():
+def test_file_tool_missing_tilde_prefix(env: Environment):
     tool = FileTool()
     text = dedent("""
         <details>
@@ -96,11 +96,11 @@ def test_file_tool_missing_tilde_prefix():
     """).strip()
 
     # Slice matches regex, but parse should fail
-    length = tool.slice(text, 0)
+    length = tool.slice(env, text, 0)
     assert length == len(text)
 
     with pytest.raises(ValueError, match="Path must start with ~/"):
-        tool.parse(text)
+        tool.parse(env, text)
 
 def test_file_tool_empty_code_block(env: Environment):
     tool = FileTool()
@@ -112,10 +112,10 @@ def test_file_tool_empty_code_block(env: Environment):
         </details>
     """).strip()
 
-    length = tool.slice(text, 0)
+    length = tool.slice(env, text, 0)
     assert length == len(text)
 
-    call = tool.parse(text)
+    call = tool.parse(env, text)
     assert isinstance(call, FileToolCall)
     assert call._path == PurePosixPath("myproject/empty.txt")
     assert call._content == ""
