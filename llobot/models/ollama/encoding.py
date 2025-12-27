@@ -4,7 +4,6 @@ from typing import Iterable
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
 from llobot.chats.thread import ChatThread
-from llobot.chats.binarization import binarize_intent
 
 def _format_model_name(name: str) -> str:
     if ':' not in name:
@@ -12,7 +11,7 @@ def _format_model_name(name: str) -> str:
     return name
 
 def _encode_role(intent: ChatIntent) -> str:
-    if binarize_intent(intent) == ChatIntent.RESPONSE:
+    if intent == ChatIntent.RESPONSE:
         return 'assistant'
     else:
         return 'user'

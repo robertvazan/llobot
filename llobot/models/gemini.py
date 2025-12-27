@@ -6,7 +6,7 @@ from llobot.chats.intent import ChatIntent
 from llobot.chats.thread import ChatThread
 from llobot.models import Model
 from llobot.chats.stream import ChatStream, buffer_stream
-from llobot.chats.binarization import binarize_chat
+from llobot.formats.binarization import BinarizationFormat, standard_binarization_format
 from llobot.utils.values import ValueTypeMixin
 
 class GeminiModel(Model, ValueTypeMixin):
@@ -18,6 +18,7 @@ class GeminiModel(Model, ValueTypeMixin):
     _client: genai.Client
     _context_budget: int
     _thinking: int | None
+    _binarization_format: BinarizationFormat
 
     def __init__(self, name: str, *,
         model: str = 'gemini-2.5-pro',
@@ -25,6 +26,7 @@ class GeminiModel(Model, ValueTypeMixin):
         auth: str | None = None,
         context_budget: int = 100_000,
         thinking: int | None = None,
+        binarization_format: BinarizationFormat | None = None,
     ):
         """
         Initializes the Gemini model.
@@ -37,6 +39,7 @@ class GeminiModel(Model, ValueTypeMixin):
                   variable is used.
             context_budget: The character budget for context stuffing.
             thinking: The budget in tokens to allocate for "thinking" (prompt construction).
+            binarization_format: Format to use for prompt binarization. Defaults to standard.
         """
         self._name = name
         self._model = model
@@ -49,6 +52,7 @@ class GeminiModel(Model, ValueTypeMixin):
             self._client = genai.Client()
         self._context_budget = context_budget
         self._thinking = thinking
+        self._binarization_format = binarization_format or standard_binarization_format()
 
     def _ephemeral_fields(self) -> Iterable[str]:
         return ['_client']
@@ -64,7 +68,7 @@ class GeminiModel(Model, ValueTypeMixin):
     def generate(self, prompt: ChatThread) -> ChatStream:
         def _stream() -> ChatStream:
             contents = []
-            sanitized_prompt = binarize_chat(prompt, last=ChatIntent.PROMPT)
+            sanitized_prompt = self._binarization_format.binarize_chat(prompt)
             for message in sanitized_prompt:
                 if message.intent == ChatIntent.PROMPT:
                     contents.append(types.UserContent(parts=[types.Part(text=message.content)]))

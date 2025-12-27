@@ -1,0 +1,69 @@
+from llobot.chats.thread import ChatThread
+from llobot.chats.message import ChatMessage
+from llobot.chats.intent import ChatIntent
+from llobot.formats.binarization.separator import SeparatorBinarizationFormat
+
+def test_binarize_intent():
+    """Tests that intents are correctly mapped to PROMPT or RESPONSE."""
+    fmt = SeparatorBinarizationFormat()
+    assert fmt.binarize_intent(ChatIntent.SYSTEM) == ChatIntent.PROMPT
+    assert fmt.binarize_intent(ChatIntent.EXAMPLE_PROMPT) == ChatIntent.PROMPT
+    assert fmt.binarize_intent(ChatIntent.PROMPT) == ChatIntent.PROMPT
+    assert fmt.binarize_intent(ChatIntent.STATUS) == ChatIntent.PROMPT
+
+    assert fmt.binarize_intent(ChatIntent.AFFIRMATION) == ChatIntent.RESPONSE
+    assert fmt.binarize_intent(ChatIntent.EXAMPLE_RESPONSE) == ChatIntent.RESPONSE
+    assert fmt.binarize_intent(ChatIntent.RESPONSE) == ChatIntent.RESPONSE
+
+def test_binarize_chat_merging():
+    """Tests that consecutive messages of same binarized intent are merged."""
+    fmt = SeparatorBinarizationFormat(separator='|')
+    chat = ChatThread([
+        ChatMessage(ChatIntent.SYSTEM, "sys"),
+        ChatMessage(ChatIntent.PROMPT, "p1"),
+        ChatMessage(ChatIntent.STATUS, "stat"),
+        ChatMessage(ChatIntent.RESPONSE, "r1"),
+        ChatMessage(ChatIntent.AFFIRMATION, "aff"),
+    ])
+
+    binarized = fmt.binarize_chat(chat)
+    assert len(binarized) == 2
+
+    # SYSTEM, PROMPT, STATUS -> PROMPT group
+    assert binarized[0].intent == ChatIntent.PROMPT
+    assert binarized[0].content == "sys|p1|stat"
+
+    # RESPONSE, AFFIRMATION -> RESPONSE group
+    assert binarized[1].intent == ChatIntent.RESPONSE
+    assert binarized[1].content == "r1|aff"
+
+def test_binarize_chat_alternating():
+    """Tests that alternating messages are preserved."""
+    fmt = SeparatorBinarizationFormat()
+    chat = ChatThread([
+        ChatMessage(ChatIntent.PROMPT, "p1"),
+        ChatMessage(ChatIntent.RESPONSE, "r1"),
+        ChatMessage(ChatIntent.PROMPT, "p2"),
+    ])
+
+    binarized = fmt.binarize_chat(chat)
+    assert len(binarized) == 3
+    assert binarized[0].content == "p1"
+    assert binarized[1].content == "r1"
+    assert binarized[2].content == "p2"
+
+def test_binarize_chat_no_injection():
+    """Tests that no fillers are injected."""
+    fmt = SeparatorBinarizationFormat()
+    chat = ChatThread([ChatMessage(ChatIntent.PROMPT, "p1")])
+
+    binarized = fmt.binarize_chat(chat)
+    assert len(binarized) == 1
+    assert binarized[0].intent == ChatIntent.PROMPT
+    assert binarized[0].content == "p1"
+
+def test_binarize_chat_empty():
+    """Tests binarizing an empty chat."""
+    fmt = SeparatorBinarizationFormat()
+    chat = ChatThread()
+    assert len(fmt.binarize_chat(chat)) == 0

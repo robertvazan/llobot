@@ -9,6 +9,8 @@ Subpackages
 -----------
 affirmations
     Utilities for creating standard affirmation messages.
+binarization
+    Formats for normalizing chats into strict prompt/response sequences.
 documents
     Formats for rendering individual documents.
 knowledge

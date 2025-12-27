@@ -5,7 +5,7 @@ from llobot.chats.thread import ChatThread
 from llobot.chats.intent import ChatIntent
 from llobot.models import Model
 from llobot.chats.stream import ChatStream, buffer_stream
-from llobot.chats.binarization import binarize_chat
+from llobot.formats.binarization import BinarizationFormat, standard_binarization_format
 from llobot.models.ollama.endpoints import localhost_ollama_endpoint
 from llobot.models.ollama.encoding import encode_request, parse_stream
 from llobot.utils.values import ValueTypeMixin
@@ -19,12 +19,14 @@ class OllamaModel(Model, ValueTypeMixin):
     _endpoint: str
     _num_ctx: int
     _context_budget: int
+    _binarization_format: BinarizationFormat
 
     def __init__(self, name: str, *,
         model: str,
         num_ctx: int,
         endpoint: str | None = None,
         context_budget: int | None = None,
+        binarization_format: BinarizationFormat | None = None,
     ):
         """
         Initializes the Ollama model.
@@ -39,6 +41,7 @@ class OllamaModel(Model, ValueTypeMixin):
             endpoint: The URL of the Ollama API endpoint. Defaults to localhost.
             context_budget: The character budget for context stuffing. Defaults
                             to `2 * num_ctx`, with a cap of 100,000.
+            binarization_format: Format to use for prompt binarization. Defaults to standard.
         """
         self._name = name
         self._model = model
@@ -46,6 +49,7 @@ class OllamaModel(Model, ValueTypeMixin):
         self._num_ctx = num_ctx
         # Default context budget to half the num_ctx, assuming about 4 characters per token.
         self._context_budget = context_budget or min(100_000, 2 * num_ctx)
+        self._binarization_format = binarization_format or standard_binarization_format()
 
     @property
     def name(self) -> str:
@@ -57,7 +61,7 @@ class OllamaModel(Model, ValueTypeMixin):
 
     def generate(self, prompt: ChatThread) -> ChatStream:
         def _stream() -> ChatStream:
-            sanitized_prompt = binarize_chat(prompt, last=ChatIntent.PROMPT)
+            sanitized_prompt = self._binarization_format.binarize_chat(prompt)
             request = encode_request(self._model, {'num_ctx': self._num_ctx}, sanitized_prompt)
             yield ChatIntent.RESPONSE
             with requests.post(self._endpoint + '/chat', stream=True, json=request) as http_response:

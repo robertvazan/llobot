@@ -1,0 +1,65 @@
+"""
+Separator-based binarization format.
+"""
+from __future__ import annotations
+from typing import Iterable
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
+from llobot.chats.thread import ChatThread
+from llobot.formats.binarization import BinarizationFormat
+from llobot.utils.values import ValueTypeMixin
+
+class SeparatorBinarizationFormat(BinarizationFormat, ValueTypeMixin):
+    """
+    A binarization format that merges consecutive messages of the same group.
+
+    It maps SYSTEM, EXAMPLE_PROMPT, PROMPT, and STATUS to PROMPT.
+    It maps AFFIRMATION, EXAMPLE_RESPONSE, and RESPONSE to RESPONSE.
+
+    Consecutive messages that map to the same intent are joined with a separator.
+    Empty or whitespace-only messages are discarded.
+    """
+    _separator: str
+
+    def __init__(self, separator: str = '\n\n'):
+        """
+        Initializes the format.
+
+        Args:
+            separator: String used to join merged messages.
+        """
+        self._separator = separator
+
+    def _ephemeral_fields(self) -> Iterable[str]:
+        # Separator is a configuration detail, but it affects output, so it's not ephemeral.
+        return []
+
+    def binarize_intent(self, intent: ChatIntent) -> ChatIntent:
+        if intent in [ChatIntent.SYSTEM, ChatIntent.EXAMPLE_PROMPT, ChatIntent.PROMPT, ChatIntent.STATUS]:
+            return ChatIntent.PROMPT
+        if intent in [ChatIntent.AFFIRMATION, ChatIntent.EXAMPLE_RESPONSE, ChatIntent.RESPONSE]:
+            return ChatIntent.RESPONSE
+        raise ValueError(f"Unknown intent for binarization: {intent}")
+
+    def binarize_chat(self, chat: ChatThread) -> ChatThread:
+        messages: list[ChatMessage] = []
+        for message in chat:
+            # Skip empty or whitespace-only messages
+            if not message.content or not message.content.strip():
+                continue
+
+            binarized = self.binarize_message(message)
+            if not messages:
+                messages.append(binarized)
+            else:
+                last = messages[-1]
+                if last.intent == binarized.intent:
+                    new_content = last.content + self._separator + binarized.content
+                    messages[-1] = ChatMessage(last.intent, new_content)
+                else:
+                    messages.append(binarized)
+        return ChatThread(messages)
+
+__all__ = [
+    'SeparatorBinarizationFormat',
+]

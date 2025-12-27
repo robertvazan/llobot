@@ -15,8 +15,6 @@ thread
     Defines `ChatThread` for sequences of messages.
 builder
     Defines `ChatBuilder` for constructing chats.
-binarization
-    Provides functions for chat binarization.
 history
     Manages storage of chat histories.
 markdown

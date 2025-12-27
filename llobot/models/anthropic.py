@@ -5,7 +5,7 @@ from llobot.chats.intent import ChatIntent
 from llobot.chats.thread import ChatThread
 from llobot.models import Model
 from llobot.chats.stream import ChatStream, buffer_stream
-from llobot.chats.binarization import binarize_chat
+from llobot.formats.binarization import BinarizationFormat, standard_binarization_format
 from llobot.utils.values import ValueTypeMixin
 
 class AnthropicModel(Model, ValueTypeMixin):
@@ -19,6 +19,7 @@ class AnthropicModel(Model, ValueTypeMixin):
     _max_tokens: int
     _cached: bool
     _thinking: int | None
+    _binarization_format: BinarizationFormat
 
     def __init__(self, name: str, *,
         model: str = 'claude-sonnet-4-0',
@@ -29,6 +30,7 @@ class AnthropicModel(Model, ValueTypeMixin):
         # No caching by default. It costs extra and not everyone takes advantage of it.
         cached: bool = False,
         thinking: int | None = None,
+        binarization_format: BinarizationFormat | None = None,
     ):
         """
         Initializes the Anthropic model.
@@ -43,6 +45,7 @@ class AnthropicModel(Model, ValueTypeMixin):
             max_tokens: The maximum number of tokens to generate.
             cached: Whether to use Anthropic's caching feature.
             thinking: The budget in tokens to allocate for "thinking" (prompt construction).
+            binarization_format: Format to use for prompt binarization. Defaults to standard.
         """
         self._name = name
         self._model = model
@@ -57,6 +60,7 @@ class AnthropicModel(Model, ValueTypeMixin):
         self._max_tokens = max_tokens
         self._cached = cached
         self._thinking = thinking
+        self._binarization_format = binarization_format or standard_binarization_format()
 
     def _ephemeral_fields(self) -> Iterable[str]:
         return ['_client']
@@ -72,7 +76,7 @@ class AnthropicModel(Model, ValueTypeMixin):
     def generate(self, prompt: ChatThread) -> ChatStream:
         def _stream() -> ChatStream:
             messages = []
-            sanitized_prompt = binarize_chat(prompt, last=ChatIntent.PROMPT)
+            sanitized_prompt = self._binarization_format.binarize_chat(prompt)
             for message in sanitized_prompt:
                 messages.append({
                     'role': 'user' if message.intent == ChatIntent.PROMPT else 'assistant',

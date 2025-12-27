@@ -4,7 +4,7 @@ Client for OpenAI models.
 from __future__ import annotations
 from typing import Iterable
 from openai import OpenAI
-from llobot.chats.binarization import binarize_chat, binarize_intent
+from llobot.formats.binarization import BinarizationFormat, standard_binarization_format
 from llobot.chats.thread import ChatThread
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
@@ -13,7 +13,7 @@ from llobot.chats.stream import ChatStream, buffer_stream
 from llobot.utils.values import ValueTypeMixin
 
 def _encode_role(intent: ChatIntent) -> str:
-    if binarize_intent(intent) == ChatIntent.RESPONSE:
+    if intent == ChatIntent.RESPONSE:
         return 'assistant'
     else:
         return 'user'
@@ -36,12 +36,14 @@ class OpenAIModel(Model, ValueTypeMixin):
     _auth: str
     _context_budget: int
     _reasoning_effort: str
+    _binarization_format: BinarizationFormat
 
     def __init__(self, name: str, *,
         auth: str,
         model: str = 'gpt-5',
         context_budget: int = 100_000,
         reasoning_effort: str = 'medium',
+        binarization_format: BinarizationFormat | None = None,
     ):
         """
         Initializes the OpenAI model.
@@ -52,12 +54,14 @@ class OpenAIModel(Model, ValueTypeMixin):
             model: The model ID to use with the API. Defaults to 'gpt-5'.
             context_budget: The character budget for context stuffing.
             reasoning_effort: Reasoning effort for the model. Defaults to 'medium'.
+            binarization_format: Format to use for prompt binarization. Defaults to standard.
         """
         self._name = name
         self._model = model
         self._auth = auth
         self._context_budget = context_budget
         self._reasoning_effort = reasoning_effort
+        self._binarization_format = binarization_format or standard_binarization_format()
 
     def _ephemeral_fields(self) -> Iterable[str]:
         return ['_auth']
@@ -75,7 +79,7 @@ class OpenAIModel(Model, ValueTypeMixin):
             client = OpenAI(
                 api_key=self._auth
             )
-            sanitized_prompt = binarize_chat(prompt, last=ChatIntent.PROMPT)
+            sanitized_prompt = self._binarization_format.binarize_chat(prompt)
             messages = _encode_chat(sanitized_prompt)
             yield ChatIntent.RESPONSE
             completion = client.chat.completions.create(

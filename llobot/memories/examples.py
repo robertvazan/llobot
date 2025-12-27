@@ -6,7 +6,6 @@ from typing import Iterable
 from heapq import merge
 from itertools import chain
 from llobot.chats.history import ChatHistory, standard_chat_history, coerce_chat_history
-from llobot.chats.binarization import binarize_intent
 from llobot.chats.thread import ChatThread
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
@@ -88,14 +87,19 @@ class ExampleMemory:
         _logger.info(f"Archived example: {', '.join(map(str, zones))}")
 
     def _as_example(self, chat: ChatThread) -> ChatThread:
-        """Converts all messages in a chat thread to their example versions."""
+        """
+        Converts a chat thread to an example thread.
+
+        Only PROMPT and RESPONSE messages (and their example variants) are kept.
+        All other messages are discarded. Kept messages are converted to
+        EXAMPLE_PROMPT or EXAMPLE_RESPONSE.
+        """
         messages = []
         for message in chat:
-            if binarize_intent(message.intent) == ChatIntent.RESPONSE:
-                example_intent = ChatIntent.EXAMPLE_RESPONSE
-            else:
-                example_intent = ChatIntent.EXAMPLE_PROMPT
-            messages.append(ChatMessage(example_intent, message.content))
+            if message.intent in (ChatIntent.PROMPT, ChatIntent.EXAMPLE_PROMPT):
+                messages.append(ChatMessage(ChatIntent.EXAMPLE_PROMPT, message.content))
+            elif message.intent in (ChatIntent.RESPONSE, ChatIntent.EXAMPLE_RESPONSE):
+                messages.append(ChatMessage(ChatIntent.EXAMPLE_RESPONSE, message.content))
         return ChatThread(messages)
 
     def recent(self, env: Environment) -> Iterable[ChatThread]:

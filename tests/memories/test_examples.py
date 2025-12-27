@@ -29,6 +29,30 @@ def test_save_and_recent_with_role_only(tmp_path: Path):
     assert example[1].intent == ChatIntent.EXAMPLE_RESPONSE
     assert example[1].content == "Hi"
 
+def test_recent_filters_intents(tmp_path: Path):
+    """Tests that non-PROMPT/RESPONSE intents are discarded in examples."""
+    history = MarkdownChatHistory(tmp_path)
+    memory = ExampleMemory('test_role', history=history)
+    env = Environment()
+    chat = ChatThread([
+        ChatMessage(ChatIntent.SYSTEM, "sys"),
+        ChatMessage(ChatIntent.PROMPT, "Hello"),
+        ChatMessage(ChatIntent.STATUS, "stat"),
+        ChatMessage(ChatIntent.RESPONSE, "Hi"),
+        ChatMessage(ChatIntent.AFFIRMATION, "ok"),
+    ])
+
+    memory.save(chat, env)
+
+    recent_examples = list(memory.recent(env))
+    assert len(recent_examples) == 1
+    example = recent_examples[0]
+    assert len(example.messages) == 2
+    assert example[0].intent == ChatIntent.EXAMPLE_PROMPT
+    assert example[0].content == "Hello"
+    assert example[1].intent == ChatIntent.EXAMPLE_RESPONSE
+    assert example[1].content == "Hi"
+
 def test_save_and_recent_with_project_and_role(tmp_path: Path):
     history = MarkdownChatHistory(tmp_path)
     memory = ExampleMemory('test_role', history=history)
