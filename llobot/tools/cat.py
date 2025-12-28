@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import PurePosixPath
 import shlex
 from llobot.environments import Environment
+from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.tools import ToolEnv
 from llobot.formats.documents import DocumentFormat, standard_document_format
@@ -35,6 +36,13 @@ class CatToolCall(ToolCall):
             raise ValueError(f"File not found: ~/{self._path}")
 
         listing = self._format.render(self._path, content)
+
+        # Deduplicate output if file is already in context.
+        context = env[ContextEnv].build()
+        if any(listing in msg.content for msg in context):
+            env[ToolEnv].log("File is already in the context.")
+            return
+
         env[ToolEnv].output(listing)
         env[ToolEnv].log("File was read.")
 

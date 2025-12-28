@@ -1,6 +1,9 @@
 from pathlib import Path, PurePosixPath
 import pytest
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 from llobot.environments import Environment
+from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.tools import ToolEnv
 from llobot.formats.documents import standard_document_format
@@ -53,6 +56,21 @@ def test_cat_tool_execute(env: Environment):
     assert "File: ~/myproject/a.txt" in output
     assert "content" in output
     assert "```" in output
+
+def test_cat_tool_execute_deduplication(env: Environment):
+    # Pre-populate context with the file content
+    listing = standard_document_format().render(PurePosixPath("myproject/a.txt"), "content")
+    env[ContextEnv].add(ChatMessage(ChatIntent.SYSTEM, listing))
+
+    call = CatToolCall(PurePosixPath("myproject/a.txt"), standard_document_format())
+    call.execute(env)
+
+    log = env[ToolEnv].flush_log()
+    output = env[ToolEnv].flush_output()
+
+    assert "Reading ~/myproject/a.txt..." in log
+    assert "File is already in the context." in log
+    assert not output
 
 def test_cat_tool_execute_python(env: Environment):
     call = CatToolCall(PurePosixPath("myproject/b.py"), standard_document_format())
