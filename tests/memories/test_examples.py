@@ -39,7 +39,6 @@ def test_recent_filters_intents(tmp_path: Path):
         ChatMessage(ChatIntent.PROMPT, "Hello"),
         ChatMessage(ChatIntent.STATUS, "stat"),
         ChatMessage(ChatIntent.RESPONSE, "Hi"),
-        ChatMessage(ChatIntent.AFFIRMATION, "ok"),
     ])
 
     memory.save(chat, env)

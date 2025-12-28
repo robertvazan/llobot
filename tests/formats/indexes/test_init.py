@@ -10,5 +10,5 @@ def test_render_chat():
     knowledge = Knowledge({'a.txt': ''})
     formatter = standard_index_format()
     chat = formatter.render_chat(knowledge)
-    assert len(chat) == 2
+    assert len(chat) == 1
     assert any('a.txt' in msg.content for msg in chat)

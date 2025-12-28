@@ -9,10 +9,9 @@ def test_render():
 def test_render_chat():
     formatter = PlainPromptFormat()
     chat = formatter.render_chat("System prompt.")
-    assert len(chat) == 2
+    assert len(chat) == 1
     assert chat[0].intent == ChatIntent.SYSTEM
     assert chat[0].content == "System prompt."
-    assert chat[1].intent == ChatIntent.AFFIRMATION
 
 def test_render_chat_empty():
     formatter = PlainPromptFormat()

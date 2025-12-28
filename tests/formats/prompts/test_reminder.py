@@ -19,7 +19,7 @@ def test_render_chat():
     formatter = ReminderPromptFormat()
     prompt = "- IMPORTANT: one\n- other\n- IMPORTANT: two"
     chat = formatter.render_chat(prompt)
-    assert len(chat) == 2
+    assert len(chat) == 1
     assert chat[0].intent == ChatIntent.SYSTEM
     content = chat[0].content
     assert 'Reminder:' in content

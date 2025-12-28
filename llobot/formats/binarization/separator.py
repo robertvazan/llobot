@@ -14,7 +14,7 @@ class SeparatorBinarizationFormat(BinarizationFormat, ValueTypeMixin):
     A binarization format that merges consecutive messages of the same group.
 
     It maps SYSTEM, EXAMPLE_PROMPT, PROMPT, and STATUS to PROMPT.
-    It maps AFFIRMATION, EXAMPLE_RESPONSE, and RESPONSE to RESPONSE.
+    It maps EXAMPLE_RESPONSE and RESPONSE to RESPONSE.
 
     Consecutive messages that map to the same intent are joined with a separator.
     Empty or whitespace-only messages are discarded.
@@ -37,7 +37,7 @@ class SeparatorBinarizationFormat(BinarizationFormat, ValueTypeMixin):
     def binarize_intent(self, intent: ChatIntent) -> ChatIntent:
         if intent in [ChatIntent.SYSTEM, ChatIntent.EXAMPLE_PROMPT, ChatIntent.PROMPT, ChatIntent.STATUS]:
             return ChatIntent.PROMPT
-        if intent in [ChatIntent.AFFIRMATION, ChatIntent.EXAMPLE_RESPONSE, ChatIntent.RESPONSE]:
+        if intent in [ChatIntent.EXAMPLE_RESPONSE, ChatIntent.RESPONSE]:
             return ChatIntent.RESPONSE
         raise ValueError(f"Unknown intent for binarization: {intent}")
 

@@ -7,9 +7,10 @@ rendering system prompts into chat messages. The main purpose is to convert a
 the conversation history.
 """
 from __future__ import annotations
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 from llobot.chats.thread import ChatThread
 from llobot.prompts import Prompt
-from llobot.formats.affirmations import affirmation_turn
 
 class PromptFormat:
     """
@@ -32,8 +33,7 @@ class PromptFormat:
         Renders a prompt as a chat thread.
 
         This method renders the prompt to a string and then wraps it in a
-        standard system message turn (a system message followed by an
-        affirmation).
+        standard system message turn.
 
         Args:
             prompt: The prompt object or string to render.
@@ -42,7 +42,9 @@ class PromptFormat:
             A `ChatThread` containing the rendered prompt.
         """
         rendered = self.render(prompt)
-        return affirmation_turn(rendered)
+        if not rendered.strip():
+            return ChatThread()
+        return ChatThread([ChatMessage(ChatIntent.SYSTEM, rendered)])
 
 def standard_prompt_format() -> PromptFormat:
     """

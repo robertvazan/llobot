@@ -11,8 +11,9 @@ details
 """
 from __future__ import annotations
 from pathlib import PurePosixPath
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 from llobot.chats.thread import ChatThread
-from llobot.formats.affirmations import affirmation_turn
 
 class DocumentFormat:
     """
@@ -44,7 +45,9 @@ class DocumentFormat:
             A chat thread containing the rendered document.
         """
         rendered = self.render(path, content)
-        return affirmation_turn(rendered)
+        if not rendered.strip():
+            return ChatThread()
+        return ChatThread([ChatMessage(ChatIntent.SYSTEM, rendered)])
 
 def standard_document_format() -> DocumentFormat:
     """

@@ -2,9 +2,10 @@
 Formatting knowledge indexes.
 """
 from __future__ import annotations
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 from llobot.chats.thread import ChatThread
 from llobot.knowledge import Knowledge
-from llobot.formats.affirmations import affirmation_turn
 
 class IndexFormat:
     """
@@ -36,7 +37,9 @@ class IndexFormat:
             A chat thread containing the rendered index, or an empty thread.
         """
         rendered = self.render(knowledge)
-        return affirmation_turn(rendered)
+        if not rendered.strip():
+            return ChatThread()
+        return ChatThread([ChatMessage(ChatIntent.SYSTEM, rendered)])
 
 def standard_index_format() -> IndexFormat:
     """

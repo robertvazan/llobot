@@ -89,41 +89,6 @@ CASES = [
     ),
     (
         ChatThread([
-            ChatMessage(ChatIntent.SYSTEM, "System."),
-            ChatMessage(ChatIntent.AFFIRMATION, ""),
-            ChatMessage(ChatIntent.PROMPT, "Prompt.")
-        ]),
-        """
-        [//]: # (System)
-
-        <details>
-        <summary>System</summary>
-
-        System.
-
-        </details>
-
-        [//]: # (Affirmation)
-
-        <details>
-        <summary>Affirmation</summary>
-
-
-
-        </details>
-
-        [//]: # (Prompt)
-
-        <details>
-        <summary>Prompt</summary>
-
-        Prompt.
-
-        </details>
-        """
-    ),
-    (
-        ChatThread([
             ChatMessage(ChatIntent.RESPONSE, "[//]: # (System)\nNormal content"),
             ChatMessage(ChatIntent.PROMPT, "[//]: # (Escaped-System)"),
         ]),

@@ -7,8 +7,6 @@ for inclusion in LLM prompts and processing of LLM responses.
 
 Subpackages
 -----------
-affirmations
-    Utilities for creating standard affirmation messages.
 binarization
     Formats for normalizing chats into strict prompt/response sequences.
 documents

@@ -18,5 +18,4 @@ def test_chatbot_chat():
     assert response.intent == ChatIntent.RESPONSE
     # EchoModel with default format joins messages with separator
     assert "System Prompt" in response.content
-    assert "Okay" in response.content  # Affirmation
     assert "Hello" in response.content

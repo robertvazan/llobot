@@ -14,9 +14,6 @@ class ChatIntent(Enum):
             knowledge base, file lists, and other project information. They are
             prepended to the user prompt and are not directly part of the
             conversational history.
-        AFFIRMATION: Short, generic responses like "Okay" or "I see." They are
-            inserted after system messages to maintain the user-model turn-taking
-            sequence when there are several consecutive system messages.
         EXAMPLE_PROMPT: The prompt part of a few-shot example. Example
             prompt/response pairs are taken from example archives maintained by
             roles.
@@ -30,7 +27,6 @@ class ChatIntent(Enum):
             are prominently displayed in the chat UI.
     """
     SYSTEM = 'System'
-    AFFIRMATION = 'Affirmation'
     EXAMPLE_PROMPT = 'Example-Prompt'
     EXAMPLE_RESPONSE = 'Example-Response'
     PROMPT = 'Prompt'
@@ -49,8 +45,6 @@ class ChatIntent(Enum):
         """
         if codename == 'System':
             return ChatIntent.SYSTEM
-        if codename == 'Affirmation':
-            return ChatIntent.AFFIRMATION
         if codename == 'Example-Prompt':
             return ChatIntent.EXAMPLE_PROMPT
         if codename == 'Example-Response':

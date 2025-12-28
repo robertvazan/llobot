@@ -21,7 +21,7 @@ def test_buffer_multimessage():
     def producer_stream():
         yield ChatIntent.RESPONSE
         yield "message one"
-        yield ChatIntent.AFFIRMATION
+        yield ChatIntent.STATUS
         yield "message two"
         yield " part two"
 
@@ -29,7 +29,7 @@ def test_buffer_multimessage():
     assert list(stream) == [
         ChatIntent.RESPONSE,
         "message one",
-        ChatIntent.AFFIRMATION,
+        ChatIntent.STATUS,
         "message two",
         " part two",
     ]

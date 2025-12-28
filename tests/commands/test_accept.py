@@ -39,7 +39,7 @@ def test_accept_command_success(tmp_path: Path):
 
     # Setup prompt with a model response containing tool calls
     response_content = textwrap.dedent("""
-        Okay, I will perform the requested file operations.
+        I will perform the requested file operations.
 
         <details>
         <summary>File: ~/myproject/file2.txt</summary>

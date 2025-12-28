@@ -11,7 +11,6 @@ def test_binarize_intent():
     assert fmt.binarize_intent(ChatIntent.PROMPT) == ChatIntent.PROMPT
     assert fmt.binarize_intent(ChatIntent.STATUS) == ChatIntent.PROMPT
 
-    assert fmt.binarize_intent(ChatIntent.AFFIRMATION) == ChatIntent.RESPONSE
     assert fmt.binarize_intent(ChatIntent.EXAMPLE_RESPONSE) == ChatIntent.RESPONSE
     assert fmt.binarize_intent(ChatIntent.RESPONSE) == ChatIntent.RESPONSE
 
@@ -23,7 +22,6 @@ def test_binarize_chat_merging():
         ChatMessage(ChatIntent.PROMPT, "p1"),
         ChatMessage(ChatIntent.STATUS, "stat"),
         ChatMessage(ChatIntent.RESPONSE, "r1"),
-        ChatMessage(ChatIntent.AFFIRMATION, "aff"),
     ])
 
     binarized = fmt.binarize_chat(chat)
@@ -33,9 +31,9 @@ def test_binarize_chat_merging():
     assert binarized[0].intent == ChatIntent.PROMPT
     assert binarized[0].content == "sys|p1|stat"
 
-    # RESPONSE, AFFIRMATION -> RESPONSE group
+    # RESPONSE -> RESPONSE group
     assert binarized[1].intent == ChatIntent.RESPONSE
-    assert binarized[1].content == "r1|aff"
+    assert binarized[1].content == "r1"
 
 def test_binarize_chat_alternating():
     """Tests that alternating messages are preserved."""

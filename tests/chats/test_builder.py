@@ -114,7 +114,7 @@ def test_record_multiple_messages():
     """Tests recording a stream with multiple messages."""
     builder = ChatBuilder()
     msg1 = ChatMessage(ChatIntent.STATUS, "info")
-    msg2 = ChatMessage(ChatIntent.AFFIRMATION, "OK")
+    msg2 = ChatMessage(ChatIntent.RESPONSE, "OK")
     def source_stream():
         yield from msg1.stream()
         yield from msg2.stream()

@@ -6,8 +6,8 @@ human-readable text format suitable for including in LLM prompts.
 
 Submodules
 ----------
-chunked
-    An implementation of `KnowledgeFormat` that groups documents into chunks.
+bulk
+    An implementation of `KnowledgeFormat` that puts all documents into a single message.
 granular
     An implementation of `KnowledgeFormat` that renders each document individually.
 """
@@ -64,8 +64,8 @@ def standard_knowledge_format() -> KnowledgeFormat:
     Returns:
         The standard `KnowledgeFormat`.
     """
-    from llobot.formats.knowledge.chunked import ChunkedKnowledgeFormat
-    return ChunkedKnowledgeFormat()
+    from llobot.formats.knowledge.bulk import BulkKnowledgeFormat
+    return BulkKnowledgeFormat()
 
 __all__ = [
     'KnowledgeFormat',
