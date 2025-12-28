@@ -116,32 +116,32 @@ class SystemPrompt(Prompt):
         return PromptFragment(self._role, *self._sections)
 
 @cache
+def orchestrator_prompt_section() -> PromptSection:
+    return PromptSection(read_prompt('orchestrator.md'))
+
+@cache
 def blocks_prompt_section() -> PromptSection:
     return PromptSection(read_prompt('blocks.md'))
 
 @cache
 def listings_prompt_section() -> PromptSection:
-    return PromptSection(read_prompt('listings.md'), blocks_prompt_section())
-
-@cache
-def knowledge_prompt_section() -> PromptSection:
-    return PromptSection(read_prompt('knowledge.md'), listings_prompt_section())
+    return PromptSection(read_prompt('listings.md'), orchestrator_prompt_section(), blocks_prompt_section())
 
 @cache
 def tools_prompt_section() -> PromptSection:
-    return PromptSection(read_prompt('tools.md'), knowledge_prompt_section())
-
-@cache
-def editing_prompt_section() -> PromptSection:
-    return PromptSection(read_prompt('editing.md'), tools_prompt_section())
+    return PromptSection(read_prompt('tools.md'), listings_prompt_section())
 
 @cache
 def answering_prompt_section() -> PromptSection:
-    return PromptSection(read_prompt('answering.md'), knowledge_prompt_section())
+    return PromptSection(read_prompt('answering.md'), listings_prompt_section())
+
+@cache
+def editing_prompt_section() -> PromptSection:
+    return PromptSection(read_prompt('editing.md'), tools_prompt_section(), answering_prompt_section())
 
 @cache
 def overviews_prompt_section() -> PromptSection:
-    return PromptSection(read_prompt('overviews.md'), knowledge_prompt_section())
+    return PromptSection(read_prompt('overviews.md'), listings_prompt_section())
 
 @cache
 def coding_prompt_section() -> PromptSection:
@@ -161,12 +161,12 @@ __all__ = [
     'PromptFragment',
     'PromptSection',
     'SystemPrompt',
+    'orchestrator_prompt_section',
     'blocks_prompt_section',
     'listings_prompt_section',
-    'knowledge_prompt_section',
     'tools_prompt_section',
-    'editing_prompt_section',
     'answering_prompt_section',
+    'editing_prompt_section',
     'overviews_prompt_section',
     'coding_prompt_section',
     'documentation_prompt_section',

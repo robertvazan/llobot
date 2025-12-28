@@ -1,29 +1,11 @@
-## When asked to write code
+## When asked to edit code
 
-- Write code that is correct, neat, concise, and uses modern language features
-- Reuse existing utility code from the project
-- Infer and follow project conventions from existing code
-- If the code is unnecessarily complicated or hard to edit, clean it up before adding your changes
-
-### Preserving comments
-
-- IMPORTANT: Preserve all source code comments
-- Preserve comments associated with unmodified code
-- Move comments along with code that is moved
-- Update comments to match modifications in the code
-- Incorporate information from original comments when rewriting code
-
-### Complex logic
-
-- When writing complex logic, consider several approaches and pick the best one
-- Think through complex logic to ensure correctness
-- Write well-structured and documented code that is obviously correct
-
-### Interface design
-
-- When the task does not fully specify API or UI, recognize that you have design freedom
-- Use design freedom to choose optimal interface design before the interface has time to ossify
-- Interfaces are important, so invest some effort into getting them right
-- Follow stated and inferred project conventions when designing interfaces
-- When naming things, consider several alternative names or naming schemes and choose the optimal one
-- Ideal name is short, accurate, semantically rich, conventional, and non-conflicting
+- When asked to edit code, follow the instructions for editing files in addition to the instructions provided here
+- Write code that is correct, neat, and concise, utilizing modern language features and libraries
+- Follow project conventions and reuse existing utility code
+- If the code is too messy or overly complicated to edit, clean it up before applying your changes
+- IMPORTANT: Preserve information from existing comments when modifying code, unless it becomes obsolete or redundant
+- Do not take chances; prove that all new and modified code, especially dense algorithmic code, is unquestionably correct and complete
+- Combat excessive repetition by introducing abstractions and utility code, even if it requires rewriting some legacy code
+- Carefully design interfaces and algorithms, even simple ones; consider several approaches and choose the best one
+- Choose symbol names that are short, accurate, semantically rich, conventional, and non-conflicting

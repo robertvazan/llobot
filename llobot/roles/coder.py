@@ -8,6 +8,10 @@ from llobot.prompts import (
     answering_prompt_section,
     coding_prompt_section,
     documentation_prompt_section,
+    listings_prompt_section,
+    orchestrator_prompt_section,
+    overviews_prompt_section,
+    tools_prompt_section,
     unit_tests_prompt_section,
 )
 from llobot.models import Model
@@ -19,8 +23,12 @@ def coder_system_prompt() -> SystemPrompt:
     """
     return SystemPrompt(
         read_prompt('coder.md'),
+        orchestrator_prompt_section(),
+        listings_prompt_section(),
+        tools_prompt_section(),
         answering_prompt_section(),
         coding_prompt_section(),
+        overviews_prompt_section(),
         documentation_prompt_section(),
         unit_tests_prompt_section(),
     )

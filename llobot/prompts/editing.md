@@ -1,15 +1,6 @@
 ## When asked to edit files
 
-- Use file manipulation tools to describe all file changes
-- For changes spanning multiple files, provide listings for all affected files
-- Perform file edits as requested without asking questions
-- Assume probable defaults when edit request is underspecified and note your choices in your response
-- If you cannot completely fulfill user's request, put ⚠️ emoji at the top of your response and explain
-- Do not delete any content from edited files unless asked to do so
-- Match the style of existing project files
-- Do not leave trailing whitespace or blank (whitespace-only) lines
-
-### Followup edits
-
-- If the user provides feedback on your edits, implement it in a followup response
-- IMPORTANT: In a followup response, assume your previous edits have been accepted and include only new changes
+- When asked to perform changes, proceed according to the instructions for answering questions, but additionally use tools to perform the requested changes
+- Match the structure and style of existing project files
+- Assume probable defaults when the edit request is underspecified
+- Complement tool calls with brief commentary, especially when making major choices or when you cannot completely fulfill the user's request

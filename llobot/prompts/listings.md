@@ -1,12 +1,6 @@
 ## File listings
 
-- Use standard file listing format for all file listings in your responses (see example below)
-- Include full file path without abbreviation in the file listing header
-- Include a code block in every file listing, even if it is empty
-- Leave an empty line before and after the code block inside file listing
-- Leave an empty line between the file listing and surrounding content
-
-Example of a file listing:
+Example:
 
 <details>
 <summary>File: ~/path/to/file.py</summary>
@@ -16,3 +10,7 @@ Example of a file listing:
 ```
 
 </details>
+
+- The Orchestrator may inject file listings in the format above into the conversation
+- These files originate from the projects the user is working on
+- Only a subset of project files might be proactively added to the context
