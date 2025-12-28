@@ -3,8 +3,10 @@ Accept command for executing tool calls from model responses.
 """
 from __future__ import annotations
 from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 from llobot.commands import handle_commands
 from llobot.environments import Environment
+from llobot.environments.context import ContextEnv
 from llobot.environments.prompt import PromptEnv
 from llobot.environments.status import StatusEnv
 from llobot.environments.tools import ToolEnv
@@ -16,8 +18,9 @@ def handle_accept_command(text: str, env: Environment) -> bool:
     Parses and executes tool calls from the last model response.
 
     This command finds the last model response, parses it for tool calls
-    using registered tools, and executes them. The results of each
-    execution are reported in the `StatusEnv`.
+    using registered tools, and executes them. Execution logs are reported
+    in the `StatusEnv`, while tool outputs are appended to the `ContextEnv`
+    as system messages.
 
     If no tool calls are found, or if there's no previous response, it's
     considered an error.
@@ -53,6 +56,7 @@ def handle_accept_command(text: str, env: Environment) -> bool:
 
     status_env = env[StatusEnv]
     tool_env = env[ToolEnv]
+    context_env = env[ContextEnv]
     success_count = 0
 
     for call in tool_calls:
@@ -69,8 +73,8 @@ def handle_accept_command(text: str, env: Environment) -> bool:
         details = markdown_code_details(summary, '', log_content)
         status_env.append(details)
 
-        if success and output_content:
-            status_env.append(output_content)
+        if output_content:
+            context_env.add(ChatMessage(ChatIntent.SYSTEM, output_content))
 
     total_count = len(tool_calls)
     if success_count == total_count:

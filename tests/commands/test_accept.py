@@ -7,6 +7,7 @@ from llobot.chats.message import ChatMessage
 from llobot.chats.thread import ChatThread
 from llobot.commands.accept import handle_accept_command
 from llobot.environments import Environment
+from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.prompt import PromptEnv
 from llobot.environments.status import StatusEnv
@@ -83,9 +84,19 @@ def test_accept_command_success(tmp_path: Path):
     assert "Success: cat ~/myproject/file3.txt" in content
     assert "Reading ~/myproject/file3.txt..." in content
     assert "File was read." in content
-    assert "File: ~/myproject/file3.txt" in content
-    assert "content3" in content
+    # Output should NOT be in status
+    assert "File: ~/myproject/file3.txt" not in content
+    assert "content3" not in content
     assert "✅ All 3 tool calls executed." in content
+
+    # Verify context messages
+    context_env = env[ContextEnv]
+    assert context_env.populated
+    context_messages = context_env.build().messages
+    assert len(context_messages) == 1
+    assert context_messages[0].intent == ChatIntent.SYSTEM
+    assert "File: ~/myproject/file3.txt" in context_messages[0].content
+    assert "content3" in context_messages[0].content
 
 def test_accept_command_failure(tmp_path: Path):
     # Setup project
