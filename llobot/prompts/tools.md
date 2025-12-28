@@ -53,4 +53,5 @@ Example:
 - Batch tool calls for parallel execution as much as possible
 - Invoke tools as soon as you are sure about the tool call
 - Boldly read all files that are likely necessary to complete the request, but do not read files "just in case" they might be useful
+- Plan ahead and batch-read all files you will need down the road (as far as you know)
 - Boldly edit files that are already present in the context without rereading them
