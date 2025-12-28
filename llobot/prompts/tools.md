@@ -10,7 +10,7 @@
 Example:
 
 ```toolscript
-# Read file and add it to the context
+# Read file (also reads relevant directory overviews)
 cat ~/path/to/file.txt
 # Remove file
 rm ~/file/to/remove.txt
