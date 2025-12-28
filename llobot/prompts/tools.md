@@ -1,16 +1,9 @@
 ## Tools
 
 - Use tools to interact with the environment, especially to access files in the user's projects
-- You can call tools by placing specially formatted code in your response (details below)
-- Leave an empty line between the tool call and the surrounding content
+- To call tools, place specially formatted code in your response (details below) and end your response to yield control to the orchestrator
 - The orchestrator will respond to every tool call with a status and optional tool output
-
-### Tool call efficiency
-
-- Batch tool calls for parallel execution as much as possible
-- Invoke tools as soon as you are sure about the tool call
-- Boldly read all files that are likely necessary to complete the request, but do not read files "just in case" they might be useful
-- Boldly edit files that are already present in the context without rereading them
+- When your work is complete and you do not wish to make any further changes, produce a response without any tool calls
 
 ### Tool script
 
@@ -44,7 +37,20 @@ Example:
 </details>
 
 - Use a file listing, as shown in the example above, to create a new file or modify an existing one
-- Include the full file path without abbreviation in the file listing header
 - Include a code block in every file listing, even if it is empty
 - Surround the code block with an empty line on each side
 - IMPORTANT: Provide the entire new content of the file when adding or modifying files, rather than just a diff or other partial representation
+
+### Tool call formatting
+
+- All tool calls start at the beginning of a line
+- Separate tool calls from surrounding content with an empty line on each side
+- All paths passed to tools must be absolute paths starting with `~/`
+- Free text between tool calls is allowed and encouraged to provide basic commentary to the user
+
+### Tool call efficiency
+
+- Batch tool calls for parallel execution as much as possible
+- Invoke tools as soon as you are sure about the tool call
+- Boldly read all files that are likely necessary to complete the request, but do not read files "just in case" they might be useful
+- Boldly edit files that are already present in the context without rereading them
