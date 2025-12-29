@@ -83,10 +83,10 @@ def test_accept_command_success(tmp_path: Path):
     assert "File was removed." in content
     assert "Success: cat ~/myproject/file3.txt" in content
     # Updated expectations for cat tool logs
-    assert "Preparing to read ~/myproject/file3.txt..." in content
-    assert "Scanning ~/myproject for overviews..." in content
     assert "Reading ~/myproject/file3.txt..." in content
     assert "File was read." in content
+    assert "Preparing to read" not in content
+    assert "Scanning" not in content
     # Output should NOT be in status
     assert "File: ~/myproject/file3.txt" not in content
     assert "content3" not in content

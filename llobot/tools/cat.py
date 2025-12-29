@@ -41,47 +41,47 @@ class CatToolCall(ToolCall):
         project = env[ProjectEnv].union
         tool_env = env[ToolEnv]
         context = env[ContextEnv].build()
-        processed_paths = set()
 
-        tool_env.log(f"Preparing to read ~/{self._path}...")
-
-        def process_path(path: PurePosixPath):
-            if path in processed_paths:
-                return
-
-            tool_env.log(f"Reading ~/{path}...")
-
-            content = project.read(path)
-            if content is None:
-                if path == self._path:
-                    raise ValueError(f"File not found: ~/{path}")
-                return
-
-            listing = self._format.render(path, content)
-
-            if any(listing in msg.content for msg in context):
-                tool_env.log(f"File {path} is already in the context.")
-                processed_paths.add(path)
-                return
-
-            tool_env.output(listing)
-            tool_env.log("File was read.")
-            processed_paths.add(path)
+        tool_env.log(f"Reading ~/{self._path}...")
 
         # 1. Load overviews in parent directories, starting from root
         parents = list(self._path.parents)
         parents.reverse()
 
         for parent in parents:
-            tool_env.log(f"Scanning ~/{parent} for overviews...")
             # Sort items to ensure deterministic order
             items = sorted(project.items(parent), key=lambda i: i.path)
             for item in items:
                 if isinstance(item, ProjectFile) and item.path in self._overviews:
-                    process_path(item.path)
+                    path = item.path
+                    if path == self._path:
+                        continue
+
+                    content = project.read(path)
+                    if content is None:
+                        continue
+
+                    listing = self._format.render(path, content)
+
+                    if any(listing in msg.content for msg in context):
+                        continue
+
+                    tool_env.output(listing)
+                    tool_env.log(f"Read also: ~/{path}")
 
         # 2. Load target file
-        process_path(self._path)
+        content = project.read(self._path)
+        if content is None:
+            raise ValueError(f"File not found: ~/{self._path}")
+
+        listing = self._format.render(self._path, content)
+
+        if any(listing in msg.content for msg in context):
+            tool_env.log("File is already in the context.")
+            return
+
+        tool_env.output(listing)
+        tool_env.log("File was read.")
 
 class CatTool(LineTool):
     """
