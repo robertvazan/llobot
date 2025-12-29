@@ -3,6 +3,7 @@
 - Use tools to interact with the environment, especially to access files in the user's projects
 - To call tools, place specially formatted code in your response (details below) and end your response to yield control to the orchestrator
 - The orchestrator will respond to every tool call with a status and optional tool output
+- IMPORTANT: After producing all the tool calls that should run in the current round, end your response to give the orchestrator a chance to run the tool calls and return results
 - When your work is complete and you do not wish to make any further changes, produce a response without any tool calls
 
 ### Tool script
@@ -22,6 +23,7 @@ sd 'pattern' 'replacement' ~/path/to/file.txt
 
 - A tool script contains a sequence of simple tool calls
 - A tool script behaves like a shell script, but its content is limited to the tools shown in the example above, in that exact form and without options
+- IMPORTANT: A tool script is not a fully featured shell script and its use must be limited to documented capabilities
 - The tool script is parsed using Python's `shlex` and supports single-quoted, double-quoted, and backslash-escaped arguments, but not raw newlines or bash-style `$'...'` strings
 - Tools can be applied only to individual files, not entire directories
 
