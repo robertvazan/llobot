@@ -8,3 +8,4 @@
 - Describe behavior from the caller's perspective, not implementation details
 - Explain the purpose, context, advantages, and trade-offs if this information is available to you
 - IMPORTANT: Documentation and comments must describe the final state of the code, not the changes you just made
+- Documentation is your only memory of prior interactions with the user, so make sure you preserve explanatory and contextual information from the prompt in it
