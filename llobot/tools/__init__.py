@@ -14,6 +14,8 @@ dummy
     Base class for tools that skip content.
 code
     A tool for skipping code blocks.
+edit
+    A tool for editing files using search and replace.
 fenced
     A base class for tools that use fenced code blocks.
 files
@@ -114,12 +116,14 @@ def standard_tools() -> tuple[Tool, ...]:
     """
     from llobot.tools.cat import CatTool
     from llobot.tools.code import DummyCodeBlockTool
+    from llobot.tools.edit import EditTool
     from llobot.tools.files import FileTool
     from llobot.tools.move import MoveTool
     from llobot.tools.remove import RemoveTool
     from llobot.tools.script import ScriptTool
     return (
         FileTool(),
+        EditTool(),
         MoveTool(),
         RemoveTool(),
         CatTool(),

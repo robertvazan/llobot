@@ -36,10 +36,29 @@ Example:
 
 </details>
 
-- Use a file listing, as shown in the example above, to create a new file or modify an existing one
-- Include a code block in every file listing, even if it is empty
-- Surround the code block with an empty line on each side
-- IMPORTANT: Provide the entire new content of the file when adding or modifying files, rather than just a diff or other partial representation
+- Use a file listing, exactly as shown in the example above, to create a new file or modify an existing one
+
+### File edit
+
+Example:
+
+<details>
+<summary>Edit: ~/path/to/file.py</summary>
+
+```python
+# ... search block (lines to find) ...
+```
+
+```python
+# ... replace block (lines to substitute) ...
+```
+
+</details>
+
+- Use the edit tool, exactly as shown in the example above, to perform block-level search-and-replace on a file
+- The tool searches for the first block and replaces it with the second block (which may be empty)
+- Both blocks must contain whole lines and the first and last line must be non-empty
+- The search block must be unique in the file
 
 ### Tool call formatting
 
