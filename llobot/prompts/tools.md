@@ -16,6 +16,8 @@ cat ~/path/to/file.txt
 rm ~/file/to/remove.txt
 # Move file
 mv ~/original/location.md ~/path/to/destination.md
+# Search and replace (case-sensitive regex, Rust-style replacement template)
+sd 'pattern' 'replacement' ~/path/to/file.txt
 ```
 
 - A tool script contains a sequence of simple tool calls

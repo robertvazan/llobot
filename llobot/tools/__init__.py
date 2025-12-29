@@ -10,10 +10,10 @@ block
     Base class for tools that parse content blocks.
 cat
     A tool for reading files.
-dummy
-    Base class for tools that skip content.
 code
     A tool for skipping code blocks.
+dummy
+    Base class for tools that skip content.
 edit
     A tool for editing files using search and replace.
 fenced
@@ -28,6 +28,8 @@ parsing
     A function to parse tool calls from text.
 remove
     A tool for removing files.
+replace
+    A tool for replacing text using regex patterns.
 script
     A tool for executing scripts of line-based commands.
 """
@@ -108,8 +110,8 @@ def standard_tools() -> tuple[Tool, ...]:
     Returns a standard set of tools for file manipulation.
 
     The standard toolset includes tools for creating/updating files, moving
-    files, removing files, reading files, and a fallback tool to skip generic
-    code blocks.
+    files, removing files, replacing text, reading files, and a fallback tool
+    to skip generic code blocks.
 
     Returns:
         A tuple of standard tool instances.
@@ -120,12 +122,14 @@ def standard_tools() -> tuple[Tool, ...]:
     from llobot.tools.files import FileTool
     from llobot.tools.move import MoveTool
     from llobot.tools.remove import RemoveTool
+    from llobot.tools.replace import ReplaceTool
     from llobot.tools.script import ScriptTool
     return (
         FileTool(),
         EditTool(),
         MoveTool(),
         RemoveTool(),
+        ReplaceTool(),
         CatTool(),
         ScriptTool(),
         DummyCodeBlockTool(),
