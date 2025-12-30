@@ -37,21 +37,35 @@ class DirectoryProject(Project, ValueTypeMixin):
         Args:
             directory: The path to the project's root directory. It can contain `~`.
             zones: A set of zone identifiers for the project. If `None`, defaults
-                   to a single zone matching the project's prefix.
+                   to a single zone matching the directory's last component.
             prefix: The path prefix for all items in the project. If `None`, it
-                    defaults to the last component of the directory path.
+                    defaults to the path relative to the user's home directory
+                    for directories under home, or the last component otherwise.
             whitelist: A custom whitelist subset for this project.
             blacklist: A custom blacklist subset for this project.
             mutable: If `True`, the project allows write operations. Defaults to `False`.
         """
         self._directory = Path(directory).expanduser().absolute()
-        self._prefix = coerce_path(prefix) if prefix is not None else coerce_path(self._directory.name)
+
+        # Compute default prefix: home-relative path for directories under home,
+        # otherwise fall back to directory name
+        if prefix is not None:
+            self._prefix = coerce_path(prefix)
+        else:
+            home = Path.home()
+            relative = self._directory.relative_to(home) if self._directory.is_relative_to(home) else None
+            # Use home-relative path if under home and not the home directory itself
+            if relative is not None and relative.parts:
+                self._prefix = coerce_path(relative)
+            else:
+                self._prefix = coerce_path(self._directory.name)
         validate_zone(self._prefix)
 
+        # Default zone is the last component of the directory path
         if zones is not None:
             self._zones = frozenset(coerce_path(z) for z in zones)
         else:
-            self._zones = frozenset([self._prefix])
+            self._zones = frozenset([coerce_path(self._directory.name)])
 
         for zone in self._zones:
             validate_zone(zone)

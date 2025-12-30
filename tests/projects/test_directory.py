@@ -16,9 +16,13 @@ def test_directory_project_simple(tmp_path: Path):
     (tmp_path / "subdir" / "file3.py").write_text("content3")
 
     project = DirectoryProject(tmp_path)
-    prefix = PurePosixPath(tmp_path.name)
-    assert project.zones == {prefix}
-    assert project.prefixes == {prefix}
+    # Default zone is directory name, prefix depends on whether under home
+    zone = PurePosixPath(tmp_path.name)
+    assert project.zones == {zone}
+    # For paths not under home, prefix equals directory name
+    if not tmp_path.is_relative_to(Path.home()):
+        assert project.prefixes == {zone}
+    prefix = list(project.prefixes)[0]
 
     expected_paths = {
         prefix / 'file1.txt',
@@ -34,6 +38,60 @@ def test_directory_project_simple(tmp_path: Path):
     })
     assert project.read_all() == expected_knowledge
 
+def test_directory_project_home_relative_prefix(tmp_path: Path, monkeypatch):
+    """Test that directories under home get home-relative prefix by default."""
+    # Create a fake home directory
+    fake_home = tmp_path / "fake_home"
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, 'home', classmethod(lambda cls: fake_home))
+
+    # Create a nested project under fake home
+    project_dir = fake_home / "Sources" / "myproject"
+    project_dir.mkdir(parents=True)
+    (project_dir / "file.txt").write_text("content")
+
+    project = DirectoryProject(project_dir)
+
+    # Prefix should be home-relative path
+    assert project.prefixes == {PurePosixPath("Sources/myproject")}
+    # Zone should still be just the directory name
+    assert project.zones == {PurePosixPath("myproject")}
+    # Files should be accessible via the home-relative prefix
+    assert project.read(PurePosixPath("Sources/myproject/file.txt")) == "content\n"
+
+def test_directory_project_outside_home_prefix(tmp_path: Path, monkeypatch):
+    """Test that directories outside home use directory name as prefix."""
+    # Create a fake home that doesn't contain tmp_path
+    fake_home = tmp_path / "fake_home"
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, 'home', classmethod(lambda cls: fake_home))
+
+    # Create a project outside fake home
+    project_dir = tmp_path / "outside_project"
+    project_dir.mkdir()
+    (project_dir / "file.txt").write_text("content")
+
+    project = DirectoryProject(project_dir)
+
+    # Prefix should be just directory name (not home-relative)
+    assert project.prefixes == {PurePosixPath("outside_project")}
+    # Zone should also be directory name
+    assert project.zones == {PurePosixPath("outside_project")}
+
+def test_directory_project_at_home_uses_dirname(tmp_path: Path, monkeypatch):
+    """Test that a project at home directory itself uses directory name as prefix."""
+    fake_home = tmp_path / "fake_home"
+    fake_home.mkdir()
+    (fake_home / "file.txt").write_text("content")
+    monkeypatch.setattr(Path, 'home', classmethod(lambda cls: fake_home))
+
+    project = DirectoryProject(fake_home)
+
+    # When directory is home itself, fall back to directory name
+    assert project.prefixes == {PurePosixPath("fake_home")}
+    assert project.zones == {PurePosixPath("fake_home")}
+    assert project.read(PurePosixPath("fake_home/file.txt")) == "content\n"
+
 def test_directory_project_dot_prefix_fails(tmp_path: Path):
     (tmp_path / "file1.txt").write_text("content1")
     with pytest.raises(ValueError, match="Zone must be a non-empty relative path other than '.'"):
@@ -45,11 +103,18 @@ def test_directory_project_home_expansion():
 
 def test_directory_project_custom_zones(tmp_path: Path):
     (tmp_path / "file1.txt").write_text("content1")
-    project = DirectoryProject(tmp_path, zones={"my-proj-zone"})
-    prefix = PurePosixPath(tmp_path.name)
+    project = DirectoryProject(tmp_path, zones={"my-proj-zone"}, prefix="myprefix")
     assert project.zones == {PurePosixPath("my-proj-zone")}
-    assert project.prefixes == {prefix}
-    assert {file.path for file in project._walk(prefix)} == {prefix / 'file1.txt'}
+    assert project.prefixes == {PurePosixPath("myprefix")}
+    assert {file.path for file in project._walk(PurePosixPath("myprefix"))} == {PurePosixPath("myprefix/file1.txt")}
+
+def test_directory_project_default_zone_is_dirname(tmp_path: Path):
+    """Test that default zone is directory name even when prefix differs."""
+    (tmp_path / "file1.txt").write_text("content1")
+    project = DirectoryProject(tmp_path, prefix="custom/prefix")
+    # Zone defaults to directory name, not prefix
+    assert project.zones == {PurePosixPath(tmp_path.name)}
+    assert project.prefixes == {PurePosixPath("custom/prefix")}
 
 def test_directory_project_filtering(tmp_path: Path):
     (tmp_path / "file1.txt").write_text("content1")

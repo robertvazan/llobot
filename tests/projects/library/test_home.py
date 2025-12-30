@@ -4,9 +4,9 @@ import pytest
 
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
+from llobot.knowledge.subsets.parsing import parse_pattern
 from llobot.projects.directory import DirectoryProject
 from llobot.projects.library.home import HomeProjectLibrary
-from llobot.knowledge.subsets.parsing import parse_pattern
 from llobot.projects.shallow import ShallowProject
 
 
@@ -26,6 +26,7 @@ def test_home_project_library(tmp_path: Path):
     assert lib.lookup('nonexistent') == []
     assert lib.lookup('/absolute/path') == []
     assert lib.lookup('invalid/../path') == []
+
 
 def test_home_project_library_with_parents(tmp_path: Path):
     (tmp_path / 'p' / 'sub').mkdir(parents=True)
@@ -54,6 +55,7 @@ def test_home_project_library_with_parents(tmp_path: Path):
     assert isinstance(found_no_parents[0], DirectoryProject)
     assert found_no_parents[0].prefixes == {PurePosixPath('p')}
 
+
 def test_home_project_library_with_filters(tmp_path: Path):
     (tmp_path / 'project2').mkdir()
     (tmp_path / 'project2' / 'a.txt').write_text('a')
@@ -65,9 +67,11 @@ def test_home_project_library_with_filters(tmp_path: Path):
     assert isinstance(project, DirectoryProject)
     assert project.read_all().keys() == KnowledgeIndex([PurePosixPath('project2/a.txt')])
 
+
 def test_home_project_library_default_home():
     lib = HomeProjectLibrary()
     assert lib._home == Path.home().absolute()
+
 
 def test_home_project_library_mutable(tmp_path: Path):
     (tmp_path / 'project3').mkdir()
@@ -90,3 +94,41 @@ def test_home_project_library_mutable(tmp_path: Path):
     with pytest.raises(PermissionError):
         immutable_project.write(PurePosixPath('project3/another.txt'), 'fail')
     assert not (tmp_path / 'project3' / 'another.txt').exists()
+
+
+def test_home_project_library_zone_from_key(tmp_path: Path):
+    """Test that zones are derived from lookup key, not the directory name."""
+    (tmp_path / 'nested' / 'project').mkdir(parents=True)
+    (tmp_path / 'nested' / 'project' / 'file.txt').write_text('content')
+
+    lib = HomeProjectLibrary(tmp_path, parents=False)
+    projects = lib.lookup('nested/project')
+    assert len(projects) == 1
+
+    project = projects[0]
+    # Prefix falls back to the lookup key when home library root is not under Path.home().
+    assert project.prefixes == {PurePosixPath('nested/project')}
+    # Zone defaults to the lookup key (not just the last component).
+    assert project.zones == {PurePosixPath('nested/project')}
+
+
+def test_home_project_library_home_relative_prefix(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """Test that prefixes become home-relative when project directories are under Path.home()."""
+    fake_home = tmp_path / 'fake_home'
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, 'home', classmethod(lambda cls: fake_home))
+
+    sources = fake_home / 'Sources'
+    sources.mkdir()
+
+    (sources / 'myproject').mkdir()
+    (sources / 'myproject' / 'file.txt').write_text('content')
+
+    lib = HomeProjectLibrary(sources, parents=False)
+    project = lib.lookup('myproject')[0]
+
+    # Zone defaults to key.
+    assert project.zones == {PurePosixPath('myproject')}
+    # Prefix follows DirectoryProject-style home-relative computation.
+    assert project.prefixes == {PurePosixPath('Sources/myproject')}
+    assert project.read(PurePosixPath('Sources/myproject/file.txt')) == 'content\n'
