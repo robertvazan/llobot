@@ -32,7 +32,10 @@ class EditToolCall(ToolCall):
         env[ToolEnv].log(f"Editing ~/{self._path}...")
 
         # Ensure consistent normalization for matching logic
-        content = normalize_document(project.read(self._path))
+        raw_content = project.read(self._path)
+        if raw_content is None:
+            raise FileNotFoundError(f"File not found: {self._path}")
+        content = normalize_document(raw_content)
 
         search_block = normalize_document(self._search)
         replace_block = normalize_document(self._replace)

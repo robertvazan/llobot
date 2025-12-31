@@ -5,42 +5,20 @@ import pytest
 from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.tools import ToolEnv
+from llobot.projects.directory import DirectoryProject
 from llobot.tools.edit import EditTool, EditToolCall
 
-class MockProject:
-    def __init__(self):
-        self.files = {}
-
-    def read(self, path: PurePosixPath) -> str:
-        if path in self.files:
-            return self.files[path]
-        raise FileNotFoundError(path)
-
-    def write(self, path: PurePosixPath, content: str):
-        self.files[path] = content
-
-class MockProjectEnv:
-    def __init__(self):
-        self.union = MockProject()
-
-class MockToolEnv:
-    def __init__(self):
-        self.log_messages = []
-
-    def log(self, message: str):
-        self.log_messages.append(message)
-
 @pytest.fixture
-def env():
+def env(tmp_path):
+    project = DirectoryProject(tmp_path, prefix='test', mutable=True)
     env = Environment()
-    env._components[ProjectEnv] = MockProjectEnv()
-    env._components[ToolEnv] = MockToolEnv()
+    env[ProjectEnv]._projects.add(project)
     return env
 
 def test_parse_edit(env):
     source = textwrap.dedent("""
         <details>
-        <summary>Edit: ~/file.txt</summary>
+        <summary>Edit: ~/test/file.txt</summary>
 
         ```text
         <<<<<<< SEARCH
@@ -57,14 +35,14 @@ def test_parse_edit(env):
     assert len(calls) == 1
     call = calls[0]
     assert isinstance(call, EditToolCall)
-    assert call._path == PurePosixPath('file.txt')
+    assert call._path == PurePosixPath('test/file.txt')
     assert call._search.strip() == 'foo'
     assert call._replace.strip() == 'bar'
 
 def test_parse_edit_empty_replace(env):
     source = textwrap.dedent("""
         <details>
-        <summary>Edit: ~/file.txt</summary>
+        <summary>Edit: ~/test/file.txt</summary>
 
         ```text
         <<<<<<< SEARCH
@@ -85,7 +63,7 @@ def test_parse_edit_empty_replace(env):
 def test_parse_edit_content_with_equals(env):
     source = textwrap.dedent("""
         <details>
-        <summary>Edit: ~/file.txt</summary>
+        <summary>Edit: ~/test/file.txt</summary>
 
         ```text
         <<<<<<< SEARCH
@@ -108,96 +86,92 @@ def test_parse_edit_content_with_equals(env):
     assert call._search.strip() == "foo\n=======\nbar"
     assert call._replace.strip() == "baz\n=======\nqux"
 
-def test_execute_edit(env):
-    project = env[ProjectEnv].union
-    project.write(PurePosixPath('file.txt'), "line1\nline2\nline3\n")
+def test_execute_edit(env, tmp_path):
+    (tmp_path / 'file.txt').write_text("line1\nline2\nline3\n", encoding='utf-8')
 
-    call = EditToolCall(PurePosixPath('file.txt'), "line2", "replacement")
+    call = EditToolCall(PurePosixPath('test/file.txt'), "line2", "replacement")
     call.execute(env)
 
-    assert project.files[PurePosixPath('file.txt')] == "line1\nreplacement\nline3\n"
+    assert (tmp_path / 'file.txt').read_text(encoding='utf-8') == "line1\nreplacement\nline3\n"
 
-def test_execute_edit_not_found(env):
-    project = env[ProjectEnv].union
-    project.write(PurePosixPath('file.txt'), "line1\nline2\nline3\n")
+def test_execute_edit_not_found(env, tmp_path):
+    (tmp_path / 'file.txt').write_text("line1\nline2\nline3\n", encoding='utf-8')
 
-    call = EditToolCall(PurePosixPath('file.txt'), "line4", "replacement")
+    call = EditToolCall(PurePosixPath('test/file.txt'), "line4", "replacement")
     with pytest.raises(ValueError, match="Search block not found"):
         call.execute(env)
 
-def test_execute_edit_ambiguous(env):
-    project = env[ProjectEnv].union
-    project.write(PurePosixPath('file.txt'), "line1\nline1\n")
+def test_execute_edit_ambiguous(env, tmp_path):
+    (tmp_path / 'file.txt').write_text("line1\nline1\n", encoding='utf-8')
 
-    call = EditToolCall(PurePosixPath('file.txt'), "line1", "replacement")
+    call = EditToolCall(PurePosixPath('test/file.txt'), "line1", "replacement")
     with pytest.raises(ValueError, match="Context is ambiguous"):
         call.execute(env)
 
-def test_execute_edit_multi_line_ambiguous(env):
-    project = env[ProjectEnv].union
-    project.write(PurePosixPath('file.txt'), "line1\nline2\nline1\nline2\n")
+def test_execute_edit_multi_line_ambiguous(env, tmp_path):
+    (tmp_path / 'file.txt').write_text("line1\nline2\nline1\nline2\n", encoding='utf-8')
 
-    call = EditToolCall(PurePosixPath('file.txt'), "line1\nline2", "replacement")
+    call = EditToolCall(PurePosixPath('test/file.txt'), "line1\nline2", "replacement")
     with pytest.raises(ValueError, match="Context is ambiguous"):
         call.execute(env)
 
-def test_execute_edit_empty_search(env):
-    project = env[ProjectEnv].union
-    project.write(PurePosixPath('file.txt'), "content\n")
+def test_execute_edit_empty_search(env, tmp_path):
+    (tmp_path / 'file.txt').write_text("content\n", encoding='utf-8')
 
-    call = EditToolCall(PurePosixPath('file.txt'), "", "replacement")
+    call = EditToolCall(PurePosixPath('test/file.txt'), "", "replacement")
     with pytest.raises(ValueError, match="Search block cannot be empty"):
         call.execute(env)
 
-def test_execute_edit_partial_match_ignored(env):
+def test_execute_edit_partial_match_ignored(env, tmp_path):
     """Ensures that matches strictly follow line boundaries."""
-    project = env[ProjectEnv].union
-    project.write(PurePosixPath('file.txt'), "foobar\n")
+    (tmp_path / 'file.txt').write_text("foobar\n", encoding='utf-8')
 
-    call = EditToolCall(PurePosixPath('file.txt'), "bar", "baz")
+    call = EditToolCall(PurePosixPath('test/file.txt'), "bar", "baz")
     with pytest.raises(ValueError, match="Search block not found"):
         call.execute(env)
 
-    assert project.files[PurePosixPath('file.txt')] == "foobar\n"
+    assert (tmp_path / 'file.txt').read_text(encoding='utf-8') == "foobar\n"
 
-def test_execute_edit_start_match(env):
+def test_execute_edit_start_match(env, tmp_path):
     """Ensures match works at the very beginning of the file."""
-    project = env[ProjectEnv].union
-    project.write(PurePosixPath('file.txt'), "foo\nbar\n")
+    (tmp_path / 'file.txt').write_text("foo\nbar\n", encoding='utf-8')
 
-    call = EditToolCall(PurePosixPath('file.txt'), "foo", "baz")
+    call = EditToolCall(PurePosixPath('test/file.txt'), "foo", "baz")
     call.execute(env)
 
-    assert project.files[PurePosixPath('file.txt')] == "baz\nbar\n"
+    assert (tmp_path / 'file.txt').read_text(encoding='utf-8') == "baz\nbar\n"
 
-def test_execute_edit_middle_match(env):
+def test_execute_edit_middle_match(env, tmp_path):
     """Ensures match works in the middle of the file."""
-    project = env[ProjectEnv].union
-    project.write(PurePosixPath('file.txt'), "top\nmiddle\nbottom\n")
+    (tmp_path / 'file.txt').write_text("top\nmiddle\nbottom\n", encoding='utf-8')
 
-    call = EditToolCall(PurePosixPath('file.txt'), "middle", "center")
+    call = EditToolCall(PurePosixPath('test/file.txt'), "middle", "center")
     call.execute(env)
 
-    assert project.files[PurePosixPath('file.txt')] == "top\ncenter\nbottom\n"
+    assert (tmp_path / 'file.txt').read_text(encoding='utf-8') == "top\ncenter\nbottom\n"
 
-def test_execute_edit_multi_line_match(env):
+def test_execute_edit_multi_line_match(env, tmp_path):
     """Ensures matching multiple lines works correctly."""
-    project = env[ProjectEnv].union
-    project.write(PurePosixPath('file.txt'), "line1\nline2\nline3\n")
+    (tmp_path / 'file.txt').write_text("line1\nline2\nline3\n", encoding='utf-8')
 
-    call = EditToolCall(PurePosixPath('file.txt'), "line2\nline3", "replacement")
+    call = EditToolCall(PurePosixPath('test/file.txt'), "line2\nline3", "replacement")
     call.execute(env)
 
-    assert project.files[PurePosixPath('file.txt')] == "line1\nreplacement\n"
+    assert (tmp_path / 'file.txt').read_text(encoding='utf-8') == "line1\nreplacement\n"
 
-def test_execute_edit_normalize_output(env):
+def test_execute_edit_normalize_output(env, tmp_path):
     """Ensures output is normalized on write."""
-    project = env[ProjectEnv].union
-    project.write(PurePosixPath('file.txt'), "line1\nline2\n")
+    (tmp_path / 'file.txt').write_text("line1\nline2\n", encoding='utf-8')
 
     # Replacement lacks newline
-    call = EditToolCall(PurePosixPath('file.txt'), "line2", "replacement")
+    call = EditToolCall(PurePosixPath('test/file.txt'), "line2", "replacement")
     call.execute(env)
 
     # Result should have newline
-    assert project.files[PurePosixPath('file.txt')] == "line1\nreplacement\n"
+    assert (tmp_path / 'file.txt').read_text(encoding='utf-8') == "line1\nreplacement\n"
+
+def test_execute_edit_missing_file(env):
+    """Ensures meaningful error when file is missing."""
+    call = EditToolCall(PurePosixPath('test/missing.txt'), "foo", "bar")
+    with pytest.raises(FileNotFoundError, match="File not found"):
+        call.execute(env)
