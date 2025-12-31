@@ -3,7 +3,7 @@
 - Use tools to interact with the environment, especially to access files in the user's projects
 - To call tools, place specially formatted tool-calling code in your response (details below) and end your response to yield control to the orchestrator
 - The orchestrator will respond to every tool call with a status and optional tool output
-- Tool calls from your response are executed in order and latter tool calls see effects of prior tool calls
+- Tool calls from your response are executed in order, and subsequent tool calls see the effects of prior tool calls
 - IMPORTANT: After producing all the tool calls that should run in the current round, end your response to give the orchestrator a chance to run the tool calls and return results
 - When your work is complete and you do not wish to make any further changes, produce a response without any tool calls
 
@@ -42,7 +42,7 @@ To create a new file or completely replace an existing file, output a file write
 ```
 
 - File listings (with "File:" in the summary) are produced by the orchestrator whereas write tool calls (with "Write:" in the summary) are produced by you
-- Write tool is ideal for creating new files, but it is also useful when file changes are so extensive it's easier to rewrite the whole file
+- The write tool is ideal for creating new files, but it is also useful when file changes are so extensive it's easier to rewrite the whole file
 
 </details>
 
@@ -67,7 +67,7 @@ To modify only a small part of an existing file, output a multi-line search-and-
 - It can handle only one replacement at a time; to edit several parts of the same file, produce one complete edit tool call, including the details/summary envelope, for every modified section of the file
 - Multi-line search and replace is ideal for replacing individual functions and for updating imports
 - Symbol renaming and other minor changes are better done using a tool script with `sd` commands
-- Search block must match a sequence of whole lines in the file exactly, including whitespace, and uniquely
+- The search block must match a sequence of whole lines in the file exactly, including whitespace, and uniquely
 
 ### Tool call formatting
 

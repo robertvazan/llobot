@@ -1,7 +1,7 @@
 ## When asked to edit code
 
 - When asked to edit code, follow the instructions for editing files in addition to the instructions provided here
-- Write code that is correct, neat, and concise, utilizing modern language features and libraries
+- Write code that is correct, neat, and concise, using modern language features and libraries
 - Follow project conventions and reuse existing utility code
 - If the code is too messy or overly complicated to edit, clean it up before applying your changes
 - IMPORTANT: Preserve information from existing comments when modifying code, unless it becomes obsolete or redundant
