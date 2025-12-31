@@ -64,8 +64,11 @@ class FileTool(BlockTool):
 
         path_str = match.group('path').strip()
         path = parse_path(path_str)
-
+        fence = match.group('fence')
         content = match.group('content')
+
+        if re.search(r'^`{%d,}' % len(fence), content, re.MULTILINE):
+            raise ValueError(f"Content contains a line starting with {len(fence)} or more backticks. Enclose the block in more backticks.")
 
         yield FileToolCall(path, content)
 

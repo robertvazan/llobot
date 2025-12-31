@@ -175,3 +175,91 @@ def test_execute_edit_missing_file(env):
     call = EditToolCall(PurePosixPath('test/missing.txt'), "foo", "bar")
     with pytest.raises(FileNotFoundError, match="File not found"):
         call.execute(env)
+
+def test_parse_edit_with_shorter_fence(env):
+    source = textwrap.dedent("""
+        <details>
+        <summary>Edit: ~/test/file.txt</summary>
+
+        ````text
+        <<<<<<< SEARCH
+        ```
+        shorter fence
+        ```
+        ======= AND
+        bar
+        >>>>>>> REPLACE
+        ````
+
+        </details>
+    """)
+    tool = EditTool()
+    calls = list(tool.parse(env, source.strip()))
+    assert len(calls) == 1
+    call = calls[0]
+    # Verify the inner backticks are preserved
+    assert "```\nshorter fence\n```" in call._search
+
+def test_parse_edit_with_indented_fence(env):
+    source = textwrap.dedent("""
+        <details>
+        <summary>Edit: ~/test/file.txt</summary>
+
+        ```text
+        <<<<<<< SEARCH
+         ```
+         indented
+         ```
+        ======= AND
+        bar
+        >>>>>>> REPLACE
+        ```
+
+        </details>
+    """)
+    tool = EditTool()
+    calls = list(tool.parse(env, source.strip()))
+    assert len(calls) == 1
+
+def test_parse_edit_with_conflicting_fence(env):
+    source = textwrap.dedent("""
+        <details>
+        <summary>Edit: ~/test/file.txt</summary>
+
+        ```text
+        <<<<<<< SEARCH
+        ```
+        conflict
+        ```
+        ======= AND
+        bar
+        >>>>>>> REPLACE
+        ```
+
+        </details>
+    """)
+    tool = EditTool()
+    with pytest.raises(ValueError, match="Content contains a line starting with"):
+        list(tool.parse(env, source.strip()))
+
+def test_parse_edit_with_midline_fence(env):
+    source = textwrap.dedent("""
+        <details>
+        <summary>Edit: ~/test/file.txt</summary>
+
+        ```text
+        <<<<<<< SEARCH
+        some text ``` mid line
+        ======= AND
+        other text ``` mid line
+        >>>>>>> REPLACE
+        ```
+
+        </details>
+    """)
+    tool = EditTool()
+    calls = list(tool.parse(env, source.strip()))
+    assert len(calls) == 1
+    call = calls[0]
+    assert "some text ``` mid line" in call._search
+    assert "other text ``` mid line" in call._replace

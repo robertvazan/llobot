@@ -129,3 +129,58 @@ def test_file_tool_empty_code_block(env: Environment):
     call.execute(env)
     project = env[ProjectEnv].union
     assert project.read(PurePosixPath("myproject/empty.txt")) == ""
+
+def test_file_tool_nested_fences(env: Environment):
+    tool = FileTool()
+    # Outer fence is 4 backticks, inner is 3. Should pass.
+    text = dedent("""
+        <details>
+        <summary>File: ~/myproject/foo.md</summary>
+
+        ````markdown
+        ```python
+        print("hello")
+        ```
+        ````
+
+        </details>
+    """).strip()
+
+    calls = list(tool.parse(env, text))
+    assert len(calls) == 1
+    assert calls[0]._content.strip() == '```python\nprint("hello")\n```'
+
+def test_file_tool_conflicting_fence(env: Environment):
+    tool = FileTool()
+    text = dedent("""
+        <details>
+        <summary>File: ~/myproject/foo.md</summary>
+
+        ```markdown
+        Start
+        ```
+        End
+        ```
+
+        </details>
+    """).strip()
+
+    with pytest.raises(ValueError, match="Content contains a line starting with"):
+        list(tool.parse(env, text))
+
+def test_file_tool_midline_fence(env: Environment):
+    tool = FileTool()
+    text = dedent("""
+        <details>
+        <summary>File: ~/myproject/foo.md</summary>
+
+        ```markdown
+        Here is some text with ``` backticks in the middle.
+        ```
+
+        </details>
+    """).strip()
+
+    calls = list(tool.parse(env, text))
+    assert len(calls) == 1
+    assert "text with ``` backticks" in calls[0]._content
