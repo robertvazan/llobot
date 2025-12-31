@@ -156,8 +156,8 @@ def unit_tests_prompt_section() -> PromptSection:
     return PromptSection(read_prompt('unit_tests.md'), coding_prompt_section())
 
 @cache
-def self_review_prompt_section() -> PromptSection:
-    return PromptSection(read_prompt('self_review.md'), coding_prompt_section())
+def review_prompt_section() -> PromptSection:
+    return PromptSection(read_prompt('review.md'), coding_prompt_section())
 
 __all__ = [
     'read_prompt',
@@ -175,5 +175,5 @@ __all__ = [
     'coding_prompt_section',
     'documentation_prompt_section',
     'unit_tests_prompt_section',
-    'self_review_prompt_section',
+    'review_prompt_section',
 ]

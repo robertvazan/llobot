@@ -43,7 +43,7 @@ To create a new file or completely replace an existing file, output a file listi
 
 </details>
 
-### Multi-line search and replace
+### Multi-line search and replace (edit tool)
 
 To modify only a small part of an existing file, output a multi-line search-and-replace tool call:
 

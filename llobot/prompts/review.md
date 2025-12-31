@@ -6,3 +6,4 @@
 - Do not read any additional files during review and rely solely on what is already in the context
 - Report only issues and refrain from commenting correct code
 - Number review comments for easy reference and use Markdown formatting to make them skimmable
+- When asked to resolve issues named in a review written by another LLM, implement only recommendations that you agree with, because the other LLM could be wrong

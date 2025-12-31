@@ -11,7 +11,7 @@ from llobot.prompts import (
     listings_prompt_section,
     orchestrator_prompt_section,
     overviews_prompt_section,
-    self_review_prompt_section,
+    review_prompt_section,
     tools_prompt_section,
     unit_tests_prompt_section,
 )
@@ -32,7 +32,7 @@ def coder_system_prompt() -> SystemPrompt:
         overviews_prompt_section(),
         documentation_prompt_section(),
         unit_tests_prompt_section(),
-        self_review_prompt_section(),
+        review_prompt_section(),
     )
 
 class Coder(Editor):
