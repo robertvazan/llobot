@@ -45,7 +45,7 @@ def test_parse_edit(env):
         ```text
         <<<<<<< SEARCH
         foo
-        =======
+        ======= AND
         bar
         >>>>>>> REPLACE
         ```
@@ -69,7 +69,7 @@ def test_parse_edit_empty_replace(env):
         ```text
         <<<<<<< SEARCH
         foo
-        =======
+        ======= AND
         >>>>>>> REPLACE
         ```
 
@@ -81,6 +81,32 @@ def test_parse_edit_empty_replace(env):
     call = calls[0]
     assert isinstance(call, EditToolCall)
     assert call._replace.strip() == ''
+
+def test_parse_edit_content_with_equals(env):
+    source = textwrap.dedent("""
+        <details>
+        <summary>Edit: ~/file.txt</summary>
+
+        ```text
+        <<<<<<< SEARCH
+        foo
+        =======
+        bar
+        ======= AND
+        baz
+        =======
+        qux
+        >>>>>>> REPLACE
+        ```
+
+        </details>
+    """)
+    tool = EditTool()
+    calls = list(tool.parse(env, source.strip()))
+    assert len(calls) == 1
+    call = calls[0]
+    assert call._search.strip() == "foo\n=======\nbar"
+    assert call._replace.strip() == "baz\n=======\nqux"
 
 def test_execute_edit(env):
     project = env[ProjectEnv].union

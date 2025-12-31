@@ -73,7 +73,7 @@ _EDIT_DETAILS_RE = re.compile(
     r'^(?P<fence>`{3,})(?P<lang>[^`\n]*)\s*\n'
     r'^<{7,}.*?\n'
     r'(?P<search>.*?)'
-    r'^={7,}\n'
+    r'^={7,} AND\n'
     r'(?P<replace>.*?)'
     r'^>{7,}.*?\n'
     r'^(?P=fence)\s*</details>',
@@ -89,7 +89,7 @@ class EditTool(BlockTool):
     ```lang
     <<<<<<< SEARCH
     search content
-    =======
+    ======= AND
     replace content
     >>>>>>> REPLACE
     ```
@@ -112,9 +112,9 @@ class EditTool(BlockTool):
         search = match.group('search')
         replace = match.group('replace')
 
-        if re.search(r'^={7,}$', search, re.MULTILINE):
+        if re.search(r'^={7,} AND$', search, re.MULTILINE):
             raise ValueError("Search block contains separator marker.")
-        if re.search(r'^={7,}$', replace, re.MULTILINE):
+        if re.search(r'^={7,} AND$', replace, re.MULTILINE):
             raise ValueError("Replacement block contains separator marker.")
 
         yield EditToolCall(path, search, replace)
