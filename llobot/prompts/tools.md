@@ -30,16 +30,19 @@ sd old new ~/path/to/file.txt
 - IMPORTANT: A tool script is not a fully featured shell script and its use must be limited to documented capabilities
 - To perform operations with multi-line arguments, use block tools documented below instead of or in addition to the tool script
 
-### New or modified file
+### New or modified file (file tool)
 
-To create a new file or completely replace an existing file, output a file listing:
+To create a new file or completely replace an existing file, output a file write tool call:
 
 <details>
-<summary>File: ~/path/to/file.py</summary>
+<summary>Write: ~/path/to/file.py</summary>
 
 ```python
 # ... entire content of the file ...
 ```
+
+- File listings (with "File:" in the summary) are produced by the orchestrator whereas write tool calls (with "Write:" in the summary) are produced by you
+- Write tool is ideal for creating new files, but it is also useful when file changes are so extensive it's easier to rewrite the whole file
 
 </details>
 
@@ -108,7 +111,7 @@ def cube(x):
 </details>
 
 <details>
-<summary>Success: file ~/myproject/ops.py</summary>
+<summary>Success: cat ~/myproject/ops.py</summary>
 
 ```
 Reading ~/myproject/ops.py...
@@ -170,7 +173,7 @@ File was edited.
 </details>
 
 <details>
-<summary>Success: file ~/myproject/ops.py</summary>
+<summary>Success: cat ~/myproject/ops.py</summary>
 
 ```
 Reading ~/myproject/ops.py...

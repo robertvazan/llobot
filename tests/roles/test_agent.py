@@ -8,7 +8,7 @@ from llobot.chats.stream import record_stream
 from llobot.chats.thread import ChatThread
 from llobot.models.echo import EchoModel
 from llobot.roles.agent import Agent
-from llobot.tools.files import FileTool
+from llobot.tools.write import WriteTool
 
 def get_response_content(thread: ChatThread) -> str:
     """Helper to extract model response content from the thread."""
@@ -126,11 +126,11 @@ def test_agent_accept_command(tmp_path: Path):
             from llobot.commands.project import handle_project_commands
             handle_project_commands(env)
 
-    agent = ProjectAwareAgent('agent', model, tools=[FileTool()], session_history=tmp_path / 'sessions', projects=library)
+    agent = ProjectAwareAgent('agent', model, tools=[WriteTool()], session_history=tmp_path / 'sessions', projects=library)
 
     file_tool_call_str = dedent("""\
         <details>
-        <summary>File: ~/project/test.txt</summary>
+        <summary>Write: ~/project/test.txt</summary>
 
         ```
         content
@@ -151,5 +151,5 @@ def test_agent_accept_command(tmp_path: Path):
     status_msg = next((m for m in response_thread if m.intent == ChatIntent.STATUS), None)
     assert status_msg
     assert "✅ All 1 tool calls executed." in status_msg.content
-    assert "Success: file ~/project/test.txt" in status_msg.content
+    assert "Success: write ~/project/test.txt" in status_msg.content
     assert (tmp_path / 'project/test.txt').read_text().strip() == 'content'

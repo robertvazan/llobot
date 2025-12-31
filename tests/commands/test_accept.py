@@ -15,12 +15,12 @@ from llobot.environments.tools import ToolEnv
 from llobot.projects.library.home import HomeProjectLibrary
 from llobot.tools.cat import CatTool
 from llobot.tools.code import DummyCodeBlockTool
-from llobot.tools.files import FileTool
+from llobot.tools.write import WriteTool
 from llobot.tools.move import MoveTool
 from llobot.tools.remove import RemoveTool
 from llobot.tools.script import ScriptTool
 
-TOOLS = [FileTool(), MoveTool(), RemoveTool(), CatTool(), ScriptTool(), DummyCodeBlockTool()]
+TOOLS = [WriteTool(), MoveTool(), RemoveTool(), CatTool(), ScriptTool(), DummyCodeBlockTool()]
 
 def test_accept_command_success(tmp_path: Path):
     # Setup project
@@ -43,7 +43,7 @@ def test_accept_command_success(tmp_path: Path):
         I will perform the requested file operations.
 
         <details>
-        <summary>File: ~/myproject/file2.txt</summary>
+        <summary>Write: ~/myproject/file2.txt</summary>
 
         ```
         new content
@@ -75,7 +75,7 @@ def test_accept_command_success(tmp_path: Path):
     # Verify status messages
     status_env = env[StatusEnv]
     content = status_env.content()
-    assert "Success: file ~/myproject/file2.txt" in content
+    assert "Success: write ~/myproject/file2.txt" in content
     assert "Writing ~/myproject/file2.txt..." in content
     assert "File was written." in content
     assert "Success: rm ~/myproject/file1.txt" in content

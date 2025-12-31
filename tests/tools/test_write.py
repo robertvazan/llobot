@@ -6,7 +6,7 @@ from llobot.environments.projects import ProjectEnv
 from llobot.environments.tools import ToolEnv
 from llobot.projects.directory import DirectoryProject
 from llobot.projects.library.home import HomeProjectLibrary
-from llobot.tools.files import FileTool, FileToolCall
+from llobot.tools.write import WriteTool, WriteToolCall
 
 @pytest.fixture
 def home_library(tmp_path: Path) -> HomeProjectLibrary:
@@ -29,11 +29,11 @@ def env(home_library: HomeProjectLibrary, project: DirectoryProject) -> Environm
     penv.add("myproject")
     return environment
 
-def test_file_tool_slice_and_parse(env: Environment):
-    tool = FileTool()
+def test_write_tool_slice_and_parse(env: Environment):
+    tool = WriteTool()
     text = dedent("""
         <details>
-        <summary>File: ~/myproject/foo.txt</summary>
+        <summary>Write: ~/myproject/foo.txt</summary>
 
         ```
         content
@@ -49,7 +49,7 @@ def test_file_tool_slice_and_parse(env: Environment):
     calls = list(tool.parse(env, text))
     assert len(calls) == 1
     call = calls[0]
-    assert isinstance(call, FileToolCall)
+    assert isinstance(call, WriteToolCall)
     assert call._path == PurePosixPath("myproject/foo.txt")
     assert call._content == "content\nof the file\n"
 
@@ -61,11 +61,11 @@ def test_file_tool_slice_and_parse(env: Environment):
     assert "Writing ~/myproject/foo.txt..." in log
     assert "File was written." in log
 
-def test_file_tool_slice_extra_whitespace(env: Environment):
-    tool = FileTool()
+def test_write_tool_slice_extra_whitespace(env: Environment):
+    tool = WriteTool()
     text = dedent("""
         <details>
-          <summary>  File:   ~/myproject/bar.py   </summary>
+          <summary>  Write:   ~/myproject/bar.py   </summary>
 
         ````python
         print("hello")
@@ -80,20 +80,20 @@ def test_file_tool_slice_extra_whitespace(env: Environment):
     calls = list(tool.parse(env, text))
     assert len(calls) == 1
     call = calls[0]
-    assert isinstance(call, FileToolCall)
+    assert isinstance(call, WriteToolCall)
     assert call._path == PurePosixPath("myproject/bar.py")
     assert call._content == 'print("hello")\n'
 
-def test_file_tool_no_match(env: Environment):
-    tool = FileTool()
-    text = "<summary>File: foo.txt</summary>"
+def test_write_tool_no_match(env: Environment):
+    tool = WriteTool()
+    text = "<summary>Write: foo.txt</summary>"
     assert tool.slice(env, text, 0) == 0
 
-def test_file_tool_missing_tilde_prefix(env: Environment):
-    tool = FileTool()
+def test_write_tool_missing_tilde_prefix(env: Environment):
+    tool = WriteTool()
     text = dedent("""
         <details>
-        <summary>File: myproject/foo.txt</summary>
+        <summary>Write: myproject/foo.txt</summary>
         ```
         ```
         </details>
@@ -106,11 +106,11 @@ def test_file_tool_missing_tilde_prefix(env: Environment):
     with pytest.raises(ValueError, match="Path must start with ~/"):
         list(tool.parse(env, text))
 
-def test_file_tool_empty_code_block(env: Environment):
-    tool = FileTool()
+def test_write_tool_empty_code_block(env: Environment):
+    tool = WriteTool()
     text = dedent("""
         <details>
-        <summary>File: ~/myproject/empty.txt</summary>
+        <summary>Write: ~/myproject/empty.txt</summary>
         ```
         ```
         </details>
@@ -122,7 +122,7 @@ def test_file_tool_empty_code_block(env: Environment):
     calls = list(tool.parse(env, text))
     assert len(calls) == 1
     call = calls[0]
-    assert isinstance(call, FileToolCall)
+    assert isinstance(call, WriteToolCall)
     assert call._path == PurePosixPath("myproject/empty.txt")
     assert call._content == ""
 
@@ -130,12 +130,12 @@ def test_file_tool_empty_code_block(env: Environment):
     project = env[ProjectEnv].union
     assert project.read(PurePosixPath("myproject/empty.txt")) == ""
 
-def test_file_tool_nested_fences(env: Environment):
-    tool = FileTool()
+def test_write_tool_nested_fences(env: Environment):
+    tool = WriteTool()
     # Outer fence is 4 backticks, inner is 3. Should pass.
     text = dedent("""
         <details>
-        <summary>File: ~/myproject/foo.md</summary>
+        <summary>Write: ~/myproject/foo.md</summary>
 
         ````markdown
         ```python
@@ -150,11 +150,11 @@ def test_file_tool_nested_fences(env: Environment):
     assert len(calls) == 1
     assert calls[0]._content.strip() == '```python\nprint("hello")\n```'
 
-def test_file_tool_conflicting_fence(env: Environment):
-    tool = FileTool()
+def test_write_tool_conflicting_fence(env: Environment):
+    tool = WriteTool()
     text = dedent("""
         <details>
-        <summary>File: ~/myproject/foo.md</summary>
+        <summary>Write: ~/myproject/foo.md</summary>
 
         ```markdown
         Start
@@ -168,11 +168,11 @@ def test_file_tool_conflicting_fence(env: Environment):
     with pytest.raises(ValueError, match="Content contains a line starting with"):
         list(tool.parse(env, text))
 
-def test_file_tool_midline_fence(env: Environment):
-    tool = FileTool()
+def test_write_tool_midline_fence(env: Environment):
+    tool = WriteTool()
     text = dedent("""
         <details>
-        <summary>File: ~/myproject/foo.md</summary>
+        <summary>Write: ~/myproject/foo.md</summary>
 
         ```markdown
         Here is some text with ``` backticks in the middle.

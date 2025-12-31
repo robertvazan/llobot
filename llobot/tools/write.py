@@ -13,7 +13,7 @@ from llobot.tools import ToolCall
 from llobot.tools.block import BlockTool
 from llobot.utils.text import normalize_document
 
-class FileToolCall(ToolCall):
+class WriteToolCall(ToolCall):
     _path: PurePosixPath
     _content: str
 
@@ -23,7 +23,7 @@ class FileToolCall(ToolCall):
 
     @property
     def title(self) -> str:
-        return f"file ~/{self._path}"
+        return f"write ~/{self._path}"
 
     def execute(self, env: Environment):
         project = env[ProjectEnv].union
@@ -31,8 +31,8 @@ class FileToolCall(ToolCall):
         project.write(self._path, normalize_document(self._content))
         env[ToolEnv].log("File was written.")
 
-_FILE_DETAILS_RE = re.compile(
-    r'^<details>\s*<summary>\s*File:\s*(?P<path>.+?)\s*</summary>\s*'
+_WRITE_DETAILS_RE = re.compile(
+    r'^<details>\s*<summary>\s*Write:\s*(?P<path>.+?)\s*</summary>\s*'
     r'^(?P<fence>`{3,})(?P<lang>[^`\n]*)\s*\n'
     r'(?P<content>.*?)'
     r'^(?P=fence)\s*</details>',
@@ -40,11 +40,11 @@ _FILE_DETAILS_RE = re.compile(
 )
 
 
-class FileTool(BlockTool):
+class WriteTool(BlockTool):
     """
     Tool that parses document listings in the format:
     <details>
-    <summary>File: ~/path/to/file</summary>
+    <summary>Write: ~/path/to/file</summary>
 
     ```lang
     content
@@ -53,13 +53,13 @@ class FileTool(BlockTool):
     </details>
     """
     def slice(self, env: Environment, source: str, at: int) -> int:
-        match = _FILE_DETAILS_RE.match(source, pos=at)
+        match = _WRITE_DETAILS_RE.match(source, pos=at)
         if not match:
             return 0
         return match.end() - at
 
     def parse(self, env: Environment, source: str) -> Iterable[ToolCall]:
-        match = _FILE_DETAILS_RE.fullmatch(source)
+        match = _WRITE_DETAILS_RE.fullmatch(source)
         assert match, "source for parse() must be validated by slice()"
 
         path_str = match.group('path').strip()
@@ -70,9 +70,9 @@ class FileTool(BlockTool):
         if re.search(r'^`{%d,}' % len(fence), content, re.MULTILINE):
             raise ValueError(f"Content contains a line starting with {len(fence)} or more backticks. Enclose the block in more backticks.")
 
-        yield FileToolCall(path, content)
+        yield WriteToolCall(path, content)
 
 __all__ = [
-    'FileTool',
-    'FileToolCall',
+    'WriteTool',
+    'WriteToolCall',
 ]

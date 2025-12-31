@@ -18,7 +18,7 @@ edit
     A tool for editing files using search and replace.
 fenced
     A base class for tools that use fenced code blocks.
-files
+write
     A tool for creating or updating files from file listings.
 line
     Base class for tools that parse single lines.
@@ -49,7 +49,7 @@ class ToolCall(ValueTypeMixin):
         """
         Returns a summary or header of the tool call.
 
-        Example: "rm path/to/file" or "file path/to/file".
+        Example: "rm path/to/file" or "write path/to/file".
         """
         raise NotImplementedError
 
@@ -119,13 +119,13 @@ def standard_tools() -> tuple[Tool, ...]:
     from llobot.tools.cat import CatTool
     from llobot.tools.code import DummyCodeBlockTool
     from llobot.tools.edit import EditTool
-    from llobot.tools.files import FileTool
     from llobot.tools.move import MoveTool
     from llobot.tools.remove import RemoveTool
     from llobot.tools.replace import ReplaceTool
     from llobot.tools.script import ScriptTool
+    from llobot.tools.write import WriteTool
     return (
-        FileTool(),
+        WriteTool(),
         EditTool(),
         MoveTool(),
         RemoveTool(),
