@@ -33,7 +33,7 @@ class FileToolCall(ToolCall):
 
 _FILE_DETAILS_RE = re.compile(
     r'^<details>\s*<summary>\s*File:\s*(?P<path>.+?)\s*</summary>\s*'
-    r'^(?P<fence>`{3,})(?P<lang>\w*)\s*\n'
+    r'^(?P<fence>`{3,})(?P<lang>[^`\n]*)\s*\n'
     r'(?P<content>.*?)'
     r'^(?P=fence)\s*</details>',
     re.DOTALL | re.MULTILINE

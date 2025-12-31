@@ -51,16 +51,16 @@ To modify only a small part of an existing file, output a multi-line search-and-
 <summary>Edit: ~/path/to/file.py</summary>
 
 ```python
+<<<<<<< SEARCH
 # multi-line block to search for
-```
-
-```python
+=======
 # multi-line replacement block (may be empty)
+>>>>>>> REPLACE
 ```
 
 </details>
 
-- The tool searches for the first block and replaces it with the second block
+- The tool searches the file for the block between `<<<<<<< SEARCH` and `=======` and replaces it with the block between `=======` and `>>>>>>> REPLACE`
 - It can handle only one replacement at a time; to edit several parts of the same file, output several search-and-replace tool calls for the same file, one for every modified section of the file
 - Multi-line search and replace is ideal for replacing individual functions and for updating imports
 - Symbol renaming and other minor changes are better done using a tool script with `sd` commands
@@ -127,13 +127,13 @@ You can now edit the file using multi-line search and replace tool. In this exam
 <summary>Edit: ~/myproject/ops.py</summary>
 
 ```python
+<<<<<<< SEARCH
 def square(x):
     return x ** 2
-```
-
-```python
+=======
 def square(x):
     return x * x
+>>>>>>> REPLACE
 ```
 
 </details>

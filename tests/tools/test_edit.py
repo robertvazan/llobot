@@ -43,11 +43,11 @@ def test_parse_edit(env):
         <summary>Edit: ~/file.txt</summary>
 
         ```text
+        <<<<<<< SEARCH
         foo
-        ```
-
-        ```text
+        =======
         bar
+        >>>>>>> REPLACE
         ```
 
         </details>
@@ -67,10 +67,10 @@ def test_parse_edit_empty_replace(env):
         <summary>Edit: ~/file.txt</summary>
 
         ```text
+        <<<<<<< SEARCH
         foo
-        ```
-
-        ```text
+        =======
+        >>>>>>> REPLACE
         ```
 
         </details>

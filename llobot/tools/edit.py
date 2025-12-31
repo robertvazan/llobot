@@ -70,13 +70,13 @@ class EditToolCall(ToolCall):
 
 _EDIT_DETAILS_RE = re.compile(
     r'^<details>\s*<summary>\s*Edit:\s*(?P<path>.+?)\s*</summary>\s*'
-    r'^(?P<fence1>`{3,})(?P<lang1>\w*)\s*\n'
+    r'^(?P<fence>`{3,})(?P<lang>[^`\n]*)\s*\n'
+    r'^<{7,}.*?\n'
     r'(?P<search>.*?)'
-    r'^(?P=fence1)[ \t]*\n'
-    r'(?:\s*\n)+'
-    r'[ \t]*^(?P<fence2>`{3,})(?P<lang2>\w*)\s*\n'
+    r'^={7,}\n'
     r'(?P<replace>.*?)'
-    r'^(?P=fence2)\s*</details>',
+    r'^>{7,}.*?\n'
+    r'^(?P=fence)\s*</details>',
     re.DOTALL | re.MULTILINE
 )
 
@@ -87,11 +87,11 @@ class EditTool(BlockTool):
     <summary>Edit: ~/path/to/file</summary>
 
     ```lang
+    <<<<<<< SEARCH
     search content
-    ```
-
-    ```lang
+    =======
     replace content
+    >>>>>>> REPLACE
     ```
 
     </details>
@@ -111,6 +111,11 @@ class EditTool(BlockTool):
 
         search = match.group('search')
         replace = match.group('replace')
+
+        if re.search(r'^={7,}$', search, re.MULTILINE):
+            raise ValueError("Search block contains separator marker.")
+        if re.search(r'^={7,}$', replace, re.MULTILINE):
+            raise ValueError("Replacement block contains separator marker.")
 
         yield EditToolCall(path, search, replace)
 
