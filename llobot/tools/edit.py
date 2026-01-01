@@ -79,15 +79,6 @@ _EDIT_SLICE_RE = re.compile(
     re.DOTALL | re.MULTILINE
 )
 
-_EDIT_CONTENT_RE = re.compile(
-    r'^<{7,}[^\n]*\n'
-    r'(?P<search>.*?)'
-    r'^={7,} AND[^\n]*\n'
-    r'(?P<replace>.*?)'
-    r'^>{7,}[^\n]*\n?',
-    re.DOTALL | re.MULTILINE
-)
-
 class EditTool(BlockTool):
     """
     Tool that parses edit listings in the format:
@@ -95,11 +86,9 @@ class EditTool(BlockTool):
     <summary>Edit: ~/path/to/file</summary>
 
     ```lang
-    <<<<<<< SEARCH
     search content
-    ======= AND
+    @@@
     replace content
-    >>>>>>> REPLACE
     ```
 
     </details>
@@ -122,17 +111,26 @@ class EditTool(BlockTool):
         if re.search(r'^`{%d,}' % len(fence), content, re.MULTILINE):
             raise ValueError(f"Content contains a line starting with {len(fence)} or more backticks. Enclose the block in more backticks.")
 
-        content_match = _EDIT_CONTENT_RE.fullmatch(content)
-        if not content_match:
-            raise ValueError("Edit block must contain <<<<<<< SEARCH, ======= AND, and >>>>>>> REPLACE markers.")
+        lines = content.splitlines(keepends=True)
+        candidates = []
+        for i, line in enumerate(lines):
+            stripped = line.rstrip('\n\r')
+            if len(stripped) >= 3 and all(c == '@' for c in stripped):
+                candidates.append((i, len(stripped)))
 
-        search = content_match.group('search')
-        replace = content_match.group('replace')
+        if not candidates:
+            raise ValueError("Edit block must contain a separator line with 3 or more '@' characters.")
 
-        if re.search(r'^={7,} AND', search, re.MULTILINE):
-            raise ValueError("Search block contains separator marker.")
-        if re.search(r'^={7,} AND', replace, re.MULTILINE):
-            raise ValueError("Replacement block contains separator marker.")
+        max_len = max(l for _, l in candidates)
+        best_candidates = [i for i, l in candidates if l == max_len]
+
+        if len(best_candidates) > 1:
+            raise ValueError(f"Ambiguous separator: multiple lines with {max_len} '@' characters found.")
+
+        sep_idx = best_candidates[0]
+
+        search = "".join(lines[:sep_idx])
+        replace = "".join(lines[sep_idx+1:])
 
         yield EditToolCall(path, search, replace)
 

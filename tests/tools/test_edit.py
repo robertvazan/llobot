@@ -21,11 +21,9 @@ def test_parse_edit(env):
         <summary>Edit: ~/test/file.txt</summary>
 
         ```text
-        <<<<<<< SEARCH
         foo
-        ======= AND
+        @@@
         bar
-        >>>>>>> REPLACE
         ```
 
         </details>
@@ -45,10 +43,8 @@ def test_parse_edit_empty_replace(env):
         <summary>Edit: ~/test/file.txt</summary>
 
         ```text
-        <<<<<<< SEARCH
         foo
-        ======= AND
-        >>>>>>> REPLACE
+        @@@
         ```
 
         </details>
@@ -60,21 +56,19 @@ def test_parse_edit_empty_replace(env):
     assert isinstance(call, EditToolCall)
     assert call._replace.strip() == ''
 
-def test_parse_edit_content_with_equals(env):
+def test_parse_edit_content_with_at_signs(env):
     source = textwrap.dedent("""
         <details>
         <summary>Edit: ~/test/file.txt</summary>
 
         ```text
-        <<<<<<< SEARCH
         foo
-        =======
+        @@@
         bar
-        ======= AND
+        @@@@
         baz
-        =======
+        @@@
         qux
-        >>>>>>> REPLACE
         ```
 
         </details>
@@ -83,8 +77,28 @@ def test_parse_edit_content_with_equals(env):
     calls = list(tool.parse(env, source.strip()))
     assert len(calls) == 1
     call = calls[0]
-    assert call._search.strip() == "foo\n=======\nbar"
-    assert call._replace.strip() == "baz\n=======\nqux"
+    # @@@@ is the separator because it's longest
+    assert call._search.strip() == "foo\n@@@\nbar"
+    assert call._replace.strip() == "baz\n@@@\nqux"
+
+def test_parse_edit_ambiguous_separator(env):
+    source = textwrap.dedent("""
+        <details>
+        <summary>Edit: ~/test/file.txt</summary>
+
+        ```text
+        foo
+        @@@
+        bar
+        @@@
+        baz
+        ```
+
+        </details>
+    """)
+    tool = EditTool()
+    with pytest.raises(ValueError, match="Ambiguous separator"):
+        list(tool.parse(env, source.strip()))
 
 def test_execute_edit(env, tmp_path):
     (tmp_path / 'file.txt').write_text("line1\nline2\nline3\n", encoding='utf-8')
@@ -182,13 +196,11 @@ def test_parse_edit_with_shorter_fence(env):
         <summary>Edit: ~/test/file.txt</summary>
 
         ````text
-        <<<<<<< SEARCH
         ```
         shorter fence
         ```
-        ======= AND
+        @@@
         bar
-        >>>>>>> REPLACE
         ````
 
         </details>
@@ -206,13 +218,11 @@ def test_parse_edit_with_indented_fence(env):
         <summary>Edit: ~/test/file.txt</summary>
 
         ```text
-        <<<<<<< SEARCH
          ```
          indented
          ```
-        ======= AND
+        @@@
         bar
-        >>>>>>> REPLACE
         ```
 
         </details>
@@ -227,13 +237,11 @@ def test_parse_edit_with_conflicting_fence(env):
         <summary>Edit: ~/test/file.txt</summary>
 
         ```text
-        <<<<<<< SEARCH
         ```
         conflict
         ```
-        ======= AND
+        @@@
         bar
-        >>>>>>> REPLACE
         ```
 
         </details>
@@ -242,17 +250,15 @@ def test_parse_edit_with_conflicting_fence(env):
     with pytest.raises(ValueError, match="Content contains a line starting with"):
         list(tool.parse(env, source.strip()))
 
-def test_parse_edit_with_midline_fence(env):
+def test_parse_edit_with_midline_separator(env):
     source = textwrap.dedent("""
         <details>
         <summary>Edit: ~/test/file.txt</summary>
 
         ```text
-        <<<<<<< SEARCH
-        some text ``` mid line
-        ======= AND
-        other text ``` mid line
-        >>>>>>> REPLACE
+        some text @@@ mid line
+        @@@@
+        other text @@@ mid line
         ```
 
         </details>
@@ -261,5 +267,6 @@ def test_parse_edit_with_midline_fence(env):
     calls = list(tool.parse(env, source.strip()))
     assert len(calls) == 1
     call = calls[0]
-    assert "some text ``` mid line" in call._search
-    assert "other text ``` mid line" in call._replace
+    # @@@@ is separator
+    assert "some text @@@ mid line" in call._search
+    assert "other text @@@ mid line" in call._replace
