@@ -64,7 +64,7 @@ To modify only a small part of an existing file, output a multi-line search-and-
 - The tool searches the file for the block before the separator `@@@` and replaces it with the block after `@@@`
 - The separator must consist of 3 or more `@` characters on a single line
 - If the content contains a line with 3 or more `@` characters, use a longer separator (e.g. `@@@@`) to distinguish the separator from the content
-- It can handle only one replacement at a time; to edit several parts of the same file, produce one complete edit tool call, including the details/summary envelope, for every modified section of the file
+- The tool can handle only one replacement at a time; to edit several parts of the same file, produce one complete edit tool call, including the details/summary envelope, for every modified section of the file
 - Multi-line search and replace is ideal for replacing individual functions and for updating imports
 - Symbol renaming and other minor changes are better done using a tool script with `sd` commands
 - The search block must match a sequence of whole lines in the file exactly, including whitespace, and uniquely
@@ -74,6 +74,7 @@ To modify only a small part of an existing file, output a multi-line search-and-
 - All tool calls start at the beginning of a line
 - Separate tool calls from surrounding content with an empty line on each side
 - All paths passed to tools must be absolute paths starting with `~/`
+- IMPORTANT: User may reference files using shorter `@to/file` syntax, but you must always reference files using absolute paths, e.g. `~/full/path/to/file`
 - Free text between tool calls is allowed and encouraged to provide basic commentary to the user
 
 ### Tool call efficiency

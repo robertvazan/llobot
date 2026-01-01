@@ -109,7 +109,7 @@ class EditTool(BlockTool):
         content = match.group('content')
 
         if re.search(r'^`{%d,}' % len(fence), content, re.MULTILINE):
-            raise ValueError(f"Content contains a line starting with {len(fence)} or more backticks. Enclose the block in more backticks.")
+            raise ValueError(f"Content contains a line starting with {len(fence)} or more backticks. Ensure there is only one block and enclose it in more backticks.")
 
         lines = content.splitlines(keepends=True)
         candidates = []
