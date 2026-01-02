@@ -14,8 +14,6 @@ code
     A tool for skipping code blocks.
 dummy
     Base class for tools that skip content.
-edit
-    A tool for editing files using search and replace (legacy).
 patch
     A tool for patching files using unified diffs.
 fenced

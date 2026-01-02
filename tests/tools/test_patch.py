@@ -249,7 +249,7 @@ def test_execute_preserve_empty_lines_after_strip(env, tmp_path):
 
     # Diff uses context/delete lines that are effectively empty but have trailing spaces
     # Note: Using manual string construction to ensure trailing spaces are present
-    diff = "@@\n A \n- \n-B \n+C\n"
+    diff = "@@\n A \n  \n-B \n+C\n"
 
     call = PatchToolCall('~/test/file.txt', diff, standard_document_format())
     call.execute(env)
