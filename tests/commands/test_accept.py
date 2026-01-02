@@ -12,7 +12,8 @@ from llobot.environments.projects import ProjectEnv
 from llobot.environments.prompt import PromptEnv
 from llobot.environments.status import StatusEnv
 from llobot.environments.tools import ToolEnv
-from llobot.projects.library.home import HomeProjectLibrary
+from llobot.projects.directory import DirectoryProject
+from llobot.projects.library.predefined import PredefinedProjectLibrary
 from llobot.tools.cat import CatTool
 from llobot.tools.code import DummyCodeBlockTool
 from llobot.tools.write import WriteTool
@@ -24,15 +25,15 @@ TOOLS = [WriteTool(), MoveTool(), RemoveTool(), CatTool(), ScriptTool(), DummyCo
 
 def test_accept_command_success(tmp_path: Path):
     # Setup project
-    sources_dir = tmp_path / "sources"
-    project_dir = sources_dir / "myproject"
+    project_dir = tmp_path / "myproject"
     project_dir.mkdir(parents=True)
     (project_dir / "file1.txt").write_text("content1")
     (project_dir / "file3.txt").write_text("content3")
 
     # Setup environment
     env = Environment()
-    project_library = HomeProjectLibrary(sources_dir, mutable=True)
+    project = DirectoryProject(project_dir, prefix="myproject", mutable=True)
+    project_library = PredefinedProjectLibrary({"myproject": project})
     env[ProjectEnv].configure(project_library)
     env[ProjectEnv].add("myproject")
     for tool in TOOLS:
@@ -106,13 +107,13 @@ def test_accept_command_success(tmp_path: Path):
 
 def test_accept_command_failure(tmp_path: Path):
     # Setup project
-    sources_dir = tmp_path / "sources"
-    project_dir = sources_dir / "myproject"
+    project_dir = tmp_path / "myproject"
     project_dir.mkdir(parents=True)
 
     # Setup environment
     env = Environment()
-    project_library = HomeProjectLibrary(sources_dir, mutable=True)
+    project = DirectoryProject(project_dir, prefix="myproject", mutable=True)
+    project_library = PredefinedProjectLibrary({"myproject": project})
     env[ProjectEnv].configure(project_library)
     env[ProjectEnv].add("myproject")
     for tool in TOOLS:

@@ -115,7 +115,7 @@ def test_agent_accept_command(tmp_path: Path):
     model = EchoModel('echo')
     # Agent needs a project to write files to.
     from llobot.projects.directory import DirectoryProject
-    project = DirectoryProject(tmp_path / 'project', mutable=True)
+    project = DirectoryProject(tmp_path / 'project', prefix="project", mutable=True)
     from llobot.projects.library.zone import ZoneKeyedProjectLibrary
     library = ZoneKeyedProjectLibrary(project)
 

@@ -8,16 +8,12 @@ from llobot.environments.projects import ProjectEnv
 from llobot.environments.tools import ToolEnv
 from llobot.formats.documents import standard_document_format
 from llobot.projects.directory import DirectoryProject
-from llobot.projects.library.home import HomeProjectLibrary
+from llobot.projects.library.predefined import PredefinedProjectLibrary
 from llobot.tools.cat import CatTool, CatToolCall
 from llobot.knowledge.subsets.standard import overviews_subset
 
 @pytest.fixture
-def home_library(tmp_path: Path) -> HomeProjectLibrary:
-    return HomeProjectLibrary(str(tmp_path), mutable=True)
-
-@pytest.fixture
-def project(home_library: HomeProjectLibrary, tmp_path: Path) -> DirectoryProject:
+def project(tmp_path: Path) -> DirectoryProject:
     proj_dir = tmp_path / "myproject"
     proj_dir.mkdir()
     (proj_dir / "a.txt").write_text("content")
@@ -29,15 +25,17 @@ def project(home_library: HomeProjectLibrary, tmp_path: Path) -> DirectoryProjec
     (sub_dir / "c.txt").write_text("subcontent")
     (sub_dir / "__init__.py").write_text("# Init")
 
-    projects = home_library.lookup("myproject")
-    assert projects and isinstance(projects[0], DirectoryProject)
-    return projects[0]
+    return DirectoryProject(proj_dir, prefix="myproject", mutable=True)
 
 @pytest.fixture
-def env(home_library: HomeProjectLibrary, project: DirectoryProject) -> Environment:
+def library(project: DirectoryProject) -> PredefinedProjectLibrary:
+    return PredefinedProjectLibrary({"myproject": project})
+
+@pytest.fixture
+def env(library: PredefinedProjectLibrary) -> Environment:
     environment = Environment()
     penv = environment[ProjectEnv]
-    penv.configure(home_library)
+    penv.configure(library)
     penv.add("myproject")
     return environment
 

@@ -15,10 +15,11 @@ def test_project_read_all(tmp_path: Path):
 
     project = DirectoryProject(
         tmp_path,
+        prefix="p",
         blacklist=FilenameSubset("blacklisted.txt"),
         whitelist=SuffixSubset(".txt"),
     )
-    prefix = PurePosixPath(tmp_path.name)
+    prefix = PurePosixPath("p")
 
     expected_knowledge = Knowledge({
         prefix / "file1.txt": "content1\n",
