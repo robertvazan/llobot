@@ -21,6 +21,10 @@ class MockProject(Project, ValueTypeMixin):
     def prefixes(self) -> set[PurePosixPath]:
         return self._prefixes
 
+    @property
+    def summary(self) -> list[str]:
+        return [f"MockProject {p}" for p in sorted(self.prefixes)]
+
     def _get_at(self, path: PurePosixPath):
         node = self._files
         try:
@@ -182,3 +186,13 @@ def test_union_project_move_within_project_preserves_permissions(tmp_path: Path)
     dest_mode = dest_path.stat().st_mode
     assert stat.S_IMODE(dest_mode) == stat.S_IMODE(src_mode)
     assert os.access(dest_path, os.X_OK)
+
+def test_union_project_summary():
+    p1 = MockProject(prefixes={'p1'}, files={})
+    p2 = MockProject(prefixes={'p2'}, files={})
+    union = union_project(p1, p2)
+
+    summary = union.summary
+    assert len(summary) == 2
+    assert "MockProject p1" in summary
+    assert "MockProject p2" in summary

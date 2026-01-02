@@ -28,6 +28,10 @@ class ShallowProject(Project, ValueTypeMixin):
     def prefixes(self) -> set[PurePosixPath]:
         return self._project.prefixes
 
+    @property
+    def summary(self) -> list[str]:
+        return [f"{s}, top directory only" for s in self._project.summary]
+
     def items(self, path: PurePosixPath) -> list[ProjectItem]:
         """
         Returns a list of items if the path is a prefix.

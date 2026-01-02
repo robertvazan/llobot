@@ -45,6 +45,14 @@ class Project:
         """
         return set()
 
+    @property
+    def summary(self) -> list[str]:
+        """
+        Returns a list of single-line Markdown descriptions of the project.
+        Descriptions should be plain text and not include list markers.
+        """
+        return []
+
     def items(self, path: PurePosixPath) -> list[ProjectItem]:
         """
         Returns a list of items in a directory.

@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Iterable
 from llobot.chats.thread import ChatThread
 from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 from llobot.chats.stream import ChatStream
 from llobot.commands.accept import handle_accept_commands
 from llobot.commands.model import handle_model_commands
@@ -154,6 +155,12 @@ class Agent(Role):
         builder = env[ContextEnv].builder
         builder.budget = env[ModelEnv].get().context_budget
         builder.add(self._prompt_format.render_chat(self._system))
+
+        items = env[ProjectEnv].union.summary
+        if items:
+            # Format as a Markdown list
+            text = "Projects:\n\n" + "\n".join(f"- {item}" for item in items)
+            builder.add(ChatMessage(ChatIntent.SYSTEM, text))
 
     def remind(self, env: Environment):
         """

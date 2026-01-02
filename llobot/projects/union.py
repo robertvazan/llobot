@@ -49,6 +49,13 @@ class UnionProject(Project, ValueTypeMixin):
     def prefixes(self) -> set[PurePosixPath]:
         return set(self._routing.keys())
 
+    @property
+    def summary(self) -> list[str]:
+        result = []
+        for p in self._projects:
+            result.extend(p.summary)
+        return result
+
     def _find_project(self, path: PurePosixPath) -> Project | None:
         """Finds the project responsible for a given path based on the longest matching prefix."""
         for p in [path] + list(path.parents):

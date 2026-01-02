@@ -71,3 +71,13 @@ def test_shallow_project_mutable(tmp_path: Path):
     (project_dir / "source.txt").write_text("move again")
     with pytest.raises(PermissionError): # mutable fails for destination
          shallow.move(PurePosixPath("p/source.txt"), PurePosixPath("p/subdir/dest_deep.txt"))
+
+def test_shallow_project_summary(tmp_path: Path):
+    project_dir = tmp_path / "proj"
+    project_dir.mkdir()
+    base_project = DirectoryProject(project_dir, prefix="p")
+    shallow = ShallowProject(base_project)
+
+    summary = shallow.summary
+    assert "Directory `~/p`, read-only" in summary[0]
+    assert "top directory only" in summary[0]

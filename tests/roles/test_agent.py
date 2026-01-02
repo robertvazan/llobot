@@ -6,6 +6,7 @@ from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
 from llobot.chats.stream import record_stream
 from llobot.chats.thread import ChatThread
+from llobot.environments.projects import ProjectEnv
 from llobot.models.echo import EchoModel
 from llobot.roles.agent import Agent
 from llobot.tools.write import WriteTool
@@ -155,3 +156,30 @@ def test_agent_accept_command(tmp_path: Path):
     assert "Running tool: write ~/project/test.txt" in status_msg.content
     assert "Success." in status_msg.content
     assert (tmp_path / 'project/test.txt').read_text().strip() == 'content'
+
+def test_agent_project_summary(tmp_path: Path):
+    """Tests that Agent includes project summary in the context."""
+    model = EchoModel('echo')
+
+    # Setup a project environment with a mock project
+    from llobot.projects.marker import MarkerProject
+    project = MarkerProject("myproject")
+    from llobot.projects.library.predefined import PredefinedProjectLibrary
+    library = PredefinedProjectLibrary({'myproject': project})
+
+    agent = Agent('agent', model, session_history=tmp_path, projects=library)
+
+    # We need to manually select the project in the environment for it to appear in summary
+    # Typically this is done by a command, but we can simulate it by subclassing or just relying
+    # on the fact that if we don't have commands, no project is selected unless we force it.
+    # Let's subclass to force selection.
+    class PreselectedAgent(Agent):
+        def handle_setup(self, env):
+            env[ProjectEnv].add('myproject')
+
+    agent = PreselectedAgent('agent', model, session_history=tmp_path, projects=library)
+    prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "Hello")])
+    response = get_response_content(record_stream(agent.chat(prompt)))
+
+    assert "Projects:" in response
+    assert "- Marker `~/myproject`" in response

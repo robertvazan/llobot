@@ -20,3 +20,10 @@ def test_marker_project_invalid_prefix_fails():
         MarkerProject("..")
     with pytest.raises(ValueError, match="wildcards"):
         MarkerProject("prefix*")
+
+def test_marker_project_summary():
+    project = MarkerProject("p1", "p2")
+    summary = project.summary
+    assert len(summary) == 2
+    assert "Marker `~/p1`" in summary
+    assert "Marker `~/p2`" in summary

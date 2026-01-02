@@ -230,3 +230,23 @@ def test_directory_project_write_preserves_executable(tmp_path: Path):
     new_mode = exe_path.stat().st_mode
     assert stat.S_IMODE(new_mode) == stat.S_IMODE(original_mode)
     assert os.access(exe_path, os.X_OK)
+
+def test_directory_project_summary(tmp_path: Path):
+    project_dir = tmp_path / "summary_project"
+    project_dir.mkdir()
+
+    # Test read-only
+    project = DirectoryProject(project_dir, prefix="p", mutable=False)
+    assert "Directory `~/p`, read-only" in project.summary[0]
+
+    # Test mutable
+    project = DirectoryProject(project_dir, prefix="p", mutable=True)
+    assert "Directory `~/p`, mutable" in project.summary[0]
+
+    # Test mapped path (when real path differs from expected home-relative path)
+    # Assuming project_dir is not at ~/p
+    if project_dir != Path.home() / "p":
+        assert f"real location `{project_dir}`" in project.summary[0]
+
+    # Test home-relative assumption
+    assert len(project.summary) == 1

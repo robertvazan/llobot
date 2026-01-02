@@ -65,6 +65,20 @@ class DirectoryProject(Project, ValueTypeMixin):
     def prefixes(self) -> set[PurePosixPath]:
         return {self._prefix}
 
+    @property
+    def summary(self) -> list[str]:
+        parts = [f"Directory `~/{self._prefix}`"]
+        if self._mutable:
+            parts.append("mutable")
+        else:
+            parts.append("read-only")
+
+        expected_path = Path.home() / self._prefix
+        if self._directory != expected_path:
+            parts.append(f"real location `{self._directory}`")
+
+        return [", ".join(parts)]
+
     def _to_local_path(self, path: PurePosixPath) -> PurePosixPath | None:
         """Strips the project prefix from a path. Returns None if path is not under the prefix."""
         try:

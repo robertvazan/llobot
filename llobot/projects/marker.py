@@ -37,6 +37,10 @@ class MarkerProject(Project, ValueTypeMixin):
     def prefixes(self) -> set[PurePosixPath]:
         return set(self._prefixes)
 
+    @property
+    def summary(self) -> list[str]:
+        return [f"Marker `~/{p}`" for p in sorted(self._prefixes)]
+
 __all__ = [
     'MarkerProject',
 ]
