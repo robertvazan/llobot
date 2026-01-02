@@ -22,7 +22,8 @@ from llobot.formats.prompts.reminder import ReminderPromptFormat
 from llobot.models import Model
 from llobot.models.library import ModelLibrary
 from llobot.models.library.empty import EmptyModelLibrary
-from llobot.projects.library import ProjectLibrary, ProjectLibraryPrecursor, coerce_project_library
+from llobot.projects.library import ProjectLibrary
+from llobot.projects.library.empty import EmptyProjectLibrary
 from llobot.prompts import Prompt
 from llobot.roles import Role
 from llobot.tools import Tool
@@ -49,7 +50,7 @@ class Agent(Role):
 
     def __init__(self, name: str, model: Model, *,
         prompt: str | Prompt = '',
-        projects: ProjectLibraryPrecursor = (),
+        projects: ProjectLibrary | None = None,
         models: ModelLibrary | None = None,
         tools: Iterable[Tool] = (),
         session_history: SessionHistory | Zoning | Path | str = standard_session_history(),
@@ -73,7 +74,7 @@ class Agent(Role):
         self._name = name
         self._model = model
         self._system = str(prompt)
-        self._project_library = coerce_project_library(projects)
+        self._project_library = projects or EmptyProjectLibrary()
         self._model_library = models or EmptyModelLibrary()
         self._tools = tuple(tools)
         self._session_history = coerce_session_history(session_history)

@@ -17,12 +17,9 @@ predefined
     A library that maps fixed keys to fixed projects.
 union
     A library that combines multiple libraries.
-zone
-    A library that creates zone projects from keys.
 """
 from __future__ import annotations
-from typing import Iterable
-from llobot.projects import Project, ProjectPrecursor, coerce_project
+from llobot.projects import Project
 from llobot.knowledge.subsets import KnowledgeSubset
 
 class ProjectLibrary:
@@ -53,35 +50,6 @@ class ProjectLibrary:
         from llobot.projects.library.filtered import FilteredProjectLibrary
         return FilteredProjectLibrary(self, whitelist=~other)
 
-type ProjectLibraryPrecursor = ProjectLibrary | Project | Iterable[ProjectPrecursor]
-
-def coerce_project_library(precursor: ProjectLibraryPrecursor) -> ProjectLibrary:
-    """
-    Coerces a precursor object into a `ProjectLibrary`.
-
-    - `ProjectLibrary` is returned as is.
-    - A single `Project` is wrapped in a `ZoneKeyedProjectLibrary`.
-    - An iterable of `ProjectPrecursor` items is converted to a `ZoneKeyedProjectLibrary`.
-
-    Args:
-        precursor: The object to coerce.
-
-    Returns:
-        A `ProjectLibrary` instance.
-    """
-    if isinstance(precursor, ProjectLibrary):
-        return precursor
-    if isinstance(precursor, Project):
-        from llobot.projects.library.zone import ZoneKeyedProjectLibrary
-        return ZoneKeyedProjectLibrary(precursor)
-    # The check for Iterable must be after other types, because string is an iterable.
-    if isinstance(precursor, Iterable) and not isinstance(precursor, str):
-        from llobot.projects.library.zone import ZoneKeyedProjectLibrary
-        return ZoneKeyedProjectLibrary(*precursor)
-    raise TypeError(f"Cannot coerce {precursor} to ProjectLibrary")
-
 __all__ = [
     'ProjectLibrary',
-    'ProjectLibraryPrecursor',
-    'coerce_project_library',
 ]

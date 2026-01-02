@@ -2,7 +2,8 @@ from pathlib import Path, PurePosixPath
 import pytest
 from llobot.environments.projects import ProjectEnv
 from llobot.projects.empty import EmptyProject
-from llobot.projects.library.zone import ZoneKeyedProjectLibrary
+from llobot.projects.library.predefined import PredefinedProjectLibrary
+from llobot.projects.library.union import UnionProjectLibrary
 from llobot.projects.union import UnionProject
 from llobot.projects.zone import ZoneProject
 
@@ -17,7 +18,10 @@ def test_project_env_add():
     p1 = ZoneProject("p1")
     p2 = ZoneProject("p2")
     p3 = ZoneProject("p1", "p3")
-    library = ZoneKeyedProjectLibrary(p1, p2, p3)
+    library = UnionProjectLibrary(
+        PredefinedProjectLibrary({'p1': p1, 'p2': p2}),
+        PredefinedProjectLibrary({'p1': p3, 'p3': p3}),
+    )
 
     env = ProjectEnv()
     env.configure(library)
@@ -46,19 +50,20 @@ def test_project_env_add():
 def test_project_env_add_deduplicates():
     p1a = ZoneProject("p1")
     p1b = ZoneProject("p1") # Same value, different object
-    library = ZoneKeyedProjectLibrary(p1a, p1b) # library will already deduplicate
+    library = PredefinedProjectLibrary({'p1': p1a, 'p1_dup': p1b})
 
     env = ProjectEnv()
     env.configure(library)
 
     env.add("p1")
+    env.add("p1_dup")
     # The set should only contain one of them, as they are equal.
     assert len(env.selected) == 1
 
 def test_project_env_union_caching():
     p1 = ZoneProject("p1")
     p2 = ZoneProject("p2")
-    library = ZoneKeyedProjectLibrary(p1, p2)
+    library = PredefinedProjectLibrary({'p1': p1, 'p2': p2})
 
     env = ProjectEnv()
     env.configure(library)
@@ -81,7 +86,7 @@ def test_project_env_persistence(tmp_path: Path):
     p1 = ZoneProject("p1")
     p2 = ZoneProject("p2")
     p3 = ZoneProject("p3")
-    library = ZoneKeyedProjectLibrary(p1, p2, p3)
+    library = PredefinedProjectLibrary({'p1': p1, 'p2': p2, 'p3': p3})
 
     # --- Save env with p1, p2 ---
     env1 = ProjectEnv()
@@ -112,7 +117,7 @@ def test_project_env_persistence(tmp_path: Path):
     assert env2.selected[1].zones == {PurePosixPath("p2")}
 
 def test_project_env_load_not_found_fails(tmp_path: Path):
-    library = ZoneKeyedProjectLibrary(ZoneProject("p1"))
+    library = PredefinedProjectLibrary({'p1': ZoneProject("p1")})
 
     save_path = tmp_path / "env"
     save_path.mkdir()
@@ -126,7 +131,7 @@ def test_project_env_load_not_found_fails(tmp_path: Path):
 
 def test_project_env_load_missing_file_clears(tmp_path: Path):
     p1 = ZoneProject("p1")
-    library = ZoneKeyedProjectLibrary(p1)
+    library = PredefinedProjectLibrary({'p1': p1})
 
     env = ProjectEnv()
     env.configure(library)
