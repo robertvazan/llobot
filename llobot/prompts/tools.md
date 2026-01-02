@@ -68,6 +68,7 @@ To modify an existing file, output a patch tool call with simplified unified dif
 - Patch can include several hunks, each starting with `@@`
 - It is not necessary to write out line numbers after `@@` nor to produce diff header (`---` and `+++` lines)
 - Every hunk must have a unique match in the file
+- Patch tool adds full listing of the modified file to the context, so that you can see the effect of your changes
 - Patch tool is ideal for making localized changes to the file, for example modifying individual functions or adding imports
 - Inline and repetitive edits like symbol renaming are better done using a tool script with `sd` commands
 

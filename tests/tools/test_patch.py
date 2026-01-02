@@ -5,6 +5,7 @@ from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.tools import ToolEnv
 from llobot.projects.directory import DirectoryProject
+from llobot.formats.documents import standard_document_format
 from llobot.tools.patch import PatchTool, PatchToolCall
 
 @pytest.fixture
@@ -60,10 +61,16 @@ def test_execute_simple_replacement(env, tmp_path):
         -line2
         +modified
     """)
-    call = PatchToolCall(PurePosixPath('test/file.txt'), diff)
+    call = PatchToolCall(PurePosixPath('test/file.txt'), diff, standard_document_format())
     call.execute(env)
 
     assert (tmp_path / 'file.txt').read_text(encoding='utf-8') == "line1\nmodified\nline3\n"
+
+    tool_env = env[ToolEnv]
+    assert tool_env.flush_log() == "Applied 1 hunks."
+    output = tool_env.flush_output()
+    assert "File: ~/test/file.txt" in output
+    assert "modified" in output
 
 def test_execute_with_context(env, tmp_path):
     (tmp_path / 'file.txt').write_text("A\nB\nC\nD\n", encoding='utf-8')
@@ -75,7 +82,7 @@ def test_execute_with_context(env, tmp_path):
         +MODIFIED
          C
     """)
-    call = PatchToolCall(PurePosixPath('test/file.txt'), diff)
+    call = PatchToolCall(PurePosixPath('test/file.txt'), diff, standard_document_format())
     call.execute(env)
 
     assert (tmp_path / 'file.txt').read_text(encoding='utf-8') == "A\nMODIFIED\nC\nD\n"
@@ -92,10 +99,13 @@ def test_execute_multiple_hunks(env, tmp_path):
         -E
         +End
     """)
-    call = PatchToolCall(PurePosixPath('test/file.txt'), diff)
+    call = PatchToolCall(PurePosixPath('test/file.txt'), diff, standard_document_format())
     call.execute(env)
 
     assert (tmp_path / 'file.txt').read_text(encoding='utf-8') == "Start\nB\nC\nD\nEnd\n"
+
+    tool_env = env[ToolEnv]
+    assert tool_env.flush_log() == "Applied 2 hunks."
 
 def test_execute_fail_not_found(env, tmp_path):
     (tmp_path / 'file.txt').write_text("A\nB\nC\n", encoding='utf-8')
@@ -105,7 +115,7 @@ def test_execute_fail_not_found(env, tmp_path):
         -D
         +E
     """)
-    call = PatchToolCall(PurePosixPath('test/file.txt'), diff)
+    call = PatchToolCall(PurePosixPath('test/file.txt'), diff, standard_document_format())
     with pytest.raises(ValueError, match="Hunk 1 failed. Search block not found"):
         call.execute(env)
 
@@ -117,7 +127,7 @@ def test_execute_fail_ambiguous(env, tmp_path):
         -A
         +B
     """)
-    call = PatchToolCall(PurePosixPath('test/file.txt'), diff)
+    call = PatchToolCall(PurePosixPath('test/file.txt'), diff, standard_document_format())
     with pytest.raises(ValueError, match="Context is ambiguous"):
         call.execute(env)
 
@@ -128,7 +138,7 @@ def test_execute_fail_empty_search(env, tmp_path):
         @@
         +New
     """)
-    call = PatchToolCall(PurePosixPath('test/file.txt'), diff)
+    call = PatchToolCall(PurePosixPath('test/file.txt'), diff, standard_document_format())
     with pytest.raises(ValueError, match="Hunk 1 search block is empty"):
         call.execute(env)
 
@@ -141,7 +151,7 @@ def test_execute_whole_line_enforcement(env, tmp_path):
         -target
         +replacement
     """)
-    call = PatchToolCall(PurePosixPath('test/file.txt'), diff)
+    call = PatchToolCall(PurePosixPath('test/file.txt'), diff, standard_document_format())
 
     with pytest.raises(ValueError, match="Search block not found"):
         call.execute(env)
@@ -156,7 +166,7 @@ def test_execute_ignore_header(env, tmp_path):
         -A
         +B
     """)
-    call = PatchToolCall(PurePosixPath('test/file.txt'), diff)
+    call = PatchToolCall(PurePosixPath('test/file.txt'), diff, standard_document_format())
     call.execute(env)
     assert (tmp_path / 'file.txt').read_text(encoding='utf-8') == "B\n"
 
@@ -169,13 +179,13 @@ def test_execute_normalization(env, tmp_path):
         -B
         +C
     """)
-    call = PatchToolCall(PurePosixPath('test/file.txt'), diff)
+    call = PatchToolCall(PurePosixPath('test/file.txt'), diff, standard_document_format())
     call.execute(env)
     # Result should be normalized (no trailing empty lines beyond the terminal newline)
     assert (tmp_path / 'file.txt').read_text(encoding='utf-8') == "A\nC\n"
 
 def test_execute_missing_file(env):
-    call = PatchToolCall(PurePosixPath('test/missing.txt'), "@@\n-a\n+b")
+    call = PatchToolCall(PurePosixPath('test/missing.txt'), "@@\n-a\n+b", standard_document_format())
     with pytest.raises(FileNotFoundError, match="File not found"):
         call.execute(env)
 
@@ -192,7 +202,7 @@ def test_atomic_execution(env, tmp_path):
         -X
         +ModifiedX
     """)
-    call = PatchToolCall(PurePosixPath('test/file.txt'), diff)
+    call = PatchToolCall(PurePosixPath('test/file.txt'), diff, standard_document_format())
     with pytest.raises(ValueError, match="Search block not found"):
         call.execute(env)
 
@@ -211,7 +221,7 @@ def test_strict_context_parsing(env, tmp_path):
         -B
         +C
     """)
-    call = PatchToolCall(PurePosixPath('test/file.txt'), diff)
+    call = PatchToolCall(PurePosixPath('test/file.txt'), diff, standard_document_format())
     # The empty line will fall through to the invalid line check
     with pytest.raises(ValueError, match="Invalid diff line"):
         call.execute(env)

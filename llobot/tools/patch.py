@@ -8,6 +8,7 @@ from typing import Iterable
 from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.tools import ToolEnv
+from llobot.formats.documents import DocumentFormat, standard_document_format
 from llobot.formats.paths import parse_path
 from llobot.tools import ToolCall
 from llobot.tools.block import BlockTool
@@ -16,10 +17,12 @@ from llobot.utils.text import normalize_document
 class PatchToolCall(ToolCall):
     _path: PurePosixPath
     _diff: str
+    _format: DocumentFormat
 
-    def __init__(self, path: PurePosixPath, diff: str):
+    def __init__(self, path: PurePosixPath, diff: str, format: DocumentFormat):
         self._path = path
         self._diff = diff
+        self._format = format
 
     @property
     def title(self) -> str:
@@ -72,7 +75,15 @@ class PatchToolCall(ToolCall):
                 current_content[idx + len(search_block):]
             )
 
-        project.write(self._path, normalize_document(current_content))
+        new_content = normalize_document(current_content)
+        project.write(self._path, new_content)
+
+        tool_env = env[ToolEnv]
+        tool_env.log(f"Applied {len(hunks)} hunks.")
+        tool_env.log(f"Adding modified file to the context...")
+
+        listing = self._format.render(self._path, new_content)
+        tool_env.output(listing)
 
     def _parse_diff(self, diff: str) -> list[tuple[str, str]]:
         lines = diff.splitlines(keepends=True)
@@ -139,6 +150,11 @@ class PatchTool(BlockTool):
 
     </details>
     """
+    _format: DocumentFormat
+
+    def __init__(self, *, format: DocumentFormat | None = None):
+        self._format = format or standard_document_format()
+
     def slice(self, env: Environment, source: str, at: int) -> int:
         match = _PATCH_DETAILS_RE.match(source, pos=at)
         if not match:
@@ -158,7 +174,7 @@ class PatchTool(BlockTool):
         if re.search(r'^`{%d,}' % len(fence), content, re.MULTILINE):
             raise ValueError(f"Content contains a line starting with {len(fence)} or more backticks. Enclose the block in more backticks.")
 
-        yield PatchToolCall(path, content)
+        yield PatchToolCall(path, content, self._format)
 
 __all__ = [
     'PatchTool',
