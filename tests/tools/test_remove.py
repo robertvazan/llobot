@@ -37,7 +37,7 @@ def test_remove_tool_matches_and_parses_line(env: Environment):
 
     call = tool.parse_line(env, line)
     assert isinstance(call, RemoveToolCall)
-    assert call._path == PurePosixPath("myproject/a.txt")
+    assert call._path == "~/myproject/a.txt"
 
 def test_remove_tool_quoted_path(env: Environment):
     tool = RemoveTool()
@@ -47,10 +47,10 @@ def test_remove_tool_quoted_path(env: Environment):
 
     call = tool.parse_line(env, line)
     assert isinstance(call, RemoveToolCall)
-    assert call._path == PurePosixPath("myproject/foo bar.txt")
+    assert call._path == "~/myproject/foo bar.txt"
 
 def test_remove_tool_execute(env: Environment):
-    call = RemoveToolCall(PurePosixPath("myproject/a.txt"))
+    call = RemoveToolCall("~/myproject/a.txt")
     call.execute(env)
 
     project = env[ProjectEnv].union

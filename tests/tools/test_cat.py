@@ -49,10 +49,10 @@ def test_cat_tool_matches_and_parses_line(env: Environment):
 
     call = tool.parse_line(env, line)
     assert isinstance(call, CatToolCall)
-    assert call._path == PurePosixPath("myproject/a.txt")
+    assert call._path == "~/myproject/a.txt"
 
 def test_cat_tool_execute(env: Environment):
-    call = CatToolCall(PurePosixPath("myproject/a.txt"), standard_document_format(), overviews_subset())
+    call = CatToolCall("~/myproject/a.txt", standard_document_format(), overviews_subset())
     call.execute(env)
 
     log = env[ToolEnv].flush_log()
@@ -72,7 +72,7 @@ def test_cat_tool_execute(env: Environment):
     assert "content" in output
 
 def test_cat_tool_execute_nested_overviews(env: Environment):
-    call = CatToolCall(PurePosixPath("myproject/sub/c.txt"), standard_document_format(), overviews_subset())
+    call = CatToolCall("~/myproject/sub/c.txt", standard_document_format(), overviews_subset())
     call.execute(env)
 
     log = env[ToolEnv].flush_log()
@@ -91,7 +91,7 @@ def test_cat_tool_execute_deduplication(env: Environment):
     listing = standard_document_format().render(PurePosixPath("myproject/a.txt"), "content")
     env[ContextEnv].add(ChatMessage(ChatIntent.SYSTEM, listing))
 
-    call = CatToolCall(PurePosixPath("myproject/a.txt"), standard_document_format(), overviews_subset())
+    call = CatToolCall("~/myproject/a.txt", standard_document_format(), overviews_subset())
     call.execute(env)
 
     log = env[ToolEnv].flush_log()
@@ -108,7 +108,7 @@ def test_cat_tool_overview_deduplication(env: Environment):
     listing = standard_document_format().render(PurePosixPath("myproject/README.md"), "# Readme")
     env[ContextEnv].add(ChatMessage(ChatIntent.SYSTEM, listing))
 
-    call = CatToolCall(PurePosixPath("myproject/a.txt"), standard_document_format(), overviews_subset())
+    call = CatToolCall("~/myproject/a.txt", standard_document_format(), overviews_subset())
     call.execute(env)
 
     log = env[ToolEnv].flush_log()
@@ -116,7 +116,7 @@ def test_cat_tool_overview_deduplication(env: Environment):
     assert "Read also: ~/myproject/README.md" not in log
 
 def test_cat_tool_execute_python(env: Environment):
-    call = CatToolCall(PurePosixPath("myproject/b.py"), standard_document_format(), overviews_subset())
+    call = CatToolCall("~/myproject/b.py", standard_document_format(), overviews_subset())
     call.execute(env)
 
     output = env[ToolEnv].flush_output()
@@ -125,7 +125,7 @@ def test_cat_tool_execute_python(env: Environment):
     assert "print('hello')" in output
 
 def test_cat_tool_missing_file_loads_overviews(env: Environment):
-    call = CatToolCall(PurePosixPath("myproject/nonexistent.txt"), standard_document_format(), overviews_subset())
+    call = CatToolCall("~/myproject/nonexistent.txt", standard_document_format(), overviews_subset())
     with pytest.raises(ValueError, match="File not found"):
         call.execute(env)
 
@@ -137,7 +137,7 @@ def test_cat_tool_missing_file_loads_overviews(env: Environment):
 
 def test_cat_tool_target_is_overview(env: Environment):
     # If we cat the overview itself, it should appear once
-    call = CatToolCall(PurePosixPath("myproject/README.md"), standard_document_format(), overviews_subset())
+    call = CatToolCall("~/myproject/README.md", standard_document_format(), overviews_subset())
     call.execute(env)
 
     log = env[ToolEnv].flush_log()

@@ -37,8 +37,8 @@ def test_move_tool_matches_and_parses_line(env: Environment):
 
     call = tool.parse_line(env, line)
     assert isinstance(call, MoveToolCall)
-    assert call._source == PurePosixPath("myproject/a.txt")
-    assert call._destination == PurePosixPath("myproject/b.txt")
+    assert call._source == "~/myproject/a.txt"
+    assert call._destination == "~/myproject/b.txt"
 
 def test_move_tool_quoted_paths(env: Environment):
     tool = MoveTool()
@@ -48,8 +48,8 @@ def test_move_tool_quoted_paths(env: Environment):
 
     call = tool.parse_line(env, line)
     assert isinstance(call, MoveToolCall)
-    assert call._source == PurePosixPath("myproject/foo bar.txt")
-    assert call._destination == PurePosixPath("myproject/baz qux.txt")
+    assert call._source == "~/myproject/foo bar.txt"
+    assert call._destination == "~/myproject/baz qux.txt"
 
 def test_move_tool_backslash_escape_space(env: Environment):
     tool = MoveTool()
@@ -59,11 +59,11 @@ def test_move_tool_backslash_escape_space(env: Environment):
 
     call = tool.parse_line(env, line)
     assert isinstance(call, MoveToolCall)
-    assert call._source == PurePosixPath("myproject/foo bar.txt")
-    assert call._destination == PurePosixPath("myproject/baz qux.txt")
+    assert call._source == "~/myproject/foo bar.txt"
+    assert call._destination == "~/myproject/baz qux.txt"
 
 def test_move_tool_execute(env: Environment):
-    call = MoveToolCall(PurePosixPath("myproject/a.txt"), PurePosixPath("myproject/b.txt"))
+    call = MoveToolCall("~/myproject/a.txt", "~/myproject/b.txt")
     call.execute(env)
 
     project = env[ProjectEnv].union
@@ -73,7 +73,7 @@ def test_move_tool_execute(env: Environment):
 def test_move_tool_overwrite(env: Environment):
     project = env[ProjectEnv].union
     project.write(PurePosixPath("myproject/b.txt"), "old content")
-    call = MoveToolCall(PurePosixPath("myproject/a.txt"), PurePosixPath("myproject/b.txt"))
+    call = MoveToolCall("~/myproject/a.txt", "~/myproject/b.txt")
     call.execute(env)
     log = env[ToolEnv].flush_log()
     assert "Warning: Overwriting ~/myproject/b.txt" in log
@@ -90,5 +90,6 @@ def test_move_tool_missing_tilde(env: Environment):
     # matches_line should return True because it just checks shlex parts
     assert tool.matches_line(env, line)
 
+    call = tool.parse_line(env, line)
     with pytest.raises(ValueError, match="Path must start with ~/"):
-        tool.parse_line(env, line)
+        call.execute(env)

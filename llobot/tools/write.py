@@ -2,32 +2,38 @@
 Tool for writing files from document listings.
 """
 from __future__ import annotations
-from pathlib import PurePosixPath
 import re
 from typing import Iterable
 from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
-from llobot.environments.tools import ToolEnv
 from llobot.formats.paths import parse_path
 from llobot.tools import ToolCall
 from llobot.tools.block import BlockTool
 from llobot.utils.text import normalize_document
 
 class WriteToolCall(ToolCall):
-    _path: PurePosixPath
+    _path: str
     _content: str
+    _fence_length: int | None
 
-    def __init__(self, path: PurePosixPath, content: str):
+    def __init__(self, path: str, content: str, fence_length: int | None = None):
         self._path = path
         self._content = content
+        self._fence_length = fence_length
 
     @property
     def title(self) -> str:
-        return f"write ~/{self._path}"
+        return f"write {self._path}"
 
     def execute(self, env: Environment):
+        path = parse_path(self._path)
         project = env[ProjectEnv].union
-        project.write(self._path, normalize_document(self._content))
+
+        if self._fence_length is not None:
+            if re.search(r'^`{%d,}' % self._fence_length, self._content, re.MULTILINE):
+                raise ValueError(f"Content contains a line starting with {self._fence_length} or more backticks. Enclose the block in more backticks.")
+
+        project.write(path, normalize_document(self._content))
 
 _WRITE_DETAILS_RE = re.compile(
     r'^<details>\s*<summary>\s*Write:\s*(?P<path>.+?)\s*</summary>\s*'
@@ -61,14 +67,10 @@ class WriteTool(BlockTool):
         assert match, "source for parse() must be validated by slice()"
 
         path_str = match.group('path').strip()
-        path = parse_path(path_str)
         fence = match.group('fence')
         content = match.group('content')
 
-        if re.search(r'^`{%d,}' % len(fence), content, re.MULTILINE):
-            raise ValueError(f"Content contains a line starting with {len(fence)} or more backticks. Enclose the block in more backticks.")
-
-        yield WriteToolCall(path, content)
+        yield WriteToolCall(path_str, content, len(fence))
 
 __all__ = [
     'WriteTool',

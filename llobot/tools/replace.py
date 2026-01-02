@@ -6,12 +6,10 @@ This is a simplified version of the `sd` tool that accepts syntax:
 Replacement templates use Rust syntax, which is translated to Python syntax.
 """
 from __future__ import annotations
-from pathlib import PurePosixPath
 import re
 import shlex
 from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
-from llobot.environments.tools import ToolEnv
 from llobot.formats.paths import parse_path
 from llobot.tools import ToolCall
 from llobot.tools.line import LineTool
@@ -80,16 +78,16 @@ class ReplaceToolCall(ToolCall):
     """
     A tool call for replacing text in a file using regex.
     """
-    _path: PurePosixPath
+    _path: str
     _pattern: str
     _replacement: str
 
-    def __init__(self, path: PurePosixPath, pattern: str, replacement: str):
+    def __init__(self, path: str, pattern: str, replacement: str):
         """
         Initializes a ReplaceToolCall.
 
         Args:
-            path: The path to the file to modify.
+            path: The path string to the file to modify.
             pattern: The regex pattern to search for (Rust syntax).
             replacement: The replacement template (Rust syntax).
         """
@@ -99,14 +97,15 @@ class ReplaceToolCall(ToolCall):
 
     @property
     def title(self) -> str:
-        return shlex.join(['sd', self._pattern, self._replacement, f'~/{self._path}'])
+        return shlex.join(['sd', self._pattern, self._replacement, self._path])
 
     def execute(self, env: Environment):
+        path = parse_path(self._path)
         project = env[ProjectEnv].union
 
-        content = project.read(self._path)
+        content = project.read(path)
         if content is None:
-            raise ValueError(f"File not found: ~/{self._path}")
+            raise ValueError(f"File not found: ~/{path}")
 
         # Compile pattern as case-sensitive (default in Python)
         try:
@@ -123,7 +122,7 @@ class ReplaceToolCall(ToolCall):
         if count == 0:
             raise ValueError(f"Pattern not found in file: {self._pattern}")
 
-        project.write(self._path, normalize_document(new_content))
+        project.write(path, normalize_document(new_content))
 
 
 class ReplaceTool(LineTool):
@@ -149,7 +148,7 @@ class ReplaceTool(LineTool):
 
         pattern = parts[1]
         replacement = parts[2]
-        path = parse_path(parts[3])
+        path = parts[3]
 
         return ReplaceToolCall(path, pattern, replacement)
 

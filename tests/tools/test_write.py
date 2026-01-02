@@ -3,7 +3,6 @@ from pathlib import Path, PurePosixPath
 from textwrap import dedent
 from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
-from llobot.environments.tools import ToolEnv
 from llobot.projects.directory import DirectoryProject
 from llobot.projects.library.home import HomeProjectLibrary
 from llobot.tools.write import WriteTool, WriteToolCall
@@ -50,7 +49,7 @@ def test_write_tool_slice_and_parse(env: Environment):
     assert len(calls) == 1
     call = calls[0]
     assert isinstance(call, WriteToolCall)
-    assert call._path == PurePosixPath("myproject/foo.txt")
+    assert call._path == "~/myproject/foo.txt"
     assert call._content == "content\nof the file\n"
 
     call.execute(env)
@@ -77,7 +76,7 @@ def test_write_tool_slice_extra_whitespace(env: Environment):
     assert len(calls) == 1
     call = calls[0]
     assert isinstance(call, WriteToolCall)
-    assert call._path == PurePosixPath("myproject/bar.py")
+    assert call._path == "~/myproject/bar.py"
     assert call._content == 'print("hello")\n'
 
 def test_write_tool_no_match(env: Environment):
@@ -95,12 +94,14 @@ def test_write_tool_missing_tilde_prefix(env: Environment):
         </details>
     """).strip()
 
-    # Slice matches regex, but parse should fail
+    # Slice matches regex, and parse succeeds, but execute should fail
     length = tool.slice(env, text, 0)
     assert length == len(text)
 
+    calls = list(tool.parse(env, text))
+    assert len(calls) == 1
     with pytest.raises(ValueError, match="Path must start with ~/"):
-        list(tool.parse(env, text))
+        calls[0].execute(env)
 
 def test_write_tool_empty_code_block(env: Environment):
     tool = WriteTool()
@@ -119,7 +120,7 @@ def test_write_tool_empty_code_block(env: Environment):
     assert len(calls) == 1
     call = calls[0]
     assert isinstance(call, WriteToolCall)
-    assert call._path == PurePosixPath("myproject/empty.txt")
+    assert call._path == "~/myproject/empty.txt"
     assert call._content == ""
 
     call.execute(env)
@@ -161,8 +162,10 @@ def test_write_tool_conflicting_fence(env: Environment):
         </details>
     """).strip()
 
+    calls = list(tool.parse(env, text))
+    assert len(calls) == 1
     with pytest.raises(ValueError, match="Content contains a line starting with"):
-        list(tool.parse(env, text))
+        calls[0].execute(env)
 
 def test_write_tool_midline_fence(env: Environment):
     tool = WriteTool()

@@ -2,11 +2,9 @@
 Tool for removing files.
 """
 from __future__ import annotations
-from pathlib import PurePosixPath
 import shlex
 from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
-from llobot.environments.tools import ToolEnv
 from llobot.formats.paths import parse_path
 from llobot.tools import ToolCall
 from llobot.tools.line import LineTool
@@ -15,18 +13,19 @@ class RemoveToolCall(ToolCall):
     """
     A tool call for removing a file.
     """
-    _path: PurePosixPath
+    _path: str
 
-    def __init__(self, path: PurePosixPath):
+    def __init__(self, path: str):
         self._path = path
 
     @property
     def title(self) -> str:
-        return f"rm ~/{self._path}"
+        return f"rm {self._path}"
 
     def execute(self, env: Environment):
+        path = parse_path(self._path)
         project = env[ProjectEnv].union
-        project.remove(self._path)
+        project.remove(path)
 
 class RemoveTool(LineTool):
     """
@@ -45,7 +44,7 @@ class RemoveTool(LineTool):
         if len(parts) != 2 or parts[0] != 'rm':
             raise ValueError(f"Invalid rm command: {line}")
 
-        path = parse_path(parts[1])
+        path = parts[1]
 
         return RemoveToolCall(path)
 

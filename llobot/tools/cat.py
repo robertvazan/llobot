@@ -24,26 +24,28 @@ class CatToolCall(ToolCall):
     identifies and reads overview files (e.g. README.md, __init__.py) in the
     target file's parent directories to provide context.
     """
-    _path: PurePosixPath
+    _path: str
     _format: DocumentFormat
     _overviews: KnowledgeSubset
 
-    def __init__(self, path: PurePosixPath, format: DocumentFormat, overviews: KnowledgeSubset):
+    def __init__(self, path: str, format: DocumentFormat, overviews: KnowledgeSubset):
         self._path = path
         self._format = format
         self._overviews = overviews
 
     @property
     def title(self) -> str:
-        return f"cat ~/{self._path}"
+        return f"cat {self._path}"
 
     def execute(self, env: Environment):
+        path = parse_path(self._path)
+
         project = env[ProjectEnv].union
         tool_env = env[ToolEnv]
         context = env[ContextEnv].build()
 
         # 1. Load overviews in parent directories, starting from root
-        parents = list(self._path.parents)
+        parents = list(path.parents)
         parents.reverse()
 
         for parent in parents:
@@ -51,28 +53,28 @@ class CatToolCall(ToolCall):
             items = sorted(project.items(parent), key=lambda i: i.path)
             for item in items:
                 if isinstance(item, ProjectFile) and item.path in self._overviews:
-                    path = item.path
-                    if path == self._path:
+                    p = item.path
+                    if p == path:
                         continue
 
-                    content = project.read(path)
+                    content = project.read(p)
                     if content is None:
                         continue
 
-                    listing = self._format.render(path, content)
+                    listing = self._format.render(p, content)
 
                     if any(listing in msg.content for msg in context):
                         continue
 
                     tool_env.output(listing)
-                    tool_env.log(f"Read also: ~/{path}")
+                    tool_env.log(f"Read also: ~/{p}")
 
         # 2. Load target file
-        content = project.read(self._path)
+        content = project.read(path)
         if content is None:
-            raise ValueError(f"File not found: ~/{self._path}")
+            raise ValueError(f"File not found: ~/{path}")
 
-        listing = self._format.render(self._path, content)
+        listing = self._format.render(path, content)
 
         if any(listing in msg.content for msg in context):
             tool_env.log("File is already in the context.")
@@ -114,7 +116,7 @@ class CatTool(LineTool):
         if len(parts) != 2 or parts[0] != 'cat':
             raise ValueError(f"Invalid cat command: {line}")
 
-        path = parse_path(parts[1])
+        path = parts[1]
 
         return CatToolCall(path, self._format, self._overviews)
 

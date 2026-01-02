@@ -2,7 +2,6 @@
 Tool for moving files.
 """
 from __future__ import annotations
-from pathlib import PurePosixPath
 import shlex
 from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
@@ -15,22 +14,25 @@ class MoveToolCall(ToolCall):
     """
     A tool call for moving a file.
     """
-    _source: PurePosixPath
-    _destination: PurePosixPath
+    _source: str
+    _destination: str
 
-    def __init__(self, source: PurePosixPath, destination: PurePosixPath):
+    def __init__(self, source: str, destination: str):
         self._source = source
         self._destination = destination
 
     @property
     def title(self) -> str:
-        return f"mv ~/{self._source} ~/{self._destination}"
+        return f"mv {self._source} {self._destination}"
 
     def execute(self, env: Environment):
+        source = parse_path(self._source)
+        destination = parse_path(self._destination)
+
         project = env[ProjectEnv].union
-        if project.read(self._destination) is not None:
-            env[ToolEnv].log(f"Warning: Overwriting ~/{self._destination}")
-        project.move(self._source, self._destination)
+        if project.read(destination) is not None:
+            env[ToolEnv].log(f"Warning: Overwriting ~/{destination}")
+        project.move(source, destination)
 
 class MoveTool(LineTool):
     """
@@ -49,8 +51,8 @@ class MoveTool(LineTool):
         if len(parts) != 3 or parts[0] != 'mv':
             raise ValueError(f"Invalid mv command: {line}")
 
-        source_path = parse_path(parts[1])
-        dest_path = parse_path(parts[2])
+        source_path = parts[1]
+        dest_path = parts[2]
 
         return MoveToolCall(source_path, dest_path)
 

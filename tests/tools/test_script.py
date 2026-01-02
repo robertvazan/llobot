@@ -1,11 +1,8 @@
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from textwrap import dedent
 import pytest
 from llobot.environments import Environment
-from llobot.environments.projects import ProjectEnv
 from llobot.environments.tools import ToolEnv
-from llobot.projects.directory import DirectoryProject
-from llobot.projects.library.home import HomeProjectLibrary
 from llobot.tools import InvalidToolCall, ToolCall
 from llobot.tools.line import LineTool
 from llobot.tools.move import MoveTool, MoveToolCall
@@ -76,8 +73,9 @@ def test_script_tool_invalid_argument(env: Environment):
 
     calls = list(tool.parse(env, text))
     assert len(calls) == 1
-    assert isinstance(calls[0], InvalidToolCall)
-    assert "Path must start with ~/" in str(calls[0]._error)
+    assert isinstance(calls[0], RemoveToolCall)
+    with pytest.raises(ValueError, match="Path must start with ~/"):
+        calls[0].execute(env)
 
 def test_script_tool_matches_line_exception(env: Environment):
     class CrashingTool(LineTool):

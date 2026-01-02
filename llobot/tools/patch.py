@@ -2,7 +2,6 @@
 Tool for patching files using unified diffs.
 """
 from __future__ import annotations
-from pathlib import PurePosixPath
 import re
 from typing import Iterable
 from llobot.environments import Environment
@@ -15,25 +14,26 @@ from llobot.tools.block import BlockTool
 from llobot.utils.text import normalize_document
 
 class PatchToolCall(ToolCall):
-    _path: PurePosixPath
+    _path: str
     _diff: str
     _format: DocumentFormat
 
-    def __init__(self, path: PurePosixPath, diff: str, format: DocumentFormat):
+    def __init__(self, path: str, diff: str, format: DocumentFormat):
         self._path = path
         self._diff = diff
         self._format = format
 
     @property
     def title(self) -> str:
-        return f"patch ~/{self._path}"
+        return f"patch {self._path}"
 
     def execute(self, env: Environment):
+        path = parse_path(self._path)
         project = env[ProjectEnv].union
 
-        original_content = project.read(self._path)
+        original_content = project.read(path)
         if original_content is None:
-            raise FileNotFoundError(f"File not found: {self._path}")
+            raise FileNotFoundError(f"File not found: {path}")
 
         content = normalize_document(original_content)
         hunks = self._parse_diff(self._diff)
@@ -76,13 +76,13 @@ class PatchToolCall(ToolCall):
             )
 
         new_content = normalize_document(current_content)
-        project.write(self._path, new_content)
+        project.write(path, new_content)
 
         tool_env = env[ToolEnv]
         tool_env.log(f"Applied {len(hunks)} hunks.")
         tool_env.log(f"Adding modified file to the context...")
 
-        listing = self._format.render(self._path, new_content)
+        listing = self._format.render(path, new_content)
         tool_env.output(listing)
 
     def _parse_diff(self, diff: str) -> list[tuple[str, str]]:
@@ -166,15 +166,9 @@ class PatchTool(BlockTool):
         assert match, "source for parse() must be validated by slice()"
 
         path_str = match.group('path').strip()
-        path = parse_path(path_str)
         content = match.group('content')
 
-        # Check for nested fences
-        fence = match.group('fence')
-        if re.search(r'^`{%d,}' % len(fence), content, re.MULTILINE):
-            raise ValueError(f"Content contains a line starting with {len(fence)} or more backticks. Enclose the block in more backticks.")
-
-        yield PatchToolCall(path, content, self._format)
+        yield PatchToolCall(path_str, content, self._format)
 
 __all__ = [
     'PatchTool',
