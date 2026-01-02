@@ -4,6 +4,21 @@ Project libraries for looking up projects by key.
 This package provides the `ProjectLibrary` interface and several implementations
 for discovering and retrieving `Project` instances based on a string key.
 Libraries can be combined using `|`, `&`, and `-` operators.
+
+Submodules
+----------
+empty
+    A library that contains no projects.
+filtered
+    A library that filters results from another library.
+home
+    A library that finds projects in a home directory.
+predefined
+    A library that maps fixed keys to fixed projects.
+union
+    A library that combines multiple libraries.
+zone
+    A library that creates zone projects from keys.
 """
 from __future__ import annotations
 from typing import Iterable
