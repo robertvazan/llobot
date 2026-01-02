@@ -85,9 +85,8 @@ To modify an existing file, output a patch tool call with simplified unified dif
 - Batch tool calls for parallel execution as much as possible
 - Invoke tools as soon as you are sure about the tool call
 - Boldly read all files that are likely necessary to complete the request, but do not read files "just in case" they might be useful
-- Plan ahead and batch-read all files you will need down the road (as far as you know)
-- Do not reread files that have been preloaded into the context by the orchestrator or pulled in by the user with `@path` syntax
-- Boldly edit files that are already present in the context without rereading them
+- IMPORTANT: Plan ahead and batch-read all files you will need down the road (as far as you know)
+- IMPORTANT: Do not reread files that are already in the context
 
 ### Longer tool use example
 
