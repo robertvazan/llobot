@@ -42,8 +42,6 @@ class CatToolCall(ToolCall):
         tool_env = env[ToolEnv]
         context = env[ContextEnv].build()
 
-        tool_env.log(f"Reading ~/{self._path}...")
-
         # 1. Load overviews in parent directories, starting from root
         parents = list(self._path.parents)
         parents.reverse()
@@ -81,7 +79,6 @@ class CatToolCall(ToolCall):
             return
 
         tool_env.output(listing)
-        tool_env.log("File was read.")
 
 class CatTool(LineTool):
     """

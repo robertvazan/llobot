@@ -30,9 +30,7 @@ class MoveToolCall(ToolCall):
         project = env[ProjectEnv].union
         if project.read(self._destination) is not None:
             env[ToolEnv].log(f"Warning: Overwriting ~/{self._destination}")
-        env[ToolEnv].log(f"Moving ~/{self._source} to ~/{self._destination}...")
         project.move(self._source, self._destination)
-        env[ToolEnv].log("File was moved.")
 
 class MoveTool(LineTool):
     """

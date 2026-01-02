@@ -27,9 +27,7 @@ class WriteToolCall(ToolCall):
 
     def execute(self, env: Environment):
         project = env[ProjectEnv].union
-        env[ToolEnv].log(f"Writing ~/{self._path}...")
         project.write(self._path, normalize_document(self._content))
-        env[ToolEnv].log("File was written.")
 
 _WRITE_DETAILS_RE = re.compile(
     r'^<details>\s*<summary>\s*Write:\s*(?P<path>.+?)\s*</summary>\s*'

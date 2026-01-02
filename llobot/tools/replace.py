@@ -103,7 +103,6 @@ class ReplaceToolCall(ToolCall):
 
     def execute(self, env: Environment):
         project = env[ProjectEnv].union
-        env[ToolEnv].log(f"Replacing in ~/{self._path}...")
 
         content = project.read(self._path)
         if content is None:
@@ -125,7 +124,6 @@ class ReplaceToolCall(ToolCall):
             raise ValueError(f"Pattern not found in file: {self._pattern}")
 
         project.write(self._path, normalize_document(new_content))
-        env[ToolEnv].log(f"Replaced {count} occurrence(s).")
 
 
 class ReplaceTool(LineTool):

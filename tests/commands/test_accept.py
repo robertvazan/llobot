@@ -75,18 +75,21 @@ def test_accept_command_success(tmp_path: Path):
     # Verify status messages
     status_env = env[StatusEnv]
     content = status_env.content()
-    assert "Success: write ~/myproject/file2.txt" in content
-    assert "Writing ~/myproject/file2.txt..." in content
-    assert "File was written." in content
-    assert "Success: rm ~/myproject/file1.txt" in content
-    assert "Removing ~/myproject/file1.txt..." in content
-    assert "File was removed." in content
-    assert "Success: cat ~/myproject/file3.txt" in content
-    # Updated expectations for cat tool logs
-    assert "Reading ~/myproject/file3.txt..." in content
-    assert "File was read." in content
-    assert "Preparing to read" not in content
-    assert "Scanning" not in content
+
+    assert "Tool call log" in content
+
+    # Check strict formatting and separation
+    expected_log_fragment = (
+        "Running tool: write ~/myproject/file2.txt\n"
+        "Success.\n"
+        "\n"
+        "Running tool: rm ~/myproject/file1.txt\n"
+        "Success.\n"
+        "\n"
+        "Running tool: cat ~/myproject/file3.txt"
+    )
+    assert expected_log_fragment in content
+
     # Output should NOT be in status
     assert "File: ~/myproject/file3.txt" not in content
     assert "content3" not in content
@@ -135,8 +138,9 @@ def test_accept_command_failure(tmp_path: Path):
     # Verify status messages
     status_env = env[StatusEnv]
     content = status_env.content()
-    assert "Failure: rm ~/myproject/nonexistent.txt" in content
-    assert "Removing ~/myproject/nonexistent.txt..." in content
+    assert "Running tool: rm ~/myproject/nonexistent.txt" in content
+    assert "Error executing:" in content
+    assert "Failed." in content
     assert "Error executing:" in content
     assert "❌ 0 of 1 tool calls executed." in content
 

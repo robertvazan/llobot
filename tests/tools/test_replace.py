@@ -191,8 +191,6 @@ def test_execute_multiple_occurrences(env):
     call.execute(env)
 
     assert project.files[PurePosixPath('file.txt')] == 'qux bar qux baz qux\n'
-    log = env[ToolEnv].log_messages
-    assert any('Replaced 3 occurrence(s)' in msg for msg in log)
 
 
 def test_execute_case_sensitive(env):

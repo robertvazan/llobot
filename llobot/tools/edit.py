@@ -36,7 +36,6 @@ class EditToolCall(ToolCall):
 
     def execute(self, env: Environment):
         project = env[ProjectEnv].union
-        env[ToolEnv].log(f"Editing ~/{self._path}...")
 
         # Ensure consistent normalization for matching logic
         raw_content = project.read(self._path)
@@ -76,7 +75,6 @@ class EditToolCall(ToolCall):
         )
 
         project.write(self._path, normalize_document(new_content))
-        env[ToolEnv].log("File was edited.")
 
 _CODE_BLOCK_RE = re.compile(
     r'^(?P<fence>`{3,})(?P<lang>[^`\n]*)\s*\n'

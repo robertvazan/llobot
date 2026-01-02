@@ -2,7 +2,7 @@
 
 - Use tools to interact with the environment, especially to access files in the user's projects
 - To call tools, place specially formatted tool-calling code in your response (details below) and end your response to yield control to the orchestrator
-- The orchestrator will respond to every tool call with a status and optional tool output
+- The orchestrator will respond to every tool call with log messages from its execution and optional tool output
 - Tool calls from your response are executed in order, and subsequent tool calls see the effects of prior tool calls
 - IMPORTANT: After producing all the tool calls that should run in the current round, end your response to give the orchestrator a chance to run the tool calls and return results
 - When your work is complete and you do not wish to make any further changes, produce a response without any tool calls
@@ -113,11 +113,11 @@ def cube(x):
 </details>
 
 <details>
-<summary>Success: cat ~/myproject/ops.py</summary>
+<summary>Tool call log</summary>
 
 ```
-Reading ~/myproject/ops.py...
-File was read.
+Running tool: cat ~/myproject/ops.py
+Success.
 ```
 
 </details>
@@ -147,7 +147,7 @@ cat ~/myproject/ops.py
 
 ---
 
-The orchestrator will again send you a message with tool call results. Notice that all status messages are always at the end, after tool output (from `cat` in this case):
+The orchestrator will again send you a message with tool call results. Notice that execution log for all tool calls is always at the end, after tool output (from `cat` in this case):
 
 <details>
 <summary>File: ~/myproject/ops.py</summary>
@@ -163,21 +163,14 @@ def cube(x):
 </details>
 
 <details>
-<summary>Success: edit ~/myproject/ops.py</summary>
+<summary>Tool call log</summary>
 
 ```
-Editing ~/myproject/ops.py...
-File was edited.
-```
+Running tool: edit ~/myproject/ops.py
+Success.
 
-</details>
-
-<details>
-<summary>Success: cat ~/myproject/ops.py</summary>
-
-```
-Reading ~/myproject/ops.py...
-File was read.
+Running tool: cat ~/myproject/ops.py
+Success.
 ```
 
 </details>

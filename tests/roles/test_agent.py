@@ -151,5 +151,7 @@ def test_agent_accept_command(tmp_path: Path):
     status_msg = next((m for m in response_thread if m.intent == ChatIntent.STATUS), None)
     assert status_msg
     assert "✅ All 1 tool calls executed." in status_msg.content
-    assert "Success: write ~/project/test.txt" in status_msg.content
+    assert "Tool call log" in status_msg.content
+    assert "Running tool: write ~/project/test.txt" in status_msg.content
+    assert "Success." in status_msg.content
     assert (tmp_path / 'project/test.txt').read_text().strip() == 'content'

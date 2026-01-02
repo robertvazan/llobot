@@ -59,22 +59,26 @@ def handle_accept_command(text: str, env: Environment) -> bool:
     context_env = env[ContextEnv]
     success_count = 0
 
-    for call in tool_calls:
+    for i, call in enumerate(tool_calls):
+        if i > 0:
+            tool_env.log("")
+
+        tool_env.log(f"Running tool: {call.title}")
         success = call.try_execute(env)
+        tool_env.log("Success." if success else "Failed.")
+
         if success:
             success_count += 1
 
-        log_content = tool_env.flush_log()
         output_content = tool_env.flush_output()
-
-        summary = f"{'Success' if success else 'Failure'}: {call.title}"
-
-        # Output a details/summary section with an untyped code block (no language).
-        details = markdown_code_details(summary, '', log_content)
-        status_env.append(details)
-
         if output_content:
             context_env.add(ChatMessage(ChatIntent.SYSTEM, output_content))
+
+    # Output a single details/summary section for the log
+    log_content = tool_env.flush_log()
+    if log_content:
+        details = markdown_code_details("Tool call log", '', log_content)
+        status_env.append(details)
 
     total_count = len(tool_calls)
     if success_count == total_count:

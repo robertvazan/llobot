@@ -55,9 +55,6 @@ def test_remove_tool_execute(env: Environment):
 
     project = env[ProjectEnv].union
     assert project.read(PurePosixPath("myproject/a.txt")) is None
-    log = env[ToolEnv].flush_log()
-    assert "Removing ~/myproject/a.txt..." in log
-    assert "File was removed." in log
 
 def test_remove_tool_no_match(env: Environment):
     tool = RemoveTool()

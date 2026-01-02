@@ -57,10 +57,6 @@ def test_write_tool_slice_and_parse(env: Environment):
     project = env[ProjectEnv].union
     assert project.read(PurePosixPath("myproject/foo.txt")) == "content\nof the file\n"
 
-    log = env[ToolEnv].flush_log()
-    assert "Writing ~/myproject/foo.txt..." in log
-    assert "File was written." in log
-
 def test_write_tool_slice_extra_whitespace(env: Environment):
     tool = WriteTool()
     text = dedent("""

@@ -58,9 +58,10 @@ def test_cat_tool_execute(env: Environment):
     log = env[ToolEnv].flush_log()
     output = env[ToolEnv].flush_output()
 
-    assert "Reading ~/myproject/a.txt..." in log
     assert "Read also: ~/myproject/README.md" in log
-    assert "File was read." in log
+    # It should not contain the main file read log anymore
+    assert "Reading ~/myproject/a.txt" not in log
+    assert "File was read." not in log
 
     assert "Scanning" not in log
     assert "Preparing" not in log
@@ -78,10 +79,8 @@ def test_cat_tool_execute_nested_overviews(env: Environment):
     output = env[ToolEnv].flush_output()
 
     indices = [
-        log.find("Reading ~/myproject/sub/c.txt..."),
         log.find("Read also: ~/myproject/README.md"),
         log.find("Read also: ~/myproject/sub/__init__.py"),
-        log.find("File was read."),
     ]
     assert -1 not in indices
     assert indices == sorted(indices)
@@ -98,10 +97,8 @@ def test_cat_tool_execute_deduplication(env: Environment):
     log = env[ToolEnv].flush_log()
     output = env[ToolEnv].flush_output()
 
-    assert "Reading ~/myproject/a.txt..." in log
     assert "Read also: ~/myproject/README.md" in log
     assert "File is already in the context." in log
-    assert "File was read." not in log
 
     assert "File: ~/myproject/README.md" in output
     assert "content" not in output
@@ -116,9 +113,7 @@ def test_cat_tool_overview_deduplication(env: Environment):
 
     log = env[ToolEnv].flush_log()
 
-    assert "Reading ~/myproject/a.txt..." in log
     assert "Read also: ~/myproject/README.md" not in log
-    assert "File was read." in log
 
 def test_cat_tool_execute_python(env: Environment):
     call = CatToolCall(PurePosixPath("myproject/b.py"), standard_document_format(), overviews_subset())
@@ -137,7 +132,6 @@ def test_cat_tool_missing_file_loads_overviews(env: Environment):
     log = env[ToolEnv].flush_log()
     output = env[ToolEnv].flush_output()
 
-    assert "Reading ~/myproject/nonexistent.txt..." in log
     assert "Read also: ~/myproject/README.md" in log
     assert "File: ~/myproject/README.md" in output
 
@@ -150,11 +144,9 @@ def test_cat_tool_target_is_overview(env: Environment):
     output = env[ToolEnv].flush_output()
 
     # Should read it only once
-    assert log.count("Reading ~/myproject/README.md...") == 1
     assert "Read also: ~/myproject/README.md" not in log
     assert "File is already in the context." not in log
     assert output.count("# Readme") == 1
-    assert "File was read." in log
 
 def test_cat_tool_no_match(env: Environment):
     tool = CatTool()

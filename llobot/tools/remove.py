@@ -26,9 +26,7 @@ class RemoveToolCall(ToolCall):
 
     def execute(self, env: Environment):
         project = env[ProjectEnv].union
-        env[ToolEnv].log(f"Removing ~/{self._path}...")
         project.remove(self._path)
-        env[ToolEnv].log("File was removed.")
 
 class RemoveTool(LineTool):
     """

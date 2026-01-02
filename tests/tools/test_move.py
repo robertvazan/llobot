@@ -69,9 +69,6 @@ def test_move_tool_execute(env: Environment):
     project = env[ProjectEnv].union
     assert project.read(PurePosixPath("myproject/a.txt")) is None
     assert project.read(PurePosixPath("myproject/b.txt")) == "content\n"
-    log = env[ToolEnv].flush_log()
-    assert "Moving ~/myproject/a.txt to ~/myproject/b.txt..." in log
-    assert "File was moved." in log
 
 def test_move_tool_overwrite(env: Environment):
     project = env[ProjectEnv].union
