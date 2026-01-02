@@ -15,7 +15,9 @@ code
 dummy
     Base class for tools that skip content.
 edit
-    A tool for editing files using search and replace.
+    A tool for editing files using search and replace (legacy).
+patch
+    A tool for patching files using unified diffs.
 fenced
     A base class for tools that use fenced code blocks.
 write
@@ -118,7 +120,7 @@ def standard_tools() -> tuple[Tool, ...]:
     """
     from llobot.tools.cat import CatTool
     from llobot.tools.code import DummyCodeBlockTool
-    from llobot.tools.edit import EditTool
+    from llobot.tools.patch import PatchTool
     from llobot.tools.move import MoveTool
     from llobot.tools.remove import RemoveTool
     from llobot.tools.replace import ReplaceTool
@@ -126,7 +128,7 @@ def standard_tools() -> tuple[Tool, ...]:
     from llobot.tools.write import WriteTool
     return (
         WriteTool(),
-        EditTool(),
+        PatchTool(),
         MoveTool(),
         RemoveTool(),
         ReplaceTool(),

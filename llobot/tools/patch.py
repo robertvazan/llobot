@@ -1,0 +1,166 @@
+"""
+Tool for patching files using unified diffs.
+"""
+from __future__ import annotations
+from pathlib import PurePosixPath
+import re
+from typing import Iterable
+from llobot.environments import Environment
+from llobot.environments.projects import ProjectEnv
+from llobot.environments.tools import ToolEnv
+from llobot.formats.paths import parse_path
+from llobot.tools import ToolCall
+from llobot.tools.block import BlockTool
+from llobot.utils.text import normalize_document
+
+class PatchToolCall(ToolCall):
+    _path: PurePosixPath
+    _diff: str
+
+    def __init__(self, path: PurePosixPath, diff: str):
+        self._path = path
+        self._diff = diff
+
+    @property
+    def title(self) -> str:
+        return f"patch ~/{self._path}"
+
+    def execute(self, env: Environment):
+        project = env[ProjectEnv].union
+
+        original_content = project.read(self._path)
+        if original_content is None:
+            raise FileNotFoundError(f"File not found: {self._path}")
+
+        content = normalize_document(original_content)
+        hunks = self._parse_diff(self._diff)
+
+        if not hunks:
+            raise ValueError("No hunks found in diff.")
+
+        current_content = content
+
+        for i, (search_block, replace_block) in enumerate(hunks):
+            hunk_num = i + 1
+            if not search_block:
+                raise ValueError(f"Hunk {hunk_num} search block is empty.")
+
+            matches = []
+            start = 0
+            while True:
+                idx = current_content.find(search_block, start)
+                if idx == -1:
+                    break
+
+                # Check start of line.
+                # The search block is guaranteed to end with \n by _parse_diff, so we implicitly check end of line too.
+                if idx == 0 or current_content[idx - 1] == '\n':
+                    matches.append(idx)
+
+                start = idx + 1
+
+            if not matches:
+                raise ValueError(f"Hunk {hunk_num} failed. Search block not found.")
+
+            if len(matches) > 1:
+                raise ValueError(f"Hunk {hunk_num} failed. Search block found {len(matches)} times. Context is ambiguous.")
+
+            idx = matches[0]
+            current_content = (
+                current_content[:idx] +
+                replace_block +
+                current_content[idx + len(search_block):]
+            )
+
+        project.write(self._path, normalize_document(current_content))
+
+    def _parse_diff(self, diff: str) -> list[tuple[str, str]]:
+        lines = diff.splitlines(keepends=True)
+        # Ensure the last line ends with newline
+        if lines and not lines[-1].endswith('\n'):
+            lines[-1] += '\n'
+
+        hunks = []
+        search_lines = []
+        replace_lines = []
+        in_hunk = False
+
+        for line in lines:
+            if line.startswith('@@'):
+                if in_hunk:
+                    hunks.append(("".join(search_lines), "".join(replace_lines)))
+                in_hunk = True
+                search_lines = []
+                replace_lines = []
+                continue
+
+            # Skip header lines before first hunk
+            if not in_hunk:
+                continue
+
+            if line.startswith(' '):
+                # Context
+                content = line[1:]
+                search_lines.append(content)
+                replace_lines.append(content)
+            elif line.startswith('-'):
+                # Delete
+                search_lines.append(line[1:])
+            elif line.startswith('+'):
+                # Add
+                replace_lines.append(line[1:])
+            else:
+                raise ValueError(f"Invalid diff line: {line.strip()!r}")
+
+        if in_hunk:
+            hunks.append(("".join(search_lines), "".join(replace_lines)))
+
+        return hunks
+
+_PATCH_DETAILS_RE = re.compile(
+    r'^<details>\s*<summary>\s*Patch:\s*(?P<path>.+?)\s*</summary>\s*'
+    r'^(?P<fence>`{3,})(?P<lang>[^`\n]*)\s*\n'
+    r'(?P<content>.*?)'
+    r'^(?P=fence)\s*</details>',
+    re.DOTALL | re.MULTILINE
+)
+
+class PatchTool(BlockTool):
+    """
+    Tool that parses patch listings in the format:
+    <details>
+    <summary>Patch: ~/path/to/file</summary>
+
+    ```diff
+    @@ ...
+    - search content
+    + replace content
+    ```
+
+    </details>
+    """
+    def slice(self, env: Environment, source: str, at: int) -> int:
+        match = _PATCH_DETAILS_RE.match(source, pos=at)
+        if not match:
+            return 0
+        return match.end() - at
+
+    def parse(self, env: Environment, source: str) -> Iterable[ToolCall]:
+        match = _PATCH_DETAILS_RE.fullmatch(source)
+        assert match, "source for parse() must be validated by slice()"
+
+        path_str = match.group('path').strip()
+        path = parse_path(path_str)
+        content = match.group('content')
+
+        # Check for nested fences
+        fence = match.group('fence')
+        if re.search(r'^`{%d,}' % len(fence), content, re.MULTILINE):
+            raise ValueError(f"Content contains a line starting with {len(fence)} or more backticks. Enclose the block in more backticks.")
+
+        yield PatchToolCall(path, content)
+
+__all__ = [
+    'PatchTool',
+    'PatchToolCall',
+]

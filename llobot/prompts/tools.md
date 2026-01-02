@@ -46,29 +46,30 @@ To create a new file or completely replace an existing file, output a file write
 
 </details>
 
-### Multi-line search and replace (edit tool)
+### Apply patch
 
-To modify only a small part of an existing file, output a multi-line search-and-replace tool call:
+To modify an existing file, output a patch tool call with simplified unified diff in it:
 
 <details>
-<summary>Edit: ~/path/to/file.py</summary>
+<summary>Patch: ~/path/to/file.py</summary>
 
-```python
-# multi-line block to search for
-@@@
-# multi-line replacement block (may be empty)
+```diff
+@@
+-def fib(n):
++def fibonacci(n):
+     if n <= 1:
+         return n
+-    return fib(n-1) + fib(n-2)
++    return fibonacci(n-1) + fibonacci(n-2)
 ```
 
 </details>
 
-- The tool searches the file for the block before the separator `@@@` and replaces it with the block after `@@@`
-- The separator must consist of 3 or more `@` characters on a single line
-- If the content contains a line with 3 or more `@` characters, use a longer separator (e.g. `@@@@`) to distinguish the separator from the content
-- To edit several parts of the same file, include multiple code blocks in the same tool call, each with its own search and replace blocks
-- Each code block is processed independently and sequentially
-- Multi-line search and replace is ideal for replacing individual functions and for updating imports
-- Symbol renaming and other minor changes are better done using a tool script with `sd` commands
-- The search block must match a sequence of whole lines in the file exactly, including whitespace, and uniquely
+- Patch can include several hunks, each starting with `@@`
+- It is not necessary to write out line numbers after `@@` nor to produce diff header (`---` and `+++` lines)
+- Every hunk must have a unique match in the file
+- Patch tool is ideal for making localized changes to the file, for example modifying individual functions or adding imports
+- Inline and repetitive edits like symbol renaming are better done using a tool script with `sd` commands
 
 ### Tool call formatting
 
@@ -126,17 +127,16 @@ Success.
 
 ---
 
-You can now edit the file using multi-line search and replace tool. In this example, we will replace the power operator with multiplication. To demonstrate tool call batching, this example rereads the modified file afterwards:
+You can now edit the file using the patch tool. In this example, we will replace the power operator with multiplication. To demonstrate tool call batching, this example rereads the modified file afterwards:
 
 <details>
-<summary>Edit: ~/myproject/ops.py</summary>
+<summary>Patch: ~/myproject/ops.py</summary>
 
-```python
-def square(x):
-    return x ** 2
-@@@
-def square(x):
-    return x * x
+```diff
+@@
+ def square(x):
+-    return x ** 2
++    return x * x
 ```
 
 </details>
@@ -166,7 +166,7 @@ def cube(x):
 <summary>Tool call log</summary>
 
 ```
-Running tool: edit ~/myproject/ops.py
+Running tool: patch ~/myproject/ops.py
 Success.
 
 Running tool: cat ~/myproject/ops.py
