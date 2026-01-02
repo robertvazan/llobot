@@ -17,15 +17,22 @@ class EditToolCall(ToolCall):
     _path: PurePosixPath
     _search: str
     _replace: str
+    _index: int
+    _total: int
 
-    def __init__(self, path: PurePosixPath, search: str, replace: str):
+    def __init__(self, path: PurePosixPath, search: str, replace: str, index: int = 1, total: int = 1):
         self._path = path
         self._search = search
         self._replace = replace
+        self._index = index
+        self._total = total
 
     @property
     def title(self) -> str:
-        return f"edit ~/{self._path}"
+        base = f"edit ~/{self._path}"
+        if self._total > 1:
+            return f"{base} (part {self._index} of {self._total})"
+        return base
 
     def execute(self, env: Environment):
         project = env[ProjectEnv].union
@@ -71,11 +78,10 @@ class EditToolCall(ToolCall):
         project.write(self._path, normalize_document(new_content))
         env[ToolEnv].log("File was edited.")
 
-_EDIT_SLICE_RE = re.compile(
-    r'^<details>\s*<summary>\s*Edit:\s*(?P<path>.+?)\s*</summary>\s*'
+_CODE_BLOCK_RE = re.compile(
     r'^(?P<fence>`{3,})(?P<lang>[^`\n]*)\s*\n'
     r'(?P<content>.*?)'
-    r'^(?P=fence)\s*</details>',
+    r'^(?P=fence)(?=\s|$)',
     re.DOTALL | re.MULTILINE
 )
 
@@ -92,47 +98,107 @@ class EditTool(BlockTool):
     ```
 
     </details>
+
+    Multiple code blocks can be provided in the same tool call to perform
+    multiple edits on the same file sequentially.
     """
     def slice(self, env: Environment, source: str, at: int) -> int:
-        match = _EDIT_SLICE_RE.match(source, pos=at)
-        if not match:
+        # Match the header
+        # Using match with pos checks at that position. ^ matches start of string,
+        # but since 'source' is passed as is, we rely on 'at' being start of line
+        # and checking source[at:].
+        header_match = re.match(r'^<details>\s*<summary>\s*Edit:\s*.+?\s*</summary>', source[at:])
+        if not header_match:
             return 0
-        return match.end() - at
+
+        cursor = at + header_match.end()
+        length = len(source)
+
+        in_code_block = False
+        fence_len = 0
+
+        while cursor < length:
+            try:
+                eol = source.index('\n', cursor)
+            except ValueError:
+                eol = length
+
+            line = source[cursor:eol]
+
+            # Strictly match fences at the start of the line to be consistent with parse()
+            # and Markdown code block rules used in this project.
+            fence_match = re.match(r'^(`{3,})', line)
+
+            if in_code_block:
+                # Check for code block end
+                if fence_match:
+                    if len(fence_match.group(1)) >= fence_len:
+                        in_code_block = False
+                        fence_len = 0
+            else:
+                # Check for closing tag
+                if re.fullmatch(r'\s*</details>\s*', line):
+                    # Found the closing tag outside of a code block
+                    return (eol + 1) - at if eol < length else length - at
+
+                # Check for code block start
+                if fence_match:
+                    in_code_block = True
+                    fence_len = len(fence_match.group(1))
+
+            cursor = eol + 1
+
+        return 0
 
     def parse(self, env: Environment, source: str) -> Iterable[ToolCall]:
-        match = _EDIT_SLICE_RE.fullmatch(source)
-        assert match, "source for parse() must be validated by slice()"
+        # Header match is guaranteed by slice
+        header_match = re.match(r'^<details>\s*<summary>\s*Edit:\s*(?P<path>.+?)\s*</summary>', source)
+        if not header_match:
+             raise ValueError("Invalid edit tool format header")
 
-        path_str = match.group('path').strip()
+        path_str = header_match.group('path').strip()
         path = parse_path(path_str)
-        fence = match.group('fence')
-        content = match.group('content')
 
-        if re.search(r'^`{%d,}' % len(fence), content, re.MULTILINE):
-            raise ValueError(f"Content contains a line starting with {len(fence)} or more backticks. Ensure there is only one block and enclose it in more backticks.")
+        # Extract body: from end of header to (start of) closing tag
+        body_start = header_match.end()
+        body = source[body_start:]
 
-        lines = content.splitlines(keepends=True)
-        candidates = []
-        for i, line in enumerate(lines):
-            stripped = line.rstrip('\n\r')
-            if len(stripped) >= 3 and all(c == '@' for c in stripped):
-                candidates.append((i, len(stripped)))
+        # Find the last </details> that closes the block.
+        # Since slice() ensures the block ends with </details> (possibly followed by newline),
+        # we can safely strip it.
+        closing_match = re.search(r'\s*</details>\s*$', body)
+        if closing_match:
+            body = body[:closing_match.start()]
 
-        if not candidates:
-            raise ValueError("Edit block must contain a separator line with 3 or more '@' characters.")
+        blocks = list(_CODE_BLOCK_RE.finditer(body))
+        if not blocks:
+            raise ValueError("Edit tool call must contain at least one code block.")
 
-        max_len = max(l for _, l in candidates)
-        best_candidates = [i for i, l in candidates if l == max_len]
+        total = len(blocks)
+        for i, block_match in enumerate(blocks, 1):
+            content = block_match.group('content')
+            lines = content.splitlines(keepends=True)
+            candidates = []
+            for j, line in enumerate(lines):
+                stripped = line.rstrip('\n\r')
+                if len(stripped) >= 3 and all(c == '@' for c in stripped):
+                    candidates.append((j, len(stripped)))
 
-        if len(best_candidates) > 1:
-            raise ValueError(f"Ambiguous separator: multiple lines with {max_len} '@' characters found.")
+            if not candidates:
+                raise ValueError("Edit block must contain a separator line with 3 or more '@' characters.")
 
-        sep_idx = best_candidates[0]
+            max_len = max(l for _, l in candidates)
+            best_candidates = [j for j, l in candidates if l == max_len]
 
-        search = "".join(lines[:sep_idx])
-        replace = "".join(lines[sep_idx+1:])
+            if len(best_candidates) > 1:
+                raise ValueError(f"Ambiguous separator: multiple lines with {max_len} '@' characters found.")
 
-        yield EditToolCall(path, search, replace)
+            sep_idx = best_candidates[0]
+
+            search = "".join(lines[:sep_idx])
+            replace = "".join(lines[sep_idx+1:])
+
+            yield EditToolCall(path, search, replace, index=i, total=total)
 
 __all__ = [
     'EditTool',

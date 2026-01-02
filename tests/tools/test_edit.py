@@ -247,8 +247,38 @@ def test_parse_edit_with_conflicting_fence(env):
         </details>
     """)
     tool = EditTool()
-    with pytest.raises(ValueError, match="Content contains a line starting with"):
+    # The parser sees the first ```...``` pair as a complete block (with empty content).
+    # Since this block doesn't contain the separator, it raises the missing separator error.
+    with pytest.raises(ValueError, match="Edit block must contain a separator"):
         list(tool.parse(env, source.strip()))
+
+def test_parse_edit_with_interleaved_text(env):
+    """Ensures text between code blocks is ignored (allowing for comments)."""
+    source = textwrap.dedent("""
+        <details>
+        <summary>Edit: ~/test/file.txt</summary>
+
+        ```text
+        foo
+        @@@
+        bar
+        ```
+
+        Some commentary here that should be ignored.
+
+        ```text
+        baz
+        @@@
+        qux
+        ```
+
+        </details>
+    """)
+    tool = EditTool()
+    calls = list(tool.parse(env, source.strip()))
+    assert len(calls) == 2
+    assert calls[0]._search.strip() == 'foo'
+    assert calls[1]._search.strip() == 'baz'
 
 def test_parse_edit_with_midline_separator(env):
     source = textwrap.dedent("""
@@ -270,3 +300,168 @@ def test_parse_edit_with_midline_separator(env):
     # @@@@ is separator
     assert "some text @@@ mid line" in call._search
     assert "other text @@@ mid line" in call._replace
+
+def test_parse_edit_multiple_blocks(env):
+    source = textwrap.dedent("""
+        <details>
+        <summary>Edit: ~/test/file.txt</summary>
+
+        ```text
+        foo
+        @@@
+        bar
+        ```
+
+        ```text
+        baz
+        @@@
+        qux
+        ```
+
+        </details>
+    """)
+    tool = EditTool()
+    calls = list(tool.parse(env, source.strip()))
+    assert len(calls) == 2
+
+    assert calls[0]._search.strip() == 'foo'
+    assert calls[0]._replace.strip() == 'bar'
+    assert calls[0].title == "edit ~/test/file.txt (part 1 of 2)"
+
+    assert calls[1]._search.strip() == 'baz'
+    assert calls[1]._replace.strip() == 'qux'
+    assert calls[1].title == "edit ~/test/file.txt (part 2 of 2)"
+
+def test_parse_edit_closing_tag_in_code_block(env):
+    source = textwrap.dedent("""
+        <details>
+        <summary>Edit: ~/test/file.txt</summary>
+
+        ```text
+        foo
+        </details>
+        @@@
+        bar
+        ```
+
+        </details>
+    """)
+    tool = EditTool()
+    calls = list(tool.parse(env, source.strip()))
+    assert len(calls) == 1
+    call = calls[0]
+    assert "foo\n</details>" in call._search
+
+def test_parse_edit_mixed_fences(env):
+    source = textwrap.dedent("""
+        <details>
+        <summary>Edit: ~/test/file.txt</summary>
+
+        ```text
+        foo
+        @@@
+        bar
+        ```
+
+        ````text
+        baz
+        ```
+        @@@
+        qux
+        ````
+
+        </details>
+    """)
+    tool = EditTool()
+    calls = list(tool.parse(env, source.strip()))
+    assert len(calls) == 2
+
+    assert calls[0]._search.strip() == 'foo'
+    assert calls[0]._replace.strip() == 'bar'
+
+    assert "baz\n```" in calls[1]._search
+    assert calls[1]._replace.strip() == 'qux'
+
+def test_parse_edit_single_part_title(env):
+    source = textwrap.dedent("""
+        <details>
+        <summary>Edit: ~/test/file.txt</summary>
+
+        ```text
+        foo
+        @@@
+        bar
+        ```
+
+        </details>
+    """)
+    tool = EditTool()
+    calls = list(tool.parse(env, source.strip()))
+    assert len(calls) == 1
+    assert calls[0].title == "edit ~/test/file.txt"
+
+def test_parse_edit_closing_tag_in_code_block(env):
+    source = textwrap.dedent("""
+        <details>
+        <summary>Edit: ~/test/file.txt</summary>
+
+        ```text
+        foo
+        </details>
+        @@@
+        bar
+        ```
+
+        </details>
+    """)
+    tool = EditTool()
+    calls = list(tool.parse(env, source.strip()))
+    assert len(calls) == 1
+    call = calls[0]
+    assert "foo\n</details>" in call._search
+
+def test_parse_edit_indented_fence_is_text(env):
+    source = textwrap.dedent("""
+        <details>
+        <summary>Edit: ~/test/file.txt</summary>
+
+        ```text
+        foo
+        @@@
+        bar
+        ```
+
+        This is commentary with an indented block:
+          ```
+          some code
+          ```
+
+        </details>
+    """)
+    tool = EditTool()
+    calls = list(tool.parse(env, source.strip()))
+    assert len(calls) == 1
+    assert calls[0]._search.strip() == 'foo'
+    assert calls[0]._replace.strip() == 'bar'
+
+def test_parse_edit_tilde_fence_ignored(env):
+    source = textwrap.dedent("""
+        <details>
+        <summary>Edit: ~/test/file.txt</summary>
+
+        ```text
+        foo
+        @@@
+        bar
+        ```
+
+        ~~~
+        This is a tilde block, ignored by edit tool
+        ~~~
+
+        </details>
+    """)
+    tool = EditTool()
+    calls = list(tool.parse(env, source.strip()))
+    assert len(calls) == 1
+    assert calls[0]._search.strip() == 'foo'
