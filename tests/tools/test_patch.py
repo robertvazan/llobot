@@ -229,3 +229,29 @@ def test_strict_context_parsing(env, tmp_path):
     # The empty line will fall through to the invalid line check
     with pytest.raises(ValueError, match="Invalid diff line"):
         call.execute(env)
+
+def test_execute_ignore_trailing_whitespace_in_diff(env, tmp_path):
+    (tmp_path / 'file.txt').write_text("line1\n", encoding='utf-8')
+
+    # Diff has trailing whitespace on the context line
+    diff = dedent("""
+        @@
+        -line1
+        +line2
+    """)
+    call = PatchToolCall('~/test/file.txt', diff, standard_document_format())
+    call.execute(env)
+
+    assert (tmp_path / 'file.txt').read_text(encoding='utf-8') == "line2\n"
+
+def test_execute_preserve_empty_lines_after_strip(env, tmp_path):
+    (tmp_path / 'file.txt').write_text("A\n\nB\n", encoding='utf-8')
+
+    # Diff uses context/delete lines that are effectively empty but have trailing spaces
+    # Note: Using manual string construction to ensure trailing spaces are present
+    diff = "@@\n A \n- \n-B \n+C\n"
+
+    call = PatchToolCall('~/test/file.txt', diff, standard_document_format())
+    call.execute(env)
+
+    assert (tmp_path / 'file.txt').read_text(encoding='utf-8') == "A\n\nC\n"

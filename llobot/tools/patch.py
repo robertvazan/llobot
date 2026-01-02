@@ -111,15 +111,15 @@ class PatchToolCall(ToolCall):
 
             if line.startswith(' '):
                 # Context
-                content = line[1:]
+                content = line[1:].rstrip() + '\n'
                 search_lines.append(content)
                 replace_lines.append(content)
             elif line.startswith('-'):
                 # Delete
-                search_lines.append(line[1:])
+                search_lines.append(line[1:].rstrip() + '\n')
             elif line.startswith('+'):
                 # Add
-                replace_lines.append(line[1:])
+                replace_lines.append(line[1:].rstrip() + '\n')
             else:
                 raise ValueError(f"Invalid diff line: {line.strip()!r}")
 
