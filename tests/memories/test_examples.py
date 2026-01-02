@@ -9,7 +9,7 @@ from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
 from llobot.memories.examples import ExampleMemory
 from llobot.projects.library.predefined import PredefinedProjectLibrary
-from llobot.projects.zone import ZoneProject
+from llobot.projects.marker import MarkerProject
 from llobot.utils.time import parse_time
 
 def test_save_and_recent_with_role_only(tmp_path: Path):
@@ -56,7 +56,7 @@ def test_save_and_recent_with_project_and_role(tmp_path: Path):
     history = MarkdownChatHistory(tmp_path)
     memory = ExampleMemory('test_role', history=history)
     env = Environment()
-    library = PredefinedProjectLibrary({'test_project': ZoneProject('test_project')})
+    library = PredefinedProjectLibrary({'test_project': MarkerProject('test_project')})
     project_env = env[ProjectEnv]
     project_env.configure(library)
     project_env.add('test_project')
@@ -80,7 +80,7 @@ def test_zones_with_path_like_zone(tmp_path: Path):
     history = MarkdownChatHistory(tmp_path)
     memory = ExampleMemory('test_role', history=history)
     env = Environment()
-    library = PredefinedProjectLibrary({'my/project': ZoneProject('my/project')})
+    library = PredefinedProjectLibrary({'my/project': MarkerProject('my/project')})
     project_env = env[ProjectEnv]
     project_env.configure(library)
     project_env.add('my/project')
@@ -100,7 +100,7 @@ def test_save_with_project_only(tmp_path: Path):
     history = MarkdownChatHistory(tmp_path)
     memory = ExampleMemory(history=history)
     env = Environment()
-    library = PredefinedProjectLibrary({'test_project': ZoneProject('test_project')})
+    library = PredefinedProjectLibrary({'test_project': MarkerProject('test_project')})
     project_env = env[ProjectEnv]
     project_env.configure(library)
     project_env.add('test_project')
@@ -147,7 +147,7 @@ def test_recent_merges_examples(tmp_path: Path):
     history = MarkdownChatHistory(tmp_path)
     memory = ExampleMemory('test_role', history=history)
     env = Environment()
-    library = PredefinedProjectLibrary({'p1': ZoneProject('p1'), 'p2': ZoneProject('p2')})
+    library = PredefinedProjectLibrary({'p1': MarkerProject('p1'), 'p2': MarkerProject('p2')})
     project_env = env[ProjectEnv]
     project_env.configure(library)
     project_env.add('p1')

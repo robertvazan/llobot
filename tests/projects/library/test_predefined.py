@@ -1,12 +1,12 @@
 from __future__ import annotations
 from pathlib import PurePosixPath
 from llobot.projects.library.predefined import PredefinedProjectLibrary
-from llobot.projects.zone import ZoneProject
+from llobot.projects.marker import MarkerProject
 
 
 def test_lookup():
-    p1 = ZoneProject('z1')
-    p2 = ZoneProject('z2')
+    p1 = MarkerProject('z1')
+    p2 = MarkerProject('z2')
     library = PredefinedProjectLibrary({'k1': p1, 'k2': p2})
 
     assert library.lookup('k1') == [p1]
@@ -17,8 +17,8 @@ def test_lookup():
 def test_coercion():
     library = PredefinedProjectLibrary({'k1': 'z1'})
     [p] = library.lookup('k1')
-    assert isinstance(p, ZoneProject)
-    assert p.zones == {PurePosixPath('z1')}
+    assert isinstance(p, MarkerProject)
+    assert p.prefixes == {PurePosixPath('z1')}
 
 
 def test_equality():

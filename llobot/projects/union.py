@@ -46,13 +46,6 @@ class UnionProject(Project, ValueTypeMixin):
         return ['_routing']
 
     @property
-    def zones(self) -> set[PurePosixPath]:
-        all_zones = set()
-        for p in self._projects:
-            all_zones.update(p.zones)
-        return all_zones
-
-    @property
     def prefixes(self) -> set[PurePosixPath]:
         return set(self._routing.keys())
 

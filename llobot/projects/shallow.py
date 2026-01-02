@@ -25,10 +25,6 @@ class ShallowProject(Project, ValueTypeMixin):
         self._project = project
 
     @property
-    def zones(self) -> set[PurePosixPath]:
-        return self._project.zones
-
-    @property
     def prefixes(self) -> set[PurePosixPath]:
         return self._project.prefixes
 

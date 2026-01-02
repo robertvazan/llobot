@@ -56,12 +56,12 @@ class ProjectEnv(PersistentEnv):
     @property
     def selected(self) -> list[Project]:
         """
-        Gets the list of all selected projects, sorted by zone for consistency.
+        Gets the list of all selected projects, sorted by prefix for consistency.
 
         Returns:
             A sorted list of `Project` instances.
         """
-        return sorted(list(self._projects), key=lambda p: sorted(list(p.zones)))
+        return sorted(list(self._projects), key=lambda p: sorted(list(p.prefixes)))
 
     @cached_property
     def union(self) -> Project:

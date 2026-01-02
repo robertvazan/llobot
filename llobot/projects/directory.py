@@ -15,7 +15,6 @@ class DirectoryProject(Project, ValueTypeMixin):
     Can be configured to be mutable.
     """
     _directory: Path
-    _zones: frozenset[PurePosixPath]
     _prefix: PurePosixPath
     _whitelist: KnowledgeSubset
     _blacklist: KnowledgeSubset
@@ -25,7 +24,6 @@ class DirectoryProject(Project, ValueTypeMixin):
         self,
         directory: Path | str,
         *,
-        zones: set[str | PurePosixPath] | None = None,
         prefix: PurePosixPath | str | None = None,
         whitelist: KnowledgeSubset | None = None,
         blacklist: KnowledgeSubset | None = None,
@@ -36,8 +34,6 @@ class DirectoryProject(Project, ValueTypeMixin):
 
         Args:
             directory: The path to the project's root directory. It can contain `~`.
-            zones: A set of zone identifiers for the project. If `None`, defaults
-                   to a single zone matching the directory's last component.
             prefix: The path prefix for all items in the project. If `None`, it
                     defaults to the path relative to the user's home directory
                     for directories under home, or the last component otherwise.
@@ -61,22 +57,9 @@ class DirectoryProject(Project, ValueTypeMixin):
                 self._prefix = coerce_path(self._directory.name)
         validate_zone(self._prefix)
 
-        # Default zone is the last component of the directory path
-        if zones is not None:
-            self._zones = frozenset(coerce_path(z) for z in zones)
-        else:
-            self._zones = frozenset([coerce_path(self._directory.name)])
-
-        for zone in self._zones:
-            validate_zone(zone)
-
         self._whitelist = whitelist or whitelist_subset()
         self._blacklist = blacklist or blacklist_subset()
         self._mutable = mutable
-
-    @property
-    def zones(self) -> set[PurePosixPath]:
-        return set(self._zones)
 
     @property
     def prefixes(self) -> set[PurePosixPath]:

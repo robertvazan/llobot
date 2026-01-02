@@ -1,10 +1,10 @@
 from llobot.projects.library.filtered import FilteredProjectLibrary
 from llobot.projects.library.predefined import PredefinedProjectLibrary
 from llobot.knowledge.subsets.pattern import PatternSubset
-from llobot.projects.zone import ZoneProject
+from llobot.projects.marker import MarkerProject
 
 def test_filtered_project_library():
-    p1 = ZoneProject('allowed/key')
+    p1 = MarkerProject('allowed/key')
     lib = PredefinedProjectLibrary({'allowed/key': p1})
 
     whitelist = PatternSubset("allowed/*")

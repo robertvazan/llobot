@@ -22,13 +22,10 @@ class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
 
     Defaults
     --------
-    - Zone defaults to the lookup key (treated as a relative path), not to the
-      directory name. This means nested keys like `nested/project` produce a
-      nested zone `nested/project`.
     - Prefix defaults to the same home-relative computation as in
       `DirectoryProject`, but with a different fallback: when the
-      home-relative computation cannot be used, the fallback equals the zone
-      (i.e., the lookup key).
+      home-relative computation cannot be used, the fallback equals the lookup
+      key.
     """
     _home: Path
     _whitelist: KnowledgeSubset | None
@@ -65,7 +62,7 @@ class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
     def _default_prefix(self, directory: Path, zone: PurePosixPath) -> PurePosixPath:
         """
         Computes default prefix similarly to `DirectoryProject`, but with
-        fallback equal to the provided zone.
+        fallback equal to the provided key.
         """
         home = Path.home()
         if directory.is_relative_to(home):
@@ -75,7 +72,7 @@ class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
                 try:
                     return coerce_path(relative)
                 except ValueError:
-                    # Fall back to zone below.
+                    # Fall back to key below.
                     pass
         return zone
 
@@ -85,7 +82,6 @@ class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
         """
         return DirectoryProject(
             directory,
-            zones={zone},
             prefix=self._default_prefix(directory, zone),
             whitelist=self._whitelist,
             blacklist=self._blacklist,

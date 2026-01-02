@@ -5,7 +5,7 @@ from llobot.projects.empty import EmptyProject
 from llobot.projects.library.predefined import PredefinedProjectLibrary
 from llobot.projects.library.union import UnionProjectLibrary
 from llobot.projects.union import UnionProject
-from llobot.projects.zone import ZoneProject
+from llobot.projects.marker import MarkerProject
 
 def test_project_env_empty():
     env = ProjectEnv()
@@ -15,9 +15,9 @@ def test_project_env_empty():
     assert env.selected == []
 
 def test_project_env_add():
-    p1 = ZoneProject("p1")
-    p2 = ZoneProject("p2")
-    p3 = ZoneProject("p1", "p3")
+    p1 = MarkerProject("p1")
+    p2 = MarkerProject("p2")
+    p3 = MarkerProject("p1", "p3")
     library = UnionProjectLibrary(
         PredefinedProjectLibrary({'p1': p1, 'p2': p2}),
         PredefinedProjectLibrary({'p1': p3, 'p3': p3}),
@@ -48,8 +48,8 @@ def test_project_env_add():
     assert set(env.selected) == {p1, p2, p3}
 
 def test_project_env_add_deduplicates():
-    p1a = ZoneProject("p1")
-    p1b = ZoneProject("p1") # Same value, different object
+    p1a = MarkerProject("p1")
+    p1b = MarkerProject("p1") # Same value, different object
     library = PredefinedProjectLibrary({'p1': p1a, 'p1_dup': p1b})
 
     env = ProjectEnv()
@@ -61,8 +61,8 @@ def test_project_env_add_deduplicates():
     assert len(env.selected) == 1
 
 def test_project_env_union_caching():
-    p1 = ZoneProject("p1")
-    p2 = ZoneProject("p2")
+    p1 = MarkerProject("p1")
+    p2 = MarkerProject("p2")
     library = PredefinedProjectLibrary({'p1': p1, 'p2': p2})
 
     env = ProjectEnv()
@@ -83,9 +83,9 @@ def test_project_env_union_caching():
     assert union3 is union4
 
 def test_project_env_persistence(tmp_path: Path):
-    p1 = ZoneProject("p1")
-    p2 = ZoneProject("p2")
-    p3 = ZoneProject("p3")
+    p1 = MarkerProject("p1")
+    p2 = MarkerProject("p2")
+    p3 = MarkerProject("p3")
     library = PredefinedProjectLibrary({'p1': p1, 'p2': p2, 'p3': p3})
 
     # --- Save env with p1, p2 ---
@@ -112,12 +112,12 @@ def test_project_env_persistence(tmp_path: Path):
     # State should be replaced with loaded state
     assert env2._keys == {"p1", "p2"}
     assert len(env2.selected) == 2
-    # .selected is sorted by zone
-    assert env2.selected[0].zones == {PurePosixPath("p1")}
-    assert env2.selected[1].zones == {PurePosixPath("p2")}
+    # .selected is sorted by prefix
+    assert env2.selected[0].prefixes == {PurePosixPath("p1")}
+    assert env2.selected[1].prefixes == {PurePosixPath("p2")}
 
 def test_project_env_load_not_found_fails(tmp_path: Path):
-    library = PredefinedProjectLibrary({'p1': ZoneProject("p1")})
+    library = PredefinedProjectLibrary({'p1': MarkerProject("p1")})
 
     save_path = tmp_path / "env"
     save_path.mkdir()
@@ -130,7 +130,7 @@ def test_project_env_load_not_found_fails(tmp_path: Path):
         env.load(save_path)
 
 def test_project_env_load_missing_file_clears(tmp_path: Path):
-    p1 = ZoneProject("p1")
+    p1 = MarkerProject("p1")
     library = PredefinedProjectLibrary({'p1': p1})
 
     env = ProjectEnv()

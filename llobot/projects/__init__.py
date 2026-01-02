@@ -13,8 +13,8 @@ Submodules
 ----------
 empty
     An empty project that has no content.
-zone
-    A project that only has zones but no content.
+marker
+    A project that has one or more prefixes (markers) but no content.
 directory
     A project that sources its content from a filesystem directory.
 shallow
@@ -36,15 +36,6 @@ class Project:
     A repository of documents that can be enumerated and read. Projects can
     also be mutable, allowing for file modifications.
     """
-    @property
-    def zones(self) -> set[PurePosixPath]:
-        """
-        A set of zone identifiers associated with the project.
-
-        Zone identifiers must be valid relative paths as per `validate_zone`.
-        """
-        return set()
-
     @property
     def prefixes(self) -> set[PurePosixPath]:
         """
@@ -209,8 +200,8 @@ def coerce_project(precursor: ProjectPrecursor) -> Project:
     - `Project` is returned as is.
     - `Path` is coerced to `DirectoryProject`.
     - `str` starting with `/` or `~` is coerced to `DirectoryProject`.
-    - Other `str` values are coerced to `ZoneProject`.
-    - `PurePosixPath` is coerced to `ZoneProject`.
+    - Other `str` values are coerced to `MarkerProject`.
+    - `PurePosixPath` is coerced to `MarkerProject`.
 
     Args:
         precursor: The object to coerce. Can be a `Project`, `Path`, `PurePosixPath`, or `str`.
@@ -226,11 +217,11 @@ def coerce_project(precursor: ProjectPrecursor) -> Project:
     if isinstance(precursor, str):
         if precursor.startswith('/') or precursor.startswith('~'):
             return DirectoryProject(precursor)
-        from llobot.projects.zone import ZoneProject
-        return ZoneProject(precursor)
+        from llobot.projects.marker import MarkerProject
+        return MarkerProject(precursor)
     if isinstance(precursor, PurePosixPath):
-        from llobot.projects.zone import ZoneProject
-        return ZoneProject(precursor)
+        from llobot.projects.marker import MarkerProject
+        return MarkerProject(precursor)
     raise TypeError(f"Cannot coerce {precursor} to Project")
 
 __all__ = [

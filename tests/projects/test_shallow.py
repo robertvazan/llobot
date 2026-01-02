@@ -15,7 +15,6 @@ def test_shallow_project(tmp_path: Path):
     base_project = DirectoryProject(project_dir, prefix="p")
     shallow = ShallowProject(base_project)
 
-    assert shallow.zones == base_project.zones
     assert shallow.prefixes == base_project.prefixes
 
     # items() should return shallow files and directories
