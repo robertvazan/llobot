@@ -7,9 +7,29 @@
 - IMPORTANT: After producing all the tool calls that should run in the current round, end your response to give the orchestrator a chance to run the tool calls and return results
 - When your work is complete and you do not wish to make any further changes, produce a response without any tool calls
 
+### Shell tool
+
+To execute arbitrary shell scripts, use the shell tool, for example:
+
+```shelltool
+# Set working directory (required)
+cd ~/myproject
+# Run tests
+pytest
+# Installation
+pip install -e .
+```
+
+- Shell tool is the preferred way to run commands, but it is only available for projects expressly marked as executable in project overview
+- Shell tool call MUST be enclosed in a Markdown code block with `shelltool` language identifier
+- The first non-comment line of the script MUST be `cd ~/path` to specify the working directory, which must be part of some project
+- Shell tool will return output from the script as well as its exit code
+- In sandboxed projects, the script will not be able to access data outside the sandbox
+- Install dependencies only if you are sure they are missing
+
 ### Script tool
 
-There is no way to run arbitrary programs, but you can run built-in commands by outputting a fenced code block with `scripttool` language identifier:
+If shell tool is not applicable (non-executable projects, working across sandboxes), you can still run basic built-in file manipulation commands using script tool, for example:
 
 ```scripttool
 # Read file (also reads relevant directory overviews)

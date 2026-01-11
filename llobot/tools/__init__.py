@@ -30,6 +30,8 @@ remove
     A tool for removing files.
 replace
     A tool for replacing text using regex patterns.
+shell
+    A tool for executing shell scripts.
 script
     A tool for executing scripts of line-based commands.
 """
@@ -125,6 +127,7 @@ def standard_tools() -> tuple[Tool, ...]:
     from llobot.tools.remove import RemoveTool
     from llobot.tools.replace import ReplaceTool
     from llobot.tools.script import ScriptTool
+    from llobot.tools.shell import ShellTool
     from llobot.tools.write import WriteTool
     return (
         WriteTool(),
@@ -132,6 +135,7 @@ def standard_tools() -> tuple[Tool, ...]:
         MoveTool(),
         RemoveTool(),
         ReplaceTool(),
+        ShellTool(),
         CatTool(),
         ScriptTool(),
         DummyCodeBlockTool(),
