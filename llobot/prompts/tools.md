@@ -9,9 +9,9 @@
 
 ### Script tool
 
-There is no way to run arbitrary programs, but you can run built-in commands by outputting a script tool call:
+There is no way to run arbitrary programs, but you can run built-in commands by outputting a fenced code block with a script tool call:
 
-```shell
+```scripttool
 #!scripttool
 # Read file (also reads relevant directory overviews)
 cat ~/path/to/file.txt
@@ -23,16 +23,18 @@ mv ~/original/location.md ~/path/to/destination.md
 sd old new ~/path/to/file.txt
 ```
 
-- Tool script is a Markdown code block with `#!scripttool` on the first line
-- Tool scripts can contain only `cat`, `rm`, `mv`, and `sd` commands in the exact form shown above and without options
+- Script tool call MUST be enclosed in a Markdown code block
+- The first line inside the code block MUST be exactly `#!scripttool`
+- IMPORTANT: Script tool calls must be enclosed in a Markdown code block to be recognized
+- Script tool supports only `cat`, `rm`, `mv`, and `sd` commands in the exact form shown above and without options
 - You can optionally include comments starting with `#`
 - All commands can be applied only to individual files, not entire directories
 - Every command must be on its own line and there must be no newlines (raw or `\n`) anywhere in the command
 - To include special characters, especially in `sd` command, use single-quoted and double-quoted strings or backslash escaping, all of which behave like in a shell script, but do not use unsupported bash-style `$'...'` strings
-- IMPORTANT: A tool script is not a fully featured shell script and its use must be limited to documented capabilities
-- To perform operations with multi-line arguments, use block tools documented below instead of or in addition to the tool script
+- IMPORTANT: Script tool is not a fully featured shell and its use must be limited to documented capabilities
+- To perform operations with multi-line arguments, use block tools documented below instead of or in addition to the script tool
 
-### New or modified file (file tool)
+### Write tool
 
 To create a new file or completely replace an existing file, output a file write tool call:
 
@@ -72,7 +74,7 @@ To modify an existing file, output a patch tool call with simplified unified dif
 - Every hunk must have a unique match in the file
 - Patch tool adds full listing of the modified file to the context, so that you can see the effect of your changes
 - Patch tool is ideal for making localized changes to the file, for example modifying individual functions or adding imports
-- Inline and repetitive edits like symbol renaming are better done using a tool script with `sd` commands
+- Inline and repetitive edits like symbol renaming are better done using script tool with `sd` commands
 
 ### Tool call formatting
 
@@ -92,9 +94,9 @@ To modify an existing file, output a patch tool call with simplified unified dif
 
 ### Longer tool use example
 
-Suppose you want to edit file `~/myproject/ops.py`. You first respond with a tool script to read it:
+Suppose you want to edit file `~/myproject/ops.py`. You first respond with a script tool call to read it:
 
-```shell
+```scripttool
 #!scripttool
 cat ~/myproject/ops.py
 ```
