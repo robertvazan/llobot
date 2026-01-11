@@ -7,8 +7,8 @@ from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
 from llobot.commands import handle_commands
 from llobot.environments import Environment
+from llobot.environments.context import ContextEnv
 from llobot.environments.prompt import PromptEnv
-from llobot.environments.status import StatusEnv
 from llobot.formats.mentions import strip_mentions
 from llobot.memories.examples import ExampleMemory
 
@@ -42,7 +42,7 @@ def handle_approve_command(text: str, env: Environment, examples: ExampleMemory)
     example = ChatThread([initial_prompt, response_message])
 
     examples.save(example, env)
-    env[StatusEnv].append("✅ Example saved.")
+    env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, "✅ Example saved."))
 
     return True
 

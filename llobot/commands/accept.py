@@ -8,7 +8,6 @@ from llobot.commands import handle_commands
 from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
 from llobot.environments.prompt import PromptEnv
-from llobot.environments.status import StatusEnv
 from llobot.environments.tools import ToolEnv
 from llobot.tools.parsing import parse_tool_calls
 from llobot.utils.text import markdown_code_details
@@ -19,8 +18,8 @@ def handle_accept_command(text: str, env: Environment) -> bool:
 
     This command finds the last model response, parses it for tool calls
     using registered tools, and executes them. Execution logs are reported
-    in the `StatusEnv`, while tool outputs are appended to the `ContextEnv`
-    as system messages.
+    in the `ContextEnv` as status messages, while tool outputs are appended
+    to the `ContextEnv` as system messages.
 
     If no tool calls are found, or if there's no previous response, it's
     considered an error.
@@ -54,7 +53,6 @@ def handle_accept_command(text: str, env: Environment) -> bool:
     if not tool_calls:
         raise ValueError("No tool calls to execute.")
 
-    status_env = env[StatusEnv]
     tool_env = env[ToolEnv]
     context_env = env[ContextEnv]
     success_count = 0
@@ -74,11 +72,11 @@ def handle_accept_command(text: str, env: Environment) -> bool:
         if output_content:
             context_env.add(ChatMessage(ChatIntent.SYSTEM, output_content))
 
-    # Output a single details/summary section for the log
+    # Output log details
     log_content = tool_env.flush_log()
     if log_content:
         details = markdown_code_details("Tool call log", '', log_content)
-        status_env.append(details)
+        context_env.add(ChatMessage(ChatIntent.STATUS, details))
 
     total_count = len(tool_calls)
     if success_count == total_count:
@@ -86,7 +84,7 @@ def handle_accept_command(text: str, env: Environment) -> bool:
     else:
         summary_line = f"❌ {success_count} of {total_count} tool calls executed."
 
-    status_env.append(summary_line)
+    context_env.add(ChatMessage(ChatIntent.STATUS, summary_line))
 
     return True
 

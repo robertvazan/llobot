@@ -10,7 +10,6 @@ from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.prompt import PromptEnv
-from llobot.environments.status import StatusEnv
 from llobot.environments.tools import ToolEnv
 from llobot.projects.directory import DirectoryProject
 from llobot.projects.library.predefined import PredefinedProjectLibrary
@@ -73,12 +72,20 @@ def test_accept_command_success(tmp_path: Path):
     assert (project_dir / "file2.txt").is_file()
     assert (project_dir / "file2.txt").read_text() == "new content\n"
 
-    # Verify status messages
-    status_env = env[StatusEnv]
-    content = status_env.content()
+    # Verify context messages
+    context_env = env[ContextEnv]
+    assert context_env.populated
+    context_messages = context_env.build().messages
+    # 1. Output from cat
+    # 2. Log details
+    # 3. Summary
+    assert len(context_messages) == 3
+    assert context_messages[0].intent == ChatIntent.SYSTEM
+    assert "File: ~/myproject/file3.txt" in context_messages[0].content
+    assert "content3" in context_messages[0].content
 
-    assert "Tool call log" in content
-
+    assert context_messages[1].intent == ChatIntent.STATUS
+    assert "Tool call log" in context_messages[1].content
     # Check strict formatting and separation
     expected_log_fragment = (
         "Running tool: write ~/myproject/file2.txt\n"
@@ -89,21 +96,10 @@ def test_accept_command_success(tmp_path: Path):
         "\n"
         "Running tool: cat ~/myproject/file3.txt"
     )
-    assert expected_log_fragment in content
+    assert expected_log_fragment in context_messages[1].content
 
-    # Output should NOT be in status
-    assert "File: ~/myproject/file3.txt" not in content
-    assert "content3" not in content
-    assert "✅ All 3 tool calls executed." in content
-
-    # Verify context messages
-    context_env = env[ContextEnv]
-    assert context_env.populated
-    context_messages = context_env.build().messages
-    assert len(context_messages) == 1
-    assert context_messages[0].intent == ChatIntent.SYSTEM
-    assert "File: ~/myproject/file3.txt" in context_messages[0].content
-    assert "content3" in context_messages[0].content
+    assert context_messages[2].intent == ChatIntent.STATUS
+    assert "✅ All 3 tool calls executed." in context_messages[2].content
 
 def test_accept_command_failure(tmp_path: Path):
     # Setup project
@@ -136,14 +132,18 @@ def test_accept_command_failure(tmp_path: Path):
     handled = handle_accept_command("accept", env)
     assert handled
 
-    # Verify status messages
-    status_env = env[StatusEnv]
-    content = status_env.content()
+    # Verify context messages
+    context_env = env[ContextEnv]
+    context_messages = context_env.build().messages
+    assert len(context_messages) == 2
+
+    content = context_messages[0].content
     assert "Running tool: rm ~/myproject/nonexistent.txt" in content
     assert "Error executing:" in content
     assert "Failed." in content
     assert "Error executing:" in content
-    assert "❌ 0 of 1 tool calls executed." in content
+
+    assert "❌ 0 of 1 tool calls executed." in context_messages[1].content
 
 def test_accept_command_no_tool_calls():
     # Setup environment

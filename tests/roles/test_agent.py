@@ -52,8 +52,8 @@ def test_agent_session_persistence(tmp_path: Path):
     class StatefulAgent(Agent):
         def handle_setup(self, env):
             super().handle_setup(env)
-            from llobot.environments.status import StatusEnv
-            env[StatusEnv].append("State loaded.")
+            from llobot.environments.context import ContextEnv
+            env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, "State loaded."))
 
     agent2 = StatefulAgent('stateful', model, session_history=tmp_path)
     # The prompt is the full history. The agent uses the first message to find the session.
@@ -149,12 +149,18 @@ def test_agent_accept_command(tmp_path: Path):
     stream = agent.chat(prompt)
     response_thread = record_stream(stream)
 
-    status_msg = next((m for m in response_thread if m.intent == ChatIntent.STATUS), None)
-    assert status_msg
-    assert "✅ All 1 tool calls executed." in status_msg.content
-    assert "Tool call log" in status_msg.content
-    assert "Running tool: write ~/project/test.txt" in status_msg.content
-    assert "Success." in status_msg.content
+    # Expect two status messages: one for log, one for summary
+    status_messages = [m for m in response_thread if m.intent == ChatIntent.STATUS]
+    assert len(status_messages) == 2
+
+    log_msg = status_messages[0]
+    assert "Tool call log" in log_msg.content
+    assert "Running tool: write ~/project/test.txt" in log_msg.content
+    assert "Success." in log_msg.content
+
+    summary_msg = status_messages[1]
+    assert "✅ All 1 tool calls executed." in summary_msg.content
+
     assert (tmp_path / 'project/test.txt').read_text().strip() == 'content'
 
 def test_agent_project_summary(tmp_path: Path):

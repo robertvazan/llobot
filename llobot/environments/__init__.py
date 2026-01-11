@@ -23,8 +23,6 @@ context
     LLM context accumulator.
 prompt
     Current prompt message.
-status
-    Status messages.
 persistent
     Base class for persistent environment components.
 """

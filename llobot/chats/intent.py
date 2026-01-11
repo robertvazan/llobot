@@ -24,7 +24,8 @@ class ChatIntent(Enum):
             front-end.
         STATUS: Role-generated status messages (e.g., confirmations of actions
             taken or error reports), which are given this intent to ensure they
-            are prominently displayed in the chat UI.
+            are prominently displayed in the chat UI. Unlike system messages,
+            status messages are visible to the user.
     """
     SYSTEM = 'System'
     EXAMPLE_PROMPT = 'Example-Prompt'

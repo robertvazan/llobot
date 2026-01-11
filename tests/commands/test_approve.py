@@ -5,8 +5,8 @@ from llobot.chats.message import ChatMessage
 from llobot.chats.thread import ChatThread
 from llobot.commands.approve import handle_approve_command
 from llobot.environments import Environment
+from llobot.environments.context import ContextEnv
 from llobot.environments.prompt import PromptEnv
-from llobot.environments.status import StatusEnv
 from llobot.memories.examples import ExampleMemory
 
 def test_approve_command(tmp_path: Path):
@@ -24,10 +24,12 @@ def test_approve_command(tmp_path: Path):
     # Handle
     assert handle_approve_command('approve', env, examples)
 
-    # Check status
-    status = env[StatusEnv]
-    assert status.populated
-    assert status.content() == "✅ Example saved."
+    # Check context
+    context_env = env[ContextEnv]
+    messages = context_env.build().messages
+    assert len(messages) == 1
+    assert messages[0].intent == ChatIntent.STATUS
+    assert messages[0].content == "✅ Example saved."
 
     # Check saved example
     saved_examples = list(examples.recent(env))
@@ -57,8 +59,8 @@ def test_approve_command_full_chat(tmp_path: Path):
     # Handle
     assert handle_approve_command('approve', env, examples)
 
-    # Check status
-    assert env[StatusEnv].populated
+    # Check context
+    assert env[ContextEnv].populated
 
     # Check that only initial prompt and final response are saved
     saved_examples = list(examples.recent(env))
@@ -86,8 +88,8 @@ def test_approve_command_empty_stripped_prompt(tmp_path: Path):
     # Handle
     assert handle_approve_command('approve', env, examples)
 
-    # Check status
-    assert env[StatusEnv].populated
+    # Check context
+    assert env[ContextEnv].populated
 
     # Check that the initial prompt and last response were saved
     saved_examples = list(examples.recent(env))
