@@ -27,7 +27,7 @@ class PatchToolCall(ToolCall):
 
     @property
     def title(self) -> str:
-        return f"patch {self._path}"
+        return f"patch `{self._path}`"
 
     def execute(self, env: Environment):
         path = parse_path(self._path)
@@ -35,7 +35,7 @@ class PatchToolCall(ToolCall):
 
         original_content = project.read(path)
         if original_content is None:
-            raise FileNotFoundError(f"File not found: {path}")
+            raise FileNotFoundError(f"File not found: ~/{path}")
 
         content = normalize_document(original_content)
         hunks = self._parse_diff(self._diff)
@@ -81,7 +81,7 @@ class PatchToolCall(ToolCall):
         project.write(path, new_content)
 
         context_env = env[ContextEnv]
-        context_env.add(ChatMessage(ChatIntent.STATUS, f"Applied {len(hunks)} hunks to ~/{path}."))
+        context_env.add(ChatMessage(ChatIntent.STATUS, f"Applied {len(hunks)} hunks to `~/{path}`."))
 
         listing = self._format.render(path, new_content)
         context_env.add(ChatMessage(ChatIntent.SYSTEM, listing))

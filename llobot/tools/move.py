@@ -25,7 +25,7 @@ class MoveToolCall(ToolCall):
 
     @property
     def title(self) -> str:
-        return f"mv {self._source} {self._destination}"
+        return f"mv `{self._source}` `{self._destination}`"
 
     def execute(self, env: Environment):
         source = parse_path(self._source)
@@ -34,9 +34,9 @@ class MoveToolCall(ToolCall):
         context_env = env[ContextEnv]
         project = env[ProjectEnv].union
 
-        msg = f"Moved ~/{source} to ~/{destination}"
+        msg = f"Moved `~/{source}` to `~/{destination}`"
         if project.read(destination) is not None:
-            msg += f" (overwriting ~/{destination})"
+            msg += f" (overwriting `~/{destination}`)"
 
         project.move(source, destination)
         context_env.add(ChatMessage(ChatIntent.STATUS, msg))

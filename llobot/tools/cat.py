@@ -35,7 +35,7 @@ class CatToolCall(ToolCall):
 
     @property
     def title(self) -> str:
-        return f"cat {self._path}"
+        return f"cat `{self._path}`"
 
     def execute(self, env: Environment):
         path = parse_path(self._path)
@@ -66,8 +66,8 @@ class CatToolCall(ToolCall):
                     if any(listing in msg.content for msg in context):
                         continue
 
+                    context_env.add(ChatMessage(ChatIntent.STATUS, f"Reading also related `~/{p}`..."))
                     context_env.add(ChatMessage(ChatIntent.SYSTEM, listing))
-                    context_env.add(ChatMessage(ChatIntent.STATUS, f"Read also: ~/{p}"))
 
         # 2. Load target file
         content = project.read(path)
@@ -77,7 +77,7 @@ class CatToolCall(ToolCall):
         listing = self._format.render(path, content)
 
         if any(listing in msg.content for msg in context):
-            context_env.add(ChatMessage(ChatIntent.STATUS, f"File ~/{path} is already in the context."))
+            context_env.add(ChatMessage(ChatIntent.STATUS, f"File `~/{path}` is already in the context."))
             return
 
         context_env.add(ChatMessage(ChatIntent.SYSTEM, listing))

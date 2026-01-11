@@ -54,7 +54,7 @@ def test_remove_tool_execute(env: Environment):
 
     project = env[ProjectEnv].union
     assert project.read(PurePosixPath("myproject/a.txt")) is None
-    assert "Removed ~/myproject/a.txt" in env[ContextEnv].build().messages[0].content
+    assert "Removed `~/myproject/a.txt`" in env[ContextEnv].build().messages[0].content
 
 def test_remove_tool_no_match(env: Environment):
     tool = RemoveTool()

@@ -74,7 +74,7 @@ def test_move_tool_overwrite(env: Environment):
     call = MoveToolCall("~/myproject/a.txt", "~/myproject/b.txt")
     call.execute(env)
     log = "\n".join(m.content for m in env[ContextEnv].build().messages if m.intent == ChatIntent.STATUS)
-    assert "Moved ~/myproject/a.txt to ~/myproject/b.txt (overwriting ~/myproject/b.txt)" in log
+    assert "Moved `~/myproject/a.txt` to `~/myproject/b.txt` (overwriting `~/myproject/b.txt`)" in log
     assert project.read(PurePosixPath("myproject/b.txt")) == "content\n"
 
 def test_move_tool_no_match(env: Environment):

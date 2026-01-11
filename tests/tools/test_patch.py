@@ -72,7 +72,7 @@ def test_execute_simple_replacement(env, tmp_path):
     log = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.STATUS)
     output = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.SYSTEM)
 
-    assert "Applied 1 hunks to ~/test/file.txt." in log
+    assert "Applied 1 hunks to `~/test/file.txt`." in log
     assert "File: ~/test/file.txt" in output
     assert "modified" in output
 
@@ -112,7 +112,7 @@ def test_execute_multiple_hunks(env, tmp_path):
     context_messages = context_env.build().messages
     log = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.STATUS)
 
-    assert "Applied 2 hunks to ~/test/file.txt." in log
+    assert "Applied 2 hunks to `~/test/file.txt`." in log
 
 def test_execute_fail_not_found(env, tmp_path):
     (tmp_path / 'file.txt').write_text("A\nB\nC\n", encoding='utf-8')

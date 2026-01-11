@@ -26,7 +26,7 @@ class WriteToolCall(ToolCall):
 
     @property
     def title(self) -> str:
-        return f"write {self._path}"
+        return f"write `{self._path}`"
 
     def execute(self, env: Environment):
         path = parse_path(self._path)
@@ -37,7 +37,7 @@ class WriteToolCall(ToolCall):
                 raise ValueError(f"Content contains a line starting with {self._fence_length} or more backticks. Enclose the block in more backticks.")
 
         project.write(path, normalize_document(self._content))
-        env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"Written ~/{path}"))
+        env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"Written `~/{path}`"))
 
 _WRITE_DETAILS_RE = re.compile(
     r'^<details>\s*<summary>\s*Write:\s*(?P<path>.+?)\s*</summary>\s*'

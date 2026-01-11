@@ -23,13 +23,13 @@ class RemoveToolCall(ToolCall):
 
     @property
     def title(self) -> str:
-        return f"rm {self._path}"
+        return f"rm `{self._path}`"
 
     def execute(self, env: Environment):
         path = parse_path(self._path)
         project = env[ProjectEnv].union
         project.remove(path)
-        env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"Removed ~/{path}"))
+        env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"Removed `~/{path}`"))
 
 class RemoveTool(LineTool):
     """

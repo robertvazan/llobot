@@ -100,7 +100,9 @@ class ReplaceToolCall(ToolCall):
 
     @property
     def title(self) -> str:
-        return shlex.join(['sd', self._pattern, self._replacement, self._path])
+        # We manually quote the path in the title for display purposes
+        cmd = shlex.join(['sd', self._pattern, self._replacement])
+        return f"{cmd} `{self._path}`"
 
     def execute(self, env: Environment):
         path = parse_path(self._path)
@@ -126,7 +128,7 @@ class ReplaceToolCall(ToolCall):
             raise ValueError(f"Pattern not found in file: {self._pattern}")
 
         project.write(path, normalize_document(new_content))
-        env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"Replaced {count} matches in ~/{path}"))
+        env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"Replaced {count} matches in `~/{path}`"))
 
 
 class ReplaceTool(LineTool):

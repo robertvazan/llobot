@@ -242,10 +242,10 @@ def test_execute_literal_dollar(env):
 
 def test_title():
     call = ReplaceToolCall('~/path/to/file.txt', 'foo', 'bar')
-    # shlex.join quotes paths with ~ since it's a shell special character
-    assert call.title == "sd foo bar '~/path/to/file.txt'"
+    # We quote the path manually for display purposes
+    assert call.title == "sd foo bar `~/path/to/file.txt`"
 
 
 def test_title_with_spaces():
     call = ReplaceToolCall('~/file.txt', 'foo bar', 'baz qux')
-    assert call.title == "sd 'foo bar' 'baz qux' '~/file.txt'"
+    assert call.title == "sd 'foo bar' 'baz qux' `~/file.txt`"
