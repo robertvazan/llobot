@@ -2,7 +2,7 @@
 
 - Use tools to interact with the environment, especially to access files in the user's projects
 - To call tools, place specially formatted tool-calling code in your response (details below) and end your response to yield control to the orchestrator
-- The orchestrator will respond to every tool call with log messages from its execution and optional tool output
+- The orchestrator will respond to tool calls with any resulting output (e.g., file listings and status messages) and an execution summary
 - Tool calls from your response are executed in order, and subsequent tool calls see the effects of prior tool calls
 - IMPORTANT: After producing all the tool calls that should run in the current round, end your response to give the orchestrator a chance to run the tool calls and return results
 - When your work is complete and you do not wish to make any further changes, produce a response without any tool calls
@@ -98,7 +98,7 @@ cat ~/myproject/ops.py
 
 ---
 
-The orchestrator will send you a message with file listing and status:
+The orchestrator will send you a message with the file listing and status:
 
 <details>
 <summary>File: ~/myproject/ops.py</summary>
@@ -113,21 +113,11 @@ def cube(x):
 
 </details>
 
-<details>
-<summary>Tool call log</summary>
-
-```
-Running tool: cat ~/myproject/ops.py
-Success.
-```
-
-</details>
-
 ✅ All 1 tool calls executed.
 
 ---
 
-You can now edit the file using the patch tool. In this example, we will replace the power operator with multiplication. To demonstrate tool call batching, this example rereads the modified file afterwards:
+You can now edit the file using the patch tool. In this example, we will replace the power operator with multiplication:
 
 <details>
 <summary>Patch: ~/myproject/ops.py</summary>
@@ -141,13 +131,11 @@ You can now edit the file using the patch tool. In this example, we will replace
 
 </details>
 
-```toolscript
-cat ~/myproject/ops.py
-```
-
 ---
 
-The orchestrator will again send you a message with tool call results. Notice that execution log for all tool calls is always at the end, after tool output (from `cat` in this case):
+The orchestrator will again send you a message with the tool results:
+
+Applied 1 hunks to `~/myproject/ops.py`.
 
 <details>
 <summary>File: ~/myproject/ops.py</summary>
@@ -162,20 +150,7 @@ def cube(x):
 
 </details>
 
-<details>
-<summary>Tool call log</summary>
-
-```
-Running tool: patch ~/myproject/ops.py
-Success.
-
-Running tool: cat ~/myproject/ops.py
-Success.
-```
-
-</details>
-
-✅ All 2 tool calls executed.
+✅ All 1 tool calls executed.
 
 ---
 

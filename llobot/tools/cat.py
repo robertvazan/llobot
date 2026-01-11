@@ -66,7 +66,7 @@ class CatToolCall(ToolCall):
                     if any(listing in msg.content for msg in context):
                         continue
 
-                    context_env.add(ChatMessage(ChatIntent.STATUS, f"Reading also related `~/{p}`..."))
+                    context_env.add(ChatMessage(ChatIntent.SYSTEM, f"Reading also related `~/{p}`..."))
                     context_env.add(ChatMessage(ChatIntent.SYSTEM, listing))
 
         # 2. Load target file
