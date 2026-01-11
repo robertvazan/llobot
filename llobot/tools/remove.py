@@ -3,7 +3,10 @@ Tool for removing files.
 """
 from __future__ import annotations
 import shlex
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 from llobot.environments import Environment
+from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.formats.paths import parse_path
 from llobot.tools import ToolCall
@@ -26,6 +29,7 @@ class RemoveToolCall(ToolCall):
         path = parse_path(self._path)
         project = env[ProjectEnv].union
         project.remove(path)
+        env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"Removed ~/{path}"))
 
 class RemoveTool(LineTool):
     """

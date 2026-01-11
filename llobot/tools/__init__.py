@@ -36,7 +36,6 @@ script
 from __future__ import annotations
 from functools import cache
 from llobot.environments import Environment
-from llobot.environments.tools import ToolEnv
 from llobot.utils.values import ValueTypeMixin
 
 class ToolCall(ValueTypeMixin):
@@ -79,7 +78,10 @@ class ToolCall(ValueTypeMixin):
             self.execute(env)
             return True
         except Exception as e:
-            env[ToolEnv].log(f"Error executing: {e}")
+            from llobot.chats.intent import ChatIntent
+            from llobot.chats.message import ChatMessage
+            from llobot.environments.context import ContextEnv
+            env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"Error executing {self.title}: {e}"))
             return False
 
 class InvalidToolCall(ToolCall):

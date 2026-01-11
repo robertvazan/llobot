@@ -3,6 +3,9 @@ from typing import Iterable
 import pytest
 from llobot.environments import Environment
 from llobot.environments.tools import ToolEnv
+from llobot.environments.context import ContextEnv
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 from llobot.tools import InvalidToolCall, Tool, ToolCall
 from llobot.tools.block import BlockTool
 
@@ -50,7 +53,7 @@ def test_try_execute_success():
     env = Environment()
     call = SuccessToolCall()
     assert call.try_execute(env)
-    assert not env[ToolEnv].flush_log()
+    assert not env[ContextEnv].populated
 
 def test_try_execute_failure():
     class FailToolCall(ToolCall):
@@ -61,4 +64,4 @@ def test_try_execute_failure():
     env = Environment()
     call = FailToolCall()
     assert not call.try_execute(env)
-    assert "Error executing: oops" in env[ToolEnv].flush_log()
+    assert "Error executing fail: oops" in env[ContextEnv].build().messages[0].content

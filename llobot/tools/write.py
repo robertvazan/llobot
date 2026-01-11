@@ -4,7 +4,10 @@ Tool for writing files from document listings.
 from __future__ import annotations
 import re
 from typing import Iterable
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 from llobot.environments import Environment
+from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.formats.paths import parse_path
 from llobot.tools import ToolCall
@@ -34,6 +37,7 @@ class WriteToolCall(ToolCall):
                 raise ValueError(f"Content contains a line starting with {self._fence_length} or more backticks. Enclose the block in more backticks.")
 
         project.write(path, normalize_document(self._content))
+        env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"Written ~/{path}"))
 
 _WRITE_DETAILS_RE = re.compile(
     r'^<details>\s*<summary>\s*Write:\s*(?P<path>.+?)\s*</summary>\s*'

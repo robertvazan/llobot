@@ -1,9 +1,12 @@
 from __future__ import annotations
 from pathlib import PurePosixPath
 import pytest
+from llobot.chats.intent import ChatIntent
 from llobot.environments import Environment
+from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.tools import ToolEnv
+from llobot.chats.message import ChatMessage
 from llobot.tools.replace import ReplaceTool, ReplaceToolCall, rust_to_python_replacement
 
 
@@ -23,19 +26,18 @@ class MockProjectEnv:
         self.union = MockProject()
 
 
-class MockToolEnv:
+class MockContextEnv:
     def __init__(self):
-        self.log_messages = []
+        self.messages = []
 
-    def log(self, message: str):
-        self.log_messages.append(message)
-
+    def add(self, message: ChatMessage):
+        self.messages.append(message)
 
 @pytest.fixture
 def env():
     env = Environment()
     env._components[ProjectEnv] = MockProjectEnv()
-    env._components[ToolEnv] = MockToolEnv()
+    env._components[ContextEnv] = MockContextEnv()
     return env
 
 

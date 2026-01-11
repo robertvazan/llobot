@@ -53,8 +53,10 @@ def test_cat_tool_execute(env: Environment):
     call = CatToolCall("~/myproject/a.txt", standard_document_format(), overviews_subset())
     call.execute(env)
 
-    log = env[ToolEnv].flush_log()
-    output = env[ToolEnv].flush_output()
+    context_env = env[ContextEnv]
+    context_messages = context_env.build().messages
+    log = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.STATUS)
+    output = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.SYSTEM)
 
     assert "Read also: ~/myproject/README.md" in log
     # It should not contain the main file read log anymore
@@ -73,8 +75,9 @@ def test_cat_tool_execute_nested_overviews(env: Environment):
     call = CatToolCall("~/myproject/sub/c.txt", standard_document_format(), overviews_subset())
     call.execute(env)
 
-    log = env[ToolEnv].flush_log()
-    output = env[ToolEnv].flush_output()
+    context_env = env[ContextEnv]
+    context_messages = context_env.build().messages
+    log = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.STATUS)
 
     indices = [
         log.find("Read also: ~/myproject/README.md"),
@@ -92,11 +95,16 @@ def test_cat_tool_execute_deduplication(env: Environment):
     call = CatToolCall("~/myproject/a.txt", standard_document_format(), overviews_subset())
     call.execute(env)
 
-    log = env[ToolEnv].flush_log()
-    output = env[ToolEnv].flush_output()
+    context_env = env[ContextEnv]
+    context_messages = context_env.build().messages
+    log = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.STATUS)
+    # We only care about NEWLY ADDED system messages.
+    # The first message was added manually in the test setup.
+    new_system_messages = [m for m in context_messages[1:] if m.intent == ChatIntent.SYSTEM]
+    output = "\n".join(m.content for m in new_system_messages)
 
     assert "Read also: ~/myproject/README.md" in log
-    assert "File is already in the context." in log
+    assert "File ~/myproject/a.txt is already in the context." in log
 
     assert "File: ~/myproject/README.md" in output
     assert "content" not in output
@@ -109,7 +117,9 @@ def test_cat_tool_overview_deduplication(env: Environment):
     call = CatToolCall("~/myproject/a.txt", standard_document_format(), overviews_subset())
     call.execute(env)
 
-    log = env[ToolEnv].flush_log()
+    context_env = env[ContextEnv]
+    context_messages = context_env.build().messages
+    log = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.STATUS)
 
     assert "Read also: ~/myproject/README.md" not in log
 
@@ -117,7 +127,10 @@ def test_cat_tool_execute_python(env: Environment):
     call = CatToolCall("~/myproject/b.py", standard_document_format(), overviews_subset())
     call.execute(env)
 
-    output = env[ToolEnv].flush_output()
+    context_env = env[ContextEnv]
+    context_messages = context_env.build().messages
+    output = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.SYSTEM)
+
     # ExtensionLanguageMapping maps .py to python
     assert "```python" in output
     assert "print('hello')" in output
@@ -127,8 +140,10 @@ def test_cat_tool_missing_file_loads_overviews(env: Environment):
     with pytest.raises(ValueError, match="File not found"):
         call.execute(env)
 
-    log = env[ToolEnv].flush_log()
-    output = env[ToolEnv].flush_output()
+    context_env = env[ContextEnv]
+    context_messages = context_env.build().messages
+    log = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.STATUS)
+    output = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.SYSTEM)
 
     assert "Read also: ~/myproject/README.md" in log
     assert "File: ~/myproject/README.md" in output
@@ -138,12 +153,14 @@ def test_cat_tool_target_is_overview(env: Environment):
     call = CatToolCall("~/myproject/README.md", standard_document_format(), overviews_subset())
     call.execute(env)
 
-    log = env[ToolEnv].flush_log()
-    output = env[ToolEnv].flush_output()
+    context_env = env[ContextEnv]
+    context_messages = context_env.build().messages
+    log = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.STATUS)
+    output = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.SYSTEM)
 
     # Should read it only once
     assert "Read also: ~/myproject/README.md" not in log
-    assert "File is already in the context." not in log
+    assert "File ~/myproject/README.md is already in the context." not in log
     assert output.count("# Readme") == 1
 
 def test_cat_tool_no_match(env: Environment):

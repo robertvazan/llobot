@@ -2,6 +2,7 @@ import pytest
 from pathlib import Path, PurePosixPath
 from textwrap import dedent
 from llobot.environments import Environment
+from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.projects.directory import DirectoryProject
 from llobot.projects.library.predefined import PredefinedProjectLibrary
@@ -52,6 +53,7 @@ def test_write_tool_slice_and_parse(env: Environment):
     call.execute(env)
     project = env[ProjectEnv].union
     assert project.read(PurePosixPath("myproject/foo.txt")) == "content\nof the file\n"
+    assert "Written ~/myproject/foo.txt" in env[ContextEnv].build().messages[0].content
 
 def test_write_tool_slice_extra_whitespace(env: Environment):
     tool = WriteTool()

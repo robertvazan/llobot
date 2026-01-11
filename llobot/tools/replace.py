@@ -8,7 +8,10 @@ Replacement templates use Rust syntax, which is translated to Python syntax.
 from __future__ import annotations
 import re
 import shlex
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 from llobot.environments import Environment
+from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.formats.paths import parse_path
 from llobot.tools import ToolCall
@@ -123,6 +126,7 @@ class ReplaceToolCall(ToolCall):
             raise ValueError(f"Pattern not found in file: {self._pattern}")
 
         project.write(path, normalize_document(new_content))
+        env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"Replaced {count} matches in ~/{path}"))
 
 
 class ReplaceTool(LineTool):

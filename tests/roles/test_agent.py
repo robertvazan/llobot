@@ -154,9 +154,7 @@ def test_agent_accept_command(tmp_path: Path):
     assert len(status_messages) == 2
 
     log_msg = status_messages[0]
-    assert "Tool call log" in log_msg.content
-    assert "Running tool: write ~/project/test.txt" in log_msg.content
-    assert "Success." in log_msg.content
+    assert "Written ~/project/test.txt" in log_msg.content
 
     summary_msg = status_messages[1]
     assert "✅ All 1 tool calls executed." in summary_msg.content

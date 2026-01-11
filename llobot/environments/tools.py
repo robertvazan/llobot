@@ -9,65 +9,14 @@ if TYPE_CHECKING:
 
 class ToolEnv:
     """
-    Environment component for accumulating tool execution logs and managing tools.
-
-    This environment manages two streams of text produced by tools:
-    - Log: Internal execution details, errors, and status updates (via `log()`).
-    - Output: User-visible content produced by the tool, such as file listings (via `output()`).
+    Environment component for managing registered tools.
     """
-    _log: list[str]
-    _output: list[str]
     _tools: set[Tool]
     _cached_tools: list[Tool] | None
 
     def __init__(self):
-        self._log = []
-        self._output = []
         self._tools = set()
         self._cached_tools = None
-
-    def log(self, message: str):
-        """
-        Appends a message to the tool execution log.
-
-        Args:
-            message: The message to log.
-        """
-        self._log.append(message)
-
-    def flush_log(self) -> str:
-        """
-        Returns the accumulated log and clears the buffer.
-
-        Returns:
-            The joined log messages separated by newlines.
-        """
-        result = '\n'.join(self._log)
-        self._log.clear()
-        return result
-
-    def output(self, content: str):
-        """
-        Appends content to the tool execution output.
-
-        The output is intended to be displayed to the user, typically after the
-        execution log.
-
-        Args:
-            content: The content to append.
-        """
-        self._output.append(content)
-
-    def flush_output(self) -> str:
-        """
-        Returns the accumulated output and clears the buffer.
-
-        Returns:
-            The joined output strings separated by double newlines.
-        """
-        result = '\n\n'.join(self._output)
-        self._output.clear()
-        return result
 
     def register(self, tool: Tool):
         """

@@ -4,9 +4,11 @@ Tool for patching files using unified diffs.
 from __future__ import annotations
 import re
 from typing import Iterable
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 from llobot.environments import Environment
+from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
-from llobot.environments.tools import ToolEnv
 from llobot.formats.documents import DocumentFormat, standard_document_format
 from llobot.formats.paths import parse_path
 from llobot.tools import ToolCall
@@ -78,12 +80,11 @@ class PatchToolCall(ToolCall):
         new_content = normalize_document(current_content)
         project.write(path, new_content)
 
-        tool_env = env[ToolEnv]
-        tool_env.log(f"Applied {len(hunks)} hunks.")
-        tool_env.log(f"Adding modified file to the context...")
+        context_env = env[ContextEnv]
+        context_env.add(ChatMessage(ChatIntent.STATUS, f"Applied {len(hunks)} hunks to ~/{path}."))
 
         listing = self._format.render(path, new_content)
-        tool_env.output(listing)
+        context_env.add(ChatMessage(ChatIntent.SYSTEM, listing))
 
     def _parse_diff(self, diff: str) -> list[tuple[str, str]]:
         lines = diff.splitlines(keepends=True)

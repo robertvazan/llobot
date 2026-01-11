@@ -10,26 +10,6 @@ class MyBlockTool(BlockTool):
 class MyDummyTool(DummyTool):
     def skip(self, env, source, at): return 0
 
-def test_tool_env_log():
-    env = Environment()
-    tool_env = env[ToolEnv]
-
-    tool_env.log("message 1")
-    tool_env.log("message 2")
-
-    assert tool_env.flush_log() == "message 1\nmessage 2"
-    assert tool_env.flush_log() == ""
-
-def test_tool_env_output():
-    env = Environment()
-    tool_env = env[ToolEnv]
-
-    tool_env.output("output 1")
-    tool_env.output("output 2")
-
-    assert tool_env.flush_output() == "output 1\n\noutput 2"
-    assert tool_env.flush_output() == ""
-
 def test_tool_registry():
     env = Environment()
     tool_env = env[ToolEnv]

@@ -3,9 +3,11 @@ Tool for moving files.
 """
 from __future__ import annotations
 import shlex
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 from llobot.environments import Environment
+from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
-from llobot.environments.tools import ToolEnv
 from llobot.formats.paths import parse_path
 from llobot.tools import ToolCall
 from llobot.tools.line import LineTool
@@ -29,10 +31,15 @@ class MoveToolCall(ToolCall):
         source = parse_path(self._source)
         destination = parse_path(self._destination)
 
+        context_env = env[ContextEnv]
         project = env[ProjectEnv].union
+
+        msg = f"Moved ~/{source} to ~/{destination}"
         if project.read(destination) is not None:
-            env[ToolEnv].log(f"Warning: Overwriting ~/{destination}")
+            msg += f" (overwriting ~/{destination})"
+
         project.move(source, destination)
+        context_env.add(ChatMessage(ChatIntent.STATUS, msg))
 
 class MoveTool(LineTool):
     """

@@ -1,9 +1,10 @@
 from pathlib import PurePosixPath
 from textwrap import dedent
 import pytest
+from llobot.chats.intent import ChatIntent
 from llobot.environments import Environment
+from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
-from llobot.environments.tools import ToolEnv
 from llobot.projects.directory import DirectoryProject
 from llobot.formats.documents import standard_document_format
 from llobot.tools.patch import PatchTool, PatchToolCall
@@ -66,11 +67,12 @@ def test_execute_simple_replacement(env, tmp_path):
 
     assert (tmp_path / 'file.txt').read_text(encoding='utf-8') == "line1\nmodified\nline3\n"
 
-    tool_env = env[ToolEnv]
-    log = tool_env.flush_log()
-    assert "Applied 1 hunks." in log
-    assert "Adding modified file to the context..." in log
-    output = tool_env.flush_output()
+    context_env = env[ContextEnv]
+    context_messages = context_env.build().messages
+    log = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.STATUS)
+    output = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.SYSTEM)
+
+    assert "Applied 1 hunks to ~/test/file.txt." in log
     assert "File: ~/test/file.txt" in output
     assert "modified" in output
 
@@ -106,10 +108,11 @@ def test_execute_multiple_hunks(env, tmp_path):
 
     assert (tmp_path / 'file.txt').read_text(encoding='utf-8') == "Start\nB\nC\nD\nEnd\n"
 
-    tool_env = env[ToolEnv]
-    log = tool_env.flush_log()
-    assert "Applied 2 hunks." in log
-    assert "Adding modified file to the context..." in log
+    context_env = env[ContextEnv]
+    context_messages = context_env.build().messages
+    log = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.STATUS)
+
+    assert "Applied 2 hunks to ~/test/file.txt." in log
 
 def test_execute_fail_not_found(env, tmp_path):
     (tmp_path / 'file.txt').write_text("A\nB\nC\n", encoding='utf-8')

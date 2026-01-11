@@ -2,12 +2,12 @@
 Tool for reading files.
 """
 from __future__ import annotations
-from pathlib import PurePosixPath
 import shlex
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
-from llobot.environments.tools import ToolEnv
 from llobot.formats.documents import DocumentFormat, standard_document_format
 from llobot.formats.paths import parse_path
 from llobot.knowledge.subsets import KnowledgeSubset
@@ -41,8 +41,8 @@ class CatToolCall(ToolCall):
         path = parse_path(self._path)
 
         project = env[ProjectEnv].union
-        tool_env = env[ToolEnv]
-        context = env[ContextEnv].build()
+        context_env = env[ContextEnv]
+        context = context_env.build()
 
         # 1. Load overviews in parent directories, starting from root
         parents = list(path.parents)
@@ -66,8 +66,8 @@ class CatToolCall(ToolCall):
                     if any(listing in msg.content for msg in context):
                         continue
 
-                    tool_env.output(listing)
-                    tool_env.log(f"Read also: ~/{p}")
+                    context_env.add(ChatMessage(ChatIntent.SYSTEM, listing))
+                    context_env.add(ChatMessage(ChatIntent.STATUS, f"Read also: ~/{p}"))
 
         # 2. Load target file
         content = project.read(path)
@@ -77,10 +77,10 @@ class CatToolCall(ToolCall):
         listing = self._format.render(path, content)
 
         if any(listing in msg.content for msg in context):
-            tool_env.log("File is already in the context.")
+            context_env.add(ChatMessage(ChatIntent.STATUS, f"File ~/{path} is already in the context."))
             return
 
-        tool_env.output(listing)
+        context_env.add(ChatMessage(ChatIntent.SYSTEM, listing))
 
 class CatTool(LineTool):
     """

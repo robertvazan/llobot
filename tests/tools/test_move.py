@@ -1,9 +1,9 @@
 from pathlib import Path, PurePosixPath
-from textwrap import dedent
 import pytest
+from llobot.chats.intent import ChatIntent
 from llobot.environments import Environment
+from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
-from llobot.environments.tools import ToolEnv
 from llobot.projects.directory import DirectoryProject
 from llobot.projects.library.predefined import PredefinedProjectLibrary
 from llobot.tools.move import MoveTool, MoveToolCall
@@ -73,8 +73,8 @@ def test_move_tool_overwrite(env: Environment):
     project.write(PurePosixPath("myproject/b.txt"), "old content")
     call = MoveToolCall("~/myproject/a.txt", "~/myproject/b.txt")
     call.execute(env)
-    log = env[ToolEnv].flush_log()
-    assert "Warning: Overwriting ~/myproject/b.txt" in log
+    log = "\n".join(m.content for m in env[ContextEnv].build().messages if m.intent == ChatIntent.STATUS)
+    assert "Moved ~/myproject/a.txt to ~/myproject/b.txt (overwriting ~/myproject/b.txt)" in log
     assert project.read(PurePosixPath("myproject/b.txt")) == "content\n"
 
 def test_move_tool_no_match(env: Environment):

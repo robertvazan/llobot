@@ -1,9 +1,10 @@
 from pathlib import Path, PurePosixPath
 from textwrap import dedent
 import pytest
+from llobot.chats.intent import ChatIntent
 from llobot.environments import Environment
 from llobot.environments.projects import ProjectEnv
-from llobot.environments.tools import ToolEnv
+from llobot.environments.context import ContextEnv
 from llobot.projects.directory import DirectoryProject
 from llobot.projects.library.predefined import PredefinedProjectLibrary
 from llobot.tools.remove import RemoveTool, RemoveToolCall
@@ -53,6 +54,7 @@ def test_remove_tool_execute(env: Environment):
 
     project = env[ProjectEnv].union
     assert project.read(PurePosixPath("myproject/a.txt")) is None
+    assert "Removed ~/myproject/a.txt" in env[ContextEnv].build().messages[0].content
 
 def test_remove_tool_no_match(env: Environment):
     tool = RemoveTool()

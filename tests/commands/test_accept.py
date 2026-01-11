@@ -78,30 +78,18 @@ def test_accept_command_success(tmp_path: Path):
     context_env = env[ContextEnv]
     assert context_env.populated
     context_messages = context_env.build().messages
-    # 1. Output from cat
-    # 2. Log details
-    # 3. Summary
-    assert len(context_messages) == 3
-    assert context_messages[0].intent == ChatIntent.SYSTEM
-    assert "File: ~/myproject/file3.txt" in context_messages[0].content
-    assert "content3" in context_messages[0].content
+    assert len(context_messages) == 4
+    assert context_messages[0].intent == ChatIntent.STATUS
+    assert "Written ~/myproject/file2.txt" in context_messages[0].content
 
     assert context_messages[1].intent == ChatIntent.STATUS
-    assert "Tool call log" in context_messages[1].content
-    # Check strict formatting and separation
-    expected_log_fragment = (
-        "Running tool: write ~/myproject/file2.txt\n"
-        "Success.\n"
-        "\n"
-        "Running tool: rm ~/myproject/file1.txt\n"
-        "Success.\n"
-        "\n"
-        "Running tool: cat ~/myproject/file3.txt"
-    )
-    assert expected_log_fragment in context_messages[1].content
+    assert "Removed ~/myproject/file1.txt" in context_messages[1].content
 
-    assert context_messages[2].intent == ChatIntent.STATUS
-    assert "✅ All 3 tool calls executed." in context_messages[2].content
+    assert context_messages[2].intent == ChatIntent.SYSTEM
+    assert "File: ~/myproject/file3.txt" in context_messages[2].content
+
+    assert context_messages[3].intent == ChatIntent.STATUS
+    assert "✅ All 3 tool calls executed." in context_messages[3].content
 
 def test_accept_command_failure(tmp_path: Path):
     # Setup project
@@ -141,10 +129,8 @@ def test_accept_command_failure(tmp_path: Path):
     assert len(context_messages) == 2
 
     content = context_messages[0].content
-    assert "Running tool: rm ~/myproject/nonexistent.txt" in content
-    assert "Error executing:" in content
-    assert "Failed." in content
-    assert "Error executing:" in content
+    assert "Error executing rm ~/myproject/nonexistent.txt" in content
+    assert "No such file or directory" in content
 
     assert "❌ 0 of 1 tool calls executed." in context_messages[1].content
 
