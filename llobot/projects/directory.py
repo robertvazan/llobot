@@ -229,13 +229,12 @@ class DirectoryProject(Project, ValueTypeMixin):
             script: The shell script to execute.
 
         Returns:
-            The combined stdout and stderr of the script.
+            The combined stdout and stderr of the script, followed by the exit code.
 
         Raises:
             PermissionError: If the project is not executable or the path is
                              outside the project prefix.
             FileNotFoundError: If the working directory does not exist.
-            RuntimeError: If the script fails (non-zero exit code).
         """
         if not self.executable(path):
             raise PermissionError(f"Path is not executable in this project: {path}")
@@ -248,20 +247,22 @@ class DirectoryProject(Project, ValueTypeMixin):
         if not real_path.is_dir():
             raise FileNotFoundError(f"Working directory not found: {path}")
 
-        try:
-            result = subprocess.run(
-                script,
-                shell=True,
-                executable='/bin/bash',
-                cwd=real_path,
-                check=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True
-            )
-            return result.stdout
-        except subprocess.CalledProcessError as e:
-            raise RuntimeError(f"Script execution failed with exit code {e.returncode}:\n{e.stdout}")
+        result = subprocess.run(
+            script,
+            shell=True,
+            executable='/bin/bash',
+            cwd=real_path,
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True
+        )
+
+        output = result.stdout
+        if output and not output.endswith('\n'):
+            output += '\n'
+        output += f"Exit code: {result.returncode}\n"
+        return output
 
 __all__ = [
     'DirectoryProject',

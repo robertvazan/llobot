@@ -270,7 +270,7 @@ def test_directory_project_executable(tmp_path: Path):
 
     # Test execute
     output = project.execute(PurePosixPath("p"), "echo hello")
-    assert output.strip() == "hello"
+    assert output.strip() == "hello\nExit code: 0"
 
     # Test execute with cwd
     output = project.execute(PurePosixPath("p/subdir"), "pwd")
@@ -281,9 +281,8 @@ def test_directory_project_executable(tmp_path: Path):
         project.execute(PurePosixPath("p/nonexistent"), "pwd")
 
     # Test execute failing script
-    with pytest.raises(RuntimeError) as excinfo:
-        project.execute(PurePosixPath("p"), "exit 1")
-    assert "exit code 1" in str(excinfo.value)
+    output = project.execute(PurePosixPath("p"), "exit 1")
+    assert "Exit code: 1" in output
 
     # Test summary
     assert "executable" in project.summary[0]

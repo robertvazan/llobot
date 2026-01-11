@@ -104,6 +104,7 @@ def test_editor_system_prompt(tmp_path: Path):
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "@project_a some prompt")])
     response = get_response_content(record_stream(editor.chat(prompt)))
 
-    assert "Tools" in response
-    assert "New or modified file" in response
-    assert "Tool script" in response
+    assert "## Tools" in response
+    assert "### Script tool" in response
+    assert "### Write tool" in response
+    assert "### Apply patch" in response

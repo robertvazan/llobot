@@ -224,10 +224,11 @@ class Project:
 
         Returns:
             The standard output of the script (combined with standard error).
+            Implementations should append the exit code to the output and must
+            not raise an exception solely because the exit code is non-zero.
 
         Raises:
             PermissionError: If the path is not allowed for execution.
-            RuntimeError: If the script fails (non-zero exit code).
             NotImplementedError: If the project type does not support execution.
         """
         if not self.executable(path):
