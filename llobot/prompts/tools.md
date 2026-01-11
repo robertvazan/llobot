@@ -7,11 +7,12 @@
 - IMPORTANT: After producing all the tool calls that should run in the current round, end your response to give the orchestrator a chance to run the tool calls and return results
 - When your work is complete and you do not wish to make any further changes, produce a response without any tool calls
 
-### Tool script
+### Script tool
 
-There is no way to run arbitrary programs, but you can run built-in commands by outputting a "tool script":
+There is no way to run arbitrary programs, but you can run built-in commands by outputting a script tool call:
 
-```toolscript
+```shell
+#!scripttool
 # Read file (also reads relevant directory overviews)
 cat ~/path/to/file.txt
 # Remove file
@@ -22,6 +23,7 @@ mv ~/original/location.md ~/path/to/destination.md
 sd old new ~/path/to/file.txt
 ```
 
+- Tool script is a Markdown code block with `#!scripttool` on the first line
 - Tool scripts can contain only `cat`, `rm`, `mv`, and `sd` commands in the exact form shown above and without options
 - You can optionally include comments starting with `#`
 - All commands can be applied only to individual files, not entire directories
@@ -92,7 +94,8 @@ To modify an existing file, output a patch tool call with simplified unified dif
 
 Suppose you want to edit file `~/myproject/ops.py`. You first respond with a tool script to read it:
 
-```toolscript
+```shell
+#!scripttool
 cat ~/myproject/ops.py
 ```
 

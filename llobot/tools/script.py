@@ -13,15 +13,14 @@ class ScriptTool(FencedTool):
     """
     A tool that executes multiple line-based commands within a fenced code block.
 
-    It uses `toolscript` as the default language. It delegates parsing of each
-    line to registered `LineTool`s.
+    It requires `#!scripttool` as the first line of the block.
+    It delegates parsing of each line to registered `LineTool`s.
     """
     def __init__(self):
-        super().__init__('toolscript')
+        super().__init__(language=None)
 
     def matches_content(self, env: Environment, source: str) -> bool:
-        # We accept any content that parses as a fenced block, and validate lines later.
-        return True
+        return source.startswith('#!scripttool\n')
 
     def parse_content(self, env: Environment, source: str) -> Iterable[ToolCall]:
         lines = source.splitlines()

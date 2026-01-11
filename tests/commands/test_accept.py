@@ -51,7 +51,8 @@ def test_accept_command_success(tmp_path: Path):
 
         </details>
 
-        ```toolscript
+        ```shell
+        #!scripttool
         rm ~/myproject/file1.txt
         cat ~/myproject/file3.txt
         ```
@@ -107,7 +108,8 @@ def test_accept_command_failure(tmp_path: Path):
 
     # Setup prompt with a model response containing a failing tool call
     response_content = textwrap.dedent("""
-        ```toolscript
+        ```shell
+        #!scripttool
         rm ~/myproject/nonexistent.txt
         ```
     """)
