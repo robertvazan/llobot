@@ -1,5 +1,8 @@
 from __future__ import annotations
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 from llobot.environments import Environment
+from llobot.environments.context import ContextEnv
 from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.retrievals import RetrievalsEnv
 from llobot.knowledge.subsets import KnowledgeSubset
@@ -33,11 +36,22 @@ def assume_overview_retrieval_commands(env: Environment, *, overviews: Knowledge
     all_overviews = knowledge & overviews
     overview_tree = coerce_tree(all_overviews)
 
+    newly_added = set()
+    current_retrievals = retrievals.get()
+
     for path in retrieved_paths:
         for parent in path.parents:
             parent_tree = overview_tree[parent]
             for overview in parent_tree.file_paths:
-                retrievals.add(overview)
+                if overview not in current_retrievals and overview not in newly_added:
+                    retrievals.add(overview)
+                    newly_added.add(overview)
+
+    if newly_added:
+        lines = ["Reading also related files:"]
+        for path in sorted(newly_added):
+            lines.append(f"- `~/{path}`")
+        env[ContextEnv].add(ChatMessage(ChatIntent.SYSTEM, "\n".join(lines)))
 
 
 __all__ = [

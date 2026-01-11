@@ -3,8 +3,11 @@ Command to retrieve documents by wildcard path pattern.
 """
 from __future__ import annotations
 import re
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 from llobot.commands import handle_commands
 from llobot.environments import Environment
+from llobot.environments.context import ContextEnv
 from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.retrievals import RetrievalsEnv
 from llobot.knowledge.subsets.parsing import parse_pattern
@@ -33,6 +36,7 @@ def handle_wildcard_retrieval_command(text: str, env: Environment) -> bool:
     if '*' not in text and '?' not in text:
         return False
 
+    original_text = text
     if text.startswith('~/'):
         text = '/' + text[2:]
 
@@ -43,6 +47,12 @@ def handle_wildcard_retrieval_command(text: str, env: Environment) -> bool:
     if matches:
         for match in matches:
             env[RetrievalsEnv].add(match)
+
+        lines = [f"Resolved `{original_text}` to:"]
+        for match in sorted(matches):
+            lines.append(f"- `~/{match}`")
+        env[ContextEnv].add(ChatMessage(ChatIntent.SYSTEM, "\n".join(lines)))
+
         return True
 
     return False

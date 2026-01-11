@@ -3,8 +3,11 @@ Command to retrieve a document by path.
 """
 from __future__ import annotations
 import re
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 from llobot.commands import handle_commands
 from llobot.environments import Environment
+from llobot.environments.context import ContextEnv
 from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.retrievals import RetrievalsEnv
 from llobot.knowledge.subsets.parsing import parse_pattern
@@ -30,6 +33,7 @@ def handle_solo_retrieval_command(text: str, env: Environment) -> bool:
     if not _PATH_RE.fullmatch(text):
         return False
 
+    original_text = text
     if text.startswith('~/'):
         text = '/' + text[2:]
 
@@ -39,6 +43,7 @@ def handle_solo_retrieval_command(text: str, env: Environment) -> bool:
 
     if len(matches) == 1:
         env[RetrievalsEnv].add(matches[0])
+        env[ContextEnv].add(ChatMessage(ChatIntent.SYSTEM, f"Resolved `{original_text}` to `~/{matches[0]}`."))
         return True
 
     return False
