@@ -20,8 +20,7 @@ def env(tmp_path: Path) -> Environment:
 def test_script_tool_slice_and_parse(env: Environment):
     tool = ScriptTool()
     text = dedent("""
-        ```shell
-        #!scripttool
+        ```scripttool
         rm ~/a.txt
         mv ~/b.txt ~/c.txt
         ```
@@ -38,8 +37,7 @@ def test_script_tool_slice_and_parse(env: Environment):
 def test_script_tool_comments_and_empty_lines(env: Environment):
     tool = ScriptTool()
     text = dedent("""
-        ```
-        #!scripttool
+        ```scripttool
         # This is a comment
 
         rm ~/a.txt
@@ -50,10 +48,10 @@ def test_script_tool_comments_and_empty_lines(env: Environment):
     assert len(calls) == 1
     assert isinstance(calls[0], RemoveToolCall)
 
-def test_script_tool_missing_shebang(env: Environment):
+def test_script_tool_wrong_language(env: Environment):
     tool = ScriptTool()
     text = dedent("""
-        ```toolscript
+        ```shell
         rm ~/a.txt
         ```
     """).strip()
@@ -64,8 +62,7 @@ def test_script_tool_missing_shebang(env: Environment):
 def test_script_tool_invalid_command(env: Environment):
     tool = ScriptTool()
     text = dedent("""
-        ```bash
-        #!scripttool
+        ```scripttool
         rm ~/a.txt
         unknown cmd
         ```
@@ -80,8 +77,7 @@ def test_script_tool_invalid_command(env: Environment):
 def test_script_tool_invalid_argument(env: Environment):
     tool = ScriptTool()
     text = dedent("""
-        ```shell
-        #!scripttool
+        ```scripttool
         rm a.txt
         ```
     """).strip()
@@ -106,8 +102,7 @@ def test_script_tool_matches_line_exception(env: Environment):
 
     tool = ScriptTool()
     text = dedent("""
-        ```
-        #!scripttool
+        ```scripttool
         crash this
         ```
     """).strip()

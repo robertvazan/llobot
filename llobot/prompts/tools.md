@@ -9,10 +9,9 @@
 
 ### Script tool
 
-There is no way to run arbitrary programs, but you can run built-in commands by outputting a fenced code block with a script tool call:
+There is no way to run arbitrary programs, but you can run built-in commands by outputting a fenced code block with `scripttool` language identifier:
 
 ```scripttool
-#!scripttool
 # Read file (also reads relevant directory overviews)
 cat ~/path/to/file.txt
 # Remove file
@@ -23,9 +22,7 @@ mv ~/original/location.md ~/path/to/destination.md
 sd old new ~/path/to/file.txt
 ```
 
-- Script tool call MUST be enclosed in a Markdown code block
-- The first line inside the code block MUST be exactly `#!scripttool`
-- IMPORTANT: Script tool calls must be enclosed in a Markdown code block to be recognized
+- Script tool call MUST be enclosed in a Markdown code block with `scripttool` language identifier
 - Script tool supports only `cat`, `rm`, `mv`, and `sd` commands in the exact form shown above and without options
 - You can optionally include comments starting with `#`
 - All commands can be applied only to individual files, not entire directories
@@ -97,7 +94,6 @@ To modify an existing file, output a patch tool call with simplified unified dif
 Suppose you want to edit file `~/myproject/ops.py`. You first respond with a script tool call to read it:
 
 ```scripttool
-#!scripttool
 cat ~/myproject/ops.py
 ```
 
