@@ -86,6 +86,8 @@ def handle_accept_command(text: str, env: Environment) -> bool:
 
     context_env.add(ChatMessage(ChatIntent.STATUS, summary_line))
 
+    prompt_env.swallow()
+
     return True
 
 def handle_accept_commands(env: Environment):

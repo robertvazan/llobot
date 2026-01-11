@@ -43,6 +43,7 @@ def handle_approve_command(text: str, env: Environment, examples: ExampleMemory)
 
     examples.save(example, env)
     env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, "✅ Example saved."))
+    prompt_env.swallow()
 
     return True
 

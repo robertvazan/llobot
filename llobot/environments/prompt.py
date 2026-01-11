@@ -12,14 +12,17 @@ class PromptEnv:
 
     The session ID is a short hash of the initial prompt message. This component
     also provides access to the full prompt thread and to the content of the
-    current (last) prompt message.
+    current (last) prompt message. It also tracks whether the prompt has been
+    "swallowed" by a command, which signals that the agent should stop processing.
     """
     _full: ChatThread
     _hash: str | None
+    _swallowed: bool
 
     def __init__(self):
         self._full = ChatThread()
         self._hash = None
+        self._swallowed = False
 
     def set(self, prompt: ChatThread):
         """
@@ -38,6 +41,7 @@ class PromptEnv:
             self._hash = b64[:40]
         else:
             self._hash = None
+        self._swallowed = False
 
     @property
     def hash(self) -> str | None:
@@ -70,6 +74,21 @@ class PromptEnv:
         if not self._full:
             return ''
         return self._full[-1].content
+
+    @property
+    def swallowed(self) -> bool:
+        """
+        Whether the prompt has been swallowed by a command.
+
+        If true, the agent should not query the model for a response.
+        """
+        return self._swallowed
+
+    def swallow(self) -> None:
+        """
+        Swallows the prompt, preventing the agent from querying the model.
+        """
+        self._swallowed = True
 
 __all__ = [
     'PromptEnv',

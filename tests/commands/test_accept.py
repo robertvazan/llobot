@@ -72,6 +72,8 @@ def test_accept_command_success(tmp_path: Path):
     assert (project_dir / "file2.txt").is_file()
     assert (project_dir / "file2.txt").read_text() == "new content\n"
 
+    assert env[PromptEnv].swallowed
+
     # Verify context messages
     context_env = env[ContextEnv]
     assert context_env.populated
@@ -131,6 +133,7 @@ def test_accept_command_failure(tmp_path: Path):
     # Execute command
     handled = handle_accept_command("accept", env)
     assert handled
+    assert env[PromptEnv].swallowed
 
     # Verify context messages
     context_env = env[ContextEnv]

@@ -23,6 +23,7 @@ def test_approve_command(tmp_path: Path):
 
     # Handle
     assert handle_approve_command('approve', env, examples)
+    assert env[PromptEnv].swallowed
 
     # Check context
     context_env = env[ContextEnv]
@@ -58,6 +59,7 @@ def test_approve_command_full_chat(tmp_path: Path):
 
     # Handle
     assert handle_approve_command('approve', env, examples)
+    assert env[PromptEnv].swallowed
 
     # Check context
     assert env[ContextEnv].populated

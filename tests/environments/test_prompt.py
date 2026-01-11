@@ -15,6 +15,7 @@ def test_prompt_env_empty():
     assert env.full == ChatThread()
     assert env.current == ''
     assert env.hash is None
+    assert not env.swallowed
 
 def test_prompt_env_set():
     env = PromptEnv()
@@ -31,6 +32,15 @@ def test_prompt_env_set():
     assert env.hash is not None
     assert len(env.hash) == 40
     assert env.hash == _session_hash(initial)
+
+def test_prompt_env_swallow():
+    env = PromptEnv()
+    assert not env.swallowed
+    env.swallow()
+    assert env.swallowed
+
+    env.set(ChatThread())
+    assert not env.swallowed
 
 def test_prompt_env_set_empty_prompt():
     env = PromptEnv()
