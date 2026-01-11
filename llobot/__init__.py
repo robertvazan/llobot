@@ -30,6 +30,32 @@ prompts
     Reusable sections for building system prompts.
 roles
     Definitions of different bot personalities and capabilities (e.g., Coder).
+tools
+    File manipulation and system interaction tools for roles.
 utils
     Core utilities for text, time, and filesystem operations.
+
+Dependency Order
+----------------
+
+The subpackages depend on each other. To avoid circular dependencies and ensure
+clean architecture, they are organized in the following order of dependency,
+from most fundamental to most dependent. Code in a subpackage should generally
+only import from subpackages that appear earlier in this list. Imports from
+subpackages that appear later in this list are allowed but should generally be
+local imports.
+
+- utils
+- chats
+- knowledge
+- prompts
+- formats
+- models
+- projects
+- memories
+- crammers
+- environments
+- tools
+- commands
+- roles
 """
