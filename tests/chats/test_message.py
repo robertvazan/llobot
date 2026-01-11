@@ -6,7 +6,7 @@ def test_properties():
     msg = ChatMessage(ChatIntent.PROMPT, "Hello")
     assert msg.intent == ChatIntent.PROMPT
     assert msg.content == "Hello"
-    assert msg.cost == len("Hello") + 10
+    assert msg.cost == len("Hello") + 4
 
 def test_equality():
     """Tests equality and hashing."""

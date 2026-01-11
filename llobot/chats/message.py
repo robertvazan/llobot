@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from llobot.chats.stream import ChatStream
 
 # Guesstimate of how many chars are consumed per message by typical chat format.
-MESSAGE_OVERHEAD: int = 10
+MESSAGE_OVERHEAD: int = 4
 
 class ChatMessage(ValueTypeMixin):
     """

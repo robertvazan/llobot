@@ -29,11 +29,32 @@ def test_binarize_chat_merging():
 
     # SYSTEM, PROMPT, STATUS -> PROMPT group
     assert binarized[0].intent == ChatIntent.PROMPT
+    # Mixed original intents use the separator, except SYSTEM/STATUS
     assert binarized[0].content == "sys|p1|stat"
 
     # RESPONSE -> RESPONSE group
     assert binarized[1].intent == ChatIntent.RESPONSE
     assert binarized[1].content == "r1"
+
+def test_binarize_chat_smart_merging():
+    """Tests smart merging of same original intents and system/status."""
+    fmt = SeparatorBinarizationFormat(separator='|')
+    chat = ChatThread([
+        ChatMessage(ChatIntent.PROMPT, "p1"),
+        ChatMessage(ChatIntent.PROMPT, "p2"),
+        ChatMessage(ChatIntent.SYSTEM, "sys"),
+        ChatMessage(ChatIntent.STATUS, "stat"),
+        ChatMessage(ChatIntent.PROMPT, "p3"),
+    ])
+
+    binarized = fmt.binarize_chat(chat)
+    assert len(binarized) == 1
+
+    # p1 + \n\n + p2 (same original intent)
+    # + | + sys (different intent)
+    # + \n\n + stat (sys/stat rule)
+    # + | + p3 (different intent)
+    assert binarized[0].content == "p1\n\np2|sys\n\nstat|p3"
 
 def test_binarize_chat_alternating():
     """Tests that alternating messages are preserved."""

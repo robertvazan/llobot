@@ -56,13 +56,13 @@ def test_budget():
     assert builder.budget == 100
     assert builder.unused == 100
 
-    builder.add(ChatMessage(ChatIntent.PROMPT, "12345")) # cost = 5 + 10 = 15
-    assert builder.cost == 15
-    assert builder.unused == 85
+    builder.add(ChatMessage(ChatIntent.PROMPT, "12345")) # cost = 5 + 4 = 9
+    assert builder.cost == 9
+    assert builder.unused == 91
 
-    builder.add(ChatMessage(ChatIntent.RESPONSE, "1234567890")) # cost = 10 + 10 = 20
-    assert builder.cost == 35
-    assert builder.unused == 65
+    builder.add(ChatMessage(ChatIntent.RESPONSE, "1234567890")) # cost = 10 + 4 = 14
+    assert builder.cost == 23
+    assert builder.unused == 77
 
 def test_mark_and_undo():
     """Tests mark and undo functionality."""

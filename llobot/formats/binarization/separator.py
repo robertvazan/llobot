@@ -16,7 +16,9 @@ class SeparatorBinarizationFormat(BinarizationFormat, ValueTypeMixin):
     It maps SYSTEM, EXAMPLE_PROMPT, PROMPT, and STATUS to PROMPT.
     It maps EXAMPLE_RESPONSE and RESPONSE to RESPONSE.
 
-    Consecutive messages that map to the same intent are joined with a separator.
+    Consecutive messages that map to the same intent are joined. If they originate
+    from the same intent (or both are SYSTEM/STATUS), they are joined with an
+    empty line ('\n\n'). Otherwise, they are joined with the configured separator.
     Empty or whitespace-only messages are discarded.
     """
     _separator: str
@@ -43,6 +45,9 @@ class SeparatorBinarizationFormat(BinarizationFormat, ValueTypeMixin):
 
     def binarize_chat(self, chat: ChatThread) -> ChatThread:
         messages: list[ChatMessage] = []
+        last_original_intent: ChatIntent | None = None
+        system_status = {ChatIntent.SYSTEM, ChatIntent.STATUS}
+
         for message in chat:
             # Skip empty or whitespace-only messages
             if not message.content or not message.content.strip():
@@ -51,13 +56,20 @@ class SeparatorBinarizationFormat(BinarizationFormat, ValueTypeMixin):
             binarized = self.binarize_message(message)
             if not messages:
                 messages.append(binarized)
+                last_original_intent = message.intent
             else:
                 last = messages[-1]
                 if last.intent == binarized.intent:
-                    new_content = last.content + self._separator + binarized.content
+                    is_same_source = (message.intent == last_original_intent) or \
+                                     (message.intent in system_status and last_original_intent in system_status)
+                    sep = '\n\n' if is_same_source else self._separator
+
+                    new_content = last.content + sep + binarized.content
                     messages[-1] = ChatMessage(last.intent, new_content)
+                    last_original_intent = message.intent
                 else:
                     messages.append(binarized)
+                    last_original_intent = message.intent
         return ChatThread(messages)
 
 __all__ = [
