@@ -1,4 +1,5 @@
 from __future__ import annotations
+import subprocess
 from pathlib import Path, PurePosixPath
 from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.knowledge.subsets.standard import blacklist_subset, whitelist_subset
@@ -19,6 +20,7 @@ class DirectoryProject(Project, ValueTypeMixin):
     _whitelist: KnowledgeSubset
     _blacklist: KnowledgeSubset
     _mutable: bool
+    _executable: bool
 
     def __init__(
         self,
@@ -28,6 +30,7 @@ class DirectoryProject(Project, ValueTypeMixin):
         whitelist: KnowledgeSubset | None = None,
         blacklist: KnowledgeSubset | None = None,
         mutable: bool = False,
+        executable: bool = False,
     ):
         """
         Initializes a new DirectoryProject.
@@ -40,6 +43,7 @@ class DirectoryProject(Project, ValueTypeMixin):
             whitelist: A custom whitelist subset for this project.
             blacklist: A custom blacklist subset for this project.
             mutable: If `True`, the project allows write operations. Defaults to `False`.
+            executable: If `True`, the project allows script execution. Defaults to `False`.
         """
         self._directory = Path(directory).expanduser().absolute()
 
@@ -60,6 +64,7 @@ class DirectoryProject(Project, ValueTypeMixin):
         self._whitelist = whitelist or whitelist_subset()
         self._blacklist = blacklist or blacklist_subset()
         self._mutable = mutable
+        self._executable = executable
 
     @property
     def prefixes(self) -> set[PurePosixPath]:
@@ -72,6 +77,8 @@ class DirectoryProject(Project, ValueTypeMixin):
             parts.append("mutable")
         else:
             parts.append("read-only")
+        if self._executable:
+            parts.append("executable")
 
         expected_path = Path.home() / self._prefix
         if self._directory != expected_path:
@@ -203,6 +210,58 @@ class DirectoryProject(Project, ValueTypeMixin):
 
         create_parents(real_dest)
         real_source.rename(real_dest)
+
+    def executable(self, path: PurePosixPath) -> bool:
+        """
+        Checks if the path is executable.
+
+        A path is executable if the project is configured as executable and the
+        path is within the project's prefix.
+        """
+        return self._executable and self._to_local_path(path) is not None
+
+    def execute(self, path: PurePosixPath, script: str) -> str:
+        """
+        Executes a shell script in the project directory.
+
+        Args:
+            path: The project path to use as working directory.
+            script: The shell script to execute.
+
+        Returns:
+            The combined stdout and stderr of the script.
+
+        Raises:
+            PermissionError: If the project is not executable or the path is
+                             outside the project prefix.
+            FileNotFoundError: If the working directory does not exist.
+            RuntimeError: If the script fails (non-zero exit code).
+        """
+        if not self.executable(path):
+            raise PermissionError(f"Path is not executable in this project: {path}")
+
+        local_path = self._to_local_path(path)
+        # This should not happen if executable() check passed
+        assert local_path, f"Path {path} is not under project prefix despite executable() check passing"
+        real_path = self._directory / local_path
+
+        if not real_path.is_dir():
+            raise FileNotFoundError(f"Working directory not found: {path}")
+
+        try:
+            result = subprocess.run(
+                script,
+                shell=True,
+                executable='/bin/bash',
+                cwd=real_path,
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True
+            )
+            return result.stdout
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError(f"Script execution failed with exit code {e.returncode}:\n{e.stdout}")
 
 __all__ = [
     'DirectoryProject',

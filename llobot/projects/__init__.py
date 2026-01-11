@@ -199,6 +199,41 @@ class Project:
         self.write(destination, content)
         self.remove(source)
 
+    def executable(self, path: PurePosixPath) -> bool:
+        """
+        Checks whether the given path can be used as a working directory for execution.
+
+        Args:
+            path: The path to check.
+
+        Returns:
+            `True` if execution is allowed in this path, `False` otherwise.
+        """
+        return False
+
+    def execute(self, path: PurePosixPath, script: str) -> str:
+        """
+        Executes a script in the context of the project at the given path.
+
+        The script is executed with the current working directory set to the
+        resolved filesystem path corresponding to the given project path.
+
+        Args:
+            path: The working directory for the script (project-internal path).
+            script: The script content to execute (Linux shell).
+
+        Returns:
+            The standard output of the script (combined with standard error).
+
+        Raises:
+            PermissionError: If the path is not allowed for execution.
+            RuntimeError: If the script fails (non-zero exit code).
+            NotImplementedError: If the project type does not support execution.
+        """
+        if not self.executable(path):
+            raise PermissionError(f"Path is not allowed for execution: {path}")
+        raise NotImplementedError(f"Project type {self.__class__.__name__} does not support execution.")
+
 type ProjectPrecursor = Project | PurePosixPath | Path | str
 
 def coerce_project(precursor: ProjectPrecursor) -> Project:

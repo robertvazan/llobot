@@ -31,6 +31,7 @@ class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
     _whitelist: KnowledgeSubset | None
     _blacklist: KnowledgeSubset | None
     _mutable: bool
+    _executable: bool
     _parents: bool
 
     def __init__(
@@ -40,6 +41,7 @@ class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
         whitelist: KnowledgeSubset | None = None,
         blacklist: KnowledgeSubset | None = None,
         mutable: bool = False,
+        executable: bool = False,
         parents: bool = True,
     ):
         """
@@ -50,6 +52,7 @@ class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
             whitelist: A whitelist to pass to created `DirectoryProject` instances.
             blacklist: A blacklist to pass to created `DirectoryProject` instances.
             mutable: If `True`, created projects allow write operations.
+            executable: If `True`, created projects allow script execution.
             parents: If `True`, the library also returns shallow projects for
                 ancestor directories of any matched project. Defaults to `True`.
         """
@@ -57,6 +60,7 @@ class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
         self._whitelist = whitelist
         self._blacklist = blacklist
         self._mutable = mutable
+        self._executable = executable
         self._parents = parents
 
     def _default_prefix(self, directory: Path, zone: PurePosixPath) -> PurePosixPath:
@@ -86,6 +90,7 @@ class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
             whitelist=self._whitelist,
             blacklist=self._blacklist,
             mutable=self._mutable,
+            executable=self._executable,
         )
 
     def lookup(self, key: str) -> list[Project]:

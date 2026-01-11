@@ -114,3 +114,23 @@ def test_home_project_library_mutable(tmp_path: Path):
     with pytest.raises(PermissionError):
         immutable_project.write(PurePosixPath('project3/another.txt'), 'fail')
     assert not (tmp_path / 'project3' / 'another.txt').exists()
+
+
+def test_home_project_library_executable(tmp_path: Path):
+    (tmp_path / 'project4').mkdir()
+
+    # Test executable=True
+    exec_lib = HomeProjectLibrary(tmp_path, executable=True, parents=False)
+    exec_project = exec_lib.lookup('project4')[0]
+
+    assert isinstance(exec_project, DirectoryProject)
+    assert exec_project.executable(PurePosixPath('project4'))
+    assert exec_project.execute(PurePosixPath('project4'), 'echo hello').strip() == 'hello'
+
+    # Test default is not executable
+    noexec_lib = HomeProjectLibrary(tmp_path, parents=False)
+    noexec_project = noexec_lib.lookup('project4')[0]
+
+    assert not noexec_project.executable(PurePosixPath('project4'))
+    with pytest.raises(PermissionError):
+        noexec_project.execute(PurePosixPath('project4'), 'echo hello')

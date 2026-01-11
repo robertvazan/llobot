@@ -250,3 +250,40 @@ def test_directory_project_summary(tmp_path: Path):
 
     # Test home-relative assumption
     assert len(project.summary) == 1
+
+def test_directory_project_executable(tmp_path: Path):
+    project_dir = tmp_path / "exec_project"
+    project_dir.mkdir()
+    (project_dir / "subdir").mkdir()
+
+    # Test executable=False
+    project = DirectoryProject(project_dir, prefix="p", executable=False)
+    assert not project.executable(PurePosixPath("p/subdir"))
+    with pytest.raises(PermissionError):
+        project.execute(PurePosixPath("p/subdir"), "echo hello")
+
+    # Test executable=True
+    project = DirectoryProject(project_dir, prefix="p", executable=True)
+    assert project.executable(PurePosixPath("p"))
+    assert project.executable(PurePosixPath("p/subdir"))
+    assert not project.executable(PurePosixPath("q"))
+
+    # Test execute
+    output = project.execute(PurePosixPath("p"), "echo hello")
+    assert output.strip() == "hello"
+
+    # Test execute with cwd
+    output = project.execute(PurePosixPath("p/subdir"), "pwd")
+    assert str(project_dir / "subdir") in output
+
+    # Test execute with non-existent cwd
+    with pytest.raises(FileNotFoundError):
+        project.execute(PurePosixPath("p/nonexistent"), "pwd")
+
+    # Test execute failing script
+    with pytest.raises(RuntimeError) as excinfo:
+        project.execute(PurePosixPath("p"), "exit 1")
+    assert "exit code 1" in str(excinfo.value)
+
+    # Test summary
+    assert "executable" in project.summary[0]

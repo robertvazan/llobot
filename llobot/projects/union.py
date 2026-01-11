@@ -130,6 +130,23 @@ class UnionProject(Project, ValueTypeMixin):
             # Fallback to base implementation for cross-project moves
             super().move(source, destination)
 
+    def executable(self, path: PurePosixPath) -> bool:
+        """
+        Checks if a path is executable by delegating to the appropriate member project.
+        """
+        project = self._find_project(path)
+        return project.executable(path) if project else False
+
+    def execute(self, path: PurePosixPath, script: str) -> str:
+        """
+        Executes a script by delegating to the appropriate member project.
+        """
+        if not self.executable(path):
+            raise PermissionError(f"Path is not executable: {path}")
+        project = self._find_project(path)
+        # There must be a project if executable() succeeded.
+        assert project, f"Path {path} is executable but has no project."
+        return project.execute(path, script)
 
 def union_project(*projects: Project) -> Project:
     """

@@ -93,6 +93,27 @@ class ShallowProject(Project, ValueTypeMixin):
             raise PermissionError(f"Path is not shallow: {path}")
         self._project.remove(path)
 
+    def executable(self, path: PurePosixPath) -> bool:
+        """
+        Checks if a path is executable.
+
+        Only the project prefixes themselves are considered executable in a
+        shallow project, as subdirectories are not exposed.
+        """
+        return path in self.prefixes and self._project.executable(path)
+
+    def execute(self, path: PurePosixPath, script: str) -> str:
+        """
+        Executes a script if the path is a project prefix.
+
+        Raises:
+            PermissionError: If the path is not a prefix.
+                             Executability is checked by the underlying project.
+        """
+        if path not in self.prefixes:
+            raise PermissionError(f"Path is not a prefix in shallow project: {path}")
+        return self._project.execute(path, script)
+
 __all__ = [
     'ShallowProject',
 ]

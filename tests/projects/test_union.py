@@ -196,3 +196,23 @@ def test_union_project_summary():
     assert len(summary) == 2
     assert "MockProject p1" in summary
     assert "MockProject p2" in summary
+
+def test_union_project_execution(tmp_path: Path):
+    dir1 = tmp_path / "p1"
+    dir1.mkdir()
+    dir2 = tmp_path / "p2"
+    dir2.mkdir()
+
+    p1 = DirectoryProject(dir1, prefix="p1", executable=True)
+    p2 = DirectoryProject(dir2, prefix="p2", executable=False)
+    union = union_project(p1, p2)
+
+    assert union.executable(PurePosixPath("p1"))
+    assert not union.executable(PurePosixPath("p2"))
+
+    # Execute in p1
+    assert union.execute(PurePosixPath("p1"), "echo hi").strip() == "hi"
+
+    # Execute in p2 should fail
+    with pytest.raises(PermissionError):
+        union.execute(PurePosixPath("p2"), "echo hi")
