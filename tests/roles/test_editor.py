@@ -3,18 +3,11 @@ from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
 from llobot.chats.stream import record_stream
 from llobot.chats.thread import ChatThread
-from tests.mock_model import MockModel
+from tests.models.mock import MockModel
 from llobot.projects.directory import DirectoryProject
 from llobot.projects.library.predefined import PredefinedProjectLibrary
 from llobot.roles.editor import Editor
 from llobot.utils.fs import write_text
-
-def get_response_content(thread: ChatThread) -> str:
-    """Helper to extract model response content from the thread."""
-    for msg in thread:
-        if msg.intent == ChatIntent.RESPONSE:
-            return msg.content
-    return ""
 
 def setup_test_project(tmp_path: Path) -> tuple[Path, PredefinedProjectLibrary]:
     """Sets up a test project with files."""
@@ -32,44 +25,46 @@ def setup_test_project(tmp_path: Path) -> tuple[Path, PredefinedProjectLibrary]:
 
 def test_editor_project_selection(tmp_path: Path):
     """Tests that Editor includes file index when a project is selected."""
-    projects_dir, library = setup_test_project(tmp_path)
+    _, library = setup_test_project(tmp_path)
     model = MockModel('echo')
     editor = Editor('editor', model, projects=library, session_history=tmp_path / "sessions")
 
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "@project_a List files")])
-    response = get_response_content(record_stream(editor.chat(prompt)))
+    record_stream(editor.chat(prompt))
+    context = model.history[0]
 
     # The index should list files
-    assert "- README.md" in response
-    assert "- src/" in response
-    assert "- main.py" in response
+    assert "- README.md" in context
+    assert "- src/" in context
+    assert "- main.py" in context
 
 def test_editor_file_retrieval(tmp_path: Path):
     """Tests that Editor retrieves specific files when mentioned."""
-    projects_dir, library = setup_test_project(tmp_path)
+    _, library = setup_test_project(tmp_path)
     model = MockModel('echo')
     editor = Editor('editor', model, projects=library, session_history=tmp_path / "sessions")
 
     # Select project and retrieve a specific file
     prompt1 = ChatThread([ChatMessage(ChatIntent.PROMPT, "@project_a @src/main.py Read code")])
-    thread1 = record_stream(editor.chat(prompt1))
-    response1 = get_response_content(thread1)
+    record_stream(editor.chat(prompt1))
+    context = model.history[0]
 
     # The content should be present
-    assert "File: ~/project_a/src/main.py" in response1
-    assert "print('hello')" in response1
+    assert "File: ~/project_a/src/main.py" in context
+    assert "print('hello')" in context
 
 def test_editor_wildcard_retrieval(tmp_path: Path):
     """Tests that Editor retrieves files matching wildcard patterns."""
-    projects_dir, library = setup_test_project(tmp_path)
+    _, library = setup_test_project(tmp_path)
     model = MockModel('echo')
     editor = Editor('editor', model, projects=library, session_history=tmp_path / "sessions")
 
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "@project_a @tests/*.py Read tests")])
-    response = get_response_content(record_stream(editor.chat(prompt)))
+    record_stream(editor.chat(prompt))
+    context = model.history[0]
 
-    assert "File: ~/project_a/tests/test_main.py" in response
-    assert "def test(): pass" in response
+    assert "File: ~/project_a/tests/test_main.py" in context
+    assert "def test(): pass" in context
 
 def test_editor_overviews(tmp_path: Path):
     """Tests that Editor automatically includes ancestor overview files."""
@@ -87,24 +82,26 @@ def test_editor_overviews(tmp_path: Path):
 
     # Access a file deep in the hierarchy
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "@project_b @doc/api.py")])
-    response = get_response_content(record_stream(editor.chat(prompt)))
+    record_stream(editor.chat(prompt))
+    context = model.history[0]
 
     # Check that overviews are pulled in automatically
-    assert "File: ~/project_b/README.md" in response
-    assert "Main Overview" in response
-    assert "File: ~/project_b/doc/README.md" in response
-    assert "Doc Overview" in response
-    assert "File: ~/project_b/doc/api.py" in response
+    assert "File: ~/project_b/README.md" in context
+    assert "Main Overview" in context
+    assert "File: ~/project_b/doc/README.md" in context
+    assert "Doc Overview" in context
+    assert "File: ~/project_b/doc/api.py" in context
 
 def test_editor_system_prompt(tmp_path: Path):
     """Tests that Editor includes the tool usage instructions in its prompt."""
-    projects_dir, library = setup_test_project(tmp_path)
+    _, library = setup_test_project(tmp_path)
     model = MockModel('echo')
     editor = Editor('editor', model, projects=library, session_history=tmp_path / "sessions")
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "@project_a some prompt")])
-    response = get_response_content(record_stream(editor.chat(prompt)))
+    record_stream(editor.chat(prompt))
+    context = model.history[0]
 
-    assert "## Tools" in response
-    assert "### Script tool" in response
-    assert "### Write tool" in response
-    assert "### Apply patch" in response
+    assert "## Tools" in context
+    assert "### Script tool" in context
+    assert "### Write tool" in context
+    assert "### Apply patch" in context

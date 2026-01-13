@@ -2,24 +2,25 @@
 A mock model for testing.
 """
 from __future__ import annotations
+from typing import Iterable
 from llobot.models import Model
 from llobot.chats.thread import ChatThread
 from llobot.chats.intent import ChatIntent
 from llobot.chats.stream import ChatStream
-from llobot.formats.monolithic import MonolithicFormat, standard_monolithic_format
 from llobot.utils.values import ValueTypeMixin
 
 class MockModel(Model, ValueTypeMixin):
     """
-    A model that simply echoes back the monolithic content of the prompt.
+    A model that records prompts and returns a canned response.
     """
     _name: str
     _context_budget: int
-    _format: MonolithicFormat
+    _response: str
+    _history: list[ChatThread]
 
     def __init__(self, name: str, *,
         context_budget: int = 100_000,
-        format: MonolithicFormat | None = None,
+        response: str = "Mock response",
     ):
         """
         Initializes the mock model.
@@ -27,12 +28,12 @@ class MockModel(Model, ValueTypeMixin):
         Args:
             name: The name for this model instance.
             context_budget: The context budget to report.
-            format: The format to use for rendering the prompt.
-                    Defaults to the standard monolithic format.
+            response: The response to return from generate().
         """
         self._name = name
         self._context_budget = context_budget
-        self._format = format if format is not None else standard_monolithic_format()
+        self._response = response
+        self._history = []
 
     @property
     def name(self) -> str:
@@ -42,20 +43,27 @@ class MockModel(Model, ValueTypeMixin):
     def context_budget(self) -> int:
         return self._context_budget
 
+    @property
+    def history(self) -> tuple[ChatThread, ...]:
+        """Returns the list of prompts received by generate()."""
+        return tuple(self._history)
+
     def generate(self, prompt: ChatThread) -> ChatStream:
         """
-        Generates a response by returning the prompt's content as a stream.
+        Records the prompt and yields the configured response.
 
         Args:
-            prompt: The chat thread to echo.
+            prompt: The chat thread to respond to.
 
         Returns:
-            A `ChatStream` containing the monolithic prompt content.
+            A `ChatStream` containing the canned response.
         """
-        content = self._format.render(prompt)
-        if content:
-            yield ChatIntent.RESPONSE
-            yield content
+        self._history.append(prompt)
+        yield ChatIntent.RESPONSE
+        yield self._response
+
+    def _ephemeral_fields(self) -> Iterable[str]:
+        return ['_history']
 
 __all__ = [
     'MockModel',

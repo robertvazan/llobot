@@ -3,7 +3,7 @@ from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
 from llobot.chats.stream import record_stream
 from llobot.chats.thread import ChatThread
-from tests.mock_model import MockModel
+from tests.models.mock import MockModel
 from llobot.roles.imitator import Imitator
 
 def get_response_content(thread: ChatThread) -> str:
@@ -14,7 +14,7 @@ def get_response_content(thread: ChatThread) -> str:
     return ""
 
 def test_imitator_approve(tmp_path: Path):
-    model = MockModel('echo')
+    model = MockModel('echo', response="Say B")
     # Imitator saves examples to example_history.
     imitator = Imitator('imitator', model,
                         example_history=tmp_path / "examples",
@@ -42,14 +42,11 @@ def test_imitator_approve(tmp_path: Path):
     # 3. Verify example is used in subsequent chat
     # Start a fresh chat.
     prompt_new = ChatThread([ChatMessage(ChatIntent.PROMPT, "New task")])
-    thread_new = record_stream(imitator.chat(prompt_new))
-    response_new = get_response_content(thread_new)
+    record_stream(imitator.chat(prompt_new))
+    context_new = model.history[-1]
 
-    # The example should be stuffed into context.
-    # Since the previous response (from MockModel) contained "Say B", and the prompt was "Say B",
-    # The example saved is Prompt: "Say B", Response: "... Say B ...".
-    # Checking for "Say B" presence covers both.
-    assert "Say B" in response_new
+    # The example should be stuffed into context
+    assert "Say B" in context_new
 
 def test_imitator_approve_correction(tmp_path: Path):
     model = MockModel('echo')
@@ -76,11 +73,12 @@ def test_imitator_approve_correction(tmp_path: Path):
 
     # Verify correction
     prompt_new = ChatThread([ChatMessage(ChatIntent.PROMPT, "New task")])
-    response_new = get_response_content(record_stream(imitator.chat(prompt_new)))
+    record_stream(imitator.chat(prompt_new))
+    context_new = model.history[-1]
 
     # The stuffed example should contain the corrected response "C"
     # Example format typically:
     # Example-Prompt: Say C
     # Example-Response: C
-    assert "Say C" in response_new
-    assert "C" in response_new
+    assert "Say C" in context_new
+    assert "C" in context_new

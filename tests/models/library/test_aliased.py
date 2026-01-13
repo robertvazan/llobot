@@ -1,5 +1,5 @@
 import pytest
-from tests.mock_model import MockModel
+from tests.models.mock import MockModel
 from llobot.models.library.aliased import AliasedModelLibrary
 
 def test_aliased_model_library():

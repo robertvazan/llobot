@@ -1,4 +1,4 @@
-from tests.mock_model import MockModel
+from tests.models.mock import MockModel
 from llobot.models.library.empty import EmptyModelLibrary
 from llobot.models.library.named import NamedModelLibrary
 from llobot.models.library.union import UnionModelLibrary

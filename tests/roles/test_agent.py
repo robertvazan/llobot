@@ -7,16 +7,9 @@ from llobot.chats.message import ChatMessage
 from llobot.chats.stream import record_stream
 from llobot.chats.thread import ChatThread
 from llobot.environments.projects import ProjectEnv
-from tests.mock_model import MockModel
+from tests.models.mock import MockModel
 from llobot.roles.agent import Agent
 from llobot.tools.write import WriteTool
-
-def get_response_content(thread: ChatThread) -> str:
-    """Helper to extract model response content from the thread."""
-    for msg in thread:
-        if msg.intent == ChatIntent.RESPONSE:
-            return msg.content
-    return ""
 
 def get_session_hash(prompt: ChatThread) -> str:
     """Helper to compute session hash from a prompt thread."""
@@ -77,11 +70,13 @@ def test_agent_reminder(tmp_path: Path):
     agent = Agent('agent', model, prompt="System.\n- IMPORTANT: Do this.", session_history=tmp_path)
 
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "Hi")])
-    response = get_response_content(record_stream(agent.chat(prompt)))
+    record_stream(agent.chat(prompt))
+
+    context = model.history[0]
 
     # Reminder should be extracted and included
-    assert "Reminder:" in response
-    assert "- Do this." in response
+    assert "Reminder:" in context
+    assert "- Do this." in context
 
 def test_agent_coercion(tmp_path: Path):
     """Tests that Agent coerces context to match altered history."""
@@ -104,12 +99,14 @@ def test_agent_coercion(tmp_path: Path):
     # Agent should load context from session "Original", then detect mismatch,
     # truncate, and append the new history.
     stream2 = agent.chat(prompt2)
-    response2 = get_response_content(record_stream(stream2))
+    record_stream(stream2)
 
-    # The MockModel echoes the context. We expect "Edited" to be present, and the response from turn 1 to be gone.
-    assert "Edited" in response2
-    assert "Original" in response2 # The first prompt is still there
-    assert "New Response" in response2
+    context = model.history[-1]
+
+    # We expect "Edited" to be present, and the response from turn 1 to be gone.
+    assert "Edited" in context
+    assert "Original" in context # The first prompt is still there
+    assert "New Response" in context
 
 def test_agent_accept_command(tmp_path: Path):
     """Tests that Agent can execute tool calls with @accept command."""
@@ -171,8 +168,6 @@ def test_agent_project_summary(tmp_path: Path):
     from llobot.projects.library.predefined import PredefinedProjectLibrary
     library = PredefinedProjectLibrary({'myproject': project})
 
-    agent = Agent('agent', model, session_history=tmp_path, projects=library)
-
     # We need to manually select the project in the environment for it to appear in summary
     # Typically this is done by a command, but we can simulate it by subclassing or just relying
     # on the fact that if we don't have commands, no project is selected unless we force it.
@@ -183,7 +178,8 @@ def test_agent_project_summary(tmp_path: Path):
 
     agent = PreselectedAgent('agent', model, session_history=tmp_path, projects=library)
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "Hello")])
-    response = get_response_content(record_stream(agent.chat(prompt)))
+    record_stream(agent.chat(prompt))
+    context = model.history[0]
 
-    assert "Projects:" in response
-    assert "- Marker `~/myproject`" in response
+    assert "Projects:" in context
+    assert "- Marker `~/myproject`" in context

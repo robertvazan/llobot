@@ -2,7 +2,7 @@ from llobot.commands.model import handle_model_commands
 from llobot.environments import Environment
 from llobot.environments.commands import CommandsEnv
 from llobot.environments.model import ModelEnv
-from tests.mock_model import MockModel
+from tests.models.mock import MockModel
 from llobot.models.library.named import NamedModelLibrary
 
 default_model = MockModel('default')

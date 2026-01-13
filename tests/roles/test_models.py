@@ -2,13 +2,13 @@ from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
 from llobot.chats.stream import record_stream
 from llobot.chats.thread import ChatThread
-from tests.mock_model import MockModel
+from tests.models.mock import MockModel
 from llobot.roles.chatbot import Chatbot
 from llobot.roles.models import RoleModel
 
 def test_role_model_wrapper():
     # Setup
-    base_model = MockModel('echo')
+    base_model = MockModel('echo', response="Mock Response")
     role = Chatbot('bot', base_model, prompt="SYS")
     role_model = RoleModel(role)
 
@@ -22,13 +22,12 @@ def test_role_model_wrapper():
     assert len(response) == 1
     content = response[0].content
 
-    # Verify content
-    # The RoleModel wraps the output of Chatbot (which wraps output of MockModel)
-    # Chatbot sends [System(SYS), Prompt(Hi)] to MockModel.
-    # MockModel returns "SYS\n\n---\n\nHi".
-    # RoleModel should yield this content (via submessage format if needed, but plain string here).
-    assert "SYS" in content
-    assert "Hi" in content
+    assert content == "Mock Response"
+
+    # Verify that the role properly constructed the context passed to the model
+    context = base_model.history[0]
+    assert "SYS" in context
+    assert "Hi" in context
 
 def test_role_model_exception_handling():
     # Create a broken role
