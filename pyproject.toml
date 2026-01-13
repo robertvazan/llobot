@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "llobot"
+version = "0.1.0"
+description = "Llobot is a LLM library and a LLM tool that makes it easier to build simple conversational LLM applications or bots."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { file = "LICENSE" }
+authors = [
+  { name = "Robert Važan" },
+]
+dependencies = [
+    "anthropic==0.68.0",
+    "google-genai==1.46.0",
+    "openai==1.109.1",
+    "requests==2.32.5",
+]
+
+[project.urls]
+Homepage = "https://github.com/robertvazan/llobot"
+Repository = "https://github.com/robertvazan/llobot"
+Issues = "https://github.com/robertvazan/llobot/issues"
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.4.2",
+]

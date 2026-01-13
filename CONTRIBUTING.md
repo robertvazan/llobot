@@ -43,7 +43,23 @@ The project root directory is organized as follows:
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): This file, containing guidelines for contributors.
 - [`Containerfile`](Containerfile): Definition of the development container environment.
 - `LICENSE` & `COPYRIGHT`: Project licensing and legal information.
-- [`requirements.txt`](requirements.txt): A list of Python package dependencies for the project.
+- [`pyproject.toml`](pyproject.toml): Project metadata and dependencies.
+
+## Development
+
+This project uses [uv](https://github.com/astral-sh/uv) for dependency management and virtual environments.
+
+To sync dependencies and create a virtual environment:
+
+```bash
+uv sync --all-extras
+```
+
+To run tests:
+
+```bash
+uv run pytest
+```
 
 ## Architecture
 

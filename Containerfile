@@ -3,7 +3,6 @@
 # Build args:
 # - APT_PROXY: Optional apt-get proxy
 # - PIP_INDEX_URL: Optional PyPI index URL
-# - PIP_TRUSTED_HOST: Optional trusted host for PyPI
 # - DEV_USER: Unprivileged user in the container (defaults to rv)
 
 FROM docker.io/library/ubuntu:25.10
@@ -65,23 +64,26 @@ RUN echo '--no-require-git' > "$RIPGREP_CONFIG_PATH" && \
     echo 'shopt -s globstar' >> ~/.bashrc && \
     echo 'PS1="(dev) \[\033[01;33m\]\w\[\033[00m\]\\$ "' >> ~/.bashrc
 
-# Configure pip to use cache if provided.
+# Configure pip and uv to use cache if provided.
 # This affects both the build and subsequent usage of the container.
 ARG PIP_INDEX_URL=""
-ARG PIP_TRUSTED_HOST=""
 RUN if [ -n "$PIP_INDEX_URL" ]; then \
+    # Derive host from URL
+    PIP_TRUSTED_HOST=$(echo "$PIP_INDEX_URL" | sed -E 's|https?://([^:/]+).*|\1|'); \
+    # Configure pip
     mkdir -p ~/.config/pip && \
     echo "[global]" > ~/.config/pip/pip.conf && \
     echo "index-url = $PIP_INDEX_URL" >> ~/.config/pip/pip.conf && \
-    if [ -n "$PIP_TRUSTED_HOST" ]; then \
-        echo "trusted-host = $PIP_TRUSTED_HOST" >> ~/.config/pip/pip.conf; \
-    fi; \
+    echo "trusted-host = $PIP_TRUSTED_HOST" >> ~/.config/pip/pip.conf; \
+    # Configure uv
+    mkdir -p ~/.config/uv && \
+    echo "allow-insecure-host = [\"$PIP_TRUSTED_HOST\"]" > ~/.config/uv/uv.toml && \
+    echo "[[index]]" >> ~/.config/uv/uv.toml && \
+    echo "url = \"$PIP_INDEX_URL\"" >> ~/.config/uv/uv.toml && \
+    echo "default = true" >> ~/.config/uv/uv.toml; \
     fi
 
-# Install dependencies.
-# We use --break-system-packages because we are in a container and we want
-# packages to be available globally (or user-globally) without activating venv.
-COPY requirements.txt /tmp/requirements.txt
-RUN pip install --break-system-packages --user -r /tmp/requirements.txt
+# Install uv.
+RUN python3 -m pip install --no-cache-dir --user uv --break-system-packages
 
 CMD ["sleep", "infinity"]
