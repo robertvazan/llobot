@@ -180,3 +180,63 @@ def test_system_start_no_implicit_response():
     assert rendered.strip().startswith("[//]: # (System)")
     parsed = formatter.parse(rendered)
     assert parsed == chat
+
+def test_render_stream_buffers_status():
+    """Test that STATUS messages are buffered and yielded as a single chunk."""
+    # Input stream with a fragmented status message
+    stream = [
+        ChatIntent.STATUS,
+        "Status ",
+        "update ",
+        "in ",
+        "chunks.",
+        ChatIntent.RESPONSE,
+        "Response ",
+        "stream."
+    ]
+
+    result = list(formatter.render_stream(stream))
+
+    # Filter strings to check chunking
+    result_strings = [x for x in result if isinstance(x, str) and x]
+
+    status_body = "Status update in chunks."
+
+    # Verify the full body exists as a single token
+    assert status_body in result_strings, "Status body should be present as a single string"
+
+    # Verify original chunks are NOT present individually
+    assert "Status " not in result_strings
+    assert "update " not in result_strings
+    assert "in " not in result_strings
+    assert "chunks." not in result_strings
+
+def test_render_stream_does_not_buffer_response():
+    """Test that RESPONSE messages are NOT buffered."""
+    stream = [
+        ChatIntent.RESPONSE,
+        "Chunk 1",
+        "Chunk 2"
+    ]
+
+    result = list(formatter.render_stream(stream))
+    strings = [x for x in result if isinstance(x, str)]
+
+    assert "Chunk 1" in strings
+    assert "Chunk 2" in strings
+    assert "Chunk 1Chunk 2" not in strings
+
+def test_render_stream_buffers_status_with_newlines():
+    """Test buffering of STATUS messages containing newlines."""
+    stream = [
+        ChatIntent.STATUS,
+        "Line 1\n",
+        "Line 2"
+    ]
+
+    result = list(formatter.render_stream(stream))
+    strings = [x for x in result if isinstance(x, str)]
+
+    expected_body = "Line 1\nLine 2"
+
+    assert expected_body in strings

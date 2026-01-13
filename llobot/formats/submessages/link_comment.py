@@ -1,6 +1,5 @@
 from __future__ import annotations
 import re
-from typing import Iterator
 from llobot.chats.builder import ChatBuilder
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
@@ -190,6 +189,29 @@ class LinkCommentSubmessageFormat(SubmessageFormat, ValueTypeMixin):
 
             at_start_of_line = False
 
+    def _join_status_chunks(self, stream: ChatStream) -> ChatStream:
+        """
+        Buffers and joins all chunks inside status messages.
+        """
+        buffer: list[str] = []
+        is_status = False
+
+        for item in stream:
+            if isinstance(item, ChatIntent):
+                if buffer:
+                    yield ''.join(buffer)
+                    buffer.clear()
+
+                yield item
+                is_status = (item == ChatIntent.STATUS)
+            elif is_status:
+                buffer.append(item)
+            else:
+                yield item
+
+        if buffer:
+            yield ''.join(buffer)
+
     def render_stream(self, stream: ChatStream) -> ChatStream:
         """
         Renders a model stream into a single message stream using link-comment delimiters.
@@ -208,6 +230,7 @@ class LinkCommentSubmessageFormat(SubmessageFormat, ValueTypeMixin):
         stream = self._split_tokens(stream)
         stream = self._join_comment_tokens(stream)
         stream = self._escape_stream(stream)
+        stream = self._join_status_chunks(stream)
 
         for item in stream:
             if isinstance(item, ChatIntent):
