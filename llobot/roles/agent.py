@@ -120,8 +120,6 @@ class Agent(Role):
         Args:
             env: The environment to process commands in.
         """
-        handle_model_commands(env)
-
         self.handle_setup(env)
 
         if not env[ContextEnv].populated:
@@ -136,14 +134,14 @@ class Agent(Role):
         """
         Hook for subclasses to prepare the environment before stuffing.
 
-        This is called after project and model commands are handled but before the
-        context is stuffed. It can be used to populate environment components
-        that `stuff` depends on, such as loading a knowledge base.
+        This is called before the context is stuffed. It can be used to
+        populate environment components that `stuff` depends on, such as
+        selecting model, project, and loading a knowledge base.
 
         Args:
             env: The environment to prepare.
         """
-        pass
+        handle_model_commands(env)
 
     def stuff(self, env: Environment):
         """
