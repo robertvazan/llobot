@@ -41,6 +41,7 @@ The project root directory is organized as follows:
 - [`tests/`](tests/): Unit tests for the library. The directory structure within `tests/` mirrors that of the `llobot/` package.
 - [`README.md`](README.md): A general overview of the project, its features, and a getting-started guide.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): This file, containing guidelines for contributors.
+- [`Containerfile`](Containerfile): Definition of the development container environment.
 - `LICENSE` & `COPYRIGHT`: Project licensing and legal information.
 - [`requirements.txt`](requirements.txt): A list of Python package dependencies for the project.
 
