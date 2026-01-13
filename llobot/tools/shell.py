@@ -72,7 +72,8 @@ class ShellToolCall(ToolCall):
         if len(executable_prefixes) == 0:
             raise ValueError("No path specified in script (cd ~/path) and no executable projects found.")
 
-        raise ValueError(f"No path specified in script (cd ~/path) and multiple executable projects found: {executable_prefixes}")
+        formatted_prefixes = [f"~/{p}" for p in executable_prefixes]
+        raise ValueError(f"No path specified in script (cd ~/path) and multiple executable projects found: {formatted_prefixes}")
 
 class ShellTool(FencedTool):
     """

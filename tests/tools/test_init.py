@@ -64,4 +64,4 @@ def test_try_execute_failure():
     env = Environment()
     call = FailToolCall()
     assert not call.try_execute(env)
-    assert "Error executing fail: oops" in env[ContextEnv].build().messages[0].content
+    assert "Error executing fail: `oops`" in env[ContextEnv].build().messages[0].content

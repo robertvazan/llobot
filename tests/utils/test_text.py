@@ -1,5 +1,6 @@
 import pytest
 from llobot.utils.text import terminate_document, normalize_document, join_documents, concat_documents, dashed_name, markdown_code_block, markdown_code_details
+from llobot.utils.text import quote_code
 
 
 def test_terminate_document():
@@ -142,3 +143,28 @@ def test_markdown_code_details():
     # Custom backtick count is passed through to quote()
     expected = "<details>\n<summary>Test Summary</summary>\n\n````python\nprint('hello')\n````\n\n</details>"
     assert markdown_code_details("Test Summary", "python", "print('hello')", backtick_count=4) == expected
+
+
+def test_quote_code():
+    # Basic quoting
+    assert quote_code("hello") == "`hello`"
+
+    # Text containing backticks
+    assert quote_code("`hello`") == "`` `hello` ``"
+    assert quote_code("`") == "`` ` ``"
+
+    # Double backticks
+    assert quote_code("``") == "``` `` ```"
+
+    # Mixed backticks
+    assert quote_code("`foo``bar`") == "``` `foo``bar` ```"
+
+    # Empty string
+    assert quote_code("") == "``"
+
+    # Leading/trailing backticks
+    assert quote_code("`foo") == "`` `foo ``"
+    assert quote_code("foo`") == "`` foo` ``"
+
+    # No padding needed if not starting/ending with backtick
+    assert quote_code("foo`bar") == "``foo`bar``"

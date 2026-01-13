@@ -153,7 +153,7 @@ class DirectoryProject(Project, ValueTypeMixin):
                              outside the project prefix.
         """
         if not self.mutable(path):
-            raise PermissionError(f"Path is not mutable in this project: {path}")
+            raise PermissionError(f"Path is not mutable in this project: ~/{path}")
         local_path = self._to_local_path(path)
         # This should not happen if mutable() check passed
         assert local_path, f"Path {path} is not under project prefix despite mutable() check passing"
@@ -174,7 +174,7 @@ class DirectoryProject(Project, ValueTypeMixin):
             IsADirectoryError: If the path is a directory.
         """
         if not self.mutable(path):
-            raise PermissionError(f"Path is not mutable in this project: {path}")
+            raise PermissionError(f"Path is not mutable in this project: ~/{path}")
         local_path = self._to_local_path(path)
         # This should not happen if mutable() check passed
         assert local_path, f"Path {path} is not under project prefix despite mutable() check passing"
@@ -195,9 +195,9 @@ class DirectoryProject(Project, ValueTypeMixin):
             FileNotFoundError: If the source file does not exist.
         """
         if not self.mutable(source):
-            raise PermissionError(f"Source path is not mutable in this project: {source}")
+            raise PermissionError(f"Source path is not mutable in this project: ~/{source}")
         if not self.mutable(destination):
-            raise PermissionError(f"Destination path is not mutable in this project: {destination}")
+            raise PermissionError(f"Destination path is not mutable in this project: ~/{destination}")
 
         source_local = self._to_local_path(source)
         dest_local = self._to_local_path(destination)
@@ -237,7 +237,7 @@ class DirectoryProject(Project, ValueTypeMixin):
             FileNotFoundError: If the working directory does not exist.
         """
         if not self.executable(path):
-            raise PermissionError(f"Path is not executable in this project: {path}")
+            raise PermissionError(f"Path is not executable in this project: ~/{path}")
 
         local_path = self._to_local_path(path)
         # This should not happen if executable() check passed
@@ -245,7 +245,7 @@ class DirectoryProject(Project, ValueTypeMixin):
         real_path = self._directory / local_path
 
         if not real_path.is_dir():
-            raise FileNotFoundError(f"Working directory not found: {path}")
+            raise FileNotFoundError(f"Working directory not found: ~/{path}")
 
         result = subprocess.run(
             script,

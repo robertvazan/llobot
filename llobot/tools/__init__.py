@@ -39,6 +39,7 @@ from __future__ import annotations
 from functools import cache
 from llobot.environments import Environment
 from llobot.utils.values import ValueTypeMixin
+from llobot.utils.text import quote_code
 
 class ToolCall(ValueTypeMixin):
     """
@@ -83,7 +84,7 @@ class ToolCall(ValueTypeMixin):
             from llobot.chats.intent import ChatIntent
             from llobot.chats.message import ChatMessage
             from llobot.environments.context import ContextEnv
-            env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"Error executing {self.title}: {e}"))
+            env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"Error executing {self.title}: {quote_code(str(e))}"))
             return False
 
 class InvalidToolCall(ToolCall):

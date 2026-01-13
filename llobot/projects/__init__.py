@@ -152,7 +152,7 @@ class Project:
             NotImplementedError: If the project type does not support writing.
         """
         if not self.mutable(path):
-            raise PermissionError(f"Path is not mutable: {path}")
+            raise PermissionError(f"Path is not mutable: ~/{path}")
         raise NotImplementedError(f"Project type {self.__class__.__name__} does not support writing.")
 
     def remove(self, path: PurePosixPath):
@@ -167,7 +167,7 @@ class Project:
             NotImplementedError: If the project type does not support removing files.
         """
         if not self.mutable(path):
-            raise PermissionError(f"Path is not mutable: {path}")
+            raise PermissionError(f"Path is not mutable: ~/{path}")
         raise NotImplementedError(f"Project type {self.__class__.__name__} does not support removing files.")
 
     def move(self, source: PurePosixPath, destination: PurePosixPath):
@@ -190,11 +190,11 @@ class Project:
         """
         content = self.read(source)
         if content is None:
-            raise FileNotFoundError(f"Source file not found or is not a file: {source}")
+            raise FileNotFoundError(f"Source file not found or is not a file: ~/{source}")
         if not self.mutable(destination):
-            raise PermissionError(f"Destination path is not mutable for writing: {destination}")
+            raise PermissionError(f"Destination path is not mutable for writing: ~/{destination}")
         if not self.mutable(source):
-            raise PermissionError(f"Source path is not mutable for removal: {source}")
+            raise PermissionError(f"Source path is not mutable for removal: ~/{source}")
 
         self.write(destination, content)
         self.remove(source)
@@ -232,7 +232,7 @@ class Project:
             NotImplementedError: If the project type does not support execution.
         """
         if not self.executable(path):
-            raise PermissionError(f"Path is not allowed for execution: {path}")
+            raise PermissionError(f"Path is not allowed for execution: ~/{path}")
         raise NotImplementedError(f"Project type {self.__class__.__name__} does not support execution.")
 
 type ProjectPrecursor = Project | PurePosixPath | Path | str

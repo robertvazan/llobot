@@ -150,4 +150,33 @@ __all__ = [
     'dashed_name',
     'markdown_code_block',
     'markdown_code_details',
+    'quote_code',
 ]
+
+def quote_code(text: str) -> str:
+    """
+    Quotes text as an inline Markdown code span.
+
+    Surrounds text with backticks, ensuring that the fence is longer than any
+    sequence of backticks in the text. Adds padding spaces if necessary (i.e.
+    if the text begins or ends with a backtick).
+    """
+    if not text:
+        return '``'
+
+    max_backticks = 0
+    current_backticks = 0
+    for char in text:
+        if char == '`':
+            current_backticks += 1
+        else:
+            max_backticks = max(max_backticks, current_backticks)
+            current_backticks = 0
+    max_backticks = max(max_backticks, current_backticks)
+
+    fence_length = max_backticks + 1
+    fence = '`' * fence_length
+
+    if text.startswith('`') or text.endswith('`'):
+        return f'{fence} {text} {fence}'
+    return f'{fence}{text}{fence}'
