@@ -13,6 +13,7 @@ from llobot.chats.message import ChatMessage
 from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
+from llobot.formats.documents import DocumentFormat, standard_document_format
 from llobot.formats.paths import parse_path
 from llobot.tools import ToolCall
 from llobot.tools.line import LineTool
@@ -84,8 +85,9 @@ class ReplaceToolCall(ToolCall):
     _path: str
     _pattern: str
     _replacement: str
+    _format: DocumentFormat
 
-    def __init__(self, path: str, pattern: str, replacement: str):
+    def __init__(self, path: str, pattern: str, replacement: str, format: DocumentFormat):
         """
         Initializes a ReplaceToolCall.
 
@@ -93,10 +95,12 @@ class ReplaceToolCall(ToolCall):
             path: The path string to the file to modify.
             pattern: The regex pattern to search for (Rust syntax).
             replacement: The replacement template (Rust syntax).
+            format: The format to use for rendering the file listing.
         """
         self._path = path
         self._pattern = pattern
         self._replacement = replacement
+        self._format = format
 
     @property
     def title(self) -> str:
@@ -130,6 +134,9 @@ class ReplaceToolCall(ToolCall):
         project.write(path, normalize_document(new_content))
         env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"Replaced {count} matches in `~/{path}`"))
 
+        listing = self._format.render(path, normalize_document(new_content))
+        env[ContextEnv].add(ChatMessage(ChatIntent.SYSTEM, listing))
+
 
 class ReplaceTool(LineTool):
     """
@@ -139,6 +146,11 @@ class ReplaceTool(LineTool):
     interpreted as case-sensitive. The replacement template uses Rust syntax,
     which is translated to Python syntax before applying.
     """
+
+    _format: DocumentFormat
+
+    def __init__(self, *, format: DocumentFormat | None = None):
+        self._format = format or standard_document_format()
 
     def matches_line(self, env: Environment, line: str) -> bool:
         try:
@@ -156,7 +168,7 @@ class ReplaceTool(LineTool):
         replacement = parts[2]
         path = parts[3]
 
-        return ReplaceToolCall(path, pattern, replacement)
+        return ReplaceToolCall(path, pattern, replacement, self._format)
 
 
 __all__ = [

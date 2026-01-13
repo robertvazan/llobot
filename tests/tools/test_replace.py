@@ -7,6 +7,7 @@ from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.tools import ToolEnv
 from llobot.chats.message import ChatMessage
+from llobot.formats.documents import standard_document_format
 from llobot.tools.replace import ReplaceTool, ReplaceToolCall, rust_to_python_replacement
 
 
@@ -124,6 +125,7 @@ def test_replace_tool_parse(env):
     assert call._path == '~/path/to/file.txt'
     assert call._pattern == 'foo'
     assert call._replacement == 'bar'
+    assert call._format == tool._format
 
 
 def test_replace_tool_parse_quoted(env):
@@ -139,17 +141,26 @@ def test_execute_simple_replace(env):
     project = env[ProjectEnv].union
     project.write(PurePosixPath('file.txt'), 'hello world\n')
 
-    call = ReplaceToolCall('~/file.txt', 'world', 'universe')
+    call = ReplaceToolCall('~/file.txt', 'world', 'universe', standard_document_format())
     call.execute(env)
 
     assert project.files[PurePosixPath('file.txt')] == 'hello universe\n'
+
+    # Check that status and listing messages were added
+    messages = env[ContextEnv].messages
+    assert len(messages) == 2
+    assert messages[0].intent == ChatIntent.STATUS
+    assert "Replaced 1 matches" in messages[0].content
+    assert messages[1].intent == ChatIntent.SYSTEM
+    assert "File: ~/file.txt" in messages[1].content
+    assert "hello universe" in messages[1].content
 
 
 def test_execute_regex_replace(env):
     project = env[ProjectEnv].union
     project.write(PurePosixPath('file.txt'), 'foo123bar\n')
 
-    call = ReplaceToolCall('~/file.txt', r'\d+', 'NUM')
+    call = ReplaceToolCall('~/file.txt', r'\d+', 'NUM', standard_document_format())
     call.execute(env)
 
     assert project.files[PurePosixPath('file.txt')] == 'fooNUMbar\n'
@@ -159,7 +170,7 @@ def test_execute_capture_group(env):
     project = env[ProjectEnv].union
     project.write(PurePosixPath('file.txt'), 'hello world\n')
 
-    call = ReplaceToolCall('~/file.txt', r'(\w+) (\w+)', '$2 $1')
+    call = ReplaceToolCall('~/file.txt', r'(\w+) (\w+)', '$2 $1', standard_document_format())
     call.execute(env)
 
     assert project.files[PurePosixPath('file.txt')] == 'world hello\n'
@@ -169,7 +180,7 @@ def test_execute_named_group(env):
     project = env[ProjectEnv].union
     project.write(PurePosixPath('file.txt'), 'name: John\n')
 
-    call = ReplaceToolCall('~/file.txt', r'name: (?P<n>\w+)', 'user: $n')
+    call = ReplaceToolCall('~/file.txt', r'name: (?P<n>\w+)', 'user: $n', standard_document_format())
     call.execute(env)
 
     assert project.files[PurePosixPath('file.txt')] == 'user: John\n'
@@ -179,7 +190,7 @@ def test_execute_entire_match(env):
     project = env[ProjectEnv].union
     project.write(PurePosixPath('file.txt'), 'hello\n')
 
-    call = ReplaceToolCall('~/file.txt', r'hello', '[$0]')
+    call = ReplaceToolCall('~/file.txt', r'hello', '[$0]', standard_document_format())
     call.execute(env)
 
     assert project.files[PurePosixPath('file.txt')] == '[hello]\n'
@@ -189,7 +200,7 @@ def test_execute_multiple_occurrences(env):
     project = env[ProjectEnv].union
     project.write(PurePosixPath('file.txt'), 'foo bar foo baz foo\n')
 
-    call = ReplaceToolCall('~/file.txt', 'foo', 'qux')
+    call = ReplaceToolCall('~/file.txt', 'foo', 'qux', standard_document_format())
     call.execute(env)
 
     assert project.files[PurePosixPath('file.txt')] == 'qux bar qux baz qux\n'
@@ -200,7 +211,7 @@ def test_execute_case_sensitive(env):
     project = env[ProjectEnv].union
     project.write(PurePosixPath('file.txt'), 'Hello HELLO hello\n')
 
-    call = ReplaceToolCall('~/file.txt', 'hello', 'hi')
+    call = ReplaceToolCall('~/file.txt', 'hello', 'hi', standard_document_format())
     call.execute(env)
 
     assert project.files[PurePosixPath('file.txt')] == 'Hello HELLO hi\n'
@@ -210,13 +221,13 @@ def test_execute_pattern_not_found(env):
     project = env[ProjectEnv].union
     project.write(PurePosixPath('file.txt'), 'hello world\n')
 
-    call = ReplaceToolCall('~/file.txt', 'notfound', 'replacement')
+    call = ReplaceToolCall('~/file.txt', 'notfound', 'replacement', standard_document_format())
     with pytest.raises(ValueError, match='Pattern not found'):
         call.execute(env)
 
 
 def test_execute_file_not_found(env):
-    call = ReplaceToolCall('~/nonexistent.txt', 'foo', 'bar')
+    call = ReplaceToolCall('~/nonexistent.txt', 'foo', 'bar', standard_document_format())
     with pytest.raises(ValueError, match='File not found'):
         call.execute(env)
 
@@ -225,7 +236,7 @@ def test_execute_invalid_regex(env):
     project = env[ProjectEnv].union
     project.write(PurePosixPath('file.txt'), 'content\n')
 
-    call = ReplaceToolCall('~/file.txt', '[invalid', 'replacement')
+    call = ReplaceToolCall('~/file.txt', '[invalid', 'replacement', standard_document_format())
     with pytest.raises(ValueError, match='Invalid regex pattern'):
         call.execute(env)
 
@@ -234,18 +245,18 @@ def test_execute_literal_dollar(env):
     project = env[ProjectEnv].union
     project.write(PurePosixPath('file.txt'), 'price: 100\n')
 
-    call = ReplaceToolCall('~/file.txt', r'price: (\d+)', 'cost: $$$1')
+    call = ReplaceToolCall('~/file.txt', r'price: (\d+)', 'cost: $$$1', standard_document_format())
     call.execute(env)
 
     assert project.files[PurePosixPath('file.txt')] == 'cost: $100\n'
 
 
 def test_title():
-    call = ReplaceToolCall('~/path/to/file.txt', 'foo', 'bar')
+    call = ReplaceToolCall('~/path/to/file.txt', 'foo', 'bar', standard_document_format())
     # We quote the path manually for display purposes
     assert call.title == "sd foo bar `~/path/to/file.txt`"
 
 
 def test_title_with_spaces():
-    call = ReplaceToolCall('~/file.txt', 'foo bar', 'baz qux')
+    call = ReplaceToolCall('~/file.txt', 'foo bar', 'baz qux', standard_document_format())
     assert call.title == "sd 'foo bar' 'baz qux' `~/file.txt`"
