@@ -3,7 +3,7 @@ from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
 from llobot.chats.stream import record_stream
 from llobot.chats.thread import ChatThread
-from llobot.models.echo import EchoModel
+from tests.mock_model import MockModel
 from llobot.roles.coder import Coder
 
 def get_response_content(thread: ChatThread) -> str:
@@ -14,7 +14,7 @@ def get_response_content(thread: ChatThread) -> str:
     return ""
 
 def test_coder_instantiation(tmp_path: Path):
-    model = EchoModel('echo')
+    model = MockModel('echo')
     coder = Coder('coder', model, session_history=tmp_path)
 
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "Code something")])

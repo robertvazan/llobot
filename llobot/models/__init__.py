@@ -20,8 +20,6 @@ Submodules
 ----------
 anthropic
     Client for Anthropic (Claude) models.
-echo
-    An echo model for testing and debugging.
 gemini
     Client for Google Gemini models.
 openai

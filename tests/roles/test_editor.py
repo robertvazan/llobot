@@ -3,7 +3,7 @@ from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
 from llobot.chats.stream import record_stream
 from llobot.chats.thread import ChatThread
-from llobot.models.echo import EchoModel
+from tests.mock_model import MockModel
 from llobot.projects.directory import DirectoryProject
 from llobot.projects.library.predefined import PredefinedProjectLibrary
 from llobot.roles.editor import Editor
@@ -33,7 +33,7 @@ def setup_test_project(tmp_path: Path) -> tuple[Path, PredefinedProjectLibrary]:
 def test_editor_project_selection(tmp_path: Path):
     """Tests that Editor includes file index when a project is selected."""
     projects_dir, library = setup_test_project(tmp_path)
-    model = EchoModel('echo')
+    model = MockModel('echo')
     editor = Editor('editor', model, projects=library, session_history=tmp_path / "sessions")
 
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "@project_a List files")])
@@ -47,7 +47,7 @@ def test_editor_project_selection(tmp_path: Path):
 def test_editor_file_retrieval(tmp_path: Path):
     """Tests that Editor retrieves specific files when mentioned."""
     projects_dir, library = setup_test_project(tmp_path)
-    model = EchoModel('echo')
+    model = MockModel('echo')
     editor = Editor('editor', model, projects=library, session_history=tmp_path / "sessions")
 
     # Select project and retrieve a specific file
@@ -62,7 +62,7 @@ def test_editor_file_retrieval(tmp_path: Path):
 def test_editor_wildcard_retrieval(tmp_path: Path):
     """Tests that Editor retrieves files matching wildcard patterns."""
     projects_dir, library = setup_test_project(tmp_path)
-    model = EchoModel('echo')
+    model = MockModel('echo')
     editor = Editor('editor', model, projects=library, session_history=tmp_path / "sessions")
 
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "@project_a @tests/*.py Read tests")])
@@ -82,7 +82,7 @@ def test_editor_overviews(tmp_path: Path):
 
     project_b = DirectoryProject(project_b_dir, prefix="project_b")
     library = PredefinedProjectLibrary({"project_b": project_b})
-    model = EchoModel('echo')
+    model = MockModel('echo')
     editor = Editor('editor', model, projects=library, session_history=tmp_path / "sessions")
 
     # Access a file deep in the hierarchy
@@ -99,7 +99,7 @@ def test_editor_overviews(tmp_path: Path):
 def test_editor_system_prompt(tmp_path: Path):
     """Tests that Editor includes the tool usage instructions in its prompt."""
     projects_dir, library = setup_test_project(tmp_path)
-    model = EchoModel('echo')
+    model = MockModel('echo')
     editor = Editor('editor', model, projects=library, session_history=tmp_path / "sessions")
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "@project_a some prompt")])
     response = get_response_content(record_stream(editor.chat(prompt)))

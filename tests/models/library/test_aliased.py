@@ -1,10 +1,10 @@
 import pytest
-from llobot.models.echo import EchoModel
+from tests.mock_model import MockModel
 from llobot.models.library.aliased import AliasedModelLibrary
 
 def test_aliased_model_library():
-    m1 = EchoModel('m1')
-    m2 = EchoModel('m2')
+    m1 = MockModel('m1')
+    m2 = MockModel('m2')
     library = AliasedModelLibrary({'alias1': m1, 'alias2': m2})
     assert library.lookup('alias1') is m1
     assert library.lookup('alias2') is m2

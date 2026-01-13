@@ -3,7 +3,7 @@ from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
 from llobot.chats.stream import record_stream
 from llobot.chats.thread import ChatThread
-from llobot.models.echo import EchoModel
+from tests.mock_model import MockModel
 from llobot.roles.imitator import Imitator
 
 def get_response_content(thread: ChatThread) -> str:
@@ -14,7 +14,7 @@ def get_response_content(thread: ChatThread) -> str:
     return ""
 
 def test_imitator_approve(tmp_path: Path):
-    model = EchoModel('echo')
+    model = MockModel('echo')
     # Imitator saves examples to example_history.
     imitator = Imitator('imitator', model,
                         example_history=tmp_path / "examples",
@@ -46,13 +46,13 @@ def test_imitator_approve(tmp_path: Path):
     response_new = get_response_content(thread_new)
 
     # The example should be stuffed into context.
-    # Since the previous response (from EchoModel) contained "Say B", and the prompt was "Say B",
+    # Since the previous response (from MockModel) contained "Say B", and the prompt was "Say B",
     # The example saved is Prompt: "Say B", Response: "... Say B ...".
     # Checking for "Say B" presence covers both.
     assert "Say B" in response_new
 
 def test_imitator_approve_correction(tmp_path: Path):
-    model = EchoModel('echo')
+    model = MockModel('echo')
     imitator = Imitator('imitator', model,
                         example_history=tmp_path / "examples",
                         session_history=tmp_path / "sessions")
@@ -62,7 +62,7 @@ def test_imitator_approve_correction(tmp_path: Path):
     thread1 = record_stream(imitator.chat(prompt1))
     response1_content = get_response_content(thread1)
 
-    # Turn 2: "@approve C" (providing explicit correction because EchoModel output is messy)
+    # Turn 2: "@approve C" (providing explicit correction because MockModel output is messy)
     prompt2 = ChatThread([
         ChatMessage(ChatIntent.PROMPT, "Say C"),
         ChatMessage(ChatIntent.RESPONSE, response1_content),

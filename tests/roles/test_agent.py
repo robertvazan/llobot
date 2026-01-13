@@ -7,7 +7,7 @@ from llobot.chats.message import ChatMessage
 from llobot.chats.stream import record_stream
 from llobot.chats.thread import ChatThread
 from llobot.environments.projects import ProjectEnv
-from llobot.models.echo import EchoModel
+from tests.mock_model import MockModel
 from llobot.roles.agent import Agent
 from llobot.tools.write import WriteTool
 
@@ -28,7 +28,7 @@ def get_session_hash(prompt: ChatThread) -> str:
 
 def test_agent_first_turn(tmp_path: Path):
     """Tests that Agent creates a new session and includes system prompt on first turn."""
-    model = EchoModel('echo')
+    model = MockModel('echo')
     agent = Agent('agent', model, prompt="You are an agent.", session_history=tmp_path)
 
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "Hello")])
@@ -41,7 +41,7 @@ def test_agent_first_turn(tmp_path: Path):
 
 def test_agent_session_persistence(tmp_path: Path):
     """Tests that Agent can resume a session and load persisted state."""
-    model = EchoModel('echo')
+    model = MockModel('echo')
 
     # First turn: create a session
     agent1 = Agent('agent', model, prompt="System", session_history=tmp_path)
@@ -73,7 +73,7 @@ def test_agent_session_persistence(tmp_path: Path):
 
 def test_agent_reminder(tmp_path: Path):
     """Tests that Agent includes a reminder prompt on first turn."""
-    model = EchoModel('echo')
+    model = MockModel('echo')
     agent = Agent('agent', model, prompt="System.\n- IMPORTANT: Do this.", session_history=tmp_path)
 
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "Hi")])
@@ -85,7 +85,7 @@ def test_agent_reminder(tmp_path: Path):
 
 def test_agent_coercion(tmp_path: Path):
     """Tests that Agent coerces context to match altered history."""
-    model = EchoModel('echo')
+    model = MockModel('echo')
     agent = Agent('agent', model, prompt="System", session_history=tmp_path)
 
     # Turn 1
@@ -106,14 +106,14 @@ def test_agent_coercion(tmp_path: Path):
     stream2 = agent.chat(prompt2)
     response2 = get_response_content(record_stream(stream2))
 
-    # The EchoModel echoes the context. We expect "Edited" to be present, and the response from turn 1 to be gone.
+    # The MockModel echoes the context. We expect "Edited" to be present, and the response from turn 1 to be gone.
     assert "Edited" in response2
     assert "Original" in response2 # The first prompt is still there
     assert "New Response" in response2
 
 def test_agent_accept_command(tmp_path: Path):
     """Tests that Agent can execute tool calls with @accept command."""
-    model = EchoModel('echo')
+    model = MockModel('echo')
     # Agent needs a project to write files to.
     from llobot.projects.directory import DirectoryProject
     project = DirectoryProject(tmp_path / 'project', prefix="project", mutable=True)
@@ -163,7 +163,7 @@ def test_agent_accept_command(tmp_path: Path):
 
 def test_agent_project_summary(tmp_path: Path):
     """Tests that Agent includes project summary in the context."""
-    model = EchoModel('echo')
+    model = MockModel('echo')
 
     # Setup a project environment with a mock project
     from llobot.projects.marker import MarkerProject

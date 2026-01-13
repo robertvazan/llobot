@@ -2,13 +2,13 @@ from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
 from llobot.chats.stream import record_stream
 from llobot.chats.thread import ChatThread
-from llobot.models.echo import EchoModel
+from tests.mock_model import MockModel
 from llobot.roles.chatbot import Chatbot
 from llobot.roles.models import RoleModel
 
 def test_role_model_wrapper():
     # Setup
-    base_model = EchoModel('echo')
+    base_model = MockModel('echo')
     role = Chatbot('bot', base_model, prompt="SYS")
     role_model = RoleModel(role)
 
@@ -23,9 +23,9 @@ def test_role_model_wrapper():
     content = response[0].content
 
     # Verify content
-    # The RoleModel wraps the output of Chatbot (which wraps output of EchoModel)
-    # Chatbot sends [System(SYS), Prompt(Hi)] to EchoModel.
-    # EchoModel returns "SYS\n\n---\n\nHi".
+    # The RoleModel wraps the output of Chatbot (which wraps output of MockModel)
+    # Chatbot sends [System(SYS), Prompt(Hi)] to MockModel.
+    # MockModel returns "SYS\n\n---\n\nHi".
     # RoleModel should yield this content (via submessage format if needed, but plain string here).
     assert "SYS" in content
     assert "Hi" in content

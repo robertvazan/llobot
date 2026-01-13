@@ -2,11 +2,11 @@ from llobot.commands.model import handle_model_commands
 from llobot.environments import Environment
 from llobot.environments.commands import CommandsEnv
 from llobot.environments.model import ModelEnv
-from llobot.models.echo import EchoModel
+from tests.mock_model import MockModel
 from llobot.models.library.named import NamedModelLibrary
 
-default_model = EchoModel('default')
-m1 = EchoModel('m1')
+default_model = MockModel('default')
+m1 = MockModel('m1')
 library = NamedModelLibrary(m1)
 
 def test_handle_model_command():

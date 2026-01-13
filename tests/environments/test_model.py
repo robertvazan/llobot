@@ -3,12 +3,12 @@ from pathlib import Path
 import pytest
 from llobot.environments import Environment
 from llobot.environments.model import ModelEnv
-from llobot.models.echo import EchoModel
+from tests.mock_model import MockModel
 from llobot.models.library.named import NamedModelLibrary
 
-default_model = EchoModel('default')
-m1 = EchoModel('m1')
-m2 = EchoModel('m2')
+default_model = MockModel('default')
+m1 = MockModel('m1')
+m2 = MockModel('m2')
 library = NamedModelLibrary(m1, m2)
 
 def test_get_default():

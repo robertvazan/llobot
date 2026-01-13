@@ -6,6 +6,7 @@ from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
 from llobot.chats.stream import ChatStream
 from llobot.commands.accept import handle_accept_commands
+from llobot.commands.echo import handle_echo_commands
 from llobot.commands.model import handle_model_commands
 from llobot.commands.unrecognized import handle_unrecognized_commands
 from llobot.environments import Environment
@@ -186,6 +187,7 @@ class Agent(Role):
         Args:
             env: The environment.
         """
+        handle_echo_commands(env)
         if self._tools:
             handle_accept_commands(env)
 

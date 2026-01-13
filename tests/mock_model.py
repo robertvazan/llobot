@@ -1,5 +1,5 @@
 """
-An echo model for testing and debugging.
+A mock model for testing.
 """
 from __future__ import annotations
 from llobot.models import Model
@@ -9,7 +9,7 @@ from llobot.chats.stream import ChatStream
 from llobot.formats.monolithic import MonolithicFormat, standard_monolithic_format
 from llobot.utils.values import ValueTypeMixin
 
-class EchoModel(Model, ValueTypeMixin):
+class MockModel(Model, ValueTypeMixin):
     """
     A model that simply echoes back the monolithic content of the prompt.
     """
@@ -22,7 +22,7 @@ class EchoModel(Model, ValueTypeMixin):
         format: MonolithicFormat | None = None,
     ):
         """
-        Initializes the echo model.
+        Initializes the mock model.
 
         Args:
             name: The name for this model instance.
@@ -58,5 +58,5 @@ class EchoModel(Model, ValueTypeMixin):
             yield content
 
 __all__ = [
-    'EchoModel',
+    'MockModel',
 ]

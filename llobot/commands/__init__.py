@@ -20,6 +20,8 @@ approve
     Command to save an example.
 accept
     Command to execute tool calls from model response.
+echo
+    Command to echo the prompt context.
 """
 from __future__ import annotations
 from typing import Callable
