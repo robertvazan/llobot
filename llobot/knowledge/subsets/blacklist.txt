@@ -16,6 +16,7 @@ dist/** # Build output
 .nuxt/** # Nuxt.js
 
 # Build directories - Python
+.venv/** # Standard Python venv location
 __pycache__/** # Python bytecode
 .pytest_cache/** # pytest
 build/** # setuptools
