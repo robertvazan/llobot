@@ -17,6 +17,21 @@ Both bug reports and feature requests are welcome. There is no free support, but
 
 Pull requests are generally welcome. If you would like to make large or controversial changes, please open an issue first to discuss your idea.
 
+## Development
+
+The easiest way to get started is to build and run the development container. See [`Containerfile`](Containerfile).
+
+Once in the container, download dependencies and create a virtual environment:
+
+```bash
+uv sync --all-extras
+```
+
+Quality gates before submitting your changes:
+
+- All unit tests pass: `uv run pytest` (bare `pytest` will not work unless you activate the venv first)
+- Self-review
+
 ## Terminology
 
 The following terms are used throughout the code:
@@ -44,30 +59,6 @@ The project root directory is organized as follows:
 - [`Containerfile`](Containerfile): Definition of the development container environment.
 - `LICENSE` & `COPYRIGHT`: Project licensing and legal information.
 - [`pyproject.toml`](pyproject.toml): Project metadata and dependencies.
-
-## Development
-
-This project uses [uv](https://github.com/astral-sh/uv) for dependency management and virtual environments.
-
-To sync dependencies and create a virtual environment:
-
-```bash
-uv sync --all-extras
-```
-
-To run tests:
-
-```bash
-uv run pytest
-```
-
-Note that `pytest` is installed in the virtual environment managed by `uv`, so you must use `uv run pytest` (or activate the virtual environment) rather than running `pytest` directly.
-
-## Quality Checks
-
-Before submitting your changes, please ensure that:
-
-- All unit tests pass: `uv run pytest`
 
 ## Architecture
 
