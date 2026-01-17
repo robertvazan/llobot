@@ -61,6 +61,14 @@ To run tests:
 uv run pytest
 ```
 
+Note that `pytest` is installed in the virtual environment managed by `uv`, so you must use `uv run pytest` (or activate the virtual environment) rather than running `pytest` directly.
+
+## Quality Checks
+
+Before submitting your changes, please ensure that:
+
+- All unit tests pass: `uv run pytest`
+
 ## Architecture
 
 Llobot is designed to be modular and configurable with reasonable defaults.

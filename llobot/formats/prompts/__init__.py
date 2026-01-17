@@ -5,6 +5,16 @@ This package provides the `PromptFormat` base class and implementations for
 rendering system prompts into chat messages. The main purpose is to convert a
 `Prompt` object or a raw string into a `ChatThread` that can be prepended to
 the conversation history.
+
+Submodules
+----------
+
+plain
+    A simple pass-through format.
+grouped
+    A format that groups H2 sections into details/summary blocks.
+reminder
+    A format that extracts reminders from the prompt.
 """
 from __future__ import annotations
 from llobot.chats.intent import ChatIntent
@@ -53,8 +63,8 @@ def standard_prompt_format() -> PromptFormat:
     Returns:
         The standard `PromptFormat`.
     """
-    from llobot.formats.prompts.plain import PlainPromptFormat
-    return PlainPromptFormat()
+    from llobot.formats.prompts.grouped import GroupedPromptFormat
+    return GroupedPromptFormat()
 
 __all__ = [
     'PromptFormat',
