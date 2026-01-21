@@ -1,5 +1,5 @@
 """
-Tool for replacing text in files using regex patterns.
+Script item for replacing text in files using regex patterns.
 
 This is a simplified version of the `sd` tool that accepts syntax:
 `sd pattern replacement ~/path`. The regex pattern is always case-sensitive.
@@ -16,7 +16,7 @@ from llobot.environments.projects import ProjectEnv
 from llobot.formats.documents import DocumentFormat, standard_document_format
 from llobot.formats.paths import parse_path
 from llobot.tools import ToolCall
-from llobot.tools.line import LineTool
+from llobot.tools.script import ScriptItem
 from llobot.utils.text import normalize_document
 
 
@@ -78,7 +78,7 @@ def rust_to_python_replacement(template: str) -> str:
     return _RUST_REPLACEMENT_RE.sub(replace_match, template)
 
 
-class ReplaceToolCall(ToolCall):
+class ScriptReplaceCall(ToolCall):
     """
     A tool call for replacing text in a file using regex.
     """
@@ -89,7 +89,7 @@ class ReplaceToolCall(ToolCall):
 
     def __init__(self, path: str, pattern: str, replacement: str, format: DocumentFormat):
         """
-        Initializes a ReplaceToolCall.
+        Initializes a ScriptReplaceCall.
 
         Args:
             path: The path string to the file to modify.
@@ -138,7 +138,7 @@ class ReplaceToolCall(ToolCall):
         env[ContextEnv].add(ChatMessage(ChatIntent.SYSTEM, listing))
 
 
-class ReplaceTool(LineTool):
+class ScriptReplace(ScriptItem):
     """
     Tool that parses `sd pattern replacement ~/path` commands.
 
@@ -152,14 +152,14 @@ class ReplaceTool(LineTool):
     def __init__(self, *, format: DocumentFormat | None = None):
         self._format = format or standard_document_format()
 
-    def matches_line(self, env: Environment, line: str) -> bool:
+    def matches(self, env: Environment, line: str) -> bool:
         try:
             parts = shlex.split(line)
         except ValueError:
             return False
         return len(parts) == 4 and parts[0] == 'sd'
 
-    def parse_line(self, env: Environment, line: str) -> ToolCall:
+    def parse(self, env: Environment, line: str) -> ToolCall:
         parts = shlex.split(line)
         if len(parts) != 4 or parts[0] != 'sd':
             raise ValueError(f"Invalid sd command: {line}")
@@ -168,11 +168,11 @@ class ReplaceTool(LineTool):
         replacement = parts[2]
         path = parts[3]
 
-        return ReplaceToolCall(path, pattern, replacement, self._format)
+        return ScriptReplaceCall(path, pattern, replacement, self._format)
 
 
 __all__ = [
-    'ReplaceTool',
-    'ReplaceToolCall',
+    'ScriptReplace',
+    'ScriptReplaceCall',
     'rust_to_python_replacement',
 ]

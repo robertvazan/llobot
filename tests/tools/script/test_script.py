@@ -4,17 +4,16 @@ import pytest
 from llobot.environments import Environment
 from llobot.environments.tools import ToolEnv
 from llobot.tools import InvalidToolCall, ToolCall
-from llobot.tools.line import LineTool
-from llobot.tools.move import MoveTool, MoveToolCall
-from llobot.tools.remove import RemoveTool, RemoveToolCall
-from llobot.tools.script import ScriptTool
+from llobot.tools.script import ScriptItem, ScriptTool
+from llobot.tools.script.move import ScriptMove, ScriptMoveCall
+from llobot.tools.script.remove import ScriptRemove, ScriptRemoveCall
 
 @pytest.fixture
 def env(tmp_path: Path) -> Environment:
     environment = Environment()
     # Register tools that script tool will use
-    environment[ToolEnv].register(MoveTool())
-    environment[ToolEnv].register(RemoveTool())
+    environment[ToolEnv].register(ScriptMove())
+    environment[ToolEnv].register(ScriptRemove())
     return environment
 
 def test_script_tool_slice_and_parse(env: Environment):
@@ -31,8 +30,8 @@ def test_script_tool_slice_and_parse(env: Environment):
 
     calls = list(tool.parse(env, text))
     assert len(calls) == 2
-    assert isinstance(calls[0], RemoveToolCall)
-    assert isinstance(calls[1], MoveToolCall)
+    assert isinstance(calls[0], ScriptRemoveCall)
+    assert isinstance(calls[1], ScriptMoveCall)
 
 def test_script_tool_comments_and_empty_lines(env: Environment):
     tool = ScriptTool()
@@ -46,7 +45,7 @@ def test_script_tool_comments_and_empty_lines(env: Environment):
 
     calls = list(tool.parse(env, text))
     assert len(calls) == 1
-    assert isinstance(calls[0], RemoveToolCall)
+    assert isinstance(calls[0], ScriptRemoveCall)
 
 def test_script_tool_wrong_language(env: Environment):
     tool = ScriptTool()
@@ -70,7 +69,7 @@ def test_script_tool_invalid_command(env: Environment):
 
     calls = list(tool.parse(env, text))
     assert len(calls) == 2
-    assert isinstance(calls[0], RemoveToolCall)
+    assert isinstance(calls[0], ScriptRemoveCall)
     assert isinstance(calls[1], InvalidToolCall)
     assert "Unrecognized tool: unknown cmd" in str(calls[1]._error)
 
@@ -84,18 +83,18 @@ def test_script_tool_invalid_argument(env: Environment):
 
     calls = list(tool.parse(env, text))
     assert len(calls) == 1
-    assert isinstance(calls[0], RemoveToolCall)
+    assert isinstance(calls[0], ScriptRemoveCall)
     with pytest.raises(ValueError, match="Path must start with ~/"):
         calls[0].execute(env)
 
 def test_script_tool_matches_line_exception(env: Environment):
-    class CrashingTool(LineTool):
-        def matches_line(self, env: Environment, line: str) -> bool:
+    class CrashingTool(ScriptItem):
+        def matches(self, env: Environment, line: str) -> bool:
             if "crash" in line:
                 raise ValueError("Crash!")
             return False
 
-        def parse_line(self, env: Environment, line: str) -> ToolCall:
+        def parse(self, env: Environment, line: str) -> ToolCall:
             raise NotImplementedError
 
     env[ToolEnv].register(CrashingTool())

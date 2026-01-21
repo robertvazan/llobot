@@ -1,5 +1,5 @@
 """
-Tool for reading files.
+Script item for reading files.
 """
 from __future__ import annotations
 import shlex
@@ -14,9 +14,9 @@ from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.knowledge.subsets.standard import overviews_subset
 from llobot.projects.items import ProjectFile
 from llobot.tools import ToolCall
-from llobot.tools.line import LineTool
+from llobot.tools.script import ScriptItem
 
-class CatToolCall(ToolCall):
+class ScriptCatCall(ToolCall):
     """
     A tool call for reading a file.
 
@@ -82,7 +82,7 @@ class CatToolCall(ToolCall):
 
         context_env.add(ChatMessage(ChatIntent.SYSTEM, listing))
 
-class CatTool(LineTool):
+class ScriptCat(ScriptItem):
     """
     Tool that parses `cat ~/path` commands.
 
@@ -94,7 +94,7 @@ class CatTool(LineTool):
 
     def __init__(self, *, format: DocumentFormat | None = None, overviews: KnowledgeSubset | None = None):
         """
-        Initializes a new CatTool.
+        Initializes a new ScriptCat.
 
         Args:
             format: The document format to use for output. Defaults to standard format.
@@ -103,24 +103,24 @@ class CatTool(LineTool):
         self._format = format or standard_document_format()
         self._overviews = overviews or overviews_subset()
 
-    def matches_line(self, env: Environment, line: str) -> bool:
+    def matches(self, env: Environment, line: str) -> bool:
         try:
             parts = shlex.split(line)
         except ValueError:
             return False
         return len(parts) == 2 and parts[0] == 'cat'
 
-    def parse_line(self, env: Environment, line: str) -> ToolCall:
+    def parse(self, env: Environment, line: str) -> ToolCall:
         parts = shlex.split(line)
-        # matches_line checks structure, but let's be safe
+        # matches checks structure, but let's be safe
         if len(parts) != 2 or parts[0] != 'cat':
             raise ValueError(f"Invalid cat command: {line}")
 
         path = parts[1]
 
-        return CatToolCall(path, self._format, self._overviews)
+        return ScriptCatCall(path, self._format, self._overviews)
 
 __all__ = [
-    'CatTool',
-    'CatToolCall',
+    'ScriptCat',
+    'ScriptCatCall',
 ]

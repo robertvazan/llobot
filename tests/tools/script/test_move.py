@@ -6,7 +6,7 @@ from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.projects.directory import DirectoryProject
 from llobot.projects.library.predefined import PredefinedProjectLibrary
-from llobot.tools.move import MoveTool, MoveToolCall
+from llobot.tools.script.move import ScriptMove, ScriptMoveCall
 
 @pytest.fixture
 def project(tmp_path: Path) -> DirectoryProject:
@@ -28,40 +28,40 @@ def env(library: PredefinedProjectLibrary) -> Environment:
     return environment
 
 def test_move_tool_matches_and_parses_line(env: Environment):
-    tool = MoveTool()
+    tool = ScriptMove()
     line = "mv ~/myproject/a.txt ~/myproject/b.txt"
 
-    assert tool.matches_line(env, line)
+    assert tool.matches(env, line)
 
-    call = tool.parse_line(env, line)
-    assert isinstance(call, MoveToolCall)
+    call = tool.parse(env, line)
+    assert isinstance(call, ScriptMoveCall)
     assert call._source == "~/myproject/a.txt"
     assert call._destination == "~/myproject/b.txt"
 
 def test_move_tool_quoted_paths(env: Environment):
-    tool = MoveTool()
+    tool = ScriptMove()
     line = "mv \"~/myproject/foo bar.txt\" '~/myproject/baz qux.txt'"
 
-    assert tool.matches_line(env, line)
+    assert tool.matches(env, line)
 
-    call = tool.parse_line(env, line)
-    assert isinstance(call, MoveToolCall)
+    call = tool.parse(env, line)
+    assert isinstance(call, ScriptMoveCall)
     assert call._source == "~/myproject/foo bar.txt"
     assert call._destination == "~/myproject/baz qux.txt"
 
 def test_move_tool_backslash_escape_space(env: Environment):
-    tool = MoveTool()
+    tool = ScriptMove()
     line = r"mv ~/myproject/foo\ bar.txt ~/myproject/baz\ qux.txt"
 
-    assert tool.matches_line(env, line)
+    assert tool.matches(env, line)
 
-    call = tool.parse_line(env, line)
-    assert isinstance(call, MoveToolCall)
+    call = tool.parse(env, line)
+    assert isinstance(call, ScriptMoveCall)
     assert call._source == "~/myproject/foo bar.txt"
     assert call._destination == "~/myproject/baz qux.txt"
 
 def test_move_tool_execute(env: Environment):
-    call = MoveToolCall("~/myproject/a.txt", "~/myproject/b.txt")
+    call = ScriptMoveCall("~/myproject/a.txt", "~/myproject/b.txt")
     call.execute(env)
 
     project = env[ProjectEnv].union
@@ -71,23 +71,23 @@ def test_move_tool_execute(env: Environment):
 def test_move_tool_overwrite(env: Environment):
     project = env[ProjectEnv].union
     project.write(PurePosixPath("myproject/b.txt"), "old content")
-    call = MoveToolCall("~/myproject/a.txt", "~/myproject/b.txt")
+    call = ScriptMoveCall("~/myproject/a.txt", "~/myproject/b.txt")
     call.execute(env)
     log = "\n".join(m.content for m in env[ContextEnv].build().messages if m.intent == ChatIntent.STATUS)
     assert "Moved `~/myproject/a.txt` to `~/myproject/b.txt` (overwriting `~/myproject/b.txt`)" in log
     assert project.read(PurePosixPath("myproject/b.txt")) == "content\n"
 
 def test_move_tool_no_match(env: Environment):
-    tool = MoveTool()
-    assert not tool.matches_line(env, "cp a b")
-    assert not tool.matches_line(env, "mv a b c")
+    tool = ScriptMove()
+    assert not tool.matches(env, "cp a b")
+    assert not tool.matches(env, "mv a b c")
 
 def test_move_tool_missing_tilde(env: Environment):
-    tool = MoveTool()
+    tool = ScriptMove()
     line = "mv myproject/a.txt ~/myproject/b.txt"
-    # matches_line should return True because it just checks shlex parts
-    assert tool.matches_line(env, line)
+    # matches should return True because it just checks shlex parts
+    assert tool.matches(env, line)
 
-    call = tool.parse_line(env, line)
+    call = tool.parse(env, line)
     with pytest.raises(ValueError, match="Path must start with ~/"):
         call.execute(env)

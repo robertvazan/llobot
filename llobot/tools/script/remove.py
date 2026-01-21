@@ -1,5 +1,5 @@
 """
-Tool for removing files.
+Script item for removing files.
 """
 from __future__ import annotations
 import shlex
@@ -10,9 +10,9 @@ from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.formats.paths import parse_path
 from llobot.tools import ToolCall
-from llobot.tools.line import LineTool
+from llobot.tools.script import ScriptItem
 
-class RemoveToolCall(ToolCall):
+class ScriptRemoveCall(ToolCall):
     """
     A tool call for removing a file.
     """
@@ -31,28 +31,28 @@ class RemoveToolCall(ToolCall):
         project.remove(path)
         env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"Removed `~/{path}`"))
 
-class RemoveTool(LineTool):
+class ScriptRemove(ScriptItem):
     """
     Tool that parses `rm ~/path` commands.
     """
-    def matches_line(self, env: Environment, line: str) -> bool:
+    def matches(self, env: Environment, line: str) -> bool:
         try:
             parts = shlex.split(line)
         except ValueError:
             return False
         return len(parts) == 2 and parts[0] == 'rm'
 
-    def parse_line(self, env: Environment, line: str) -> ToolCall:
+    def parse(self, env: Environment, line: str) -> ToolCall:
         parts = shlex.split(line)
-        # matches_line checks structure, but let's be safe
+        # matches checks structure, but let's be safe
         if len(parts) != 2 or parts[0] != 'rm':
             raise ValueError(f"Invalid rm command: {line}")
 
         path = parts[1]
 
-        return RemoveToolCall(path)
+        return ScriptRemoveCall(path)
 
 __all__ = [
-    'RemoveTool',
-    'RemoveToolCall',
+    'ScriptRemove',
+    'ScriptRemoveCall',
 ]

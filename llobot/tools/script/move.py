@@ -1,5 +1,5 @@
 """
-Tool for moving files.
+Script item for moving files.
 """
 from __future__ import annotations
 import shlex
@@ -10,9 +10,9 @@ from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.formats.paths import parse_path
 from llobot.tools import ToolCall
-from llobot.tools.line import LineTool
+from llobot.tools.script import ScriptItem
 
-class MoveToolCall(ToolCall):
+class ScriptMoveCall(ToolCall):
     """
     A tool call for moving a file.
     """
@@ -41,29 +41,29 @@ class MoveToolCall(ToolCall):
         project.move(source, destination)
         context_env.add(ChatMessage(ChatIntent.STATUS, msg))
 
-class MoveTool(LineTool):
+class ScriptMove(ScriptItem):
     """
     Tool that parses `mv ~/source ~/dest` commands.
     """
-    def matches_line(self, env: Environment, line: str) -> bool:
+    def matches(self, env: Environment, line: str) -> bool:
         try:
             parts = shlex.split(line)
         except ValueError:
             return False
         return len(parts) == 3 and parts[0] == 'mv'
 
-    def parse_line(self, env: Environment, line: str) -> ToolCall:
+    def parse(self, env: Environment, line: str) -> ToolCall:
         parts = shlex.split(line)
-        # matches_line checks structure, but let's be safe
+        # matches checks structure, but let's be safe
         if len(parts) != 3 or parts[0] != 'mv':
             raise ValueError(f"Invalid mv command: {line}")
 
         source_path = parts[1]
         dest_path = parts[2]
 
-        return MoveToolCall(source_path, dest_path)
+        return ScriptMoveCall(source_path, dest_path)
 
 __all__ = [
-    'MoveTool',
-    'MoveToolCall',
+    'ScriptMove',
+    'ScriptMoveCall',
 ]

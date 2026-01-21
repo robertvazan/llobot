@@ -13,14 +13,11 @@ from llobot.environments.prompt import PromptEnv
 from llobot.environments.tools import ToolEnv
 from llobot.projects.directory import DirectoryProject
 from llobot.projects.library.predefined import PredefinedProjectLibrary
-from llobot.tools.cat import CatTool
 from llobot.tools.code import DummyCodeBlockTool
 from llobot.tools.write import WriteTool
-from llobot.tools.move import MoveTool
-from llobot.tools.remove import RemoveTool
-from llobot.tools.script import ScriptTool
+from llobot.tools.script import ScriptTool, standard_script_tools
 
-TOOLS = [WriteTool(), MoveTool(), RemoveTool(), CatTool(), ScriptTool(), DummyCodeBlockTool()]
+TOOLS = [WriteTool(), ScriptTool(), *standard_script_tools(), DummyCodeBlockTool()]
 
 def test_accept_command_success(tmp_path: Path):
     # Setup project

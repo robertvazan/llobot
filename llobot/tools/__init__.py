@@ -8,8 +8,6 @@ Submodules
 ----------
 block
     Base class for tools that parse content blocks.
-cat
-    A tool for reading files.
 code
     A tool for skipping code blocks.
 dummy
@@ -20,20 +18,12 @@ fenced
     A base class for tools that use fenced code blocks.
 write
     A tool for creating or updating files from file listings.
-line
-    Base class for tools that parse single lines.
-move
-    A tool for moving files.
 parsing
     A function to parse tool calls from text.
-remove
-    A tool for removing files.
-replace
-    A tool for replacing text using regex patterns.
 shell
     A tool for executing shell scripts.
 script
-    A tool for executing scripts of line-based commands.
+    Package for the script tool and its commands (cat, mv, rm, sd).
 """
 from __future__ import annotations
 from functools import cache
@@ -121,25 +111,18 @@ def standard_tools() -> tuple[Tool, ...]:
     Returns:
         A tuple of standard tool instances.
     """
-    from llobot.tools.cat import CatTool
     from llobot.tools.code import DummyCodeBlockTool
     from llobot.tools.patch import PatchTool
-    from llobot.tools.move import MoveTool
-    from llobot.tools.remove import RemoveTool
-    from llobot.tools.replace import ReplaceTool
-    from llobot.tools.script import ScriptTool
+    from llobot.tools.script import ScriptTool, standard_script_tools
     from llobot.tools.shell import ShellTool
     from llobot.tools.write import WriteTool
     return (
         WriteTool(),
         PatchTool(),
-        MoveTool(),
-        RemoveTool(),
-        ReplaceTool(),
         ShellTool(),
-        CatTool(),
         ScriptTool(),
         DummyCodeBlockTool(),
+        *standard_script_tools(),
     )
 
 
