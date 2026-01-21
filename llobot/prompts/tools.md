@@ -90,6 +90,7 @@ To modify an existing file, output a patch tool call with simplified unified dif
 - Every hunk must have a unique match in the file
 - Patch tool adds full listing of the modified file to the context, so that you can see the effect of your changes
 - Patch tool is ideal for making localized changes to the file, for example modifying individual functions or adding imports
+- If patching inexplicably fails, resort to write tool
 
 ### Tool call formatting
 
