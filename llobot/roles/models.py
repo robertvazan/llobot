@@ -37,6 +37,10 @@ class RoleModel(Model, ValueTypeMixin):
     def name(self) -> str:
         return self._role.name
 
+    @property
+    def identifier(self) -> str:
+        return f'llobot/{self._role.name}'
+
     def generate(self, prompt: ChatThread) -> ChatStream:
         """
         Generates a response by invoking the role's chat method.

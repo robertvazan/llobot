@@ -13,6 +13,7 @@ def test_role_model_wrapper():
     role_model = RoleModel(role)
 
     assert role_model.name == 'bot'
+    assert role_model.identifier == 'llobot/bot'
 
     # Generate
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "Hi")])

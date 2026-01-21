@@ -16,3 +16,7 @@ def test_value_type():
     assert model1 != model3
     assert hash(model1) == hash(model2)
     assert model1._endpoint == localhost_ollama_endpoint()
+
+def test_identifier():
+    model = OllamaModel(name='local', model='qwen2:7b', num_ctx=8192)
+    assert model.identifier == 'ollama/qwen2:7b'

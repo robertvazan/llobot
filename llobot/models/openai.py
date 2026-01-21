@@ -71,6 +71,10 @@ class OpenAIModel(Model, ValueTypeMixin):
         return self._name
 
     @property
+    def identifier(self) -> str:
+        return f'openai/{self._model}'
+
+    @property
     def context_budget(self) -> int:
         return self._context_budget
 

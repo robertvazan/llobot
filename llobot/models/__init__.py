@@ -39,6 +39,15 @@ class Model:
         raise NotImplementedError
 
     @property
+    def identifier(self) -> str:
+        """
+        A publicly recognizable model name, usually in vendor/model format.
+
+        For example: `openai/gpt-5-2025-08-07`.
+        """
+        raise NotImplementedError
+
+    @property
     def context_budget(self) -> int:
         """
         The number of characters to use for context stuffing.

@@ -40,6 +40,10 @@ class MockModel(Model, ValueTypeMixin):
         return self._name
 
     @property
+    def identifier(self) -> str:
+        return f'mock/{self._name}'
+
+    @property
     def context_budget(self) -> int:
         return self._context_budget
 

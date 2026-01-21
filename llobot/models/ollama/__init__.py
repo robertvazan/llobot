@@ -56,6 +56,10 @@ class OllamaModel(Model, ValueTypeMixin):
         return self._name
 
     @property
+    def identifier(self) -> str:
+        return f'ollama/{self._model}'
+
+    @property
     def context_budget(self) -> int:
         return self._context_budget
 

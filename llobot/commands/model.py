@@ -2,8 +2,11 @@
 Command to select a model.
 """
 from __future__ import annotations
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 from llobot.commands import handle_commands
 from llobot.environments import Environment
+from llobot.environments.context import ContextEnv
 from llobot.environments.model import ModelEnv
 
 def handle_model_command(text: str, env: Environment) -> bool:
@@ -28,7 +31,22 @@ def handle_model_commands(env: Environment):
     """
     Handles `@model` commands in the environment.
     """
+    model_env = env[ModelEnv]
+    try:
+        before = model_env.get()
+    except ValueError:
+        before = None
+
     handle_commands(env, handle_model_command)
+
+    try:
+        after = model_env.get()
+    except ValueError:
+        after = None
+
+    if before != after and after:
+        text = f"Selected LLM: `{after.identifier}`"
+        env[ContextEnv].add(ChatMessage(ChatIntent.SYSTEM, text))
 
 __all__ = [
     'handle_model_command',

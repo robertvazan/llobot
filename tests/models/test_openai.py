@@ -23,3 +23,7 @@ def test_missing_auth():
     """
     with pytest.raises(TypeError):
         OpenAIModel(name='gpt4')
+
+def test_identifier():
+    model = OpenAIModel(name='gpt4', auth='key', model='gpt-4o')
+    assert model.identifier == 'openai/gpt-4o'
