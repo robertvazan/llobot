@@ -40,6 +40,12 @@ class ContextEnv(PersistentEnv):
         """
         self._builder.add(branch)
 
+    def clear(self):
+        """
+        Clears all messages from the context.
+        """
+        self._builder = ChatBuilder()
+
     def record(self, stream: ChatStream) -> ChatStream:
         """
         Records a model stream while passing it through.

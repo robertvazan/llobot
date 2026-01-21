@@ -70,3 +70,14 @@ def test_context_env_load_missing_file(tmp_path: Path):
     env = ContextEnv()
     env.load(tmp_path)
     assert not env.build()
+
+def test_context_env_clear():
+    env = ContextEnv()
+    env.add(ChatMessage(ChatIntent.PROMPT, "Hello"))
+    assert env.populated
+
+    env.clear()
+
+    assert not env.populated
+    assert not env.build()
+    assert env.builder.messages == []

@@ -195,3 +195,43 @@ def test_agent_project_summary(tmp_path: Path):
 
     assert "Projects:" in context
     assert "- Marker `~/myproject`" in context
+
+def test_agent_stuffing_order_with_setup_message(tmp_path: Path):
+    """
+    Tests that context stuffing prepends system prompt even if setup added messages.
+    """
+    model = MockModel('echo')
+
+    class SetupAgent(Agent):
+        def handle_setup(self, env):
+            # Simulate setup adding a message before stuffing
+            from llobot.environments.context import ContextEnv
+            env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, "Setup complete."))
+            super().handle_setup(env)
+
+    agent = SetupAgent('agent', model, prompt="System Prompt.", session_history=tmp_path)
+
+    prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "Hello")])
+    record_stream(agent.chat(prompt))
+
+    # Check the context sent to the model
+    thread = model.history[0]
+    messages = thread.messages
+
+    # We expect:
+    # 1. System Prompt (from stuff)
+    # 2. Reminder (from remind, added after stuff)
+    # 3. Setup complete. (from handle_setup, preserved and re-added)
+    # 4. Hello (Prompt)
+
+    # Find the index of the SYSTEM message containing "System Prompt."
+    idx_system = next((i for i, m in enumerate(messages)
+                       if m.intent == ChatIntent.SYSTEM and "System Prompt." in m.content), -1)
+
+    # Find the index of the STATUS message containing "Setup complete."
+    idx_setup = next((i for i, m in enumerate(messages)
+                      if m.intent == ChatIntent.STATUS and "Setup complete." in m.content), -1)
+
+    assert idx_system != -1, "System prompt not found in context"
+    assert idx_setup != -1, "Setup message not found in context"
+    assert idx_system < idx_setup, f"System prompt (idx={idx_system}) should be before setup messages (idx={idx_setup})."

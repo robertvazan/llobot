@@ -111,17 +111,27 @@ class Agent(Role):
         """
         Processes commands and populates the environment.
 
-        This method orchestrates command handling by delegating to `handle_setup`,
-        `stuff`, and `handle_commands` for role-specific logic.
+        This method orchestrates command handling. It delegates setup to `handle_setup`.
+        It performs context stuffing if this is the first turn of the conversation
+        (or if the context is missing). Finally, it delegates command processing
+        to `handle_commands`.
 
         Args:
             env: The environment to process commands in.
         """
         self.handle_setup(env)
 
-        if not env[ContextEnv].populated:
+        # Context stuffing is performed only at the beginning of the conversation.
+        if env[PromptEnv].previous_hash is None:
+            # If setup commands added any messages (e.g. status), we must preserve them
+            # but move them after the stuffed content.
+            setup_messages = env[ContextEnv].build()
+            env[ContextEnv].clear()
+
             self.stuff(env)
             self.remind(env)
+
+            env[ContextEnv].add(setup_messages)
 
         env[ContextEnv].add(env[PromptEnv].full[-1])
 
