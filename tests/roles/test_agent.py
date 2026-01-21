@@ -174,8 +174,8 @@ def test_agent_accept_command(tmp_path: Path):
 
     assert (tmp_path / 'project/test.txt').read_text().strip() == 'content'
 
-def test_agent_project_summary(tmp_path: Path):
-    """Tests that Agent includes project summary in the context."""
+def test_project_command_summary(tmp_path: Path):
+    """Tests that project selection command adds project summary to the context."""
     model = MockModel('echo')
 
     # Setup a project environment with a mock project
@@ -184,17 +184,29 @@ def test_agent_project_summary(tmp_path: Path):
     from llobot.projects.library.predefined import PredefinedProjectLibrary
     library = PredefinedProjectLibrary({'myproject': project})
 
-    class PreselectedAgent(Agent):
+    # Agent base class doesn't handle project commands by default anymore.
+    class ProjectAwareAgent(Agent):
         def handle_setup(self, env):
-            env[ProjectEnv].add('myproject')
+            super().handle_setup(env)
+            from llobot.commands.project import handle_project_commands
+            handle_project_commands(env)
 
-    agent = PreselectedAgent('agent', model, session_history=tmp_path, projects=library)
-    prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "Hello")])
+    agent = ProjectAwareAgent('agent', model, session_history=tmp_path, projects=library)
+    prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "@myproject Hello")])
     record_stream(agent.chat(prompt))
     context = model.history[0]
 
     assert "Projects:" in context
     assert "- Marker `~/myproject`" in context
+
+    # Verify that project summary is NOT included if projects didn't change (e.g. no @project command)
+    model = MockModel('echo')
+    agent = ProjectAwareAgent('agent', model, session_history=tmp_path, projects=library)
+    prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "Hello")])
+    record_stream(agent.chat(prompt))
+    context = model.history[0]
+
+    assert "Projects:" not in context
 
 def test_agent_stuffing_order_with_setup_message(tmp_path: Path):
     """

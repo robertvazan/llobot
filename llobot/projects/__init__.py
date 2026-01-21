@@ -34,7 +34,8 @@ from llobot.projects.items import ProjectDirectory, ProjectFile, ProjectItem
 class Project:
     """
     A repository of documents that can be enumerated and read. Projects can
-    also be mutable, allowing for file modifications.
+    also be mutable, allowing for file modifications. All project implementations
+    must be value-comparable (e.g. by inheriting from `ValueTypeMixin`).
     """
     @property
     def prefixes(self) -> set[PurePosixPath]:

@@ -2,8 +2,11 @@
 Command to select a project.
 """
 from __future__ import annotations
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 from llobot.commands import handle_commands
 from llobot.environments import Environment
+from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
 
 def handle_project_command(text: str, env: Environment) -> bool:
@@ -26,9 +29,17 @@ def handle_project_command(text: str, env: Environment) -> bool:
 
 def handle_project_commands(env: Environment):
     """
-    Handles `@project` commands in the environment.
+    Handles project selection commands (e.g. `@myproject`) in the environment.
     """
+    project_env = env[ProjectEnv]
+    before = project_env.union.summary
     handle_commands(env, handle_project_command)
+    after = project_env.union.summary
+
+    if before != after:
+        if after:
+            text = "Projects:\n\n" + "\n".join(f"- {item}" for item in after)
+            env[ContextEnv].add(ChatMessage(ChatIntent.SYSTEM, text))
 
 __all__ = [
     'handle_project_command',

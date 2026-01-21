@@ -167,12 +167,6 @@ class Agent(Role):
         builder.budget = env[ModelEnv].get().context_budget
         builder.add(self._prompt_format.render_chat(self._system))
 
-        items = env[ProjectEnv].union.summary
-        if items:
-            # Format as a Markdown list
-            text = "Projects:\n\n" + "\n".join(f"- {item}" for item in items)
-            builder.add(ChatMessage(ChatIntent.SYSTEM, text))
-
     def remind(self, env: Environment):
         """
         Adds a reminder prompt to the context.
