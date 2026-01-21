@@ -40,7 +40,7 @@ def test_accept_command_success(tmp_path: Path):
         I will perform the requested file operations.
 
         <details>
-        <summary>Write: ~/myproject/file2.txt</summary>
+        <summary>write: ~/myproject/file2.txt</summary>
 
         ```
         new content

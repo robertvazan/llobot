@@ -21,7 +21,7 @@ pip install -e .
 ```
 
 - Shell tool is the preferred way to run commands, but it is only available if the project is expressly marked executable in the project list
-- Do not use shell tool for reading, writing, and patching files, because these operations are better handled by other tools 
+- Do not use shell tool for reading, writing, and patching files, because these operations are better handled by other tools
 - Shell tool call must be enclosed in a Markdown code block with `shelltool` language identifier
 - The first non-comment line of the script must be `cd ~/path` to specify the working directory, which must be part of some project
 - Shell tool will return output from the script as well as its exit code
@@ -55,13 +55,13 @@ sd old new ~/path/to/file.txt
 To create a new file or completely replace an existing file, output a file write tool call:
 
 <details>
-<summary>Write: ~/path/to/file.py</summary>
+<summary>write: ~/path/to/file.py</summary>
 
 ```python
 # ... entire content of the file ...
 ```
 
-- File listings (with "File:" in the summary) are produced by the orchestrator whereas write tool calls (with "Write:" in the summary) are produced by you
+- File listings (with "File:" in the summary) are produced by the orchestrator whereas write tool calls (with "write:" in the summary) are produced by you
 - The write tool is ideal for creating new files, but it is also useful when file changes are so extensive it's easier to rewrite the whole file
 
 </details>
@@ -71,7 +71,7 @@ To create a new file or completely replace an existing file, output a file write
 To modify an existing file, output a patch tool call with simplified unified diff in it:
 
 <details>
-<summary>Patch: ~/path/to/file.py</summary>
+<summary>patch: ~/path/to/file.py</summary>
 
 ```diff
 @@
@@ -136,7 +136,7 @@ def cube(x):
 You can now edit the file using the patch tool. In this example, we will replace the power operator with multiplication:
 
 <details>
-<summary>Patch: ~/myproject/ops.py</summary>
+<summary>patch: ~/myproject/ops.py</summary>
 
 ```diff
 @@

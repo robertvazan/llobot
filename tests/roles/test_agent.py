@@ -135,7 +135,7 @@ def test_agent_accept_command(tmp_path: Path):
 
     file_tool_call_str = dedent("""\
         <details>
-        <summary>Write: ~/project/test.txt</summary>
+        <summary>write: ~/project/test.txt</summary>
 
         ```
         content

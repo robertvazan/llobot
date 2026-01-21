@@ -20,7 +20,7 @@ def test_slice_valid(env):
     tool = PatchTool()
     source = dedent("""
         <details>
-        <summary>Patch: ~/test/file.txt</summary>
+        <summary>patch: ~/test/file.txt</summary>
 
         ```diff
         @@
@@ -36,7 +36,7 @@ def test_parse_valid(env):
     tool = PatchTool()
     source = dedent("""
         <details>
-        <summary>Patch: ~/test/file.txt</summary>
+        <summary>patch: ~/test/file.txt</summary>
 
         ```diff
         @@

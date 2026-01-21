@@ -40,7 +40,7 @@ class WriteToolCall(ToolCall):
         env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"Written `~/{path}`"))
 
 _WRITE_DETAILS_RE = re.compile(
-    r'^<details>\s*<summary>\s*Write:\s*(?P<path>.+?)\s*</summary>\s*'
+    r'^<details>\s*<summary>\s*write:\s*(?P<path>.+?)\s*</summary>\s*'
     r'^(?P<fence>`{3,})(?P<lang>[^`\n]*)\s*\n'
     r'(?P<content>.*?)'
     r'^(?P=fence)\s*</details>',
@@ -52,7 +52,7 @@ class WriteTool(BlockTool):
     """
     Tool that parses document listings in the format:
     <details>
-    <summary>Write: ~/path/to/file</summary>
+    <summary>write: ~/path/to/file</summary>
 
     ```lang
     content

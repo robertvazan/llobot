@@ -30,7 +30,7 @@ def test_write_tool_slice_and_parse(env: Environment):
     tool = WriteTool()
     text = dedent("""
         <details>
-        <summary>Write: ~/myproject/foo.txt</summary>
+        <summary>write: ~/myproject/foo.txt</summary>
 
         ```
         content
@@ -59,7 +59,7 @@ def test_write_tool_slice_extra_whitespace(env: Environment):
     tool = WriteTool()
     text = dedent("""
         <details>
-          <summary>  Write:   ~/myproject/bar.py   </summary>
+          <summary>  write:   ~/myproject/bar.py   </summary>
 
         ````python
         print("hello")
@@ -80,14 +80,14 @@ def test_write_tool_slice_extra_whitespace(env: Environment):
 
 def test_write_tool_no_match(env: Environment):
     tool = WriteTool()
-    text = "<summary>Write: foo.txt</summary>"
+    text = "<summary>write: foo.txt</summary>"
     assert tool.slice(env, text, 0) == 0
 
 def test_write_tool_missing_tilde_prefix(env: Environment):
     tool = WriteTool()
     text = dedent("""
         <details>
-        <summary>Write: myproject/foo.txt</summary>
+        <summary>write: myproject/foo.txt</summary>
         ```
         ```
         </details>
@@ -106,7 +106,7 @@ def test_write_tool_empty_code_block(env: Environment):
     tool = WriteTool()
     text = dedent("""
         <details>
-        <summary>Write: ~/myproject/empty.txt</summary>
+        <summary>write: ~/myproject/empty.txt</summary>
         ```
         ```
         </details>
@@ -131,7 +131,7 @@ def test_write_tool_nested_fences(env: Environment):
     # Outer fence is 4 backticks, inner is 3. Should pass.
     text = dedent("""
         <details>
-        <summary>Write: ~/myproject/foo.md</summary>
+        <summary>write: ~/myproject/foo.md</summary>
 
         ````markdown
         ```python
@@ -150,7 +150,7 @@ def test_write_tool_conflicting_fence(env: Environment):
     tool = WriteTool()
     text = dedent("""
         <details>
-        <summary>Write: ~/myproject/foo.md</summary>
+        <summary>write: ~/myproject/foo.md</summary>
 
         ```markdown
         Start
@@ -170,7 +170,7 @@ def test_write_tool_midline_fence(env: Environment):
     tool = WriteTool()
     text = dedent("""
         <details>
-        <summary>Write: ~/myproject/foo.md</summary>
+        <summary>write: ~/myproject/foo.md</summary>
 
         ```markdown
         Here is some text with ``` backticks in the middle.

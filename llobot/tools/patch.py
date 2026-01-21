@@ -130,7 +130,7 @@ class PatchToolCall(ToolCall):
         return hunks
 
 _PATCH_DETAILS_RE = re.compile(
-    r'^<details>\s*<summary>\s*Patch:\s*(?P<path>.+?)\s*</summary>\s*'
+    r'^<details>\s*<summary>\s*patch:\s*(?P<path>.+?)\s*</summary>\s*'
     r'^(?P<fence>`{3,})(?P<lang>[^`\n]*)\s*\n'
     r'(?P<content>.*?)'
     r'^(?P=fence)\s*</details>',
@@ -141,7 +141,7 @@ class PatchTool(BlockTool):
     """
     Tool that parses patch listings in the format:
     <details>
-    <summary>Patch: ~/path/to/file</summary>
+    <summary>patch: ~/path/to/file</summary>
 
     ```diff
     @@ ...
