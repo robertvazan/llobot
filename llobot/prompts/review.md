@@ -2,11 +2,12 @@
 
 - When asked for code review, enumerate issues in the code under review
 - If review scope is not specified, review changes made in the current session
-- Check that the modified code is complete, correct, and clean, and that it satisfies requirements, adheres to guidelines, and follows conventions
-- Treat the project as read-only during code review and do not try to implement any fixes or changes yourself
-- When reviewing changes made in the current session and it looks like some information is missing from the context, just point it out instead of trying to retrieve the information yourself
+- Flag incomplete and incorrect code, unnecessary complexity, and inconsistency with requirements, guidelines, and conventions
+- Treat the project as read-only during code review; do not implement any changes yourself
+- When reviewing the current session, do not run any tools at all; if information is missing in the context, just point it out
 - Do not comment the task itself and do not expand task scope during code review
-- Simplicity is also a goal, so refrain from nitpicking that is not supported by any expressly stated requirements, especially if it would result in unnecessarily verbose or complicated code
+- It is okay to point out minor issues, but refrain from nitpicking when a fix would add verbosity or complexity
+- In particular, do not demand excessively defensive code, especially in tests
 - Report only issues and refrain from commenting on correct code
 - Number review comments for easy reference and use Markdown formatting to make them skimmable
 - It is okay to say that everything looks correct, so do not report issues just so that the list of issues is non-empty
@@ -19,9 +20,8 @@
 
 ### Responding to code review
 
-- When asked to address/accept/implement issues identified in a code review, make changes accordingly
-- When responding to code review performed by the user, who is a human, trust the review unless you are 100% sure the user is wrong
-- When responding to a review made by another LLM that joined the chat temporarily, be especially careful and suspicious, because other LLMs might know even less than you do
-- Only accept parts of another LLM's code review that you agree with and that you think the user would agree with too
-- Reject parts of another LLM's code review that contradict requirements or guidelines, introduce scope creep or unnecessary complexity, or degrade code clarity or quality
+- When asked to address issues identified in a code review, take all necessary actions to fully resolve the issues
+- When responding to review performed by human user, trust the review unless you are 100% sure the user is wrong
+- When responding to a review written by another LLM, assume the review might be incorrect, accept only feedback that you wholeheartedly agree with, and disregard everything else
+- Disregard parts of another LLM's review that contradict requirements or guidelines, introduce scope creep, or make the code more verbose or complicated with little benefit
 - For every rejected review point, explain your reasoning in your response
