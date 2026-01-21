@@ -1,19 +1,18 @@
 from __future__ import annotations
-import base64
-import hashlib
 from pathlib import Path
+from pytest import raises
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
 from llobot.chats.thread import ChatThread
 from llobot.environments import Environment
 from llobot.environments.history import SessionHistory
 from llobot.environments.persistent import PersistentEnv
-from llobot.environments.prompt import PromptEnv
+from llobot.environments.prompt import PromptEnv, _hash_thread
 
 class DummyPersistent(PersistentEnv):
     """
     A simple persistent component used to verify that SessionHistory
-    saves and loads environment state to the path derived from PromptEnv.
+    saves and loads environment state.
     """
     filename = 'dummy.txt'
     loaded_value: str | None
@@ -31,49 +30,72 @@ class DummyPersistent(PersistentEnv):
         else:
             self.loaded_value = None
 
-def _session_hash(text: str) -> str:
-    hasher = hashlib.sha256(text.encode('utf-8'))
-    b64 = base64.urlsafe_b64encode(hasher.digest()).decode('ascii')
-    return b64[:40]
-
 def test_save_uses_session_id_and_persists_component(tmp_path: Path):
     env = Environment()
-    # Register persistent component so Environment.save() has something to write.
+    # Register persistent component
     env[DummyPersistent]
-    # Set prompt to derive session ID.
-    prompt_env = env[PromptEnv]
+
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "initial prompt")])
-    prompt_env.set(prompt)
-    session_id = prompt_env.hash
-    assert session_id
+    env[PromptEnv].set(prompt)
 
     history = SessionHistory(tmp_path)
-
-    # Execute save.
     history.save(env)
 
     # Verify file written at path derived from the session ID.
+    session_id = _hash_thread(prompt)
     session_dir = tmp_path / session_id
     assert (session_dir / DummyPersistent.filename).exists()
 
-def test_load_uses_session_id_and_loads_component(tmp_path: Path):
-    # Prepare saved state using computed session ID for "initial prompt".
-    session_id = _session_hash("initial prompt")
+def test_save_cleans_up_existing_session(tmp_path: Path):
+    """Ensures existing session directory is cleared before saving."""
+    prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "initial prompt")])
+    session_id = _hash_thread(prompt)
+    session_dir = tmp_path / session_id
+    session_dir.mkdir(parents=True)
+    (session_dir / "garbage.txt").write_text("trash")
+
+    env = Environment()
+    env[DummyPersistent]
+    env[PromptEnv].set(prompt)
+
+    history = SessionHistory(tmp_path)
+    history.save(env)
+
+    assert (session_dir / DummyPersistent.filename).exists()
+    assert not (session_dir / "garbage.txt").exists()
+
+def test_load_uses_previous_session_id(tmp_path: Path):
+    # Prepare saved state for turn 1
+    turn1_prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "Turn 1")])
+    session_id = _hash_thread(turn1_prompt)
     session_dir = tmp_path / session_id
     session_dir.mkdir(parents=True, exist_ok=True)
     (session_dir / DummyPersistent.filename).write_text('saved', encoding='utf-8')
 
-    # Create fresh environment and set same prompt.
+    # Create environment for turn 2 (continuing from Turn 1)
     env = Environment()
-    prompt_env = env[PromptEnv]
-    prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "initial prompt")])
-    prompt_env.set(prompt)
-    assert prompt_env.hash == session_id
+    turn2_prompt = turn1_prompt + ChatMessage(ChatIntent.PROMPT, "Turn 2")
+    env[PromptEnv].set(turn2_prompt)
 
-    # Ensure the component exists so Environment.load() can load it immediately.
-    dp = env[DummyPersistent]
+    # Ensure PromptEnv calculated correct previous hash
+    assert env[PromptEnv].previous_hash == session_id
 
+    # Load history
     history = SessionHistory(tmp_path)
     history.load(env)
 
-    assert dp.loaded_value == 'saved'
+    assert env[DummyPersistent].loaded_value == 'saved'
+
+def test_load_raises_on_missing_history(tmp_path: Path):
+    env = Environment()
+    # Construct prompt that implies history (two prompts)
+    prompt = ChatThread([
+        ChatMessage(ChatIntent.PROMPT, "Turn 1"),
+        ChatMessage(ChatIntent.PROMPT, "Turn 2")
+    ])
+    env[PromptEnv].set(prompt)
+
+    history = SessionHistory(tmp_path)
+
+    with raises(FileNotFoundError):
+        history.load(env)

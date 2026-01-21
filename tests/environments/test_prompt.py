@@ -1,20 +1,14 @@
-import base64
-import hashlib
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
 from llobot.chats.thread import ChatThread
-from llobot.environments.prompt import PromptEnv
-
-def _session_hash(text: str) -> str:
-    hasher = hashlib.sha256(text.encode('utf-8'))
-    b64 = base64.urlsafe_b64encode(hasher.digest()).decode('ascii')
-    return b64[:40]
+from llobot.environments.prompt import PromptEnv, _hash_thread
 
 def test_prompt_env_empty():
     env = PromptEnv()
     assert env.full == ChatThread()
     assert env.current == ''
     assert env.hash is None
+    assert env.previous_hash is None
     assert not env.swallowed
 
 def test_prompt_env_set():
@@ -31,7 +25,15 @@ def test_prompt_env_set():
     assert env.current == "Current prompt"
     assert env.hash is not None
     assert len(env.hash) == 40
-    assert env.hash == _session_hash(initial)
+    # Hash should be computed from the full thread
+    assert env.hash == _hash_thread(prompt)
+
+    # Previous hash should be computed from thread up to "Initial prompt" (inclusive)
+    # because "Initial prompt" is the previous message with PROMPT intent.
+    previous_thread = ChatThread([
+        ChatMessage(ChatIntent.PROMPT, initial),
+    ])
+    assert env.previous_hash == _hash_thread(previous_thread)
 
 def test_prompt_env_swallow():
     env = PromptEnv()
@@ -48,9 +50,12 @@ def test_prompt_env_set_empty_prompt():
     assert env.full == ChatThread()
     assert env.current == ''
     assert env.hash is None
+    assert env.previous_hash is None
 
 def test_prompt_env_first_message_empty():
+    """Empty message is still part of the thread and should be hashed."""
     env = PromptEnv()
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "")])
     env.set(prompt)
-    assert env.hash is None
+    assert env.hash is not None
+    assert env.hash == _hash_thread(prompt)

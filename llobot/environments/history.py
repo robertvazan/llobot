@@ -2,6 +2,7 @@
 Session history management.
 """
 from __future__ import annotations
+import shutil
 from pathlib import Path, PurePosixPath
 from llobot.environments import Environment
 from llobot.environments.prompt import PromptEnv
@@ -13,9 +14,7 @@ class SessionHistory:
     """
     Manages persistence of Environment states for sessions.
 
-    The session ID is a hash of the initial prompt, obtained from the
-    provided Environment's PromptEnv. If the Environment has no session ID
-    (e.g., empty prompt), save/load operations are no-ops.
+    The session ID is a hash of the full prompt thread.
     """
     _location: Zoning
 
@@ -32,8 +31,9 @@ class SessionHistory:
         """
         Saves an environment state for the current session.
 
-        The session ID is read from env[PromptEnv]. If there is no session ID,
-        this method does nothing.
+        The session ID is read from env[PromptEnv].hash. If there is no session ID,
+        this method does nothing. If a session with the same ID already exists,
+        it is removed before saving.
 
         Args:
             env: The environment to save.
@@ -43,23 +43,37 @@ class SessionHistory:
             return
         zone = PurePosixPath(session_id)
         path = self._location.resolve(zone)
+
+        if path.exists():
+            shutil.rmtree(path)
+
         env.save(path)
 
     def load(self, env: Environment):
         """
-        Loads an environment state for the current session.
+        Loads an environment state for the previous session.
 
-        The session ID is read from env[PromptEnv]. If the session does not
-        exist or there is no session ID, the environment is not modified.
+        The session ID is read from env[PromptEnv].previous_hash.
+        If previous_hash is None, it assumes a new session and does nothing.
+        If previous_hash is set but no corresponding session file is found,
+        it raises a FileNotFoundError.
 
         Args:
             env: The environment to load into.
+
+        Raises:
+            FileNotFoundError: If the previous session is missing.
         """
-        session_id = env[PromptEnv].hash
-        if not session_id:
+        previous_id = env[PromptEnv].previous_hash
+        if not previous_id:
             return
-        zone = PurePosixPath(session_id)
+
+        zone = PurePosixPath(previous_id)
         path = self._location.resolve(zone)
+
+        if not path.exists():
+            raise FileNotFoundError(f"Previous session {previous_id} not found.")
+
         env.load(path)
 
 

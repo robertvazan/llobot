@@ -1,7 +1,6 @@
-import base64
-import hashlib
 from pathlib import Path
 from textwrap import dedent
+from pytest import raises
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
 from llobot.chats.stream import record_stream
@@ -10,14 +9,8 @@ from llobot.environments.projects import ProjectEnv
 from tests.models.mock import MockModel
 from llobot.roles.agent import Agent
 from llobot.tools.write import WriteTool
-
-def get_session_hash(prompt: ChatThread) -> str:
-    """Helper to compute session hash from a prompt thread."""
-    if not prompt or not prompt[0].content:
-        raise ValueError("Cannot compute hash for empty initial prompt")
-    hasher = hashlib.sha256(prompt[0].content.encode('utf-8'))
-    b64 = base64.urlsafe_b64encode(hasher.digest()).decode('ascii')
-    return b64[:40]
+from llobot.environments.prompt import _hash_thread
+from llobot.chats.markdown import save_chat_to_markdown
 
 def test_agent_first_turn(tmp_path: Path):
     """Tests that Agent creates a new session and includes system prompt on first turn."""
@@ -28,20 +21,26 @@ def test_agent_first_turn(tmp_path: Path):
     stream = agent.chat(prompt)
     record_stream(stream)
 
+    # We save under hash(prompt)
+    session_hash = _hash_thread(prompt)
+
     # Check that session history was created
-    session_hash = get_session_hash(prompt)
     assert (tmp_path / session_hash).exists()
 
 def test_agent_session_persistence(tmp_path: Path):
     """Tests that Agent can resume a session and load persisted state."""
     model = MockModel('echo')
 
-    # First turn: create a session
+    # Turn 1: create a session
     agent1 = Agent('agent', model, prompt="System", session_history=tmp_path)
     prompt1 = ChatThread([ChatMessage(ChatIntent.PROMPT, "First")])
-    record_stream(agent1.chat(prompt1))  # this will save the session
+    response1 = record_stream(agent1.chat(prompt1))
 
-    # Second turn: resume the session with a custom agent that verifies state loading
+    # Turn 2: resume the session.
+    # The prompt is [P1, R1, P2]. Previous hash = hash([P1]).
+    # We saved Turn 1 under hash([P1]). So this should work.
+    prompt2 = prompt1 + response1 + ChatMessage(ChatIntent.PROMPT, "Next")
+
     class StatefulAgent(Agent):
         def handle_setup(self, env):
             super().handle_setup(env)
@@ -49,13 +48,6 @@ def test_agent_session_persistence(tmp_path: Path):
             env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, "State loaded."))
 
     agent2 = StatefulAgent('stateful', model, session_history=tmp_path)
-    # The prompt is the full history. The agent uses the first message to find the session.
-    prompt2 = ChatThread([
-        ChatMessage(ChatIntent.PROMPT, "First"),
-        ChatMessage(ChatIntent.RESPONSE, "Some response from turn 1"),
-        ChatMessage(ChatIntent.PROMPT, "Next")
-    ])
-
     stream2 = agent2.chat(prompt2)
     response_thread2 = record_stream(stream2)
 
@@ -78,35 +70,50 @@ def test_agent_reminder(tmp_path: Path):
     assert "Reminder:" in context
     assert "- Do this." in context
 
-def test_agent_coercion(tmp_path: Path):
-    """Tests that Agent coerces context to match altered history."""
+def test_agent_branching(tmp_path: Path):
+    """Tests that Agent branches context correctly."""
     model = MockModel('echo')
     agent = Agent('agent', model, prompt="System", session_history=tmp_path)
 
     # Turn 1
     prompt1 = ChatThread([ChatMessage(ChatIntent.PROMPT, "Original")])
-    record_stream(agent.chat(prompt1))
-    # Session for "Original" is created and saved.
+    response1 = record_stream(agent.chat(prompt1))
+    # Session S1 is saved for [Original].
 
-    # Turn 2: User edits history within the same session.
-    prompt2 = ChatThread([
-        ChatMessage(ChatIntent.PROMPT, "Original"), # Same initial prompt to stay in session
-        ChatMessage(ChatIntent.PROMPT, "Edited"), # This replaces what was in the second turn
-        ChatMessage(ChatIntent.RESPONSE, "New Response"), # User fabricated a response
-        ChatMessage(ChatIntent.PROMPT, "Next")
+    # Turn 2: User branches off from Turn 1.
+    prompt2 = prompt1 + response1 + ChatMessage(ChatIntent.PROMPT, "Branch A")
+    record_stream(agent.chat(prompt2))
+    # Agent loads S1 (hash(Original)), generates Response A.
+    # Session S2 is saved for [Original, Response1, Branch A].
+
+    # Turn 2 (Alternative): User branches off differently from Turn 1.
+    prompt3 = prompt1 + response1 + ChatMessage(ChatIntent.PROMPT, "Branch B")
+    record_stream(agent.chat(prompt3))
+    # Agent loads S1 (it's still there), generates Response B.
+    # Session S3 is saved for [Original, Response1, Branch B].
+
+    # Verify that S1 exists.
+    assert (tmp_path / _hash_thread(prompt1)).exists()
+
+    # Verify S2 and S3 exist
+    assert (tmp_path / _hash_thread(prompt2)).exists()
+    assert (tmp_path / _hash_thread(prompt3)).exists()
+
+def test_agent_missing_history(tmp_path: Path):
+    """Tests that Agent raises FileNotFoundError when history is missing."""
+    model = MockModel('echo')
+    agent = Agent('agent', model, prompt="System", session_history=tmp_path)
+
+    # Construct a prompt that looks like a second turn (P1, R1, P2)
+    # but where the first turn (P1) was never saved.
+    prompt = ChatThread([
+        ChatMessage(ChatIntent.PROMPT, "Ghost"),
+        ChatMessage(ChatIntent.RESPONSE, "Woo"),
+        ChatMessage(ChatIntent.PROMPT, "Buster")
     ])
 
-    # Agent should load context from session "Original", then detect mismatch,
-    # truncate, and append the new history.
-    stream2 = agent.chat(prompt2)
-    record_stream(stream2)
-
-    context = model.history[-1]
-
-    # We expect "Edited" to be present, and the response from turn 1 to be gone.
-    assert "Edited" in context
-    assert "Original" in context # The first prompt is still there
-    assert "New Response" in context
+    with raises(FileNotFoundError, match="Previous session .* not found"):
+        list(agent.chat(prompt))
 
 def test_agent_accept_command(tmp_path: Path):
     """Tests that Agent can execute tool calls with @accept command."""
@@ -136,14 +143,23 @@ def test_agent_accept_command(tmp_path: Path):
 
         </details>""")
 
-    # A project must be selected for its files to be writable.
-    prompt = ChatThread([
+    first_turn_thread = ChatThread([
         ChatMessage(ChatIntent.PROMPT, "Initial prompt"),
-        ChatMessage(ChatIntent.RESPONSE, file_tool_call_str),
-        ChatMessage(ChatIntent.PROMPT, "@project @accept"),
+        ChatMessage(ChatIntent.RESPONSE, file_tool_call_str)
     ])
 
-    stream = agent.chat(prompt)
+    # Create the session state for the first turn (hash of [P1])
+    session_hash = _hash_thread(first_turn_thread[0:1])
+    session_dir = tmp_path / 'sessions' / session_hash
+    session_dir.mkdir(parents=True)
+
+    # Save the context that includes the response with the tool call
+    save_chat_to_markdown(session_dir / 'context.md', first_turn_thread)
+
+    # Now the second turn
+    prompt2 = first_turn_thread + ChatMessage(ChatIntent.PROMPT, "@project @accept")
+
+    stream = agent.chat(prompt2)
     response_thread = record_stream(stream)
 
     # Expect two status messages: one for log, one for summary
@@ -168,10 +184,6 @@ def test_agent_project_summary(tmp_path: Path):
     from llobot.projects.library.predefined import PredefinedProjectLibrary
     library = PredefinedProjectLibrary({'myproject': project})
 
-    # We need to manually select the project in the environment for it to appear in summary
-    # Typically this is done by a command, but we can simulate it by subclassing or just relying
-    # on the fact that if we don't have commands, no project is selected unless we force it.
-    # Let's subclass to force selection.
     class PreselectedAgent(Agent):
         def handle_setup(self, env):
             env[ProjectEnv].add('myproject')
