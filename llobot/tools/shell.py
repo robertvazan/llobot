@@ -3,7 +3,7 @@ Tool for executing shell scripts.
 """
 from __future__ import annotations
 import shlex
-from typing import Iterable, TYPE_CHECKING
+from typing import Iterable
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
 from llobot.environments import Environment
@@ -35,7 +35,7 @@ class ShellToolCall(ToolCall):
 
         output = project.execute(path, self._script)
 
-        formatted = markdown_code_details("Script output", "text", output)
+        formatted = markdown_code_details("Shell tool output", "", output)
         env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, formatted))
 
     def _determine_path(self, project: Project, script: str) -> PurePosixPath:

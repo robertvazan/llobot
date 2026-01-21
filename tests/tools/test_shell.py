@@ -75,6 +75,8 @@ def test_shell_tool_explicit_cd(env: Environment):
     assert len(context) == 1
     msg = context[0]
     assert msg.intent == ChatIntent.STATUS
+    assert "Shell tool output" in msg.content
+    assert "```\n" in msg.content
     assert "Output from proj" in msg.content
     assert "# comment" in msg.content
 
