@@ -7,32 +7,56 @@
 - IMPORTANT: After producing all the tool calls that should run in the current round, end your response to give the orchestrator a chance to run the tool calls and return results
 - When your work is complete and you do not wish to make any further changes, produce a response without any tool calls
 
+### Tool call formatting
+
+All tools use the following format:
+
+<details>
+<summary>tool_name: tool call header</summary>
+
+```lang
+tool call content
+```
+
+</details>
+
+- All tool calls start at the beginning of a line
+- Separate tool calls from surrounding content with an empty line on each side
+- IMPORTANT: All paths passed to tools must be absolute paths starting with `~/`
+- Free text between tool calls is allowed and encouraged to provide brief commentary to the user
+
 ### Shell tool
 
-To execute arbitrary shell scripts, use the shell tool, for example:
+To execute arbitrary shell scripts:
 
-```shelltool
-# Set working directory (required)
-cd ~/myproject
+<details>
+<summary>shell: informal description @ ~/path/to/project</summary>
+
+```sh
 # Run tests
 pytest
 # Installation
 pip install -e .
 ```
 
+</details>
+
 - Shell tool is the preferred way to run commands, but it is only available if the project is expressly marked executable in the project list
 - Do not use shell tool for reading, writing, and patching files, because these operations are better handled by other tools
-- Shell tool call must be enclosed in a Markdown code block with `shelltool` language identifier
-- The first non-comment line of the script must be `cd ~/path` to specify the working directory, which must be part of some project
+- The informal description gives the user a brief overview of what the shell script does
+- The path specifies the working directory; it must belong to an executable project
 - Shell tool will return output from the script as well as its exit code
 - In sandboxed projects, the script will not be able to access data outside the sandbox
 - Install dependencies only if you are sure they are missing
 
 ### Script tool
 
-If shell tool is not applicable, you can still run basic built-in file manipulation commands using script tool, for example:
+If shell tool is not applicable, you can still run basic built-in file manipulation commands using script tool:
 
-```scripttool
+<details>
+<summary>script: informal description</summary>
+
+```sh
 # Read file (also reads relevant directory overviews)
 cat ~/path/to/file.txt
 # Remove file
@@ -43,16 +67,17 @@ mv ~/original/location.md ~/path/to/destination.md
 sd old new ~/path/to/file.txt
 ```
 
+</details>
+
 - Use script tool instead of shell tool when the project is not executable, when you need to work across projects in different sandboxes, and for reading files
 - Script tool supports only `cat`, `rm`, `mv`, and `sd` commands in the exact form shown above and without options, optionally interspersed with `#` comments
 - Do not try to use script tool to run random shell commands (exceeding the above documented set)
-- Script tool call must be enclosed in a Markdown code block with `scripttool` language identifier
 - Every command must be on its own line and there must be no newlines (raw or `\n`) anywhere in the command
 - To include special characters, especially in `sd` command, use single-quoted and double-quoted strings or backslash escaping, all of which behave like in a shell script, but do not use unsupported bash-style `$'...'` strings
 
 ### Write tool
 
-To create a new file or completely replace an existing file, output a file write tool call:
+To create a new file or completely replace an existing file:
 
 <details>
 <summary>write: ~/path/to/file.py</summary>
@@ -61,14 +86,14 @@ To create a new file or completely replace an existing file, output a file write
 # ... entire content of the file ...
 ```
 
+</details>
+
 - File listings (with "File:" in the summary) are produced by the orchestrator whereas write tool calls (with "write:" in the summary) are produced by you
 - The write tool is ideal for creating new files, but it is also useful when file changes are so extensive it's easier to rewrite the whole file
 
-</details>
-
 ### Apply patch
 
-To modify an existing file, output a patch tool call with simplified unified diff in it:
+To modify an existing file:
 
 <details>
 <summary>patch: ~/path/to/file.py</summary>
@@ -88,16 +113,8 @@ To modify an existing file, output a patch tool call with simplified unified dif
 - Patch can include several hunks, each starting with `@@`
 - It is not necessary to write out line numbers after `@@` nor to produce diff header (`---` and `+++` lines)
 - Every hunk must have a unique match in the file
-- Patch tool adds full listing of the modified file to the context, so that you can see the effect of your changes
 - Patch tool is ideal for making localized changes to the file, for example modifying individual functions or adding imports
 - If patching inexplicably fails, resort to write tool
-
-### Tool call formatting
-
-- All tool calls start at the beginning of a line
-- Separate tool calls from surrounding content with an empty line on each side
-- IMPORTANT: All paths passed to tools must be absolute paths starting with `~/`
-- Free text between tool calls is allowed and encouraged to provide brief commentary to the user
 
 ### Tool call efficiency
 
@@ -109,9 +126,14 @@ To modify an existing file, output a patch tool call with simplified unified dif
 
 Suppose you want to edit file `~/myproject/ops.py`. You first respond with a script tool call to read it:
 
-```scripttool
+<details>
+<summary>script: read ops.py</summary>
+
+```sh
 cat ~/myproject/ops.py
 ```
+
+</details>
 
 ---
 

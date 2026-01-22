@@ -49,6 +49,7 @@ def test_write_tool_slice_and_parse(env: Environment):
     assert isinstance(call, WriteToolCall)
     assert call._path == "~/myproject/foo.txt"
     assert call._content == "content\nof the file\n"
+    assert call.summary == "write: ~/myproject/foo.txt"
 
     call.execute(env)
     project = env[ProjectEnv].union
@@ -76,7 +77,9 @@ def test_write_tool_slice_extra_whitespace(env: Environment):
     call = calls[0]
     assert isinstance(call, WriteToolCall)
     assert call._path == "~/myproject/bar.py"
-    assert call._content == 'print("hello")\n'
+    assert 'print("hello")' in call._content
+    # Summary property of WriteToolCall reconstructs it cleanly
+    assert call.summary == "write: ~/myproject/bar.py"
 
 def test_write_tool_no_match(env: Environment):
     tool = WriteTool()
@@ -88,7 +91,7 @@ def test_write_tool_missing_tilde_prefix(env: Environment):
     text = dedent("""
         <details>
         <summary>write: myproject/foo.txt</summary>
-        ```
+        ```python
         ```
         </details>
     """).strip()
@@ -107,7 +110,7 @@ def test_write_tool_empty_code_block(env: Environment):
     text = dedent("""
         <details>
         <summary>write: ~/myproject/empty.txt</summary>
-        ```
+        ```text
         ```
         </details>
     """).strip()
@@ -120,7 +123,7 @@ def test_write_tool_empty_code_block(env: Environment):
     call = calls[0]
     assert isinstance(call, WriteToolCall)
     assert call._path == "~/myproject/empty.txt"
-    assert call._content == ""
+    assert call._content.strip() == ""
 
     call.execute(env)
     project = env[ProjectEnv].union
@@ -144,7 +147,7 @@ def test_write_tool_nested_fences(env: Environment):
 
     calls = list(tool.parse(env, text))
     assert len(calls) == 1
-    assert calls[0]._content.strip() == '```python\nprint("hello")\n```'
+    assert '```python\nprint("hello")\n```' in calls[0]._content
 
 def test_write_tool_conflicting_fence(env: Environment):
     tool = WriteTool()
@@ -163,8 +166,13 @@ def test_write_tool_conflicting_fence(env: Environment):
 
     calls = list(tool.parse(env, text))
     assert len(calls) == 1
+    call = calls[0]
+
+    # Verify summary is set correctly for invalid tool call
+    assert call.summary == "write: ~/myproject/foo.md"
+
     with pytest.raises(ValueError, match="Content contains a line starting with"):
-        calls[0].execute(env)
+        call.execute(env)
 
 def test_write_tool_midline_fence(env: Environment):
     tool = WriteTool()

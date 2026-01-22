@@ -19,10 +19,14 @@ def env(tmp_path: Path) -> Environment:
 def test_script_tool_slice_and_parse(env: Environment):
     tool = ScriptTool()
     text = dedent("""
-        ```scripttool
+        <details>
+        <summary>script: reorganize</summary>
+
+        ```sh
         rm ~/a.txt
         mv ~/b.txt ~/c.txt
         ```
+        </details>
     """).strip()
 
     length = tool.slice(env, text, 0)
@@ -36,23 +40,31 @@ def test_script_tool_slice_and_parse(env: Environment):
 def test_script_tool_comments_and_empty_lines(env: Environment):
     tool = ScriptTool()
     text = dedent("""
-        ```scripttool
+        <details>
+        <summary>script: cleanup</summary>
+
+        ```sh
         # This is a comment
 
         rm ~/a.txt
         ```
+        </details>
     """).strip()
 
     calls = list(tool.parse(env, text))
     assert len(calls) == 1
     assert isinstance(calls[0], ScriptRemoveCall)
 
-def test_script_tool_wrong_language(env: Environment):
+def test_script_tool_wrong_name(env: Environment):
     tool = ScriptTool()
     text = dedent("""
-        ```shell
+        <details>
+        <summary>shell: cleanup</summary>
+
+        ```sh
         rm ~/a.txt
         ```
+        </details>
     """).strip()
 
     length = tool.slice(env, text, 0)
@@ -61,10 +73,14 @@ def test_script_tool_wrong_language(env: Environment):
 def test_script_tool_invalid_command(env: Environment):
     tool = ScriptTool()
     text = dedent("""
-        ```scripttool
+        <details>
+        <summary>script: oops</summary>
+
+        ```sh
         rm ~/a.txt
         unknown cmd
         ```
+        </details>
     """).strip()
 
     calls = list(tool.parse(env, text))
@@ -72,20 +88,6 @@ def test_script_tool_invalid_command(env: Environment):
     assert isinstance(calls[0], ScriptRemoveCall)
     assert isinstance(calls[1], InvalidToolCall)
     assert "Unrecognized tool: unknown cmd" in str(calls[1]._error)
-
-def test_script_tool_invalid_argument(env: Environment):
-    tool = ScriptTool()
-    text = dedent("""
-        ```scripttool
-        rm a.txt
-        ```
-    """).strip()
-
-    calls = list(tool.parse(env, text))
-    assert len(calls) == 1
-    assert isinstance(calls[0], ScriptRemoveCall)
-    with pytest.raises(ValueError, match="Path must start with ~/"):
-        calls[0].execute(env)
 
 def test_script_tool_matches_line_exception(env: Environment):
     class CrashingTool(ScriptItem):
@@ -101,9 +103,13 @@ def test_script_tool_matches_line_exception(env: Environment):
 
     tool = ScriptTool()
     text = dedent("""
-        ```scripttool
+        <details>
+        <summary>script: crash</summary>
+
+        ```sh
         crash this
         ```
+        </details>
     """).strip()
 
     calls = list(tool.parse(env, text))

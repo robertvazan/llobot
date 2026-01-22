@@ -49,14 +49,11 @@ class ScriptTool(FencedTool):
     It requires `scripttool` as the language identifier of the block.
     It delegates parsing of each line to registered `ScriptItem`s.
     """
-    def __init__(self):
-        super().__init__(language='scripttool')
+    def matches_content(self, env: Environment, name: str, header: str, content: str) -> bool:
+        return name == 'script'
 
-    def matches_content(self, env: Environment, source: str) -> bool:
-        return True
-
-    def parse_content(self, env: Environment, source: str) -> Iterable[ToolCall]:
-        lines = source.splitlines()
+    def parse_content(self, env: Environment, name: str, header: str, content: str) -> Iterable[ToolCall]:
+        lines = content.splitlines()
         # Find all registered script items
         script_items = [t for t in env[ToolEnv].tools if isinstance(t, ScriptItem)]
 

@@ -2,7 +2,6 @@
 Tool for patching files using unified diffs.
 """
 from __future__ import annotations
-import re
 from typing import Iterable
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
@@ -12,7 +11,7 @@ from llobot.environments.projects import ProjectEnv
 from llobot.formats.documents import DocumentFormat, standard_document_format
 from llobot.formats.paths import parse_path
 from llobot.tools import ToolCall
-from llobot.tools.block import BlockTool
+from llobot.tools.fenced import FencedTool
 from llobot.utils.text import normalize_document
 
 class PatchToolCall(ToolCall):
@@ -129,15 +128,7 @@ class PatchToolCall(ToolCall):
 
         return hunks
 
-_PATCH_DETAILS_RE = re.compile(
-    r'^<details>\s*<summary>\s*patch:\s*(?P<path>.+?)\s*</summary>\s*'
-    r'^(?P<fence>`{3,})(?P<lang>[^`\n]*)\s*\n'
-    r'(?P<content>.*?)'
-    r'^(?P=fence)\s*</details>',
-    re.DOTALL | re.MULTILINE
-)
-
-class PatchTool(BlockTool):
+class PatchTool(FencedTool):
     """
     Tool that parses patch listings in the format:
     <details>
@@ -154,22 +145,14 @@ class PatchTool(BlockTool):
     _format: DocumentFormat
 
     def __init__(self, *, format: DocumentFormat | None = None):
+        super().__init__()
         self._format = format or standard_document_format()
 
-    def slice(self, env: Environment, source: str, at: int) -> int:
-        match = _PATCH_DETAILS_RE.match(source, pos=at)
-        if not match:
-            return 0
-        return match.end() - at
+    def matches_content(self, env: Environment, name: str, header: str, content: str) -> bool:
+        return name == 'patch'
 
-    def parse(self, env: Environment, source: str) -> Iterable[ToolCall]:
-        match = _PATCH_DETAILS_RE.fullmatch(source)
-        assert match, "source for parse() must be validated by slice()"
-
-        path_str = match.group('path').strip()
-        content = match.group('content')
-
-        yield PatchToolCall(path_str, content, self._format)
+    def parse_content(self, env: Environment, name: str, header: str, content: str) -> Iterable[ToolCall]:
+        yield PatchToolCall(header, content, self._format)
 
 __all__ = [
     'PatchTool',

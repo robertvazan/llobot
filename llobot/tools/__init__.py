@@ -82,13 +82,15 @@ class InvalidToolCall(ToolCall):
     Represents a failed tool call parse.
     """
     _error: Exception
+    _summary: str
 
-    def __init__(self, error: Exception):
+    def __init__(self, error: Exception, summary: str = "invalid tool call"):
         self._error = error
+        self._summary = summary
 
     @property
     def summary(self) -> str:
-        return "invalid tool call"
+        return self._summary
 
     def execute(self, env: Environment):
         raise self._error

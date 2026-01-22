@@ -2,7 +2,7 @@
 Tool for executing shell scripts.
 """
 from __future__ import annotations
-import shlex
+import re
 from typing import Iterable
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
@@ -21,48 +21,34 @@ class ShellToolCall(ToolCall):
     A tool call to execute a shell script.
     """
     _script: str
+    _path_str: str | None
+    _description: str
 
-    def __init__(self, script: str):
+    def __init__(self, script: str, path: str | None, description: str):
         self._script = script
+        self._path_str = path
+        self._description = description
 
     @property
     def summary(self) -> str:
-        return "shell script"
+        if self._path_str:
+             return f"shell: {self._description} @ {self._path_str}"
+        return f"shell: {self._description}"
 
     def execute(self, env: Environment):
         project = env[ProjectEnv].union
-        path = self._determine_path(project, self._script)
+        path = self._determine_path(project)
 
         output = project.execute(path, self._script)
 
-        formatted = markdown_code_details("Shell tool output", "", output)
+        # Always include path in summary
+        header = f"{self._description} @ ~/{path}"
+        formatted = markdown_code_details(f"Shell output: {header}", "", output)
         env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, formatted))
 
-    def _determine_path(self, project: Project, script: str) -> PurePosixPath:
-        # Check for explicit cd command
-        for line in script.splitlines():
-            line = line.strip()
-            if not line or line.startswith('#'):
-                continue
-
-            try:
-                tokens = shlex.split(line, comments=True)
-            except ValueError:
-                # Malformed shell syntax (e.g. unbalanced quotes)
-                break
-
-            if tokens and tokens[0] == 'cd':
-                if len(tokens) < 2:
-                    raise ValueError("Shell script 'cd' command missing path argument.")
-
-                path_str = tokens[1]
-                if path_str.startswith('~/'):
-                    return parse_path(path_str)
-                else:
-                    raise ValueError("Shell script must start with 'cd ~/path' to specify execution directory.")
-
-            # First non-empty non-comment line is not cd
-            break
+    def _determine_path(self, project: Project) -> PurePosixPath:
+        if self._path_str:
+            return parse_path(self._path_str)
 
         # Fallback to default executable prefix
         executable_prefixes = [p for p in project.prefixes if project.executable(p)]
@@ -70,23 +56,30 @@ class ShellToolCall(ToolCall):
             return executable_prefixes[0]
 
         if len(executable_prefixes) == 0:
-            raise ValueError("No path specified in script (cd ~/path) and no executable projects found.")
+            raise ValueError("No path specified in shell header (shell: desc @ ~/path) and no executable projects found.")
 
         formatted_prefixes = [f"~/{p}" for p in executable_prefixes]
-        raise ValueError(f"No path specified in script (cd ~/path) and multiple executable projects found: {formatted_prefixes}")
+        raise ValueError(f"No path specified in shell header (shell: desc @ ~/path) and multiple executable projects found: {formatted_prefixes}")
+
+_SHELL_HEADER_RE = re.compile(r'^(?P<description>.*)\s+@\s+(?P<path>~/.+)$')
 
 class ShellTool(FencedTool):
     """
     A tool that executes shell scripts within a fenced code block.
     """
-    def __init__(self):
-        super().__init__(language='shelltool')
+    def matches_content(self, env: Environment, name: str, header: str, content: str) -> bool:
+        return name == 'shell'
 
-    def matches_content(self, env: Environment, source: str) -> bool:
-        return True
+    def parse_content(self, env: Environment, name: str, header: str, content: str) -> Iterable[ToolCall]:
+        match = _SHELL_HEADER_RE.match(header)
+        if match:
+            description = match.group('description').strip()
+            path_str = match.group('path').strip()
+        else:
+            description = header
+            path_str = None
 
-    def parse_content(self, env: Environment, source: str) -> Iterable[ToolCall]:
-        yield ShellToolCall(source)
+        yield ShellToolCall(content, path=path_str, description=description)
 
 __all__ = [
     'ShellTool',

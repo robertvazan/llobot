@@ -53,6 +53,7 @@ def test_parse_valid(env):
     assert call._path == '~/test/file.txt'
     assert "old" in call._diff
     assert "new" in call._diff
+    assert call.summary == "patch: ~/test/file.txt"
 
 def test_execute_simple_replacement(env, tmp_path):
     (tmp_path / 'file.txt').write_text("line1\nline2\nline3\n", encoding='utf-8')

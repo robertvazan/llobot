@@ -42,16 +42,21 @@ def test_accept_command_success(tmp_path: Path):
         <details>
         <summary>write: ~/myproject/file2.txt</summary>
 
-        ```
+        ```text
         new content
         ```
 
         </details>
 
-        ```scripttool
+        <details>
+        <summary>script: cleanup</summary>
+
+        ```sh
         rm ~/myproject/file1.txt
         cat ~/myproject/file3.txt
         ```
+
+        </details>
     """)
     prompt = ChatThread([
         ChatMessage(ChatIntent.PROMPT, "do stuff"),
@@ -104,9 +109,14 @@ def test_accept_command_failure(tmp_path: Path):
 
     # Setup prompt with a model response containing a failing tool call
     response_content = textwrap.dedent("""
-        ```scripttool
+        <details>
+        <summary>script: fail</summary>
+
+        ```sh
         rm ~/myproject/nonexistent.txt
         ```
+
+        </details>
     """)
     prompt = ChatThread([
         ChatMessage(ChatIntent.PROMPT, "do stuff"),

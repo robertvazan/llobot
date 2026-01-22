@@ -39,10 +39,18 @@ class MockLibrary(ProjectLibrary):
 def env() -> Environment:
     return Environment()
 
-def wrap_script(script: str) -> str:
-    return f"```shelltool\n{script}\n```"
+def wrap_script(script: str, header: str = "desc @ ~/proj") -> str:
+    return dedent(f"""
+        <details>
+        <summary>shell: {header}</summary>
 
-def test_shell_tool_explicit_cd(env: Environment):
+        ```sh
+        {script}
+        ```
+        </details>
+    """).strip()
+
+def test_shell_tool_explicit_path(env: Environment):
     project = MockProject(
         {PurePosixPath('proj')},
         {PurePosixPath('proj')}
@@ -51,60 +59,30 @@ def test_shell_tool_explicit_cd(env: Environment):
     env[ProjectEnv].add('any')
 
     tool = ShellTool()
-    script_content = dedent("""
-        # comment
-        cd ~/proj
-        echo hello
-    """).strip()
-    source = wrap_script(script_content)
+    script_content = "echo hello"
+    source = wrap_script(script_content, "run echo @ ~/proj")
 
     calls = list(tool.parse(env, source))
     assert len(calls) == 1
     call = calls[0]
     assert isinstance(call, ShellToolCall)
+    assert call._path_str == "~/proj"
+    assert call.summary == "shell: run echo @ ~/proj"
 
     call.execute(env)
 
     assert len(project.executed_scripts) == 1
     path, executed_script = project.executed_scripts[0]
     assert path == PurePosixPath('proj')
-    assert executed_script == script_content
+    assert "echo hello" in executed_script
 
     # Check context output
     context = env[ContextEnv].build()
     assert len(context) == 1
     msg = context[0]
     assert msg.intent == ChatIntent.STATUS
-    assert "Shell tool output" in msg.content
-    assert "```\n" in msg.content
+    assert "Shell output: run echo @ ~/proj" in msg.content
     assert "Output from proj" in msg.content
-    assert "# comment" in msg.content
-
-def test_shell_tool_quoted_cd_with_extras(env: Environment):
-    project = MockProject(
-        {PurePosixPath('proj')},
-        {PurePosixPath('proj')}
-    )
-    env[ProjectEnv].configure(MockLibrary(project))
-    env[ProjectEnv].add('any')
-
-    tool = ShellTool()
-    # cd command with quotes, chaining, and inline comment
-    script_content = dedent("""
-        cd "~/proj" && echo hello # inline comment
-    """).strip()
-    source = wrap_script(script_content)
-
-    calls = list(tool.parse(env, source))
-    assert len(calls) == 1
-    call = calls[0]
-
-    call.execute(env)
-
-    assert len(project.executed_scripts) == 1
-    path, executed_script = project.executed_scripts[0]
-    assert path == PurePosixPath('proj')
-    assert executed_script == script_content
 
 def test_shell_tool_fallback(env: Environment):
     project = MockProject(
@@ -116,15 +94,22 @@ def test_shell_tool_fallback(env: Environment):
 
     tool = ShellTool()
     script_content = "echo hello"
-    source = wrap_script(script_content)
+    source = wrap_script(script_content, "run echo")
 
     calls = list(tool.parse(env, source))
     call = calls[0]
+    assert call._path_str is None
     call.execute(env)
 
     assert len(project.executed_scripts) == 1
     path, _ = project.executed_scripts[0]
     assert path == PurePosixPath('proj')
+
+    # Verify context output includes the resolved path
+    context = env[ContextEnv].build()
+    assert len(context) == 1
+    msg = context[0]
+    assert "Shell output: run echo @ ~/proj" in msg.content
 
 def test_shell_tool_ambiguous_fallback(env: Environment):
     project = MockProject(
@@ -136,7 +121,7 @@ def test_shell_tool_ambiguous_fallback(env: Environment):
 
     tool = ShellTool()
     script_content = "echo hello"
-    source = wrap_script(script_content)
+    source = wrap_script(script_content, "run echo")
 
     calls = list(tool.parse(env, source))
     call = calls[0]
@@ -154,7 +139,7 @@ def test_shell_tool_no_executable_fallback(env: Environment):
 
     tool = ShellTool()
     script_content = "echo hello"
-    source = wrap_script(script_content)
+    source = wrap_script(script_content, "run echo")
 
     calls = list(tool.parse(env, source))
     call = calls[0]
@@ -162,7 +147,7 @@ def test_shell_tool_no_executable_fallback(env: Environment):
     with pytest.raises(ValueError, match="no executable projects found"):
         call.execute(env)
 
-def test_shell_tool_invalid_cd(env: Environment):
+def test_shell_tool_last_at_in_header(env: Environment):
     project = MockProject(
         {PurePosixPath('proj')},
         {PurePosixPath('proj')}
@@ -171,12 +156,16 @@ def test_shell_tool_invalid_cd(env: Environment):
     env[ProjectEnv].add('any')
 
     tool = ShellTool()
-    script_content = "cd /absolute/path"
-    source = wrap_script(script_content)
+    # Description contains @ symbol
+    source = wrap_script("echo hello", "run @ my place @ ~/proj")
 
     calls = list(tool.parse(env, source))
     call = calls[0]
+    assert call._description == "run @ my place"
+    assert call._path_str == "~/proj"
 
-    # It parses successfully, but execution fails because cd is not ~/
-    with pytest.raises(ValueError, match="Shell script must start with 'cd ~/path'"):
-        call.execute(env)
+    call.execute(env)
+
+    context = env[ContextEnv].build()
+    msg = context[0]
+    assert "Shell output: run @ my place @ ~/proj" in msg.content
