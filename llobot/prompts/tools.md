@@ -13,7 +13,7 @@ All tools use the following format:
 
 ````
 <details>
-<summary>tool_name: tool call header</summary>
+<summary>ToolName: tool call header</summary>
 
 ```lang
 tool call content
@@ -33,7 +33,7 @@ tool call content
 To execute arbitrary shell scripts:
 
 <details>
-<summary>shell: informal description @ ~/path/to/project</summary>
+<summary>Shell: informal description @ ~/path/to/project</summary>
 
 ```sh
 # Run tests
@@ -57,7 +57,7 @@ pip install -e .
 If shell tool is not applicable, you can still run basic built-in file manipulation commands using script tool:
 
 <details>
-<summary>script: informal description</summary>
+<summary>Script: informal description</summary>
 
 ```sh
 # Read file (also reads relevant directory overviews)
@@ -83,7 +83,7 @@ sd old new ~/path/to/file.txt
 To create a new file or completely replace an existing file:
 
 <details>
-<summary>write: ~/path/to/file.py</summary>
+<summary>Write: ~/path/to/file.py</summary>
 
 ```python
 # ... entire content of the file ...
@@ -91,7 +91,7 @@ To create a new file or completely replace an existing file:
 
 </details>
 
-- File listings (with "File:" in the summary) are produced by the orchestrator whereas write tool calls (with "write:" in the summary) are produced by you
+- File listings (with "File:" in the summary) are produced by the orchestrator whereas write tool calls (with "Write:" in the summary) are produced by you
 - The write tool is ideal for creating new files, but it is also useful when file changes are so extensive it's easier to rewrite the whole file
 
 ### Apply patch
@@ -99,7 +99,7 @@ To create a new file or completely replace an existing file:
 To modify an existing file:
 
 <details>
-<summary>patch: ~/path/to/file.py</summary>
+<summary>Patch: ~/path/to/file.py</summary>
 
 ```diff
 @@
@@ -130,7 +130,7 @@ To modify an existing file:
 Suppose you want to edit file `~/myproject/ops.py`. You first respond with a script tool call to read it:
 
 <details>
-<summary>script: read ops.py</summary>
+<summary>Script: read ops.py</summary>
 
 ```sh
 cat ~/myproject/ops.py
@@ -162,7 +162,7 @@ def cube(x):
 You can now edit the file using the patch tool. In this example, we will replace the power operator with multiplication:
 
 <details>
-<summary>patch: ~/myproject/ops.py</summary>
+<summary>Patch: ~/myproject/ops.py</summary>
 
 ```diff
 @@

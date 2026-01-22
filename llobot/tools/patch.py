@@ -26,7 +26,7 @@ class PatchToolCall(ToolCall):
 
     @property
     def summary(self) -> str:
-        return f"patch: {self._path}"
+        return f"Patch: {self._path}"
 
     def execute(self, env: Environment):
         path = parse_path(self._path)
@@ -132,7 +132,7 @@ class PatchTool(FencedTool):
     """
     Tool that parses patch listings in the format:
     <details>
-    <summary>patch: ~/path/to/file</summary>
+    <summary>Patch: ~/path/to/file</summary>
 
     ```diff
     @@ ...
@@ -149,7 +149,7 @@ class PatchTool(FencedTool):
         self._format = format or standard_document_format()
 
     def matches_content(self, env: Environment, name: str, header: str, content: str) -> bool:
-        return name == 'patch'
+        return name == 'Patch'
 
     def parse_content(self, env: Environment, name: str, header: str, content: str) -> Iterable[ToolCall]:
         yield PatchToolCall(header, content, self._format)

@@ -45,12 +45,10 @@ class ScriptItem(Tool):
 class ScriptTool(FencedTool):
     """
     A tool that executes multiple line-based commands within a fenced code block.
-
-    It requires `scripttool` as the language identifier of the block.
     It delegates parsing of each line to registered `ScriptItem`s.
     """
     def matches_content(self, env: Environment, name: str, header: str, content: str) -> bool:
-        return name == 'script'
+        return name == 'Script'
 
     def parse_content(self, env: Environment, name: str, header: str, content: str) -> Iterable[ToolCall]:
         lines = content.splitlines()

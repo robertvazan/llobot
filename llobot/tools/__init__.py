@@ -41,7 +41,7 @@ class ToolCall(ValueTypeMixin):
         """
         Returns a summary or header of the tool call.
 
-        Example: "rm ~/path/to/file" or "write: ~/path/to/file".
+        Example: "rm ~/path/to/file" or "Write: ~/path/to/file".
         """
         raise NotImplementedError
 

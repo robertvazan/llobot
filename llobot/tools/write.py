@@ -23,7 +23,7 @@ class WriteToolCall(ToolCall):
 
     @property
     def summary(self) -> str:
-        return f"write: {self._path}"
+        return f"Write: {self._path}"
 
     def execute(self, env: Environment):
         path = parse_path(self._path)
@@ -37,7 +37,7 @@ class WriteTool(FencedTool):
     """
     Tool that parses document listings in the format:
     <details>
-    <summary>write: ~/path/to/file</summary>
+    <summary>Write: ~/path/to/file</summary>
 
     ```lang
     content
@@ -46,7 +46,7 @@ class WriteTool(FencedTool):
     </details>
     """
     def matches_content(self, env: Environment, name: str, header: str, content: str) -> bool:
-        return name == 'write'
+        return name == 'Write'
 
     def parse_content(self, env: Environment, name: str, header: str, content: str) -> Iterable[ToolCall]:
         yield WriteToolCall(header, content)

@@ -40,7 +40,7 @@ def test_accept_command_success(tmp_path: Path):
         I will perform the requested file operations.
 
         <details>
-        <summary>write: ~/myproject/file2.txt</summary>
+        <summary>Write: ~/myproject/file2.txt</summary>
 
         ```text
         new content
@@ -49,7 +49,7 @@ def test_accept_command_success(tmp_path: Path):
         </details>
 
         <details>
-        <summary>script: cleanup</summary>
+        <summary>Script: cleanup</summary>
 
         ```sh
         rm ~/myproject/file1.txt
@@ -110,7 +110,7 @@ def test_accept_command_failure(tmp_path: Path):
     # Setup prompt with a model response containing a failing tool call
     response_content = textwrap.dedent("""
         <details>
-        <summary>script: fail</summary>
+        <summary>Script: fail</summary>
 
         ```sh
         rm ~/myproject/nonexistent.txt

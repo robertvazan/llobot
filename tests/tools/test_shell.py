@@ -42,7 +42,7 @@ def env() -> Environment:
 def wrap_script(script: str, header: str = "desc @ ~/proj") -> str:
     return dedent(f"""
         <details>
-        <summary>shell: {header}</summary>
+        <summary>Shell: {header}</summary>
 
         ```sh
         {script}
@@ -67,7 +67,7 @@ def test_shell_tool_explicit_path(env: Environment):
     call = calls[0]
     assert isinstance(call, ShellToolCall)
     assert call._path_str == "~/proj"
-    assert call.summary == "shell: run echo @ ~/proj"
+    assert call.summary == "Shell: run echo @ ~/proj"
 
     call.execute(env)
 

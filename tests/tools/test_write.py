@@ -30,7 +30,7 @@ def test_write_tool_slice_and_parse(env: Environment):
     tool = WriteTool()
     text = dedent("""
         <details>
-        <summary>write: ~/myproject/foo.txt</summary>
+        <summary>Write: ~/myproject/foo.txt</summary>
 
         ```
         content
@@ -49,7 +49,7 @@ def test_write_tool_slice_and_parse(env: Environment):
     assert isinstance(call, WriteToolCall)
     assert call._path == "~/myproject/foo.txt"
     assert call._content == "content\nof the file\n"
-    assert call.summary == "write: ~/myproject/foo.txt"
+    assert call.summary == "Write: ~/myproject/foo.txt"
 
     call.execute(env)
     project = env[ProjectEnv].union
@@ -60,7 +60,7 @@ def test_write_tool_slice_extra_whitespace(env: Environment):
     tool = WriteTool()
     text = dedent("""
         <details>
-          <summary>  write:   ~/myproject/bar.py   </summary>
+          <summary>  Write:   ~/myproject/bar.py   </summary>
 
         ````python
         print("hello")
@@ -79,18 +79,18 @@ def test_write_tool_slice_extra_whitespace(env: Environment):
     assert call._path == "~/myproject/bar.py"
     assert 'print("hello")' in call._content
     # Summary property of WriteToolCall reconstructs it cleanly
-    assert call.summary == "write: ~/myproject/bar.py"
+    assert call.summary == "Write: ~/myproject/bar.py"
 
 def test_write_tool_no_match(env: Environment):
     tool = WriteTool()
-    text = "<summary>write: foo.txt</summary>"
+    text = "<summary>Write: foo.txt</summary>"
     assert tool.slice(env, text, 0) == 0
 
 def test_write_tool_missing_tilde_prefix(env: Environment):
     tool = WriteTool()
     text = dedent("""
         <details>
-        <summary>write: myproject/foo.txt</summary>
+        <summary>Write: myproject/foo.txt</summary>
         ```python
         ```
         </details>
@@ -109,7 +109,7 @@ def test_write_tool_empty_code_block(env: Environment):
     tool = WriteTool()
     text = dedent("""
         <details>
-        <summary>write: ~/myproject/empty.txt</summary>
+        <summary>Write: ~/myproject/empty.txt</summary>
         ```text
         ```
         </details>
@@ -134,7 +134,7 @@ def test_write_tool_nested_fences(env: Environment):
     # Outer fence is 4 backticks, inner is 3. Should pass.
     text = dedent("""
         <details>
-        <summary>write: ~/myproject/foo.md</summary>
+        <summary>Write: ~/myproject/foo.md</summary>
 
         ````markdown
         ```python
@@ -153,7 +153,7 @@ def test_write_tool_conflicting_fence(env: Environment):
     tool = WriteTool()
     text = dedent("""
         <details>
-        <summary>write: ~/myproject/foo.md</summary>
+        <summary>Write: ~/myproject/foo.md</summary>
 
         ```markdown
         Start
@@ -169,7 +169,7 @@ def test_write_tool_conflicting_fence(env: Environment):
     call = calls[0]
 
     # Verify summary is set correctly for invalid tool call
-    assert call.summary == "write: ~/myproject/foo.md"
+    assert call.summary == "Write: ~/myproject/foo.md"
 
     with pytest.raises(ValueError, match="Content contains a line starting with"):
         call.execute(env)
@@ -178,7 +178,7 @@ def test_write_tool_midline_fence(env: Environment):
     tool = WriteTool()
     text = dedent("""
         <details>
-        <summary>write: ~/myproject/foo.md</summary>
+        <summary>Write: ~/myproject/foo.md</summary>
 
         ```markdown
         Here is some text with ``` backticks in the middle.

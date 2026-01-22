@@ -20,7 +20,7 @@ def test_script_tool_slice_and_parse(env: Environment):
     tool = ScriptTool()
     text = dedent("""
         <details>
-        <summary>script: reorganize</summary>
+        <summary>Script: reorganize</summary>
 
         ```sh
         rm ~/a.txt
@@ -41,7 +41,7 @@ def test_script_tool_comments_and_empty_lines(env: Environment):
     tool = ScriptTool()
     text = dedent("""
         <details>
-        <summary>script: cleanup</summary>
+        <summary>Script: cleanup</summary>
 
         ```sh
         # This is a comment
@@ -59,7 +59,7 @@ def test_script_tool_wrong_name(env: Environment):
     tool = ScriptTool()
     text = dedent("""
         <details>
-        <summary>shell: cleanup</summary>
+        <summary>Shell: cleanup</summary>
 
         ```sh
         rm ~/a.txt
@@ -74,7 +74,7 @@ def test_script_tool_invalid_command(env: Environment):
     tool = ScriptTool()
     text = dedent("""
         <details>
-        <summary>script: oops</summary>
+        <summary>Script: oops</summary>
 
         ```sh
         rm ~/a.txt
@@ -104,7 +104,7 @@ def test_script_tool_matches_line_exception(env: Environment):
     tool = ScriptTool()
     text = dedent("""
         <details>
-        <summary>script: crash</summary>
+        <summary>Script: crash</summary>
 
         ```sh
         crash this

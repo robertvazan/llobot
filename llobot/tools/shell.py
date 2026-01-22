@@ -32,8 +32,8 @@ class ShellToolCall(ToolCall):
     @property
     def summary(self) -> str:
         if self._path_str:
-             return f"shell: {self._description} @ {self._path_str}"
-        return f"shell: {self._description}"
+            return f"Shell: {self._description} @ {self._path_str}"
+        return f"Shell: {self._description}"
 
     def execute(self, env: Environment):
         project = env[ProjectEnv].union
@@ -56,10 +56,10 @@ class ShellToolCall(ToolCall):
             return executable_prefixes[0]
 
         if len(executable_prefixes) == 0:
-            raise ValueError("No path specified in shell header (shell: desc @ ~/path) and no executable projects found.")
+            raise ValueError("No path specified in shell header (Shell: desc @ ~/path) and no executable projects found.")
 
         formatted_prefixes = [f"~/{p}" for p in executable_prefixes]
-        raise ValueError(f"No path specified in shell header (shell: desc @ ~/path) and multiple executable projects found: {formatted_prefixes}")
+        raise ValueError(f"No path specified in shell header (Shell: desc @ ~/path) and multiple executable projects found: {formatted_prefixes}")
 
 _SHELL_HEADER_RE = re.compile(r'^(?P<description>.*)\s+@\s+(?P<path>~/.+)$')
 
@@ -68,7 +68,7 @@ class ShellTool(FencedTool):
     A tool that executes shell scripts within a fenced code block.
     """
     def matches_content(self, env: Environment, name: str, header: str, content: str) -> bool:
-        return name == 'shell'
+        return name == 'Shell'
 
     def parse_content(self, env: Environment, name: str, header: str, content: str) -> Iterable[ToolCall]:
         match = _SHELL_HEADER_RE.match(header)
