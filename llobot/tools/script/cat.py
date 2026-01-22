@@ -34,7 +34,7 @@ class ScriptCatCall(ToolCall):
         self._overviews = overviews
 
     @property
-    def title(self) -> str:
+    def summary(self) -> str:
         return f"cat `{self._path}`"
 
     def execute(self, env: Environment):

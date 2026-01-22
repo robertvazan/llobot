@@ -11,7 +11,7 @@ from llobot.tools.block import BlockTool
 
 class MyToolCall(ToolCall):
     @property
-    def title(self) -> str:
+    def summary(self) -> str:
         return "my tool call"
 
     def execute(self, env: Environment):
@@ -40,14 +40,14 @@ def test_try_parse_error():
     calls = list(tool.try_parse(Environment(), "TOOL-bad"))
     assert len(calls) == 1
     assert isinstance(calls[0], InvalidToolCall)
-    assert calls[0].title == "invalid tool call"
+    assert calls[0].summary == "invalid tool call"
     with pytest.raises(ValueError, match="bad tool"):
         calls[0].execute(Environment())
 
 def test_try_execute_success():
     class SuccessToolCall(ToolCall):
         @property
-        def title(self) -> str: return "success"
+        def summary(self) -> str: return "success"
         def execute(self, env: Environment): pass
 
     env = Environment()
@@ -58,7 +58,7 @@ def test_try_execute_success():
 def test_try_execute_failure():
     class FailToolCall(ToolCall):
         @property
-        def title(self) -> str: return "fail"
+        def summary(self) -> str: return "fail"
         def execute(self, env: Environment): raise ValueError("oops")
 
     env = Environment()

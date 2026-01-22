@@ -22,7 +22,7 @@ class ScriptRemoveCall(ToolCall):
         self._path = path
 
     @property
-    def title(self) -> str:
+    def summary(self) -> str:
         return f"rm `{self._path}`"
 
     def execute(self, env: Environment):

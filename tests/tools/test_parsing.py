@@ -12,7 +12,7 @@ class SimpleToolCall(ToolCall):
         self.content = content
 
     @property
-    def title(self):
+    def summary(self):
         return f"simple {self.content}"
 
     def execute(self, env):

@@ -37,11 +37,11 @@ class ToolCall(ValueTypeMixin):
     """
 
     @property
-    def title(self) -> str:
+    def summary(self) -> str:
         """
         Returns a summary or header of the tool call.
 
-        Example: "rm path/to/file" or "write path/to/file".
+        Example: "rm ~/path/to/file" or "write: ~/path/to/file".
         """
         raise NotImplementedError
 
@@ -74,7 +74,7 @@ class ToolCall(ValueTypeMixin):
             from llobot.chats.intent import ChatIntent
             from llobot.chats.message import ChatMessage
             from llobot.environments.context import ContextEnv
-            env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"Error executing {self.title}: {quote_code(str(e))}"))
+            env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"Error executing {self.summary}: {quote_code(str(e))}"))
             return False
 
 class InvalidToolCall(ToolCall):
@@ -87,7 +87,7 @@ class InvalidToolCall(ToolCall):
         self._error = error
 
     @property
-    def title(self) -> str:
+    def summary(self) -> str:
         return "invalid tool call"
 
     def execute(self, env: Environment):

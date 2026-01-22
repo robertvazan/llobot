@@ -103,8 +103,8 @@ class ScriptReplaceCall(ToolCall):
         self._format = format
 
     @property
-    def title(self) -> str:
-        # We manually quote the path in the title for display purposes
+    def summary(self) -> str:
+        # We manually quote the path in the summary for display purposes
         cmd = shlex.join(['sd', self._pattern, self._replacement])
         return f"{cmd} `{self._path}`"
 

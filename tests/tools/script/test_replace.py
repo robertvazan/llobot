@@ -250,12 +250,12 @@ def test_execute_literal_dollar(env):
     assert project.files[PurePosixPath('file.txt')] == 'cost: $100\n'
 
 
-def test_title():
+def test_summary():
     call = ScriptReplaceCall('~/path/to/file.txt', 'foo', 'bar', standard_document_format())
     # We quote the path manually for display purposes
-    assert call.title == "sd foo bar `~/path/to/file.txt`"
+    assert call.summary == "sd foo bar `~/path/to/file.txt`"
 
 
-def test_title_with_spaces():
+def test_summary_with_spaces():
     call = ScriptReplaceCall('~/file.txt', 'foo bar', 'baz qux', standard_document_format())
-    assert call.title == "sd 'foo bar' 'baz qux' `~/file.txt`"
+    assert call.summary == "sd 'foo bar' 'baz qux' `~/file.txt`"

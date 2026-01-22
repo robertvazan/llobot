@@ -25,8 +25,8 @@ class WriteToolCall(ToolCall):
         self._fence_length = fence_length
 
     @property
-    def title(self) -> str:
-        return f"write `{self._path}`"
+    def summary(self) -> str:
+        return f"write: {self._path}"
 
     def execute(self, env: Environment):
         path = parse_path(self._path)

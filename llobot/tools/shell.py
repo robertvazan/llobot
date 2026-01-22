@@ -26,7 +26,7 @@ class ShellToolCall(ToolCall):
         self._script = script
 
     @property
-    def title(self) -> str:
+    def summary(self) -> str:
         return "shell script"
 
     def execute(self, env: Environment):

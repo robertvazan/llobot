@@ -24,7 +24,7 @@ class ScriptMoveCall(ToolCall):
         self._destination = destination
 
     @property
-    def title(self) -> str:
+    def summary(self) -> str:
         return f"mv `{self._source}` `{self._destination}`"
 
     def execute(self, env: Environment):

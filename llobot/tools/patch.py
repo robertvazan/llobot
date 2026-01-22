@@ -26,8 +26,8 @@ class PatchToolCall(ToolCall):
         self._format = format
 
     @property
-    def title(self) -> str:
-        return f"patch `{self._path}`"
+    def summary(self) -> str:
+        return f"patch: {self._path}"
 
     def execute(self, env: Environment):
         path = parse_path(self._path)
