@@ -23,7 +23,7 @@ The easiest way to get started is to build and run the development container. Se
 
 Quality gates:
 
-- All unit tests pass: `uv run pytest` (bare `pytest` will not work unless you activate the venv first)
+- Run `pytest` (all pass)
 - Self-review
 
 ## Terminology
