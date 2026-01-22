@@ -1,10 +1,14 @@
 """
-Base class for tools using fenced code blocks wrapped in details/summary.
+Tools using fenced code blocks wrapped in details/summary.
+
+This module provides the `FencedTool` base class and the `UnrecognizedFencedTool`
+fallback tool.
 """
 from __future__ import annotations
 import re
 from typing import Iterable
 from llobot.environments import Environment
+from llobot.tools.dummy import DummyTool
 from llobot.tools import ToolCall, InvalidToolCall
 from llobot.tools.block import BlockTool
 
@@ -95,6 +99,25 @@ class FencedTool(BlockTool):
         """
         raise NotImplementedError
 
+class UnrecognizedFencedTool(DummyTool):
+    """
+    A dummy tool that matches any fenced tool block and reports an error.
+    """
+    def skip(self, env: Environment, source: str, at: int) -> int:
+        match = _DETAILS_BLOCK_RE.match(source, pos=at)
+        if not match:
+            return 0
+
+        from llobot.chats.intent import ChatIntent
+        from llobot.chats.message import ChatMessage
+        from llobot.environments.context import ContextEnv
+
+        name = match.group('name')
+        header = match.group('header').strip()
+        env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"Unrecognized tool '{name}' or invalid block format. Header: {header}"))
+        return match.end() - at
+
 __all__ = [
     'FencedTool',
+    'UnrecognizedFencedTool',
 ]

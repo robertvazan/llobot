@@ -15,7 +15,7 @@ dummy
 patch
     A tool for patching files using unified diffs.
 fenced
-    A base class for tools that use fenced code blocks.
+    Tools and base classes for tools that use fenced code blocks.
 write
     A tool for creating or updating files from file listings.
 parsing
@@ -114,6 +114,7 @@ def standard_tools() -> tuple[Tool, ...]:
         A tuple of standard tool instances.
     """
     from llobot.tools.code import DummyCodeBlockTool
+    from llobot.tools.fenced import UnrecognizedFencedTool
     from llobot.tools.patch import PatchTool
     from llobot.tools.script import ScriptTool, standard_script_tools
     from llobot.tools.shell import ShellTool
@@ -123,6 +124,7 @@ def standard_tools() -> tuple[Tool, ...]:
         PatchTool(),
         ShellTool(),
         ScriptTool(),
+        UnrecognizedFencedTool(),
         DummyCodeBlockTool(),
         *standard_script_tools(),
     )
