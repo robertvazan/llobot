@@ -11,6 +11,7 @@
 
 All tools use the following format:
 
+````
 <details>
 <summary>tool_name: tool call header</summary>
 
@@ -19,7 +20,9 @@ tool call content
 ```
 
 </details>
+````
 
+- Every tool call must include details and summary elements and a fenced block as shown above
 - All tool calls start at the beginning of a line
 - Separate tool calls from surrounding content with an empty line on each side
 - IMPORTANT: All paths passed to tools must be absolute paths starting with `~/`
