@@ -86,4 +86,11 @@ RUN if [ -n "$PIP_INDEX_URL" ]; then \
 # Install uv.
 RUN python3 -m pip install --no-cache-dir --user uv --break-system-packages
 
+# Create entrypoint script.
+RUN echo '#!/bin/bash' > ~/.local/bin/entrypoint.sh && \
+    echo 'uv sync -q --all-extras' >> ~/.local/bin/entrypoint.sh && \
+    echo 'exec "$@"' >> ~/.local/bin/entrypoint.sh && \
+    chmod +x ~/.local/bin/entrypoint.sh
+
+ENTRYPOINT ["entrypoint.sh"]
 CMD ["sleep", "infinity"]

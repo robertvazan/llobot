@@ -19,15 +19,9 @@ Pull requests are generally welcome. If you would like to make large or controve
 
 ## Development
 
-The easiest way to get started is to build and run the development container. See [`Containerfile`](Containerfile).
+The easiest way to get started is to build and run the development container. See [`Containerfile`](Containerfile). It creates the venv automatically.
 
-Once in the container, download dependencies and create a virtual environment:
-
-```bash
-uv sync --all-extras
-```
-
-Quality gates before submitting your changes:
+Quality gates:
 
 - All unit tests pass: `uv run pytest` (bare `pytest` will not work unless you activate the venv first)
 - Self-review
