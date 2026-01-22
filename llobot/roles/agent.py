@@ -28,6 +28,7 @@ from llobot.projects.library.empty import EmptyProjectLibrary
 from llobot.prompts import Prompt
 from llobot.roles import Role
 from llobot.tools import Tool
+from llobot.utils.text import quote_code
 from llobot.utils.zones import Zoning
 
 class Agent(Role):
@@ -137,7 +138,12 @@ class Agent(Role):
 
             env[ContextEnv].add(preserved_messages)
 
-        self.handle_commands(env)
+        try:
+            self.handle_commands(env)
+            handle_unrecognized_commands(env)
+        except Exception as e:
+            env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"Error processing commands: {quote_code(str(e))}"))
+            env[PromptEnv].swallow()
 
     def handle_setup(self, env: Environment):
         """
@@ -227,7 +233,6 @@ class Agent(Role):
         snapshot_len = len(env[ContextEnv].build())
 
         self.handle_prompt(env)
-        handle_unrecognized_commands(env)
 
         context_env = env[ContextEnv]
         context = context_env.build()

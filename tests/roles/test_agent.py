@@ -247,3 +247,47 @@ def test_agent_stuffing_order_with_setup_message(tmp_path: Path):
     assert idx_system != -1, "System prompt not found in context"
     assert idx_setup != -1, "Setup message not found in context"
     assert idx_system < idx_setup, f"System prompt (idx={idx_system}) should be before setup messages (idx={idx_setup})."
+
+def test_agent_exception_handling(tmp_path: Path):
+    """Tests that Agent catches exceptions during command processing and reports them as status messages."""
+    model = MockModel('echo')
+
+    class BrokenAgent(Agent):
+        def handle_commands(self, env):
+            super().handle_commands(env)
+            raise RuntimeError("Something went wrong!")
+
+    agent = BrokenAgent('broken', model, session_history=tmp_path)
+    prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "Hello")])
+    stream = agent.chat(prompt)
+    response_thread = record_stream(stream)
+
+    # Verify that the exception was caught and reported as a status message
+    status_msg = next((m for m in response_thread if m.intent == ChatIntent.STATUS), None)
+    assert status_msg
+    assert "Error processing commands:" in status_msg.content
+    assert "Something went wrong!" in status_msg.content
+
+    # Verify that the prompt was swallowed (no response from model)
+    response_msg = next((m for m in response_thread if m.intent == ChatIntent.RESPONSE), None)
+    assert response_msg is None
+
+def test_agent_unrecognized_command_error(tmp_path: Path):
+    """Tests that unrecognized commands result in a status message instead of crashing."""
+    model = MockModel('echo')
+    agent = Agent('agent', model, session_history=tmp_path)
+
+    # @invalid is not a registered command, so handle_unrecognized_commands should raise ValueError,
+    # which should be caught by the try-except block.
+    prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "@invalid command")])
+    stream = agent.chat(prompt)
+    response_thread = record_stream(stream)
+
+    status_msg = next((m for m in response_thread if m.intent == ChatIntent.STATUS), None)
+    assert status_msg
+    assert "Error processing commands:" in status_msg.content
+    assert "Unrecognized: invalid" in status_msg.content
+
+    # Verify that the prompt was swallowed (no response from model)
+    response_msg = next((m for m in response_thread if m.intent == ChatIntent.RESPONSE), None)
+    assert response_msg is None
