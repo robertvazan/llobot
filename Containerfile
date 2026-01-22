@@ -86,20 +86,8 @@ RUN if [ -n "$PIP_INDEX_URL" ]; then \
 # Install uv.
 RUN python3 -m pip install --no-cache-dir --user uv --break-system-packages
 
-# Create entrypoint script.
-RUN echo '#!/bin/bash' > ~/.local/bin/entrypoint.sh && \
-    echo 'set -e' >> ~/.local/bin/entrypoint.sh && \
-    echo 'd="$PWD"' >> ~/.local/bin/entrypoint.sh && \
-    echo 'while [ "$d" != "/" ]; do' >> ~/.local/bin/entrypoint.sh && \
-    echo '    if [ -f "$d/pyproject.toml" ]; then' >> ~/.local/bin/entrypoint.sh && \
-    echo '        uv sync -q --all-extras' >> ~/.local/bin/entrypoint.sh && \
-    echo '        source $d/.venv/bin/activate' >> ~/.local/bin/entrypoint.sh && \
-    echo '        break' >> ~/.local/bin/entrypoint.sh && \
-    echo '    fi' >> ~/.local/bin/entrypoint.sh && \
-    echo '    d=$(dirname "$d")' >> ~/.local/bin/entrypoint.sh && \
-    echo 'done' >> ~/.local/bin/entrypoint.sh && \
-    echo 'exec "$@"' >> ~/.local/bin/entrypoint.sh && \
-    chmod +x ~/.local/bin/entrypoint.sh
+# Setup bashrc to activate venv.
+COPY --chown=${DEV_USER} scripts/activate.sh /home/${DEV_USER}/.local/bin/activate_project.sh
+RUN echo 'source ~/.local/bin/activate_project.sh' >> ~/.bashrc
 
-ENTRYPOINT ["entrypoint.sh"]
 CMD ["sleep", "infinity"]

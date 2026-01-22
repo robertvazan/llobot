@@ -47,6 +47,7 @@ The term “chat” is ambiguous and typically refers to either the thread or th
 The project root directory is organized as follows:
 
 - [`llobot/`](llobot/): The main Python package containing all library source code.
+- [`scripts/`](scripts/): Helper scripts for development and maintenance.
 - [`tests/`](tests/): Unit tests for the library. The directory structure within `tests/` mirrors that of the `llobot/` package.
 - [`README.md`](README.md): A general overview of the project, its features, and a getting-started guide.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): This file, containing guidelines for contributors.
