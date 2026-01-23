@@ -24,6 +24,7 @@ The easiest way to get started is to build and run the development container. Se
 Quality gates:
 
 - Run `pytest` (without parameters)
+- Run `pyright`
 - Self-review
 
 ## Terminology

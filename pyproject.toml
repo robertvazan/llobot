@@ -27,4 +27,12 @@ Issues = "https://github.com/robertvazan/llobot/issues"
 [project.optional-dependencies]
 dev = [
     "pytest==8.4.2",
+    "pyright==1.1.408",
 ]
+
+[tool.pyright]
+include = ["llobot", "tests"]
+venvPath = "."
+venv = ".venv"
+pythonVersion = "3.12"
+typeCheckingMode = "standard"

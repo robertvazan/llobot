@@ -40,6 +40,8 @@ RUN apt-get -y update && \
     sd \
     micro \
     git \
+    nodejs \
+    npm \
     && apt-get -y clean
 
 # Setup unprivileged user with passwordless sudo.
