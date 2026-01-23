@@ -6,7 +6,8 @@ from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.projects.directory import DirectoryProject
 from llobot.projects.library.predefined import PredefinedProjectLibrary
-from llobot.tools.write import WriteTool, WriteToolCall
+from llobot.tools.write import WriteTool
+from llobot.tools.reader import ToolReader
 
 @pytest.fixture
 def project(tmp_path: Path) -> DirectoryProject:
@@ -26,7 +27,7 @@ def env(library: PredefinedProjectLibrary) -> Environment:
     penv.add("myproject")
     return environment
 
-def test_write_tool_slice_and_parse(env: Environment):
+def test_write_tool_execution(env: Environment):
     tool = WriteTool()
     text = dedent("""
         <details>
@@ -40,18 +41,10 @@ def test_write_tool_slice_and_parse(env: Environment):
         </details>
     """).strip()
 
-    length = tool.slice(env, text, 0)
-    assert length == len(text)
+    reader = ToolReader(text)
+    tool.execute(env, reader)
+    assert reader.success_count == 1
 
-    calls = list(tool.parse(env, text))
-    assert len(calls) == 1
-    call = calls[0]
-    assert isinstance(call, WriteToolCall)
-    assert call._path == "~/myproject/foo.txt"
-    assert call._content == "content\nof the file\n"
-    assert call.summary == "Write: ~/myproject/foo.txt"
-
-    call.execute(env)
     project = env[ProjectEnv].union
     assert project.read(PurePosixPath("myproject/foo.txt")) == "content\nof the file\n"
     assert "Written `~/myproject/foo.txt`" in env[ContextEnv].build().messages[0].content
@@ -69,22 +62,20 @@ def test_write_tool_slice_extra_whitespace(env: Environment):
         </details>
     """).strip()
 
-    length = tool.slice(env, text, 0)
-    assert length == len(text)
+    reader = ToolReader(text)
+    tool.execute(env, reader)
+    assert reader.success_count == 1
 
-    calls = list(tool.parse(env, text))
-    assert len(calls) == 1
-    call = calls[0]
-    assert isinstance(call, WriteToolCall)
-    assert call._path == "~/myproject/bar.py"
-    assert 'print("hello")' in call._content
-    # Summary property of WriteToolCall reconstructs it cleanly
-    assert call.summary == "Write: ~/myproject/bar.py"
+    project = env[ProjectEnv].union
+    assert 'print("hello")' in project.read(PurePosixPath("myproject/bar.py"))
 
 def test_write_tool_no_match(env: Environment):
     tool = WriteTool()
     text = "<summary>Write: foo.txt</summary>"
-    assert tool.slice(env, text, 0) == 0
+
+    reader = ToolReader(text)
+    tool.execute(env, reader)
+    assert reader.position == 0
 
 def test_write_tool_missing_tilde_prefix(env: Environment):
     tool = WriteTool()
@@ -96,14 +87,9 @@ def test_write_tool_missing_tilde_prefix(env: Environment):
         </details>
     """).strip()
 
-    # Slice matches regex, and parse succeeds, but execute should fail
-    length = tool.slice(env, text, 0)
-    assert length == len(text)
-
-    calls = list(tool.parse(env, text))
-    assert len(calls) == 1
+    reader = ToolReader(text)
     with pytest.raises(ValueError, match="Path must start with ~/"):
-        calls[0].execute(env)
+        tool.execute(env, reader)
 
 def test_write_tool_empty_code_block(env: Environment):
     tool = WriteTool()
@@ -115,17 +101,9 @@ def test_write_tool_empty_code_block(env: Environment):
         </details>
     """).strip()
 
-    length = tool.slice(env, text, 0)
-    assert length == len(text)
+    reader = ToolReader(text)
+    tool.execute(env, reader)
 
-    calls = list(tool.parse(env, text))
-    assert len(calls) == 1
-    call = calls[0]
-    assert isinstance(call, WriteToolCall)
-    assert call._path == "~/myproject/empty.txt"
-    assert call._content.strip() == ""
-
-    call.execute(env)
     project = env[ProjectEnv].union
     assert project.read(PurePosixPath("myproject/empty.txt")) == ""
 
@@ -145,9 +123,11 @@ def test_write_tool_nested_fences(env: Environment):
         </details>
     """).strip()
 
-    calls = list(tool.parse(env, text))
-    assert len(calls) == 1
-    assert '```python\nprint("hello")\n```' in calls[0]._content
+    reader = ToolReader(text)
+    tool.execute(env, reader)
+
+    project = env[ProjectEnv].union
+    assert '```python\nprint("hello")\n```' in project.read(PurePosixPath("myproject/foo.md"))
 
 def test_write_tool_conflicting_fence(env: Environment):
     tool = WriteTool()
@@ -164,15 +144,9 @@ def test_write_tool_conflicting_fence(env: Environment):
         </details>
     """).strip()
 
-    calls = list(tool.parse(env, text))
-    assert len(calls) == 1
-    call = calls[0]
-
-    # Verify summary is set correctly for invalid tool call
-    assert call.summary == "Write: ~/myproject/foo.md"
-
+    reader = ToolReader(text)
     with pytest.raises(ValueError, match="Content contains a line starting with"):
-        call.execute(env)
+        tool.execute(env, reader)
 
 def test_write_tool_midline_fence(env: Environment):
     tool = WriteTool()
@@ -187,6 +161,8 @@ def test_write_tool_midline_fence(env: Environment):
         </details>
     """).strip()
 
-    calls = list(tool.parse(env, text))
-    assert len(calls) == 1
-    assert "text with ``` backticks" in calls[0]._content
+    reader = ToolReader(text)
+    tool.execute(env, reader)
+
+    project = env[ProjectEnv].union
+    assert "text with ``` backticks" in project.read(PurePosixPath("myproject/foo.md"))

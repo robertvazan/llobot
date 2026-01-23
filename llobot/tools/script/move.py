@@ -9,27 +9,26 @@ from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.formats.paths import parse_path
-from llobot.tools import ToolCall
 from llobot.tools.script import ScriptItem
 
-class ScriptMoveCall(ToolCall):
+class ScriptMove(ScriptItem):
     """
-    A tool call for moving a file.
+    Tool that parses `mv ~/source ~/dest` commands.
     """
-    _source: str
-    _destination: str
+    def execute(self, env: Environment, line: str) -> bool:
+        try:
+            parts = shlex.split(line)
+        except ValueError:
+            return False
 
-    def __init__(self, source: str, destination: str):
-        self._source = source
-        self._destination = destination
+        if len(parts) != 3 or parts[0] != 'mv':
+            return False
 
-    @property
-    def summary(self) -> str:
-        return f"mv `{self._source}` `{self._destination}`"
+        source_path = parts[1]
+        dest_path = parts[2]
 
-    def execute(self, env: Environment):
-        source = parse_path(self._source)
-        destination = parse_path(self._destination)
+        source = parse_path(source_path)
+        destination = parse_path(dest_path)
 
         context_env = env[ContextEnv]
         project = env[ProjectEnv].union
@@ -40,30 +39,8 @@ class ScriptMoveCall(ToolCall):
 
         project.move(source, destination)
         context_env.add(ChatMessage(ChatIntent.STATUS, msg))
-
-class ScriptMove(ScriptItem):
-    """
-    Tool that parses `mv ~/source ~/dest` commands.
-    """
-    def matches(self, env: Environment, line: str) -> bool:
-        try:
-            parts = shlex.split(line)
-        except ValueError:
-            return False
-        return len(parts) == 3 and parts[0] == 'mv'
-
-    def parse(self, env: Environment, line: str) -> ToolCall:
-        parts = shlex.split(line)
-        # matches checks structure, but let's be safe
-        if len(parts) != 3 or parts[0] != 'mv':
-            raise ValueError(f"Invalid mv command: {line}")
-
-        source_path = parts[1]
-        dest_path = parts[2]
-
-        return ScriptMoveCall(source_path, dest_path)
+        return True
 
 __all__ = [
     'ScriptMove',
-    'ScriptMoveCall',
 ]

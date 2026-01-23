@@ -2,8 +2,8 @@ from textwrap import dedent
 from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
 from llobot.environments.tools import ToolEnv
+from llobot.tools.execution import execute_tool_calls
 from llobot.tools.fenced import UnrecognizedFencedTool
-from llobot.tools.parsing import parse_tool_calls
 from llobot.chats.intent import ChatIntent
 
 def test_unrecognized_tool_reports_error():
@@ -22,7 +22,7 @@ def test_unrecognized_tool_reports_error():
     """).strip()
 
     # Parse tools - this should trigger the skip method of UnrecognizedFencedTool
-    list(parse_tool_calls(env, source))
+    execute_tool_calls(env, source)
 
     # Check context for status message
     context = env[ContextEnv].build()
@@ -37,7 +37,7 @@ def test_unrecognized_tool_ignores_non_fenced_blocks():
 
     source = "Some random text"
 
-    list(parse_tool_calls(env, source))
+    execute_tool_calls(env, source)
 
     context = env[ContextEnv].build()
     assert len(context) == 0

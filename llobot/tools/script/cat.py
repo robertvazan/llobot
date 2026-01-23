@@ -13,32 +13,41 @@ from llobot.formats.paths import parse_path
 from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.knowledge.subsets.standard import overviews_subset
 from llobot.projects.items import ProjectFile
-from llobot.tools import ToolCall
 from llobot.tools.script import ScriptItem
 
-class ScriptCatCall(ToolCall):
+class ScriptCat(ScriptItem):
     """
-    A tool call for reading a file.
+    Tool that parses `cat ~/path` commands.
 
-    Executes a read operation for the specified file. As a side effect, it also
-    identifies and reads overview files (e.g. README.md, __init__.py) in the
-    target file's parent directories to provide context.
+    When reading a file, this tool automatically discovers and reads overview
+    files (like README.md) in the target file's parent directories.
     """
-    _path: str
     _format: DocumentFormat
     _overviews: KnowledgeSubset
 
-    def __init__(self, path: str, format: DocumentFormat, overviews: KnowledgeSubset):
-        self._path = path
-        self._format = format
-        self._overviews = overviews
+    def __init__(self, *, format: DocumentFormat | None = None, overviews: KnowledgeSubset | None = None):
+        """
+        Initializes a new ScriptCat.
 
-    @property
-    def summary(self) -> str:
-        return f"cat `{self._path}`"
+        Args:
+            format: The document format to use for output. Defaults to standard format.
+            overviews: The subset identifying overview files. Defaults to standard overviews.
+        """
+        self._format = format or standard_document_format()
+        self._overviews = overviews or overviews_subset()
 
-    def execute(self, env: Environment):
-        path = parse_path(self._path)
+    def execute(self, env: Environment, line: str) -> bool:
+        try:
+            parts = shlex.split(line)
+        except ValueError:
+            return False
+
+        if len(parts) != 2 or parts[0] != 'cat':
+            return False
+
+        path_str = parts[1]
+
+        path = parse_path(path_str)
 
         project = env[ProjectEnv].union
         context_env = env[ContextEnv]
@@ -78,49 +87,11 @@ class ScriptCatCall(ToolCall):
 
         if any(listing in msg.content for msg in context):
             context_env.add(ChatMessage(ChatIntent.STATUS, f"File `~/{path}` is already in the context."))
-            return
+            return True
 
         context_env.add(ChatMessage(ChatIntent.SYSTEM, listing))
-
-class ScriptCat(ScriptItem):
-    """
-    Tool that parses `cat ~/path` commands.
-
-    When reading a file, this tool automatically discovers and reads overview
-    files (like README.md) in the target file's parent directories.
-    """
-    _format: DocumentFormat
-    _overviews: KnowledgeSubset
-
-    def __init__(self, *, format: DocumentFormat | None = None, overviews: KnowledgeSubset | None = None):
-        """
-        Initializes a new ScriptCat.
-
-        Args:
-            format: The document format to use for output. Defaults to standard format.
-            overviews: The subset identifying overview files. Defaults to standard overviews.
-        """
-        self._format = format or standard_document_format()
-        self._overviews = overviews or overviews_subset()
-
-    def matches(self, env: Environment, line: str) -> bool:
-        try:
-            parts = shlex.split(line)
-        except ValueError:
-            return False
-        return len(parts) == 2 and parts[0] == 'cat'
-
-    def parse(self, env: Environment, line: str) -> ToolCall:
-        parts = shlex.split(line)
-        # matches checks structure, but let's be safe
-        if len(parts) != 2 or parts[0] != 'cat':
-            raise ValueError(f"Invalid cat command: {line}")
-
-        path = parts[1]
-
-        return ScriptCatCall(path, self._format, self._overviews)
+        return True
 
 __all__ = [
     'ScriptCat',
-    'ScriptCatCall',
 ]

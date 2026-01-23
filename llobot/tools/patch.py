@@ -2,7 +2,6 @@
 Tool for patching files using unified diffs.
 """
 from __future__ import annotations
-from typing import Iterable
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
 from llobot.environments import Environment
@@ -10,44 +9,59 @@ from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.formats.documents import DocumentFormat, standard_document_format
 from llobot.formats.paths import parse_path
-from llobot.tools import ToolCall
 from llobot.tools.fenced import FencedTool
 from llobot.utils.text import normalize_document
 
-class PatchToolCall(ToolCall):
-    _path: str
-    _diff: str
+class PatchTool(FencedTool):
+    """
+    Tool that parses patch listings in the format:
+    <details>
+    <summary>Patch: ~/path/to/file</summary>
+
+    ```diff
+    @@ ...
+    - search content
+    + replace content
+    ```
+
+    </details>
+    """
     _format: DocumentFormat
 
-    def __init__(self, path: str, diff: str, format: DocumentFormat):
-        self._path = path
-        self._diff = diff
-        self._format = format
+    def __init__(self, *, format: DocumentFormat | None = None):
+        super().__init__()
+        self._format = format or standard_document_format()
 
-    @property
-    def summary(self) -> str:
-        return f"Patch: {self._path}"
+    def match_fenced(self, env: Environment, name: str, header: str, content: str) -> bool:
+        return name == 'Patch'
 
-    def execute(self, env: Environment):
-        path = parse_path(self._path)
+    def execute_fenced(self, env: Environment, name: str, header: str, content: str) -> bool:
+        path_str = header
+        diff = content
+
+        path = parse_path(path_str)
         project = env[ProjectEnv].union
 
         original_content = project.read(path)
         if original_content is None:
             raise FileNotFoundError(f"File not found: ~/{path}")
 
-        content = normalize_document(original_content)
-        hunks = self._parse_diff(self._diff)
+        file_content = normalize_document(original_content)
+
+        try:
+            hunks = self._parse_diff(diff)
+        except ValueError as e:
+            raise ValueError(f"Invalid patch for `~/{path}`: {e}") from e
 
         if not hunks:
-            raise ValueError("No hunks found in diff.")
+            raise ValueError(f"No hunks found in patch for `~/{path}`.")
 
-        current_content = content
+        current_content = file_content
 
         for i, (search_block, replace_block) in enumerate(hunks):
             hunk_num = i + 1
             if not search_block:
-                raise ValueError(f"Hunk {hunk_num} search block is empty.")
+                raise ValueError(f"Patching `~/{path}` failed: Hunk {hunk_num} search block is empty.")
 
             matches = []
             start = 0
@@ -64,10 +78,10 @@ class PatchToolCall(ToolCall):
                 start = idx + 1
 
             if not matches:
-                raise ValueError(f"Hunk {hunk_num} failed. Search block not found.")
+                raise ValueError(f"Patching `~/{path}` failed: Hunk {hunk_num} search block not found.")
 
             if len(matches) > 1:
-                raise ValueError(f"Hunk {hunk_num} failed. Search block found {len(matches)} times. Context is ambiguous.")
+                raise ValueError(f"Patching `~/{path}` failed: Hunk {hunk_num} search block found {len(matches)} times. Context is ambiguous.")
 
             idx = matches[0]
             current_content = (
@@ -84,6 +98,7 @@ class PatchToolCall(ToolCall):
 
         listing = self._format.render(path, new_content)
         context_env.add(ChatMessage(ChatIntent.SYSTEM, listing))
+        return True
 
     def _parse_diff(self, diff: str) -> list[tuple[str, str]]:
         lines = diff.splitlines(keepends=True)
@@ -128,33 +143,6 @@ class PatchToolCall(ToolCall):
 
         return hunks
 
-class PatchTool(FencedTool):
-    """
-    Tool that parses patch listings in the format:
-    <details>
-    <summary>Patch: ~/path/to/file</summary>
-
-    ```diff
-    @@ ...
-    - search content
-    + replace content
-    ```
-
-    </details>
-    """
-    _format: DocumentFormat
-
-    def __init__(self, *, format: DocumentFormat | None = None):
-        super().__init__()
-        self._format = format or standard_document_format()
-
-    def matches_content(self, env: Environment, name: str, header: str, content: str) -> bool:
-        return name == 'Patch'
-
-    def parse_content(self, env: Environment, name: str, header: str, content: str) -> Iterable[ToolCall]:
-        yield PatchToolCall(header, content, self._format)
-
 __all__ = [
     'PatchTool',
-    'PatchToolCall',
 ]

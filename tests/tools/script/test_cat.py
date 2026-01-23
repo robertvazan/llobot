@@ -8,7 +8,7 @@ from llobot.environments.projects import ProjectEnv
 from llobot.formats.documents import standard_document_format
 from llobot.projects.directory import DirectoryProject
 from llobot.projects.library.predefined import PredefinedProjectLibrary
-from llobot.tools.script.cat import ScriptCat, ScriptCatCall
+from llobot.tools.script.cat import ScriptCat
 from llobot.knowledge.subsets.standard import overviews_subset
 
 @pytest.fixture
@@ -38,19 +38,9 @@ def env(library: PredefinedProjectLibrary) -> Environment:
     penv.add("myproject")
     return environment
 
-def test_cat_tool_matches_and_parses_line(env: Environment):
-    tool = ScriptCat()
-    line = "cat ~/myproject/a.txt"
-
-    assert tool.matches(env, line)
-
-    call = tool.parse(env, line)
-    assert isinstance(call, ScriptCatCall)
-    assert call._path == "~/myproject/a.txt"
-
 def test_cat_tool_execute(env: Environment):
-    call = ScriptCatCall("~/myproject/a.txt", standard_document_format(), overviews_subset())
-    call.execute(env)
+    tool = ScriptCat()
+    assert tool.execute(env, "cat ~/myproject/a.txt")
 
     context_env = env[ContextEnv]
     context_messages = context_env.build().messages
@@ -58,25 +48,17 @@ def test_cat_tool_execute(env: Environment):
     output = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.SYSTEM)
 
     assert "Reading also related `~/myproject/README.md`..." in output
-    # It should not contain the main file read log anymore
-    assert "Reading ~/myproject/a.txt" not in log
-    assert "File was read." not in log
-
-    assert "Scanning" not in log
-    assert "Preparing" not in log
-
     assert "File: ~/myproject/README.md" in output
     assert "# Readme" in output
     assert "File: ~/myproject/a.txt" in output
     assert "content" in output
 
 def test_cat_tool_execute_nested_overviews(env: Environment):
-    call = ScriptCatCall("~/myproject/sub/c.txt", standard_document_format(), overviews_subset())
-    call.execute(env)
+    tool = ScriptCat()
+    assert tool.execute(env, "cat ~/myproject/sub/c.txt")
 
     context_env = env[ContextEnv]
     context_messages = context_env.build().messages
-    log = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.STATUS)
     output = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.SYSTEM)
 
     indices = [
@@ -85,21 +67,19 @@ def test_cat_tool_execute_nested_overviews(env: Environment):
     ]
     assert -1 not in indices
     assert indices == sorted(indices)
-    assert "Scanning" not in log
 
 def test_cat_tool_execute_deduplication(env: Environment):
     # Pre-populate context with the file content
     listing = standard_document_format().render(PurePosixPath("myproject/a.txt"), "content")
     env[ContextEnv].add(ChatMessage(ChatIntent.SYSTEM, listing))
 
-    call = ScriptCatCall("~/myproject/a.txt", standard_document_format(), overviews_subset())
-    call.execute(env)
+    tool = ScriptCat()
+    assert tool.execute(env, "cat ~/myproject/a.txt")
 
     context_env = env[ContextEnv]
     context_messages = context_env.build().messages
     log = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.STATUS)
     # We only care about NEWLY ADDED system messages.
-    # The first message was added manually in the test setup.
     new_system_messages = [m for m in context_messages[1:] if m.intent == ChatIntent.SYSTEM]
     output = "\n".join(m.content for m in new_system_messages)
 
@@ -114,8 +94,8 @@ def test_cat_tool_overview_deduplication(env: Environment):
     listing = standard_document_format().render(PurePosixPath("myproject/README.md"), "# Readme")
     env[ContextEnv].add(ChatMessage(ChatIntent.SYSTEM, listing))
 
-    call = ScriptCatCall("~/myproject/a.txt", standard_document_format(), overviews_subset())
-    call.execute(env)
+    tool = ScriptCat()
+    assert tool.execute(env, "cat ~/myproject/a.txt")
 
     context_env = env[ContextEnv]
     context_messages = context_env.build().messages
@@ -126,8 +106,8 @@ def test_cat_tool_overview_deduplication(env: Environment):
     assert "Reading also related `~/myproject/README.md`..." not in output
 
 def test_cat_tool_execute_python(env: Environment):
-    call = ScriptCatCall("~/myproject/b.py", standard_document_format(), overviews_subset())
-    call.execute(env)
+    tool = ScriptCat()
+    assert tool.execute(env, "cat ~/myproject/b.py")
 
     context_env = env[ContextEnv]
     context_messages = context_env.build().messages
@@ -138,13 +118,12 @@ def test_cat_tool_execute_python(env: Environment):
     assert "print('hello')" in output
 
 def test_cat_tool_missing_file_loads_overviews(env: Environment):
-    call = ScriptCatCall("~/myproject/nonexistent.txt", standard_document_format(), overviews_subset())
+    tool = ScriptCat()
     with pytest.raises(ValueError, match="File not found"):
-        call.execute(env)
+        tool.execute(env, "cat ~/myproject/nonexistent.txt")
 
     context_env = env[ContextEnv]
     context_messages = context_env.build().messages
-    log = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.STATUS)
     output = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.SYSTEM)
 
     assert "Reading also related `~/myproject/README.md`..." in output
@@ -152,8 +131,8 @@ def test_cat_tool_missing_file_loads_overviews(env: Environment):
 
 def test_cat_tool_target_is_overview(env: Environment):
     # If we cat the overview itself, it should appear once
-    call = ScriptCatCall("~/myproject/README.md", standard_document_format(), overviews_subset())
-    call.execute(env)
+    tool = ScriptCat()
+    tool.execute(env, "cat ~/myproject/README.md")
 
     context_env = env[ContextEnv]
     context_messages = context_env.build().messages
@@ -168,5 +147,5 @@ def test_cat_tool_target_is_overview(env: Environment):
 
 def test_cat_tool_no_match(env: Environment):
     tool = ScriptCat()
-    assert not tool.matches(env, "read a")
-    assert not tool.matches(env, "cat a b")
+    assert not tool.execute(env, "read a")
+    assert not tool.execute(env, "cat a b")

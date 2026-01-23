@@ -6,11 +6,13 @@ fallback tool.
 """
 from __future__ import annotations
 import re
-from typing import Iterable
+from llobot.chats.intent import ChatIntent
+from llobot.chats.message import ChatMessage
 from llobot.environments import Environment
-from llobot.tools.dummy import DummyTool
-from llobot.tools import ToolCall, InvalidToolCall
+from llobot.environments.context import ContextEnv
 from llobot.tools.block import BlockTool
+from llobot.tools.dummy import DummyTool
+from llobot.tools.reader import ToolReader
 
 # Matches:
 # <details>
@@ -34,42 +36,31 @@ class FencedTool(BlockTool):
     A base tool that matches fenced code blocks wrapped in details/summary tags.
     """
 
-    def slice(self, env: Environment, source: str, at: int) -> int:
-        match = _DETAILS_BLOCK_RE.match(source, pos=at)
+    def execute(self, env: Environment, reader: ToolReader) -> None:
+        match = _DETAILS_BLOCK_RE.match(reader.source, pos=reader.position)
         if not match:
-            return 0
-
-        name = match.group('name')
-        header = match.group('header').strip()
-        content = match.group('content')
-
-        if not self.matches_content(env, name, header, content):
-            return 0
-
-        return match.end() - at
-
-    def parse(self, env: Environment, source: str) -> Iterable[ToolCall]:
-        match = _DETAILS_BLOCK_RE.fullmatch(source)
-        assert match, "source for parse() must have been validated by slice()"
+            return
 
         name = match.group('name')
         header = match.group('header').strip()
         fence = match.group('fence')
         content = match.group('content')
 
-        # Perform ambiguous fence check directly in FencedTool
-        fence_length = len(fence)
-        if re.search(r'^`{%d,}' % fence_length, content, re.MULTILINE):
-            summary = f"{name}: {header}"
-            yield InvalidToolCall(
-                ValueError(f"Content contains a line starting with {fence_length} or more backticks. Enclose the block in more backticks."),
-                summary
-            )
+        if not self.match_fenced(env, name, header, content):
             return
 
-        yield from self.parse_content(env, name, header, content)
+        # Advance reader to consume the block
+        reader.advance(match.end() - reader.position)
 
-    def matches_content(self, env: Environment, name: str, header: str, content: str) -> bool:
+        # Perform ambiguous fence check
+        fence_length = len(fence)
+        if re.search(r'^`{%d,}' % fence_length, content, re.MULTILINE):
+            raise ValueError(f"Content contains a line starting with {fence_length} or more backticks. Enclose the block in more backticks.")
+
+        if self.execute_fenced(env, name, header, content):
+            reader.passed()
+
+    def match_fenced(self, env: Environment, name: str, header: str, content: str) -> bool:
         """
         Checks if the block content matches this tool's expected format.
 
@@ -84,9 +75,9 @@ class FencedTool(BlockTool):
         """
         return False
 
-    def parse_content(self, env: Environment, name: str, header: str, content: str) -> Iterable[ToolCall]:
+    def execute_fenced(self, env: Environment, name: str, header: str, content: str) -> bool:
         """
-        Parses the content into ToolCalls.
+        Executes the tool logic with the parsed content.
 
         Args:
             env: The environment.
@@ -95,27 +86,28 @@ class FencedTool(BlockTool):
             content: The content inside the fenced block.
 
         Returns:
-            An iterable of ToolCall instances.
+            True if execution succeeded, False otherwise.
         """
         raise NotImplementedError
+
 
 class UnrecognizedFencedTool(DummyTool):
     """
     A dummy tool that matches any fenced tool block and reports an error.
     """
-    def skip(self, env: Environment, source: str, at: int) -> int:
-        match = _DETAILS_BLOCK_RE.match(source, pos=at)
+    def execute(self, env: Environment, reader: ToolReader) -> None:
+        match = _DETAILS_BLOCK_RE.match(reader.source, pos=reader.position)
         if not match:
-            return 0
-
-        from llobot.chats.intent import ChatIntent
-        from llobot.chats.message import ChatMessage
-        from llobot.environments.context import ContextEnv
+            return
 
         name = match.group('name')
         header = match.group('header').strip()
+
+        # Advance/skip. Since this is a DummyTool, we use skip().
+        # However, it reports an error status, so effectively it handles the block.
+        reader.skip(match.end() - reader.position)
+
         env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"Unrecognized tool '{name}' or invalid block format. Header: {header}"))
-        return match.end() - at
 
 __all__ = [
     'FencedTool',

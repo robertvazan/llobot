@@ -3,10 +3,9 @@ Script tool and its commands.
 """
 from __future__ import annotations
 from functools import cache
-from typing import Iterable
 from llobot.environments import Environment
 from llobot.environments.tools import ToolEnv
-from llobot.tools import Tool, ToolCall, InvalidToolCall
+from llobot.tools import Tool
 from llobot.tools.fenced import FencedTool
 
 class ScriptItem(Tool):
@@ -14,31 +13,20 @@ class ScriptItem(Tool):
     Interface for tools that parse single lines within a tool script.
     """
 
-    def matches(self, env: Environment, line: str) -> bool:
+    def execute(self, env: Environment, line: str) -> bool:
         """
-        Checks if the line matches this tool's command format.
-
-        Exceptions raised by this method are treated as a failure to match.
+        Attempts to execute a script command line.
 
         Args:
             env: The environment.
-            line: The command line to check.
+            line: The command line to execute.
 
         Returns:
-            True if it matches.
-        """
-        raise NotImplementedError
+            True if the command was recognized and executed (or attempted).
+            False if the command did not match this item.
 
-    def parse(self, env: Environment, line: str) -> ToolCall:
-        """
-        Parses a single line into a ToolCall.
-
-        Args:
-            env: The environment.
-            line: The command line to parse.
-
-        Returns:
-            A ToolCall instance.
+        Raises:
+            Exception: If execution fails.
         """
         raise NotImplementedError
 
@@ -47,10 +35,10 @@ class ScriptTool(FencedTool):
     A tool that executes multiple line-based commands within a fenced code block.
     It delegates parsing of each line to registered `ScriptItem`s.
     """
-    def matches_content(self, env: Environment, name: str, header: str, content: str) -> bool:
+    def match_fenced(self, env: Environment, name: str, header: str, content: str) -> bool:
         return name == 'Script'
 
-    def parse_content(self, env: Environment, name: str, header: str, content: str) -> Iterable[ToolCall]:
+    def execute_fenced(self, env: Environment, name: str, header: str, content: str) -> bool:
         lines = content.splitlines()
         # Find all registered script items
         script_items = [t for t in env[ToolEnv].tools if isinstance(t, ScriptItem)]
@@ -63,22 +51,16 @@ class ScriptTool(FencedTool):
             matched = False
             for item in script_items:
                 try:
-                    if not item.matches(env, line):
-                        continue
+                    if item.execute(env, line):
+                        matched = True
+                        break
                 except Exception:
-                    # Treat exception as mismatch
-                    continue
-
-                try:
-                    yield item.parse(env, line)
-                except Exception as e:
-                    yield InvalidToolCall(e)
-
-                matched = True
-                break
+                    # If execute raises, it means it matched but failed. Propagate.
+                    raise
 
             if not matched:
-                yield InvalidToolCall(ValueError(f"Unrecognized tool: {line}"))
+                raise ValueError(f"Unrecognized script command: {line}")
+        return True
 
 @cache
 def standard_script_tools() -> tuple[ScriptItem, ...]:

@@ -1,10 +1,9 @@
 from __future__ import annotations
-from typing import Iterable
 from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
 from llobot.environments.tools import ToolEnv
-from llobot.tools import ToolCall
 from llobot.tools.block import BlockTool
+from llobot.tools.reader import ToolReader
 from llobot.tools.execution import execute_tool_calls
 
 class ExecutionTestEnv:
@@ -13,31 +12,26 @@ class ExecutionTestEnv:
         self.state: int = 0
         self.read_value: int | None = None
 
-class SimpleToolCall(ToolCall):
-    def __init__(self, content: str):
-        self.content = content
-
-    @property
-    def summary(self):
-        return f"simple {self.content}"
-
-    def execute(self, env):
-        if self.content == "fail":
-            raise Exception("oops")
-        env[ExecutionTestEnv].executed.append(self.content)
-
 class SimpleTool(BlockTool):
-    def slice(self, env, source, at):
+    def execute(self, env: Environment, reader: ToolReader) -> None:
+        source = reader.source
+        at = reader.position
         if source.startswith("CMD:", at):
             try:
                 end = source.index("\n", at)
-                return end - at
+                length = end - at
             except ValueError:
-                return len(source) - at
-        return 0
+                length = len(source) - at
 
-    def parse(self, env, formatted) -> Iterable[ToolCall]:
-        yield SimpleToolCall(formatted[4:])
+            content = source[at+4:at+length].strip()
+
+            reader.advance(length)
+
+            if content == "fail":
+                raise Exception("oops")
+
+            env[ExecutionTestEnv].executed.append(content)
+            reader.passed()
 
 def test_execute_tool_calls_success():
     env = Environment()
@@ -66,7 +60,7 @@ def test_execute_tool_calls_partial_failure():
     context = env[ContextEnv].build()
     # 1 failure status + 1 summary status
     assert len(context) == 2
-    assert "Error executing simple fail" in context[0].content
+    assert "Error executing tool: `oops`" in context[0].content
     assert "❌ 2 of 3 tool calls executed." in context[1].content
 
 def test_execute_tool_calls_none():
@@ -86,33 +80,27 @@ def test_execute_tool_calls_interleaved():
     Verify that tools are executed as they are parsed, not all at once at the end.
     We'll use a side effect that affects subsequent tools.
     """
-    class StateToolCall(ToolCall):
-        def __init__(self, action: str):
-            self.action = action
-
-        @property
-        def summary(self):
-            return self.action
-
-        def execute(self, env):
-            test_env = env[ExecutionTestEnv]
-            if self.action == "read":
-                test_env.read_value = test_env.state
-            elif self.action == "inc":
-                test_env.state += 1
-
     class StateTool(BlockTool):
-        def slice(self, env, source, at):
+        def execute(self, env, reader) -> None:
+            source = reader.source
+            at = reader.position
             if source.startswith("OP:", at):
                 try:
                     end = source.index("\n", at)
-                    return end - at
+                    length = end - at
                 except ValueError:
-                    return len(source) - at
-            return 0
+                    length = len(source) - at
 
-        def parse(self, env, formatted) -> Iterable[ToolCall]:
-            yield StateToolCall(formatted[3:])
+                action = source[at+3:at+length].strip()
+                reader.advance(length)
+
+                test_env = env[ExecutionTestEnv]
+                if action == "read":
+                    test_env.read_value = test_env.state
+                elif action == "inc":
+                    test_env.state += 1
+
+                reader.passed()
 
     env = Environment()
     env[ToolEnv].register(StateTool())

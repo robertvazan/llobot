@@ -15,7 +15,6 @@ from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.formats.documents import DocumentFormat, standard_document_format
 from llobot.formats.paths import parse_path
-from llobot.tools import ToolCall
 from llobot.tools.script import ScriptItem
 from llobot.utils.text import normalize_document
 
@@ -78,66 +77,6 @@ def rust_to_python_replacement(template: str) -> str:
     return _RUST_REPLACEMENT_RE.sub(replace_match, template)
 
 
-class ScriptReplaceCall(ToolCall):
-    """
-    A tool call for replacing text in a file using regex.
-    """
-    _path: str
-    _pattern: str
-    _replacement: str
-    _format: DocumentFormat
-
-    def __init__(self, path: str, pattern: str, replacement: str, format: DocumentFormat):
-        """
-        Initializes a ScriptReplaceCall.
-
-        Args:
-            path: The path string to the file to modify.
-            pattern: The regex pattern to search for (Rust syntax).
-            replacement: The replacement template (Rust syntax).
-            format: The format to use for rendering the file listing.
-        """
-        self._path = path
-        self._pattern = pattern
-        self._replacement = replacement
-        self._format = format
-
-    @property
-    def summary(self) -> str:
-        # We manually quote the path in the summary for display purposes
-        cmd = shlex.join(['sd', self._pattern, self._replacement])
-        return f"{cmd} `{self._path}`"
-
-    def execute(self, env: Environment):
-        path = parse_path(self._path)
-        project = env[ProjectEnv].union
-
-        content = project.read(path)
-        if content is None:
-            raise ValueError(f"File not found: ~/{path}")
-
-        # Compile pattern as case-sensitive (default in Python)
-        try:
-            regex = re.compile(self._pattern)
-        except re.error as e:
-            raise ValueError(f"Invalid regex pattern: {e}")
-
-        # Translate Rust replacement syntax to Python
-        python_replacement = rust_to_python_replacement(self._replacement)
-
-        # Perform replacement
-        new_content, count = regex.subn(python_replacement, content)
-
-        if count == 0:
-            raise ValueError(f"Pattern not found in file: {self._pattern}")
-
-        project.write(path, normalize_document(new_content))
-        env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"Replaced {count} matches in `~/{path}`"))
-
-        listing = self._format.render(path, normalize_document(new_content))
-        env[ContextEnv].add(ChatMessage(ChatIntent.SYSTEM, listing))
-
-
 class ScriptReplace(ScriptItem):
     """
     Tool that parses `sd pattern replacement ~/path` commands.
@@ -152,27 +91,50 @@ class ScriptReplace(ScriptItem):
     def __init__(self, *, format: DocumentFormat | None = None):
         self._format = format or standard_document_format()
 
-    def matches(self, env: Environment, line: str) -> bool:
+    def execute(self, env: Environment, line: str) -> bool:
         try:
             parts = shlex.split(line)
         except ValueError:
             return False
-        return len(parts) == 4 and parts[0] == 'sd'
 
-    def parse(self, env: Environment, line: str) -> ToolCall:
-        parts = shlex.split(line)
         if len(parts) != 4 or parts[0] != 'sd':
-            raise ValueError(f"Invalid sd command: {line}")
+            return False
 
         pattern = parts[1]
         replacement = parts[2]
-        path = parts[3]
+        path_str = parts[3]
 
-        return ScriptReplaceCall(path, pattern, replacement, self._format)
+        path = parse_path(path_str)
+        project = env[ProjectEnv].union
+
+        content = project.read(path)
+        if content is None:
+            raise ValueError(f"File not found: ~/{path}")
+
+        # Compile pattern as case-sensitive (default in Python)
+        try:
+            regex = re.compile(pattern)
+        except re.error as e:
+            raise ValueError(f"Invalid regex pattern: {e}")
+
+        # Translate Rust replacement syntax to Python
+        python_replacement = rust_to_python_replacement(replacement)
+
+        # Perform replacement
+        new_content, count = regex.subn(python_replacement, content)
+
+        if count == 0:
+            raise ValueError(f"Pattern not found in `~/{path}`: {pattern}")
+
+        project.write(path, normalize_document(new_content))
+        env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"Replaced {count} matches in `~/{path}`"))
+
+        listing = self._format.render(path, normalize_document(new_content))
+        env[ContextEnv].add(ChatMessage(ChatIntent.SYSTEM, listing))
+        return True
 
 
 __all__ = [
     'ScriptReplace',
-    'ScriptReplaceCall',
     'rust_to_python_replacement',
 ]

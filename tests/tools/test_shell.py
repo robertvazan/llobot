@@ -7,7 +7,8 @@ from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.projects import Project
 from llobot.projects.library import ProjectLibrary
-from llobot.tools.shell import ShellTool, ShellToolCall
+from llobot.tools.shell import ShellTool
+from llobot.tools.reader import ToolReader
 
 class MockProject(Project):
     def __init__(self, prefixes: set[PurePosixPath], executable_paths: set[PurePosixPath]):
@@ -62,14 +63,9 @@ def test_shell_tool_explicit_path(env: Environment):
     script_content = "echo hello"
     source = wrap_script(script_content, "run echo @ ~/proj")
 
-    calls = list(tool.parse(env, source))
-    assert len(calls) == 1
-    call = calls[0]
-    assert isinstance(call, ShellToolCall)
-    assert call._path_str == "~/proj"
-    assert call.summary == "Shell: run echo @ ~/proj"
-
-    call.execute(env)
+    reader = ToolReader(source)
+    tool.execute(env, reader)
+    assert reader.success_count == 1
 
     assert len(project.executed_scripts) == 1
     path, executed_script = project.executed_scripts[0]
@@ -96,10 +92,9 @@ def test_shell_tool_fallback(env: Environment):
     script_content = "echo hello"
     source = wrap_script(script_content, "run echo")
 
-    calls = list(tool.parse(env, source))
-    call = calls[0]
-    assert call._path_str is None
-    call.execute(env)
+    reader = ToolReader(source)
+    tool.execute(env, reader)
+    assert reader.success_count == 1
 
     assert len(project.executed_scripts) == 1
     path, _ = project.executed_scripts[0]
@@ -123,11 +118,12 @@ def test_shell_tool_ambiguous_fallback(env: Environment):
     script_content = "echo hello"
     source = wrap_script(script_content, "run echo")
 
-    calls = list(tool.parse(env, source))
-    call = calls[0]
-
+    reader = ToolReader(source)
     with pytest.raises(ValueError, match="multiple executable projects found"):
-        call.execute(env)
+        tool.execute(env, reader)
+
+    assert reader.position > 0 # Should have advanced
+    assert reader.tool_count == 1
 
 def test_shell_tool_no_executable_fallback(env: Environment):
     project = MockProject(
@@ -141,11 +137,9 @@ def test_shell_tool_no_executable_fallback(env: Environment):
     script_content = "echo hello"
     source = wrap_script(script_content, "run echo")
 
-    calls = list(tool.parse(env, source))
-    call = calls[0]
-
+    reader = ToolReader(source)
     with pytest.raises(ValueError, match="no executable projects found"):
-        call.execute(env)
+        tool.execute(env, reader)
 
 def test_shell_tool_last_at_in_header(env: Environment):
     project = MockProject(
@@ -159,12 +153,8 @@ def test_shell_tool_last_at_in_header(env: Environment):
     # Description contains @ symbol
     source = wrap_script("echo hello", "run @ my place @ ~/proj")
 
-    calls = list(tool.parse(env, source))
-    call = calls[0]
-    assert call._description == "run @ my place"
-    assert call._path_str == "~/proj"
-
-    call.execute(env)
+    reader = ToolReader(source)
+    tool.execute(env, reader)
 
     context = env[ContextEnv].build()
     msg = context[0]

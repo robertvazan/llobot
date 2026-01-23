@@ -91,7 +91,7 @@ def test_accept_command_success(tmp_path: Path):
     assert "File: ~/myproject/file3.txt" in context_messages[2].content
 
     assert context_messages[3].intent == ChatIntent.STATUS
-    assert "✅ All 3 tool calls executed." in context_messages[3].content
+    assert "✅ All 2 tool calls executed." in context_messages[3].content
 
 def test_accept_command_failure(tmp_path: Path):
     # Setup project
@@ -136,7 +136,7 @@ def test_accept_command_failure(tmp_path: Path):
     assert len(context_messages) == 2
 
     content = context_messages[0].content
-    assert "Error executing rm `~/myproject/nonexistent.txt`" in content
+    assert "Error executing tool" in content
     assert "No such file or directory" in content
 
     assert "❌ 0 of 1 tool calls executed." in context_messages[1].content

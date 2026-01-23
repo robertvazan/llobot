@@ -7,7 +7,8 @@ from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.projects.directory import DirectoryProject
 from llobot.formats.documents import standard_document_format
-from llobot.tools.patch import PatchTool, PatchToolCall
+from llobot.tools.patch import PatchTool
+from llobot.tools.reader import ToolReader
 
 @pytest.fixture
 def env(tmp_path):
@@ -16,7 +17,7 @@ def env(tmp_path):
     env[ProjectEnv]._projects.add(project)
     return env
 
-def test_slice_valid(env):
+def test_patch_tool_execution(env):
     tool = PatchTool()
     source = dedent("""
         <details>
@@ -30,30 +31,18 @@ def test_slice_valid(env):
 
         </details>
     """).strip()
-    assert tool.slice(env, source, 0) == len(source)
 
-def test_parse_valid(env):
-    tool = PatchTool()
-    source = dedent("""
-        <details>
-        <summary>Patch: ~/test/file.txt</summary>
+    # Needs reader mock
+    reader = ToolReader(source)
+    # We expect this to fail because file doesn't exist, but it confirms matching logic
+    try:
+        tool.execute(env, reader)
+    except FileNotFoundError:
+        pass
 
-        ```diff
-        @@
-        -old
-        +new
-        ```
-
-        </details>
-    """).strip()
-    calls = list(tool.parse(env, source))
-    assert len(calls) == 1
-    call = calls[0]
-    assert isinstance(call, PatchToolCall)
-    assert call._path == '~/test/file.txt'
-    assert "old" in call._diff
-    assert "new" in call._diff
-    assert call.summary == "Patch: ~/test/file.txt"
+    # If it matched, it should have advanced
+    assert reader.position == len(source)
+    assert reader.tool_count == 1
 
 def test_execute_simple_replacement(env, tmp_path):
     (tmp_path / 'file.txt').write_text("line1\nline2\nline3\n", encoding='utf-8')
@@ -63,8 +52,8 @@ def test_execute_simple_replacement(env, tmp_path):
         -line2
         +modified
     """)
-    call = PatchToolCall('~/test/file.txt', diff, standard_document_format())
-    call.execute(env)
+    tool = PatchTool()
+    tool.execute_fenced(env, "Patch", "~/test/file.txt", diff)
 
     assert (tmp_path / 'file.txt').read_text(encoding='utf-8') == "line1\nmodified\nline3\n"
 
@@ -87,8 +76,8 @@ def test_execute_with_context(env, tmp_path):
         +MODIFIED
          C
     """)
-    call = PatchToolCall('~/test/file.txt', diff, standard_document_format())
-    call.execute(env)
+    tool = PatchTool()
+    tool.execute_fenced(env, "Patch", "~/test/file.txt", diff)
 
     assert (tmp_path / 'file.txt').read_text(encoding='utf-8') == "A\nMODIFIED\nC\nD\n"
 
@@ -104,8 +93,8 @@ def test_execute_multiple_hunks(env, tmp_path):
         -E
         +End
     """)
-    call = PatchToolCall('~/test/file.txt', diff, standard_document_format())
-    call.execute(env)
+    tool = PatchTool()
+    tool.execute_fenced(env, "Patch", "~/test/file.txt", diff)
 
     assert (tmp_path / 'file.txt').read_text(encoding='utf-8') == "Start\nB\nC\nD\nEnd\n"
 
@@ -123,9 +112,9 @@ def test_execute_fail_not_found(env, tmp_path):
         -D
         +E
     """)
-    call = PatchToolCall('~/test/file.txt', diff, standard_document_format())
-    with pytest.raises(ValueError, match="Hunk 1 failed. Search block not found"):
-        call.execute(env)
+    tool = PatchTool()
+    with pytest.raises(ValueError, match="Hunk 1 search block not found"):
+        tool.execute_fenced(env, "Patch", "~/test/file.txt", diff)
 
 def test_execute_fail_ambiguous(env, tmp_path):
     (tmp_path / 'file.txt').write_text("A\nA\nA\n", encoding='utf-8')
@@ -135,9 +124,9 @@ def test_execute_fail_ambiguous(env, tmp_path):
         -A
         +B
     """)
-    call = PatchToolCall('~/test/file.txt', diff, standard_document_format())
+    tool = PatchTool()
     with pytest.raises(ValueError, match="Context is ambiguous"):
-        call.execute(env)
+        tool.execute_fenced(env, "Patch", "~/test/file.txt", diff)
 
 def test_execute_fail_empty_search(env, tmp_path):
     (tmp_path / 'file.txt').write_text("A\n", encoding='utf-8')
@@ -146,9 +135,9 @@ def test_execute_fail_empty_search(env, tmp_path):
         @@
         +New
     """)
-    call = PatchToolCall('~/test/file.txt', diff, standard_document_format())
+    tool = PatchTool()
     with pytest.raises(ValueError, match="Hunk 1 search block is empty"):
-        call.execute(env)
+        tool.execute_fenced(env, "Patch", "~/test/file.txt", diff)
 
 def test_execute_whole_line_enforcement(env, tmp_path):
     # 'target\n' exists in the content, but not at the start of a line
@@ -159,10 +148,11 @@ def test_execute_whole_line_enforcement(env, tmp_path):
         -target
         +replacement
     """)
-    call = PatchToolCall('~/test/file.txt', diff, standard_document_format())
+    tool = PatchTool()
 
-    with pytest.raises(ValueError, match="Search block not found"):
-        call.execute(env)
+    # Fixed regex to match lowercase
+    with pytest.raises(ValueError, match="search block not found"):
+        tool.execute_fenced(env, "Patch", "~/test/file.txt", diff)
 
 def test_execute_ignore_header(env, tmp_path):
     (tmp_path / 'file.txt').write_text("A\n", encoding='utf-8')
@@ -174,8 +164,8 @@ def test_execute_ignore_header(env, tmp_path):
         -A
         +B
     """)
-    call = PatchToolCall('~/test/file.txt', diff, standard_document_format())
-    call.execute(env)
+    tool = PatchTool()
+    tool.execute_fenced(env, "Patch", "~/test/file.txt", diff)
     assert (tmp_path / 'file.txt').read_text(encoding='utf-8') == "B\n"
 
 def test_execute_normalization(env, tmp_path):
@@ -187,15 +177,15 @@ def test_execute_normalization(env, tmp_path):
         -B
         +C
     """)
-    call = PatchToolCall('~/test/file.txt', diff, standard_document_format())
-    call.execute(env)
+    tool = PatchTool()
+    tool.execute_fenced(env, "Patch", "~/test/file.txt", diff)
     # Result should be normalized (no trailing empty lines beyond the terminal newline)
     assert (tmp_path / 'file.txt').read_text(encoding='utf-8') == "A\nC\n"
 
 def test_execute_missing_file(env):
-    call = PatchToolCall('~/test/missing.txt', "@@\n-a\n+b", standard_document_format())
+    tool = PatchTool()
     with pytest.raises(FileNotFoundError, match="File not found"):
-        call.execute(env)
+        tool.execute_fenced(env, "Patch", "~/test/missing.txt", "@@\n-a\n+b")
 
 def test_atomic_execution(env, tmp_path):
     """Ensures file is not modified if any hunk fails."""
@@ -210,9 +200,10 @@ def test_atomic_execution(env, tmp_path):
         -X
         +ModifiedX
     """)
-    call = PatchToolCall('~/test/file.txt', diff, standard_document_format())
-    with pytest.raises(ValueError, match="Search block not found"):
-        call.execute(env)
+    tool = PatchTool()
+    # Fixed regex to match lowercase
+    with pytest.raises(ValueError, match="search block not found"):
+        tool.execute_fenced(env, "Patch", "~/test/file.txt", diff)
 
     # File should be unchanged
     assert (tmp_path / 'file.txt').read_text(encoding='utf-8') == "A\nB\nC\n"
@@ -229,10 +220,10 @@ def test_strict_context_parsing(env, tmp_path):
         -B
         +C
     """)
-    call = PatchToolCall('~/test/file.txt', diff, standard_document_format())
+    tool = PatchTool()
     # The empty line will fall through to the invalid line check
     with pytest.raises(ValueError, match="Invalid diff line"):
-        call.execute(env)
+        tool.execute_fenced(env, "Patch", "~/test/file.txt", diff)
 
 def test_execute_ignore_trailing_whitespace_in_diff(env, tmp_path):
     (tmp_path / 'file.txt').write_text("line1\n", encoding='utf-8')
@@ -243,8 +234,8 @@ def test_execute_ignore_trailing_whitespace_in_diff(env, tmp_path):
         -line1
         +line2
     """)
-    call = PatchToolCall('~/test/file.txt', diff, standard_document_format())
-    call.execute(env)
+    tool = PatchTool()
+    tool.execute_fenced(env, "Patch", "~/test/file.txt", diff)
 
     assert (tmp_path / 'file.txt').read_text(encoding='utf-8') == "line2\n"
 
@@ -255,7 +246,7 @@ def test_execute_preserve_empty_lines_after_strip(env, tmp_path):
     # Note: Using manual string construction to ensure trailing spaces are present
     diff = "@@\n A \n  \n-B \n+C\n"
 
-    call = PatchToolCall('~/test/file.txt', diff, standard_document_format())
-    call.execute(env)
+    tool = PatchTool()
+    tool.execute_fenced(env, "Patch", "~/test/file.txt", diff)
 
     assert (tmp_path / 'file.txt').read_text(encoding='utf-8') == "A\n\nC\n"

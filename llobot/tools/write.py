@@ -2,36 +2,14 @@
 Tool for writing files from document listings.
 """
 from __future__ import annotations
-from typing import Iterable
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
 from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.formats.paths import parse_path
-from llobot.tools import ToolCall
 from llobot.tools.fenced import FencedTool
 from llobot.utils.text import normalize_document
-
-class WriteToolCall(ToolCall):
-    _path: str
-    _content: str
-
-    def __init__(self, path: str, content: str):
-        self._path = path
-        self._content = content
-
-    @property
-    def summary(self) -> str:
-        return f"Write: {self._path}"
-
-    def execute(self, env: Environment):
-        path = parse_path(self._path)
-        project = env[ProjectEnv].union
-
-        project.write(path, normalize_document(self._content))
-        env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"Written `~/{path}`"))
-
 
 class WriteTool(FencedTool):
     """
@@ -45,13 +23,19 @@ class WriteTool(FencedTool):
 
     </details>
     """
-    def matches_content(self, env: Environment, name: str, header: str, content: str) -> bool:
+    def match_fenced(self, env: Environment, name: str, header: str, content: str) -> bool:
         return name == 'Write'
 
-    def parse_content(self, env: Environment, name: str, header: str, content: str) -> Iterable[ToolCall]:
-        yield WriteToolCall(header, content)
+    def execute_fenced(self, env: Environment, name: str, header: str, content: str) -> bool:
+        path_str = header
+
+        path = parse_path(path_str)
+        project = env[ProjectEnv].union
+
+        project.write(path, normalize_document(content))
+        env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"Written `~/{path}`"))
+        return True
 
 __all__ = [
     'WriteTool',
-    'WriteToolCall',
 ]
