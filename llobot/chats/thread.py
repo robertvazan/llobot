@@ -6,6 +6,7 @@ from llobot.chats.message import ChatMessage
 
 if TYPE_CHECKING:
     from llobot.chats.stream import ChatStream
+    from llobot.chats.builder import ChatBuilder
 
 class ChatThread(ValueTypeMixin):
     """

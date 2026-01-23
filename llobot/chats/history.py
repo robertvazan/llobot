@@ -105,7 +105,7 @@ class ChatHistory:
         Returns:
             A (timestamp, ChatThread) tuple, or (None, None) if the zone is empty.
         """
-        last_item = next(self.recent(zone, cutoff), None)
+        last_item = next(iter(self.recent(zone, cutoff)), None)
         if last_item:
             return last_item
         return None, None

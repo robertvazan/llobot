@@ -118,7 +118,7 @@ def parse_chat_from_markdown(formatted: str) -> ChatThread:
     """
     builder = ChatBuilder()
     intent = None
-    lines = None
+    lines: list[str] | None = None
     first_message = True
     for line in formatted.splitlines():
         # Empty line before first message.
@@ -129,9 +129,11 @@ def parse_chat_from_markdown(formatted: str) -> ChatThread:
             if matched.group(1).startswith('Escaped-'):
                 if not intent:
                     raise ValueError
+                assert lines is not None
                 lines.append('> ' + matched.group(1).removeprefix('Escaped-'))
             else:
                 if intent:
+                    assert lines is not None
                     if len(lines) < 2 or lines[0] or lines[-1]:
                         raise ValueError
                     builder.add(ChatMessage(intent, '\n'.join(lines[1:-1])))
@@ -142,8 +144,10 @@ def parse_chat_from_markdown(formatted: str) -> ChatThread:
             if not intent:
                 # Tolerate content before first intent, for example old metadata format.
                 continue
+            assert lines is not None
             lines.append(line)
     if intent:
+        assert lines is not None
         if len(lines) < 1 or lines[0]:
             raise ValueError
         builder.add(ChatMessage(intent, '\n'.join(lines[1:])))
