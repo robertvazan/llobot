@@ -23,8 +23,8 @@ The easiest way to get started is to build and run the development container. Se
 
 Quality gates:
 
-- Run `pytest` (without parameters)
-- Run `pyright`
+- Run `pytest` without parameters to ensure all tests pass
+- Run `pyright` on modified files to check that there are no new type errors (old ones are acceptable)
 - Self-review
 
 ## Terminology
