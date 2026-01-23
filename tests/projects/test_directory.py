@@ -270,7 +270,10 @@ def test_directory_project_executable(tmp_path: Path):
 
     # Test execute
     output = project.execute(PurePosixPath("p"), "echo hello")
-    assert output.strip() == "hello\nExit code: 0"
+    assert "\nhello\n" in output
+    assert "Exit code: 0" in output
+    # set -x echos commands to stderr
+    assert "+ echo hello" in output
 
     # Test execute with cwd
     output = project.execute(PurePosixPath("p/subdir"), "pwd")
@@ -282,6 +285,15 @@ def test_directory_project_executable(tmp_path: Path):
 
     # Test execute failing script
     output = project.execute(PurePosixPath("p"), "exit 1")
+    assert "Exit code: 1" in output
+
+    # Test pipefail
+    output = project.execute(PurePosixPath("p"), "echo hello | false")
+    assert "Exit code: 1" in output
+
+    # Test unbound variable
+    output = project.execute(PurePosixPath("p"), "echo $UNBOUND_VAR")
+    assert "unbound variable" in output.lower()
     assert "Exit code: 1" in output
 
     # Test summary

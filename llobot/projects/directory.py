@@ -224,6 +224,8 @@ class DirectoryProject(Project, ValueTypeMixin):
         """
         Executes a shell script in the project directory.
 
+        The script is executed with `set -euxo pipefail` enabled by default.
+
         Args:
             path: The project path to use as working directory.
             script: The shell script to execute.
@@ -248,7 +250,7 @@ class DirectoryProject(Project, ValueTypeMixin):
             raise FileNotFoundError(f"Working directory not found: ~/{path}")
 
         result = subprocess.run(
-            script,
+            f"set -euxo pipefail\n{script}",
             shell=True,
             executable='/bin/bash',
             cwd=real_path,

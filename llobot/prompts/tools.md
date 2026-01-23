@@ -48,6 +48,7 @@ pip install -e .
 - Do not use shell tool for reading, writing, and patching files, because these operations are better handled by other tools
 - The informal description gives the user a brief overview of what the shell script does
 - The path specifies the working directory; it must belong to an executable project
+- The script runs in an interactive-like shell and stops on the first error
 - Shell tool will return output from the script as well as its exit code
 - In sandboxed projects, the script will not be able to access data outside the sandbox
 - Install dependencies only if you are sure they are missing
@@ -77,6 +78,7 @@ sd old new ~/path/to/file.txt
 - Do not try to use script tool to run random shell commands (exceeding the above documented set)
 - Every command must be on its own line and there must be no newlines (raw or `\n`) anywhere in the command
 - To include special characters, especially in `sd` command, use single-quoted and double-quoted strings or backslash escaping, all of which behave like in a shell script, but do not use unsupported bash-style `$'...'` strings
+- If there are multiple commands and one of them fails, the script stops on the first error
 
 ### Write tool
 

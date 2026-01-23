@@ -211,7 +211,9 @@ def test_union_project_execution(tmp_path: Path):
     assert not union.executable(PurePosixPath("p2"))
 
     # Execute in p1
-    assert union.execute(PurePosixPath("p1"), "echo hi").strip() == "hi\nExit code: 0"
+    output = union.execute(PurePosixPath("p1"), "echo hi")
+    assert "\nhi\n" in output
+    assert "Exit code: 0" in output
 
     # Execute in p2 should fail
     with pytest.raises(PermissionError):
