@@ -117,7 +117,7 @@ To modify an existing file:
 - It is not necessary to write out line numbers after `@@` nor to produce diff header (`---` and `+++` lines)
 - Every hunk must have a unique match in the file
 - Patch tool is ideal for making localized changes to the file, for example modifying individual functions or adding imports
-- If patching inexplicably fails, resort to write tool
+- If a patch inexplicably fails, retry with write tool in that case
 
 ### Tool call efficiency
 
