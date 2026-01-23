@@ -20,6 +20,8 @@ write
     A tool for creating or updating files from file listings.
 parsing
     A function to parse tool calls from text.
+execution
+    A function to execute tool calls.
 shell
     A tool for executing shell scripts.
 script

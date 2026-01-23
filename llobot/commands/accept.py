@@ -3,12 +3,10 @@ Accept command for executing tool calls from model responses.
 """
 from __future__ import annotations
 from llobot.chats.intent import ChatIntent
-from llobot.chats.message import ChatMessage
 from llobot.commands import handle_commands
 from llobot.environments import Environment
-from llobot.environments.context import ContextEnv
 from llobot.environments.prompt import PromptEnv
-from llobot.tools.parsing import parse_tool_calls
+from llobot.tools.execution import execute_tool_calls
 
 def handle_accept_command(text: str, env: Environment) -> bool:
     """
@@ -41,29 +39,11 @@ def handle_accept_command(text: str, env: Environment) -> bool:
     if not last_response:
         raise ValueError("Nothing to accept.")
 
-    response_content = last_response.content
+    # Execute tool calls.
+    count = execute_tool_calls(env, last_response.content)
 
-    # Parse tool calls from the last response using registered tools.
-    tool_calls = list(parse_tool_calls(env, response_content))
-
-    if not tool_calls:
+    if count == 0:
         raise ValueError("No tool calls to execute.")
-
-    context_env = env[ContextEnv]
-    success_count = 0
-
-    for call in tool_calls:
-        success = call.try_execute(env)
-        if success:
-            success_count += 1
-
-    total_count = len(tool_calls)
-    if success_count == total_count:
-        summary_line = f"✅ All {total_count} tool calls executed."
-    else:
-        summary_line = f"❌ {success_count} of {total_count} tool calls executed."
-
-    context_env.add(ChatMessage(ChatIntent.STATUS, summary_line))
 
     prompt_env.swallow()
 
