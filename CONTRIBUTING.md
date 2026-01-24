@@ -21,7 +21,7 @@ Pull requests are generally welcome. If you would like to make large or controve
 
 The easiest way to get started is to build and run the development container. See [`Containerfile`](Containerfile). It creates the venv automatically.
 
-Quality gates:
+Quality gates that must pass before you can submit your changes:
 
 - Run `pytest` without parameters to ensure all tests pass
 - Run `pyright` on modified files to check that there are no new type errors (old ones are acceptable)

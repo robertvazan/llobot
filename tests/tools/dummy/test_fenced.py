@@ -29,7 +29,7 @@ def test_unrecognized_tool_reports_error():
     assert len(context) == 1
     message = context[0]
     assert message.intent == ChatIntent.STATUS
-    assert "Unrecognized tool 'Unknown' or invalid block format. Header: some header" in message.content
+    assert "Unrecognized tool 'Unknown' or invalid block format. Header: `some header`" in message.content
 
 def test_unrecognized_tool_ignores_non_fenced_blocks():
     env = Environment()
@@ -41,3 +41,25 @@ def test_unrecognized_tool_ignores_non_fenced_blocks():
 
     context = env[ContextEnv].build()
     assert len(context) == 0
+
+def test_unrecognized_tool_header_with_special_chars():
+    env = Environment()
+    env[ToolEnv].register(UnrecognizedFencedTool())
+
+    source = dedent("""
+        <details>
+        <summary>Unknown: header `with` backticks</summary>
+
+        ```
+        some content
+        ```
+
+        </details>
+    """).strip()
+
+    execute_tool_calls(env, source)
+
+    context = env[ContextEnv].build()
+    assert len(context) == 1
+    message = context[0]
+    assert "Unrecognized tool 'Unknown' or invalid block format. Header: ``header `with` backticks``" in message.content

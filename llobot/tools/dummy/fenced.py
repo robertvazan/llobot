@@ -9,6 +9,7 @@ from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
 from llobot.tools.dummy import DummyTool
 from llobot.tools.reader import ToolReader
+from llobot.utils.text import quote_code
 
 # Matches:
 # <details>
@@ -43,7 +44,7 @@ class UnrecognizedFencedTool(DummyTool):
         # However, it reports an error status, so effectively it handles the block.
         reader.skip(match.end() - reader.position)
 
-        env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"Unrecognized tool '{name}' or invalid block format. Header: {header}"))
+        env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"Unrecognized tool '{name}' or invalid block format. Header: {quote_code(header)}"))
 
 __all__ = [
     'UnrecognizedFencedTool',
