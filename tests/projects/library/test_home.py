@@ -125,7 +125,11 @@ def test_home_project_library_executable(tmp_path: Path):
 
     assert isinstance(exec_project, DirectoryProject)
     assert exec_project.executable(PurePosixPath('project4'))
-    assert exec_project.execute(PurePosixPath('project4'), 'echo hello').strip() == 'hello\nExit code: 0'
+
+    output = exec_project.execute(PurePosixPath('project4'), 'echo hello').strip()
+    assert '+ echo hello' in output
+    assert '\nhello\n' in output
+    assert 'Exit code: 0' in output
 
     # Test default is not executable
     noexec_lib = HomeProjectLibrary(tmp_path, parents=False)
