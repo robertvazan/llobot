@@ -24,7 +24,7 @@ class WriteTool(FencedTool):
     </details>
     """
     def match_fenced(self, env: Environment, name: str, header: str, content: str) -> bool:
-        return name == 'Write'
+        return name in {'Write', 'File'}
 
     def execute_fenced(self, env: Environment, name: str, header: str, content: str) -> bool:
         path_str = header
@@ -33,6 +33,10 @@ class WriteTool(FencedTool):
         project = env[ProjectEnv].union
 
         project.write(path, normalize_document(content))
+
+        if name == 'File':
+            env[ContextEnv].add(ChatMessage(ChatIntent.SYSTEM, "Warning: Use 'Write' tool to create or update files, not 'File'."))
+
         env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"Written `~/{path}`"))
         return True
 

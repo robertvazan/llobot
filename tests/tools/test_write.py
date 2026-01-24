@@ -1,6 +1,7 @@
 import pytest
 from pathlib import Path, PurePosixPath
 from textwrap import dedent
+from llobot.chats.intent import ChatIntent
 from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
@@ -47,7 +48,9 @@ def test_write_tool_execution(env: Environment):
 
     project = env[ProjectEnv].union
     assert project.read(PurePosixPath("myproject/foo.txt")) == "content\nof the file\n"
-    assert "Written `~/myproject/foo.txt`" in env[ContextEnv].build().messages[0].content
+
+    messages = env[ContextEnv].build().messages
+    assert any("Written `~/myproject/foo.txt`" in m.content for m in messages)
 
 def test_write_tool_slice_extra_whitespace(env: Environment):
     tool = WriteTool()
@@ -166,3 +169,27 @@ def test_write_tool_midline_fence(env: Environment):
 
     project = env[ProjectEnv].union
     assert "text with ``` backticks" in project.read(PurePosixPath("myproject/foo.md"))
+
+def test_write_tool_file_alias_warning(env: Environment):
+    tool = WriteTool()
+    text = dedent("""
+        <details>
+        <summary>File: ~/myproject/foo.txt</summary>
+
+        ```
+        content
+        ```
+
+        </details>
+    """).strip()
+
+    reader = ToolReader(text)
+    tool.execute(env, reader)
+    assert reader.success_count == 1
+
+    project = env[ProjectEnv].union
+    assert project.read(PurePosixPath("myproject/foo.txt")) == "content\n"
+
+    messages = env[ContextEnv].build().messages
+    assert any(m.intent == ChatIntent.SYSTEM and "Warning: Use 'Write' tool" in m.content for m in messages)
+    assert any(m.intent == ChatIntent.STATUS and "Written `~/myproject/foo.txt`" in m.content for m in messages)
