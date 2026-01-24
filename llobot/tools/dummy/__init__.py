@@ -7,6 +7,8 @@ code
     Dummy tool for skipping generic code blocks.
 fenced
     Dummy tool for reporting unrecognized fenced blocks.
+mention
+    Dummy tool for warning about unsupported mentions.
 """
 from __future__ import annotations
 from llobot.tools.block import BlockTool

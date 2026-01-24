@@ -50,6 +50,7 @@ def standard_tools() -> tuple[Tool, ...]:
     """
     from llobot.tools.dummy.code import DummyCodeBlockTool
     from llobot.tools.dummy.fenced import UnrecognizedFencedTool
+    from llobot.tools.dummy.mention import DummyMentionTool
     from llobot.tools.patch import PatchTool
     from llobot.tools.read import ReadTool
     from llobot.tools.script import ScriptTool, standard_script_tools
@@ -63,6 +64,7 @@ def standard_tools() -> tuple[Tool, ...]:
         ScriptTool(),
         UnrecognizedFencedTool(),
         DummyCodeBlockTool(),
+        DummyMentionTool(),
         *standard_script_tools(),
     )
 
