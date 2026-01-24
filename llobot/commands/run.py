@@ -1,5 +1,5 @@
 """
-Accept command for executing tool calls from model responses.
+Run command for executing tool calls from model responses.
 """
 from __future__ import annotations
 from llobot.chats.intent import ChatIntent
@@ -8,7 +8,7 @@ from llobot.environments import Environment
 from llobot.environments.prompt import PromptEnv
 from llobot.tools.execution import execute_tool_calls
 
-def handle_accept_command(text: str, env: Environment) -> bool:
+def handle_run_command(text: str, env: Environment) -> bool:
     """
     Parses and executes tool calls from the last model response.
 
@@ -19,16 +19,16 @@ def handle_accept_command(text: str, env: Environment) -> bool:
     considered an error.
 
     Args:
-        text: The command string. Must be "accept".
+        text: The command string. Must be "run".
         env: The environment in which to execute the tool calls.
 
     Returns:
-        `True` if the command was "accept", `False` otherwise.
+        `True` if the command was "run", `False` otherwise.
 
     Raises:
-        ValueError: If there's no response to accept or no tool calls to execute.
+        ValueError: If there's no response to run or no tool calls to execute.
     """
-    if text != 'accept':
+    if text != 'run':
         return False
 
     prompt_env = env[PromptEnv]
@@ -37,7 +37,7 @@ def handle_accept_command(text: str, env: Environment) -> bool:
     # Get the last model response from the conversation history.
     last_response = next((m for m in reversed(full_prompt) if m.intent == ChatIntent.RESPONSE), None)
     if not last_response:
-        raise ValueError("Nothing to accept.")
+        raise ValueError("Nothing to run (no previous response found).")
 
     # Execute tool calls.
     count = execute_tool_calls(env, last_response.content)
@@ -49,16 +49,16 @@ def handle_accept_command(text: str, env: Environment) -> bool:
 
     return True
 
-def handle_accept_commands(env: Environment):
+def handle_run_commands(env: Environment):
     """
-    Handles `@accept` commands in the environment.
+    Handles `@run` commands in the environment.
 
     Args:
         env: The environment to handle commands in.
     """
-    handle_commands(env, lambda text, env: handle_accept_command(text, env))
+    handle_commands(env, lambda text, env: handle_run_command(text, env))
 
 __all__ = [
-    'handle_accept_command',
-    'handle_accept_commands',
+    'handle_run_command',
+    'handle_run_commands',
 ]

@@ -115,8 +115,8 @@ def test_agent_missing_history(tmp_path: Path):
     with raises(FileNotFoundError, match="Previous session .* not found"):
         list(agent.chat(prompt))
 
-def test_agent_accept_command(tmp_path: Path):
-    """Tests that Agent can execute tool calls with @accept command."""
+def test_agent_run_command(tmp_path: Path):
+    """Tests that Agent can execute tool calls with @run command."""
     model = MockModel('echo')
     # Agent needs a project to write files to.
     from llobot.projects.directory import DirectoryProject
@@ -157,7 +157,7 @@ def test_agent_accept_command(tmp_path: Path):
     save_chat_to_markdown(session_dir / 'context.md', first_turn_thread)
 
     # Now the second turn
-    prompt2 = first_turn_thread + ChatMessage(ChatIntent.PROMPT, "@project @accept")
+    prompt2 = first_turn_thread + ChatMessage(ChatIntent.PROMPT, "@project @run")
 
     stream = agent.chat(prompt2)
     response_thread = record_stream(stream)

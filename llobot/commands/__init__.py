@@ -18,7 +18,7 @@ unrecognized
     Command to handle unrecognized commands.
 approve
     Command to save an example.
-accept
+run
     Command to execute tool calls from model response.
 echo
     Command to echo the prompt context.

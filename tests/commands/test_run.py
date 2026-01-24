@@ -5,7 +5,7 @@ import pytest
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
 from llobot.chats.thread import ChatThread
-from llobot.commands.accept import handle_accept_command
+from llobot.commands.run import handle_run_command
 from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
@@ -20,7 +20,7 @@ from llobot.tools.script import ScriptTool, standard_script_tools
 
 TOOLS = [WriteTool(), ReadTool(), ScriptTool(), *standard_script_tools(), DummyCodeBlockTool()]
 
-def test_accept_command_success(tmp_path: Path):
+def test_run_command_success(tmp_path: Path):
     # Setup project
     project_dir = tmp_path / "myproject"
     project_dir.mkdir(parents=True)
@@ -70,12 +70,12 @@ def test_accept_command_success(tmp_path: Path):
     prompt = ChatThread([
         ChatMessage(ChatIntent.PROMPT, "do stuff"),
         ChatMessage(ChatIntent.RESPONSE, response_content),
-        ChatMessage(ChatIntent.PROMPT, "@accept"),
+        ChatMessage(ChatIntent.PROMPT, "@run"),
     ])
     env[PromptEnv].set(prompt)
 
     # Execute command
-    handled = handle_accept_command("accept", env)
+    handled = handle_run_command("run", env)
     assert handled
 
     # Verify project state
@@ -102,7 +102,7 @@ def test_accept_command_success(tmp_path: Path):
     assert context_messages[3].intent == ChatIntent.STATUS
     assert "✅ All 3 tool calls executed." in context_messages[3].content
 
-def test_accept_command_failure(tmp_path: Path):
+def test_run_command_failure(tmp_path: Path):
     # Setup project
     project_dir = tmp_path / "myproject"
     project_dir.mkdir(parents=True)
@@ -130,12 +130,12 @@ def test_accept_command_failure(tmp_path: Path):
     prompt = ChatThread([
         ChatMessage(ChatIntent.PROMPT, "do stuff"),
         ChatMessage(ChatIntent.RESPONSE, response_content),
-        ChatMessage(ChatIntent.PROMPT, "@accept"),
+        ChatMessage(ChatIntent.PROMPT, "@run"),
     ])
     env[PromptEnv].set(prompt)
 
     # Execute command
-    handled = handle_accept_command("accept", env)
+    handled = handle_run_command("run", env)
     assert handled
     assert env[PromptEnv].swallowed
 
@@ -150,7 +150,7 @@ def test_accept_command_failure(tmp_path: Path):
 
     assert "❌ 0 of 1 tool calls executed." in context_messages[1].content
 
-def test_accept_command_no_tool_calls():
+def test_run_command_no_tool_calls():
     # Setup environment
     env = Environment()
     for tool in TOOLS:
@@ -161,23 +161,23 @@ def test_accept_command_no_tool_calls():
     prompt = ChatThread([
         ChatMessage(ChatIntent.PROMPT, "do stuff"),
         ChatMessage(ChatIntent.RESPONSE, response_content),
-        ChatMessage(ChatIntent.PROMPT, "@accept"),
+        ChatMessage(ChatIntent.PROMPT, "@run"),
     ])
     env[PromptEnv].set(prompt)
 
     with pytest.raises(ValueError, match="No tool calls to execute."):
-        handle_accept_command("accept", env)
+        handle_run_command("run", env)
 
-def test_accept_command_no_response():
+def test_run_command_no_response():
     env = Environment()
     prompt = ChatThread([
         ChatMessage(ChatIntent.PROMPT, "do stuff"),
-        ChatMessage(ChatIntent.PROMPT, "@accept"),
+        ChatMessage(ChatIntent.PROMPT, "@run"),
     ])
     env[PromptEnv].set(prompt)
-    with pytest.raises(ValueError, match="Nothing to accept."):
-        handle_accept_command("accept", env)
+    with pytest.raises(ValueError, match=r"Nothing to run \(no previous response found\)\."):
+        handle_run_command("run", env)
 
-def test_accept_command_not_accept():
+def test_run_command_not_run():
     env = Environment()
-    assert not handle_accept_command("not-accept", env)
+    assert not handle_run_command("not-run", env)

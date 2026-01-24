@@ -5,7 +5,7 @@ from llobot.chats.thread import ChatThread
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
 from llobot.chats.stream import ChatStream
-from llobot.commands.accept import handle_accept_commands
+from llobot.commands.run import handle_run_commands
 from llobot.commands.echo import handle_echo_commands
 from llobot.commands.model import handle_model_commands
 from llobot.commands.unrecognized import handle_unrecognized_commands
@@ -190,14 +190,14 @@ class Agent(Role):
 
         This method is called after stuffing and before unrecognized commands are
         handled. It is the primary extension point for adding role-specific
-        command logic. It also handles the `@accept` command if tools are enabled.
+        command logic. It also handles the `@run` command if tools are enabled.
 
         Args:
             env: The environment.
         """
         handle_echo_commands(env)
         if self._tools:
-            handle_accept_commands(env)
+            handle_run_commands(env)
 
     def chat(self, prompt: ChatThread) -> ChatStream:
         """
