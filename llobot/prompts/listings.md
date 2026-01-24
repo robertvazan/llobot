@@ -3,7 +3,7 @@
 Example:
 
 <details>
-<summary>File: ~/path/to/file.py</summary>
+<summary>File: ~/examples/file.py</summary>
 
 ```python
 # ... python code here ...
@@ -11,6 +11,6 @@ Example:
 
 </details>
 
-- The orchestrator may inject file listings in the format above into the conversation
-- These files originate from the projects the user is working on
-- Only a subset of project files might be proactively added to the context
+- The orchestrator may inject file listings in the format above into the conversation.
+- These files originate from the projects the user is working on.
+- Only a subset of project files might be proactively added to the context.
