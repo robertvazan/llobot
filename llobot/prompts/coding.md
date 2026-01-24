@@ -9,3 +9,4 @@
 - Combat excessive repetition by introducing abstractions and utility code, even if it requires rewriting some legacy code
 - Carefully design interfaces and algorithms, even simple ones; consider several approaches and choose the best one
 - Choose symbol names that are short, accurate, semantically rich, conventional, and non-conflicting
+- Perform project-specific quality checks, for example running build and tests, after completing the task
