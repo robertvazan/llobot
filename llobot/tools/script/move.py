@@ -33,7 +33,7 @@ class ScriptMove(ScriptItem):
         context_env = env[ContextEnv]
         project = env[ProjectEnv].union
 
-        msg = f"Moved `~/{source}` to `~/{destination}`"
+        msg = f"✅ Moved `~/{source}` to `~/{destination}`"
         if project.read(destination) is not None:
             msg += f" (overwriting `~/{destination}`)"
 

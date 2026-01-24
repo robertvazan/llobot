@@ -49,7 +49,7 @@ class WriteTool(FencedTool):
         # unnormalized version) and correctly reload the file into context.
         seen_env.add(path, content)
 
-        env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"Written `~/{path}`"))
+        env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"✅ Written `~/{path}`"))
         return True
 
 __all__ = [
