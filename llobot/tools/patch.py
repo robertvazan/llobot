@@ -7,7 +7,6 @@ from llobot.chats.message import ChatMessage
 from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
-from llobot.formats.documents import DocumentFormat, standard_document_format
 from llobot.formats.paths import parse_path
 from llobot.tools.fenced import FencedTool
 from llobot.utils.text import normalize_document
@@ -26,11 +25,6 @@ class PatchTool(FencedTool):
 
     </details>
     """
-    _format: DocumentFormat
-
-    def __init__(self, *, format: DocumentFormat | None = None):
-        super().__init__()
-        self._format = format or standard_document_format()
 
     def match_fenced(self, env: Environment, name: str, header: str, content: str) -> bool:
         return name == 'Patch'
@@ -96,8 +90,6 @@ class PatchTool(FencedTool):
         context_env = env[ContextEnv]
         context_env.add(ChatMessage(ChatIntent.STATUS, f"Applied {len(hunks)} hunks to `~/{path}`."))
 
-        listing = self._format.render(path, new_content)
-        context_env.add(ChatMessage(ChatIntent.SYSTEM, listing))
         return True
 
     def _parse_diff(self, diff: str) -> list[tuple[str, str]]:

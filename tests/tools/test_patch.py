@@ -1,4 +1,3 @@
-from pathlib import PurePosixPath
 from textwrap import dedent
 import pytest
 from llobot.chats.intent import ChatIntent
@@ -6,7 +5,6 @@ from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.projects.directory import DirectoryProject
-from llobot.formats.documents import standard_document_format
 from llobot.tools.patch import PatchTool
 from llobot.tools.reader import ToolReader
 
@@ -60,11 +58,10 @@ def test_execute_simple_replacement(env, tmp_path):
     context_env = env[ContextEnv]
     context_messages = context_env.build().messages
     log = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.STATUS)
-    output = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.SYSTEM)
+    system_messages = [m for m in context_messages if m.intent == ChatIntent.SYSTEM]
 
     assert "Applied 1 hunks to `~/test/file.txt`." in log
-    assert "File: ~/test/file.txt" in output
-    assert "modified" in output
+    assert not system_messages
 
 def test_execute_with_context(env, tmp_path):
     (tmp_path / 'file.txt').write_text("A\nB\nC\nD\n", encoding='utf-8')

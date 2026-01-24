@@ -108,14 +108,11 @@ def test_execute_simple_replace(env):
 
     assert project.files[PurePosixPath('file.txt')] == 'hello universe\n'
 
-    # Check that status and listing messages were added
+    # Check that status message was added
     messages = env[ContextEnv].messages
-    assert len(messages) == 2
+    assert len(messages) == 1
     assert messages[0].intent == ChatIntent.STATUS
     assert "Replaced 1 matches" in messages[0].content
-    assert messages[1].intent == ChatIntent.SYSTEM
-    assert "File: ~/file.txt" in messages[1].content
-    assert "hello universe" in messages[1].content
 
 
 def test_execute_regex_replace(env):

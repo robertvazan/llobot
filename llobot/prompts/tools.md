@@ -147,9 +147,9 @@ sd old new ~/path/to/file.txt
 Suppose you want to edit file `~/myproject/ops.py`. You first respond with a read tool call to read it:
 
 <details>
-<summary>Read: read ops.py</summary>
+<summary>Read: current implementation</summary>
 
-```text
+```
 ~/myproject/ops.py
 ```
 
@@ -176,7 +176,7 @@ def cube(x):
 
 ---
 
-You can now edit the file using the patch tool. In this example, we will replace the power operator with multiplication:
+You can now edit the file using the patch tool. In this example, we will replace the power operator with multiplication. We will also reread the file to verify the changes:
 
 <details>
 <summary>Patch: ~/myproject/ops.py</summary>
@@ -186,6 +186,15 @@ You can now edit the file using the patch tool. In this example, we will replace
  def square(x):
 -    return x ** 2
 +    return x * x
+```
+
+</details>
+
+<details>
+<summary>Read: verify changes</summary>
+
+```
+~/myproject/ops.py
 ```
 
 </details>
@@ -209,7 +218,7 @@ def cube(x):
 
 </details>
 
-✅ All 1 tool calls executed.
+✅ All 2 tool calls executed.
 
 ---
 

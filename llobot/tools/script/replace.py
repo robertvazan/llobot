@@ -13,7 +13,6 @@ from llobot.chats.message import ChatMessage
 from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
-from llobot.formats.documents import DocumentFormat, standard_document_format
 from llobot.formats.paths import parse_path
 from llobot.tools.script import ScriptItem
 from llobot.utils.text import normalize_document
@@ -86,11 +85,6 @@ class ScriptReplace(ScriptItem):
     which is translated to Python syntax before applying.
     """
 
-    _format: DocumentFormat
-
-    def __init__(self, *, format: DocumentFormat | None = None):
-        self._format = format or standard_document_format()
-
     def execute(self, env: Environment, line: str) -> bool:
         try:
             parts = shlex.split(line)
@@ -129,8 +123,6 @@ class ScriptReplace(ScriptItem):
         project.write(path, normalize_document(new_content))
         env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"Replaced {count} matches in `~/{path}`"))
 
-        listing = self._format.render(path, normalize_document(new_content))
-        env[ContextEnv].add(ChatMessage(ChatIntent.SYSTEM, listing))
         return True
 
 
