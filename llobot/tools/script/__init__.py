@@ -67,12 +67,10 @@ def standard_script_tools() -> tuple[ScriptItem, ...]:
     """
     Returns the standard set of script items.
     """
-    from llobot.tools.script.cat import ScriptCat
     from llobot.tools.script.move import ScriptMove
     from llobot.tools.script.remove import ScriptRemove
     from llobot.tools.script.replace import ScriptReplace
     return (
-        ScriptCat(),
         ScriptMove(),
         ScriptRemove(),
         ScriptReplace(),

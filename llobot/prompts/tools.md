@@ -61,8 +61,6 @@ If shell tool is not applicable, you can still run basic built-in file manipulat
 <summary>Script: informal description</summary>
 
 ```sh
-# Read file (also reads relevant directory overviews)
-cat ~/path/to/file.txt
 # Remove file
 rm ~/file/to/remove.txt
 # Move file
@@ -73,12 +71,32 @@ sd old new ~/path/to/file.txt
 
 </details>
 
-- Use script tool instead of shell tool when the project is not executable, when you need to work across projects in different sandboxes, and for reading files
-- Script tool supports only `cat`, `rm`, `mv`, and `sd` commands in the exact form shown above and without options, optionally interspersed with `#` comments
+- Use script tool instead of shell tool when the project is not executable, when you need to work across projects in different sandboxes
+- Script tool supports only `rm`, `mv`, and `sd` commands in the exact form shown above and without options, optionally interspersed with `#` comments
 - Do not try to use script tool to run random shell commands (exceeding the above documented set)
 - Every command must be on its own line and there must be no newlines (raw or `\n`) anywhere in the command
 - To include special characters, especially in `sd` command, use single-quoted and double-quoted strings or backslash escaping, all of which behave like in a shell script, but do not use unsupported bash-style `$'...'` strings
 - If there are multiple commands and one of them fails, the script stops on the first error
+
+### Read tool
+
+To read files:
+
+<details>
+<summary>Read: informal description</summary>
+
+```
+~/path/to/file1.py
+~/path/to/file2.md
+```
+
+</details>
+
+- Use read tool to read existing files
+- The code block must contain a list of absolute paths starting with `~/`, one per line
+- Empty lines are ignored
+- The tool will also read relevant directory overviews (e.g., `README.md`) for the requested files
+- Do not read files that are already in the context
 
 ### Write tool
 
@@ -129,13 +147,13 @@ To modify an existing file:
 
 ### Longer tool use example
 
-Suppose you want to edit file `~/myproject/ops.py`. You first respond with a script tool call to read it:
+Suppose you want to edit file `~/myproject/ops.py`. You first respond with a read tool call to read it:
 
 <details>
-<summary>Script: read ops.py</summary>
+<summary>Read: read ops.py</summary>
 
-```sh
-cat ~/myproject/ops.py
+```text
+~/myproject/ops.py
 ```
 
 </details>

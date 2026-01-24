@@ -15,12 +15,14 @@ fenced
     Tools and base classes for tools that use fenced code blocks.
 write
     A tool for creating or updating files from file listings.
+read
+    A tool for reading files.
 execution
     A function to execute tool calls.
 shell
     A tool for executing shell scripts.
 script
-    Package for the script tool and its commands (cat, mv, rm, sd).
+    Package for the script tool and its commands (mv, rm, sd).
 reader
     Tool reader for tracking parsing position.
 """
@@ -49,11 +51,13 @@ def standard_tools() -> tuple[Tool, ...]:
     from llobot.tools.dummy.code import DummyCodeBlockTool
     from llobot.tools.dummy.fenced import UnrecognizedFencedTool
     from llobot.tools.patch import PatchTool
+    from llobot.tools.read import ReadTool
     from llobot.tools.script import ScriptTool, standard_script_tools
     from llobot.tools.shell import ShellTool
     from llobot.tools.write import WriteTool
     return (
         WriteTool(),
+        ReadTool(),
         PatchTool(),
         ShellTool(),
         ScriptTool(),

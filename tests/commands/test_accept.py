@@ -14,10 +14,11 @@ from llobot.environments.tools import ToolEnv
 from llobot.projects.directory import DirectoryProject
 from llobot.projects.library.predefined import PredefinedProjectLibrary
 from llobot.tools.dummy.code import DummyCodeBlockTool
+from llobot.tools.read import ReadTool
 from llobot.tools.write import WriteTool
 from llobot.tools.script import ScriptTool, standard_script_tools
 
-TOOLS = [WriteTool(), ScriptTool(), *standard_script_tools(), DummyCodeBlockTool()]
+TOOLS = [WriteTool(), ReadTool(), ScriptTool(), *standard_script_tools(), DummyCodeBlockTool()]
 
 def test_accept_command_success(tmp_path: Path):
     # Setup project
@@ -53,7 +54,15 @@ def test_accept_command_success(tmp_path: Path):
 
         ```sh
         rm ~/myproject/file1.txt
-        cat ~/myproject/file3.txt
+        ```
+
+        </details>
+
+        <details>
+        <summary>Read: check result</summary>
+
+        ```
+        ~/myproject/file3.txt
         ```
 
         </details>
@@ -91,7 +100,7 @@ def test_accept_command_success(tmp_path: Path):
     assert "File: ~/myproject/file3.txt" in context_messages[2].content
 
     assert context_messages[3].intent == ChatIntent.STATUS
-    assert "✅ All 2 tool calls executed." in context_messages[3].content
+    assert "✅ All 3 tool calls executed." in context_messages[3].content
 
 def test_accept_command_failure(tmp_path: Path):
     # Setup project

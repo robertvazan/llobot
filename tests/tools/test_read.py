@@ -8,8 +8,7 @@ from llobot.environments.projects import ProjectEnv
 from llobot.formats.documents import standard_document_format
 from llobot.projects.directory import DirectoryProject
 from llobot.projects.library.predefined import PredefinedProjectLibrary
-from llobot.tools.script.cat import ScriptCat
-from llobot.knowledge.subsets.standard import overviews_subset
+from llobot.tools.read import ReadTool
 
 @pytest.fixture
 def project(tmp_path: Path) -> DirectoryProject:
@@ -38,13 +37,15 @@ def env(library: PredefinedProjectLibrary) -> Environment:
     penv.add("myproject")
     return environment
 
-def test_cat_tool_execute(env: Environment):
-    tool = ScriptCat()
-    assert tool.execute(env, "cat ~/myproject/a.txt")
+def test_read_tool_execute(env: Environment):
+    tool = ReadTool()
+    content = """
+    ~/myproject/a.txt
+    """
+    assert tool.execute_fenced(env, "Read", "read", content)
 
     context_env = env[ContextEnv]
     context_messages = context_env.build().messages
-    log = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.STATUS)
     output = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.SYSTEM)
 
     assert "Reading also related `~/myproject/README.md`..." in output
@@ -53,28 +54,35 @@ def test_cat_tool_execute(env: Environment):
     assert "File: ~/myproject/a.txt" in output
     assert "content" in output
 
-def test_cat_tool_execute_nested_overviews(env: Environment):
-    tool = ScriptCat()
-    assert tool.execute(env, "cat ~/myproject/sub/c.txt")
+def test_read_tool_execute_multiple(env: Environment):
+    tool = ReadTool()
+    content = """
+    ~/myproject/a.txt
+    ~/myproject/sub/c.txt
+    """
+    assert tool.execute_fenced(env, "Read", "read", content)
 
     context_env = env[ContextEnv]
     context_messages = context_env.build().messages
     output = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.SYSTEM)
 
-    indices = [
-        output.find("Reading also related `~/myproject/README.md`..."),
-        output.find("Reading also related `~/myproject/sub/__init__.py`..."),
-    ]
-    assert -1 not in indices
-    assert indices == sorted(indices)
+    assert "File: ~/myproject/a.txt" in output
+    assert "File: ~/myproject/sub/c.txt" in output
+    # README should be included only once
+    assert output.count("File: ~/myproject/README.md") == 1
+    # Init should be included
+    assert "File: ~/myproject/sub/__init__.py" in output
 
-def test_cat_tool_execute_deduplication(env: Environment):
+def test_read_tool_deduplication(env: Environment):
     # Pre-populate context with the file content
     listing = standard_document_format().render(PurePosixPath("myproject/a.txt"), "content")
     env[ContextEnv].add(ChatMessage(ChatIntent.SYSTEM, listing))
 
-    tool = ScriptCat()
-    assert tool.execute(env, "cat ~/myproject/a.txt")
+    tool = ReadTool()
+    content = """
+    ~/myproject/a.txt
+    """
+    assert tool.execute_fenced(env, "Read", "read", content)
 
     context_env = env[ContextEnv]
     context_messages = context_env.build().messages
@@ -89,13 +97,16 @@ def test_cat_tool_execute_deduplication(env: Environment):
     assert "File: ~/myproject/README.md" in output
     assert "content" not in output
 
-def test_cat_tool_overview_deduplication(env: Environment):
+def test_read_tool_overview_deduplication(env: Environment):
     # Pre-populate context with the overview content
     listing = standard_document_format().render(PurePosixPath("myproject/README.md"), "# Readme")
     env[ContextEnv].add(ChatMessage(ChatIntent.SYSTEM, listing))
 
-    tool = ScriptCat()
-    assert tool.execute(env, "cat ~/myproject/a.txt")
+    tool = ReadTool()
+    content = """
+    ~/myproject/a.txt
+    """
+    assert tool.execute_fenced(env, "Read", "read", content)
 
     context_env = env[ContextEnv]
     context_messages = context_env.build().messages
@@ -105,47 +116,32 @@ def test_cat_tool_overview_deduplication(env: Environment):
     assert "Reading also related `~/myproject/README.md`..." not in log
     assert "Reading also related `~/myproject/README.md`..." not in output
 
-def test_cat_tool_execute_python(env: Environment):
-    tool = ScriptCat()
-    assert tool.execute(env, "cat ~/myproject/b.py")
-
-    context_env = env[ContextEnv]
-    context_messages = context_env.build().messages
-    output = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.SYSTEM)
-
-    # ExtensionLanguageMapping maps .py to python
-    assert "```python" in output
-    assert "print('hello')" in output
-
-def test_cat_tool_missing_file_loads_overviews(env: Environment):
-    tool = ScriptCat()
+def test_read_tool_missing_file_raises(env: Environment):
+    tool = ReadTool()
+    content = """
+    ~/myproject/nonexistent.txt
+    """
     with pytest.raises(ValueError, match="File not found"):
-        tool.execute(env, "cat ~/myproject/nonexistent.txt")
+        tool.execute_fenced(env, "Read", "read", content)
 
     context_env = env[ContextEnv]
     context_messages = context_env.build().messages
     output = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.SYSTEM)
-
+    # Overviews are read before checking file existence
     assert "Reading also related `~/myproject/README.md`..." in output
     assert "File: ~/myproject/README.md" in output
 
-def test_cat_tool_target_is_overview(env: Environment):
-    # If we cat the overview itself, it should appear once
-    tool = ScriptCat()
-    tool.execute(env, "cat ~/myproject/README.md")
+def test_read_tool_match(env: Environment):
+    tool = ReadTool()
+    assert tool.match_fenced(env, "Read", "read", "")
+    assert not tool.match_fenced(env, "Script", "read", "")
 
-    context_env = env[ContextEnv]
-    context_messages = context_env.build().messages
-    log = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.STATUS)
-    output = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.SYSTEM)
-
-    # Should read it only once
-    assert "Reading also related `~/myproject/README.md`..." not in log
-    assert "Reading also related `~/myproject/README.md`..." not in output
-    assert "File `~/myproject/README.md` is already in the context." not in log
-    assert output.count("# Readme") == 1
-
-def test_cat_tool_no_match(env: Environment):
-    tool = ScriptCat()
-    assert not tool.execute(env, "read a")
-    assert not tool.execute(env, "cat a b")
+def test_read_tool_no_comments(env: Environment):
+    tool = ReadTool()
+    content = """
+    # This is a comment
+    ~/myproject/a.txt
+    """
+    # Comments are no longer supported and are treated as paths, resulting in ValueError
+    with pytest.raises(ValueError, match="Path must start with"):
+        tool.execute_fenced(env, "Read", "read", content)
