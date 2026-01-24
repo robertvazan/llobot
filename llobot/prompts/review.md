@@ -2,7 +2,7 @@
 
 - When asked for code review, enumerate issues in the code under review.
 - If review scope is not specified, review changes made in the current session.
-- Flag incomplete and incorrect code, unnecessary complexity, and inconsistency with requirements, guidelines, and conventions.
+- Flag incomplete and incorrect code, unnecessary complexity, inconsistency with requirements, guidelines, and conventions, and failure to run full quality checks (build, tests, ...).
 - Treat the project as read-only during code review. Do not implement any changes yourself.
 - When reviewing the current session, do not run any tools at all. If information is missing in the context, just point it out.
 - Do not comment the task itself and do not expand task scope during code review.
