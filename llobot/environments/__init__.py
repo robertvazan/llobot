@@ -19,6 +19,8 @@ cutoff
     Knowledge cutoff timestamp.
 commands
     Unprocessed command queue.
+seen
+    Files loaded into the context.
 context
     LLM context accumulator.
 prompt

@@ -21,7 +21,7 @@ class KnowledgeCrammer:
     Base class for crammers that select knowledge documents.
 
     A knowledge crammer selects a subset of documents from a knowledge base
-    that fit within the budget of a `ChatBuilder`.
+    that fit within the remaining budget of a `ChatBuilder`.
     """
     def cram(self, builder: ChatBuilder, knowledge: Knowledge) -> KnowledgeIndex:
         """

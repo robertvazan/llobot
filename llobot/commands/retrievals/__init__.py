@@ -20,6 +20,7 @@ from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
 from llobot.environments.knowledge import KnowledgeEnv
 from llobot.environments.retrievals import RetrievalsEnv
+from llobot.environments.seen import SeenEnv
 from llobot.formats.knowledge import KnowledgeFormat, standard_knowledge_format
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.ranking.rankers import KnowledgeRanker, standard_ranker
@@ -55,6 +56,7 @@ def flush_retrieval_commands(
     retrieved_paths = retrievals.get()
     knowledge = env[KnowledgeEnv].get()
     context = env[ContextEnv]
+    seen_env = env[SeenEnv]
 
     # Check what is already in context to avoid duplicates.
     context_branch = context.build()
@@ -68,6 +70,8 @@ def flush_retrieval_commands(
                     paths_to_add.add(path)
 
     retrieved_knowledge = knowledge & KnowledgeIndex(paths_to_add)
+    seen_env.update(retrieved_knowledge)
+
     ranking = ranker.rank(retrieved_knowledge)
     retrievals_chat = knowledge_format.render_chat(retrieved_knowledge, ranking=ranking)
     context.add(retrievals_chat)

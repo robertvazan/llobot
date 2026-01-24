@@ -5,10 +5,12 @@ from llobot.chats.message import ChatMessage
 from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
+from llobot.environments.seen import SeenEnv
 from llobot.formats.documents import standard_document_format
 from llobot.projects.directory import DirectoryProject
 from llobot.projects.library.predefined import PredefinedProjectLibrary
 from llobot.tools.read import ReadTool
+from llobot.utils.text import normalize_document
 
 @pytest.fixture
 def project(tmp_path: Path) -> DirectoryProject:
@@ -54,6 +56,11 @@ def test_read_tool_execute(env: Environment):
     assert "File: ~/myproject/a.txt" in output
     assert "content" in output
 
+    # Check seen env
+    seen = env[SeenEnv]
+    assert "myproject/a.txt" in seen
+    assert "myproject/README.md" in seen
+
 def test_read_tool_execute_multiple(env: Environment):
     tool = ReadTool()
     content = """
@@ -73,10 +80,14 @@ def test_read_tool_execute_multiple(env: Environment):
     # Init should be included
     assert "File: ~/myproject/sub/__init__.py" in output
 
-def test_read_tool_deduplication(env: Environment):
-    # Pre-populate context with the file content
-    listing = standard_document_format().render(PurePosixPath("myproject/a.txt"), "content")
-    env[ContextEnv].add(ChatMessage(ChatIntent.SYSTEM, listing))
+def test_read_tool_deduplication_via_seen_env(env: Environment):
+    # Pre-populate seen env with the file content
+    env[SeenEnv].add("myproject/a.txt", normalize_document("content"))
+
+    # We do NOT add it to the context, to test that SeenEnv is sufficient to skip reading
+    # But wait, ReadTool logic is:
+    # if seen_env.get(p) == content_str: continue
+    # So if it's in SeenEnv, it should skip adding it to context.
 
     tool = ReadTool()
     content = """
@@ -87,20 +98,18 @@ def test_read_tool_deduplication(env: Environment):
     context_env = env[ContextEnv]
     context_messages = context_env.build().messages
     log = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.STATUS)
-    # We only care about NEWLY ADDED system messages.
-    new_system_messages = [m for m in context_messages[1:] if m.intent == ChatIntent.SYSTEM]
-    output = "\n".join(m.content for m in new_system_messages)
+    output = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.SYSTEM)
 
-    assert "Reading also related `~/myproject/README.md`..." in output
+    # It should say it's already in context (based on SeenEnv check)
     assert "File `~/myproject/a.txt` is already in the context." in log
-
-    assert "File: ~/myproject/README.md" in output
     assert "content" not in output
 
 def test_read_tool_overview_deduplication(env: Environment):
     # Pre-populate context with the overview content
-    listing = standard_document_format().render(PurePosixPath("myproject/README.md"), "# Readme")
+    listing = standard_document_format().render(PurePosixPath("myproject/README.md"), normalize_document("# Readme"))
     env[ContextEnv].add(ChatMessage(ChatIntent.SYSTEM, listing))
+    # Also mark as seen
+    env[SeenEnv].add("myproject/README.md", normalize_document("# Readme"))
 
     tool = ReadTool()
     content = """

@@ -9,6 +9,7 @@ from llobot.crammers.knowledge import KnowledgeCrammer, standard_knowledge_cramm
 from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
 from llobot.environments.knowledge import KnowledgeEnv
+from llobot.environments.seen import SeenEnv
 from llobot.models import Model
 from llobot.prompts import (
     Prompt,
@@ -107,7 +108,10 @@ class Editor(Agent):
         builder = env[ContextEnv].builder
         knowledge = env[KnowledgeEnv].get()
         self._index_crammer.cram(builder, knowledge)
-        self._knowledge_crammer.cram(builder, knowledge)
+        crammed_index = self._knowledge_crammer.cram(builder, knowledge)
+
+        seen_env = env[SeenEnv]
+        seen_env.update(knowledge & crammed_index)
 
 __all__ = [
     'editor_system_prompt',
