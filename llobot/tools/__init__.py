@@ -7,10 +7,8 @@ Submodules
 ----------
 block
     Base class for tools that parse content blocks.
-code
-    A tool for skipping code blocks.
 dummy
-    Marker interface for tools that skip content.
+    Marker interface and implementations for tools that skip content.
 patch
     A tool for patching files using unified diffs.
 fenced
@@ -48,8 +46,8 @@ def standard_tools() -> tuple[Tool, ...]:
     Returns:
         A tuple of standard tool instances.
     """
-    from llobot.tools.code import DummyCodeBlockTool
-    from llobot.tools.fenced import UnrecognizedFencedTool
+    from llobot.tools.dummy.code import DummyCodeBlockTool
+    from llobot.tools.dummy.fenced import UnrecognizedFencedTool
     from llobot.tools.patch import PatchTool
     from llobot.tools.script import ScriptTool, standard_script_tools
     from llobot.tools.shell import ShellTool

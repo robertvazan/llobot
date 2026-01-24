@@ -3,7 +3,7 @@ from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
 from llobot.environments.tools import ToolEnv
 from llobot.tools.execution import execute_tool_calls
-from llobot.tools.fenced import UnrecognizedFencedTool
+from llobot.tools.dummy.fenced import UnrecognizedFencedTool
 from llobot.chats.intent import ChatIntent
 
 def test_unrecognized_tool_reports_error():

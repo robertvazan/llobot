@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Iterator, Iterable, TYPE_CHECKING
+from typing import Iterator, Iterable, TYPE_CHECKING, overload
 from llobot.utils.values import ValueTypeMixin
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
@@ -44,6 +44,12 @@ class ChatThread(ValueTypeMixin):
     def cost(self) -> int:
         """The total estimated cost of all messages in the thread."""
         return sum([message.cost for message in self], 0)
+
+    @overload
+    def __getitem__(self, key: int) -> ChatMessage: ...
+
+    @overload
+    def __getitem__(self, key: slice) -> ChatThread: ...
 
     def __getitem__(self, key: int | slice) -> ChatMessage | ChatThread:
         if isinstance(key, slice):

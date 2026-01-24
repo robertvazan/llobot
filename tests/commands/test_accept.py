@@ -13,7 +13,7 @@ from llobot.environments.prompt import PromptEnv
 from llobot.environments.tools import ToolEnv
 from llobot.projects.directory import DirectoryProject
 from llobot.projects.library.predefined import PredefinedProjectLibrary
-from llobot.tools.code import DummyCodeBlockTool
+from llobot.tools.dummy.code import DummyCodeBlockTool
 from llobot.tools.write import WriteTool
 from llobot.tools.script import ScriptTool, standard_script_tools
 
