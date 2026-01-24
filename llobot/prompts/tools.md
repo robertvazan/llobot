@@ -11,6 +11,7 @@
 
 All tools use the following format, including the details/summary envelope:
 
+````
 <details>
 <summary>ToolName: tool call header</summary>
 
@@ -19,6 +20,7 @@ tool call content
 ```
 
 </details>
+````
 
 - Every tool call includes details and summary elements that enclose a fenced block as shown above
 - Invoked tool is identified in the summary element
