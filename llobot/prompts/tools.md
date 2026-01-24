@@ -9,9 +9,8 @@
 
 ### Tool call formatting
 
-All tools use the following format:
+All tools use the following format, including the details/summary envelope:
 
-````
 <details>
 <summary>ToolName: tool call header</summary>
 
@@ -20,13 +19,76 @@ tool call content
 ```
 
 </details>
-````
 
-- Every tool call must include details and summary elements and a fenced block as shown above
+- Every tool call includes details and summary elements that enclose a fenced block as shown above
+- Invoked tool is identified in the summary element
+- If you want to run multiple tools, put all tool calls in one response for efficient batch execution
 - All tool calls start at the beginning of a line
 - Separate tool calls from surrounding content with an empty line on each side
 - IMPORTANT: All paths passed to tools must be absolute paths starting with `~/`
 - Free text between tool calls is allowed and encouraged to provide brief commentary to the user
+- Do not waste resources with malformed or invalid tool calls or by trickling one tool call per response
+
+### Read tool
+
+Some files might be included in the context proactively. To read additional files, use the read tool:
+
+<details>
+<summary>Read: informal description</summary>
+
+```
+~/path/to/file1.py
+~/path/to/file2.md
+```
+
+</details>
+
+- The code block must contain a list of absolute paths starting with `~/`, one per line
+- The requested files will be added to the context unless they are already there
+- The tool will also read relevant directory overviews (e.g., `README.md`) for the requested files
+- IMPORTANT: Boldly read all files that have at least 50% probability of being necessary to complete the task
+- Do not read files that are already in the context
+
+### Write tool
+
+To create a new file or completely replace an existing file:
+
+<details>
+<summary>Write: ~/path/to/file.py</summary>
+
+```python
+# ... entire content of the file ...
+```
+
+</details>
+
+- The write tool is ideal for creating new files, but it is also useful when file changes are so extensive it's easier to rewrite the whole file
+- Parent directories will be created automatically
+
+### Apply patch
+
+To modify an existing file:
+
+<details>
+<summary>Patch: ~/path/to/file.py</summary>
+
+```diff
+@@
+-def fib(n):
++def fibonacci(n):
+     if n <= 1:
+         return n
+-    return fib(n-1) + fib(n-2)
++    return fibonacci(n-1) + fibonacci(n-2)
+```
+
+</details>
+
+- Patch can include several hunks, each starting with `@@`
+- It is not necessary to write out line numbers after `@@` nor to produce diff header (`---` and `+++` lines)
+- Every hunk must have a unique match in the file
+- Patch tool is ideal for making localized changes to the file, for example modifying individual functions or adding imports
+- If a patch inexplicably fails, retry the modification using write tool
 
 ### Shell tool
 
@@ -71,79 +133,12 @@ sd old new ~/path/to/file.txt
 
 </details>
 
-- Use script tool instead of shell tool when the project is not executable, when you need to work across projects in different sandboxes
-- Script tool supports only `rm`, `mv`, and `sd` commands in the exact form shown above and without options, optionally interspersed with `#` comments
+- Use script tool instead of shell tool when the project is not executable or when you need to work across projects in different sandboxes
+- Script tool supports only `rm`, `mv`, and `sd` commands at the moment, in the exact form shown above and without options, optionally interspersed with `#` comments
 - Do not try to use script tool to run random shell commands (exceeding the above documented set)
 - Every command must be on its own line and there must be no newlines (raw or `\n`) anywhere in the command
 - To include special characters, especially in `sd` command, use single-quoted and double-quoted strings or backslash escaping, all of which behave like in a shell script, but do not use unsupported bash-style `$'...'` strings
-- If there are multiple commands and one of them fails, the script stops on the first error
-
-### Read tool
-
-To read files:
-
-<details>
-<summary>Read: informal description</summary>
-
-```
-~/path/to/file1.py
-~/path/to/file2.md
-```
-
-</details>
-
-- Use read tool to read existing files
-- The code block must contain a list of absolute paths starting with `~/`, one per line
-- Empty lines are ignored
-- The tool will also read relevant directory overviews (e.g., `README.md`) for the requested files
-- Do not read files that are already in the context
-
-### Write tool
-
-To create a new file or completely replace an existing file:
-
-<details>
-<summary>Write: ~/path/to/file.py</summary>
-
-```python
-# ... entire content of the file ...
-```
-
-</details>
-
-- File listings (with "File:" in the summary) are produced by the orchestrator whereas write tool calls (with "Write:" in the summary) are produced by you
-- The write tool is ideal for creating new files, but it is also useful when file changes are so extensive it's easier to rewrite the whole file
-
-### Apply patch
-
-To modify an existing file:
-
-<details>
-<summary>Patch: ~/path/to/file.py</summary>
-
-```diff
-@@
--def fib(n):
-+def fibonacci(n):
-     if n <= 1:
-         return n
--    return fib(n-1) + fib(n-2)
-+    return fibonacci(n-1) + fibonacci(n-2)
-```
-
-</details>
-
-- Patch can include several hunks, each starting with `@@`
-- It is not necessary to write out line numbers after `@@` nor to produce diff header (`---` and `+++` lines)
-- Every hunk must have a unique match in the file
-- Patch tool is ideal for making localized changes to the file, for example modifying individual functions or adding imports
-- If a patch inexplicably fails, retry with write tool in that case
-
-### Tool call efficiency
-
-- If you want to run multiple tools, put all tool calls in one response for efficient batch execution
-- IMPORTANT: Boldly read all files that have at least 50% probability of being necessary to complete the task
-- Do not waste resources with malformed or invalid tool calls or by trickling one tool call per round-trip
+- If there are multiple commands in the script and one of them fails, the script stops immediately and subsequent commands do not run
 
 ### Longer tool use example
 
