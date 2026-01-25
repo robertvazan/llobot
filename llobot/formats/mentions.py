@@ -3,6 +3,7 @@ Parser for @command mentions in chat messages.
 """
 from __future__ import annotations
 import re
+from typing import Iterable
 from llobot.chats.message import ChatMessage
 from llobot.chats.thread import ChatThread
 
@@ -116,6 +117,83 @@ _TRAILING_MENTIONS_RE = re.compile(
     re.VERBOSE
 )
 
+# Regex for filter_mentions. It matches code blocks (to preserve), mentions (to filter),
+# and inline code (to preserve).
+_FILTER_RE = re.compile(
+    r"""
+    # Code block: 3+ backticks, content, same backticks.
+    (?P<block>`{3,}).*?(?P=block)
+    |
+    # A mention.
+    (?<!\w)@
+    (?:
+        # A quoted mention with double backticks.
+        ``(?P<quoted_double>(?:[^`]|`[^`])*?)``
+        |
+        # A quoted mention with a single backtick.
+        `(?P<quoted_single>[^`\n]*?)`
+        |
+        # A bare mention.
+        (?P<bare>[a-zA-Z0-9-_/*?:=.~]+)
+    )
+    |
+    # An inline code span.
+    (?:
+        ``(?:[^`]|`[^`])*?``
+        |
+        `[^`\n]*?`
+    )
+    """,
+    re.VERBOSE | re.DOTALL
+)
+
+def filter_mentions(text: str, mentions: Iterable[str]) -> str:
+    """
+    Removes specific mentions from the text.
+
+    When a mention is removed, all horizontal whitespace following it on the same line
+    is also removed. Code blocks and inline code spans are respected (mentions inside
+    them are ignored).
+
+    Args:
+        text: The input text.
+        mentions: An iterable of mention command strings to remove (e.g. "approve").
+
+    Returns:
+        The text with specified mentions removed.
+    """
+    target_set = set(mentions)
+    result = []
+    last_pos = 0
+
+    for match in _FILTER_RE.finditer(text):
+        # Append text before the match
+        result.append(text[last_pos:match.start()])
+
+        # Determine the command if it is a mention
+        command = None
+        if match.group('quoted_double') is not None:
+            command = match.group('quoted_double').strip()
+        elif match.group('quoted_single') is not None:
+            command = match.group('quoted_single').strip()
+        elif match.group('bare') is not None:
+            command = match.group('bare').rstrip('.:?/')
+
+        # If it's not a mention or not one of the target mentions, keep it.
+        if command is None or command not in target_set:
+            result.append(match.group(0))
+            last_pos = match.end()
+        else:
+            # It is a target mention. Skip it.
+            # Also skip following horizontal whitespace.
+            end_pos = match.end()
+            while end_pos < len(text) and text[end_pos] in ' \t':
+                end_pos += 1
+            last_pos = end_pos
+
+    result.append(text[last_pos:])
+    return ''.join(result)
+
 def strip_mentions(text: str) -> str:
     """
     Strips leading and trailing @mentions from a string.
@@ -137,5 +215,6 @@ def strip_mentions(text: str) -> str:
 
 __all__ = [
     'parse_mentions',
+    'filter_mentions',
     'strip_mentions',
 ]

@@ -1,4 +1,4 @@
-from llobot.formats.mentions import parse_mentions, strip_mentions
+from llobot.formats.mentions import parse_mentions, strip_mentions, filter_mentions
 from llobot.chats.message import ChatMessage
 from llobot.chats.thread import ChatThread
 from llobot.chats.intent import ChatIntent
@@ -119,3 +119,35 @@ def test_strip_real_world_cases():
     assert strip_mentions('do something @project') == 'do something'
     assert strip_mentions('@project do something @llobot') == 'do something'
     assert strip_mentions('  @project @llobot do something  ') == 'do something'
+
+def test_filter_simple():
+    assert filter_mentions('hello @mention world', ['mention']) == 'hello world'
+    assert filter_mentions('hello @mention', ['mention']) == 'hello '
+    assert filter_mentions('@mention world', ['mention']) == 'world'
+
+def test_filter_whitespace():
+    assert filter_mentions('@mention   world', ['mention']) == 'world'
+    assert filter_mentions('hello @mention\n', ['mention']) == 'hello \n'
+    assert filter_mentions('hello @mention  \n', ['mention']) == 'hello \n'
+    # Tabs are also removed
+    assert filter_mentions('hello @mention\tworld', ['mention']) == 'hello world'
+
+def test_filter_multiple():
+    assert filter_mentions('@m1 @m2', ['m1']) == '@m2'
+    assert filter_mentions('@m1 @m2', ['m2']) == '@m1 '
+    assert filter_mentions('@m1 @m2', ['m1', 'm2']) == ''
+
+def test_filter_ignores_blocks():
+    text = "Text\n```\n@mention\n```\nMore text"
+    assert filter_mentions(text, ['mention']) == text
+
+def test_filter_ignores_inline_code():
+    assert filter_mentions('`@mention`', ['mention']) == '`@mention`'
+    assert filter_mentions('`` @mention ``', ['mention']) == '`` @mention ``'
+
+def test_filter_mixed_types():
+    text = 'Delete @bare and @`quoted` please.'
+    assert filter_mentions(text, ['bare', 'quoted']) == 'Delete and please.'
+
+def test_filter_unmatched():
+    assert filter_mentions('hello @other world', ['mention']) == 'hello @other world'
