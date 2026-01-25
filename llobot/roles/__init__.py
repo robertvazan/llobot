@@ -21,6 +21,8 @@ editor
     A role for editing and analyzing files, serving as a base for Coder.
 models
     A wrapper that exposes a `Role` as a `Model`.
+router
+    A role that routes requests to other roles.
 
 Markdown files like `coder.md` and `editor.md` contain the core system
 prompts for the respective roles.
@@ -50,7 +52,6 @@ class Role:
             A model stream with the generated response.
         """
         raise NotImplementedError
-
 __all__ = [
     'Role',
 ]
