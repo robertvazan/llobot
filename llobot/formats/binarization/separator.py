@@ -2,7 +2,6 @@
 Separator-based binarization format.
 """
 from __future__ import annotations
-from typing import Iterable
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
 from llobot.chats.thread import ChatThread
@@ -23,7 +22,7 @@ class SeparatorBinarizationFormat(BinarizationFormat, ValueTypeMixin):
     """
     _separator: str
 
-    def __init__(self, separator: str = '\n\n'):
+    def __init__(self, separator: str = '\n\n---\n\n'):
         """
         Initializes the format.
 
@@ -31,10 +30,6 @@ class SeparatorBinarizationFormat(BinarizationFormat, ValueTypeMixin):
             separator: String used to join merged messages.
         """
         self._separator = separator
-
-    def _ephemeral_fields(self) -> Iterable[str]:
-        # Separator is a configuration detail, but it affects output, so it's not ephemeral.
-        return []
 
     def binarize_intent(self, intent: ChatIntent) -> ChatIntent:
         if intent in [ChatIntent.SYSTEM, ChatIntent.EXAMPLE_PROMPT, ChatIntent.PROMPT, ChatIntent.STATUS]:

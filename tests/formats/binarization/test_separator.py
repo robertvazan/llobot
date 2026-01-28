@@ -86,3 +86,31 @@ def test_binarize_chat_empty():
     fmt = SeparatorBinarizationFormat()
     chat = ChatThread()
     assert len(fmt.binarize_chat(chat)) == 0
+
+def test_binarize_chat_default_separator():
+    """Tests that default separator is used."""
+    fmt = SeparatorBinarizationFormat()
+    chat = ChatThread([
+        ChatMessage(ChatIntent.SYSTEM, "sys"),
+        ChatMessage(ChatIntent.PROMPT, "p1"),
+    ])
+
+    binarized = fmt.binarize_chat(chat)
+    assert len(binarized) == 1
+    # Different original intents (SYSTEM -> PROMPT, PROMPT -> PROMPT) use separator
+    assert binarized[0].content == "sys\n\n---\n\np1"
+
+def test_binarize_chat_default_separator_special_merging():
+    """Tests that default separator preserves special merging rules for SYSTEM/STATUS."""
+    fmt = SeparatorBinarizationFormat()
+    chat = ChatThread([
+        ChatMessage(ChatIntent.SYSTEM, "sys"),
+        ChatMessage(ChatIntent.STATUS, "stat"),
+        ChatMessage(ChatIntent.PROMPT, "p1"),
+    ])
+
+    binarized = fmt.binarize_chat(chat)
+    assert len(binarized) == 1
+    # SYSTEM + STATUS -> merged with \n\n (special rule)
+    # (Merged SYSTEM/STATUS) + PROMPT -> merged with default separator
+    assert binarized[0].content == "sys\n\nstat\n\n---\n\np1"
