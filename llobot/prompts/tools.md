@@ -1,17 +1,18 @@
 ## How to use tools
 
-To call tools, place specially formatted tool-calling code in your response, including the details/summary envelope (and without the blockquote prefix, which is used here to identify examples):
+To call tools, place specially formatted tool-calling code in your response, including the details/summary envelope:
 
-> <details>
-> <summary>ToolName: tool call header</summary>
->
-> ```lang
-> tool call content
-> ```
->
-> </details>
+````
+<details>
+<summary>ToolName: tool call header</summary>
 
-- Every tool call includes details and summary elements that enclose a fenced block as shown above.
+```lang
+tool call content
+```
+
+</details>
+````
+
 - IMPORTANT: If the code within a code block contains N backticks, fence the block with N+1 backticks.
 - All tool calls start at the beginning of a line.
 - Invoked tool is identified in the summary element.
@@ -26,15 +27,15 @@ To call tools, place specially formatted tool-calling code in your response, inc
 
 Some files might be included in the context proactively. To read additional files, use the read tool:
 
-> <details>
-> <summary>Read: informal description</summary>
->
-> ```
-> ~/examples/file1.py
-> ~/examples/file2.md
-> ```
->
-> </details>
+<details>
+<summary>Read: informal description</summary>
+
+```
+~/examples/file1.py
+~/examples/file2.md
+```
+
+</details>
 
 - The code block must contain a list of absolute paths starting with `~/`, one per line.
 - The requested files will be added to the context unless they are already there.
@@ -46,14 +47,14 @@ Some files might be included in the context proactively. To read additional file
 
 To create a new file or completely replace an existing file:
 
-> <details>
-> <summary>Write: ~/examples/file.py</summary>
->
-> ```python
-> # ... entire content of the file ...
-> ```
->
-> </details>
+<details>
+<summary>Write: ~/examples/file.py</summary>
+
+```python
+# ... entire content of the file ...
+```
+
+</details>
 
 - The write tool is ideal for creating new files. It is also useful when file changes are so extensive it's easier to rewrite the whole file.
 - Parent directories will be created automatically.
@@ -62,20 +63,20 @@ To create a new file or completely replace an existing file:
 
 To modify an existing file:
 
-> <details>
-> <summary>Patch: ~/examples/file.py</summary>
->
-> ```diff
-> @@
-> -def fib(n):
-> +def fibonacci(n):
->      if n <= 1:
->          return n
-> -    return fib(n-1) + fib(n-2)
-> +    return fibonacci(n-1) + fibonacci(n-2)
-> ```
->
-> </details>
+<details>
+<summary>Patch: ~/examples/file.py</summary>
+
+```diff
+@@
+-def fib(n):
++def fibonacci(n):
+     if n <= 1:
+         return n
+-    return fib(n-1) + fib(n-2)
++    return fibonacci(n-1) + fibonacci(n-2)
+```
+
+</details>
 
 - Patch can include several hunks, each starting with `@@`.
 - It is not necessary to write out line numbers after `@@` nor to produce diff header (`---` and `+++` lines).
@@ -87,17 +88,17 @@ To modify an existing file:
 
 To execute arbitrary shell scripts:
 
-> <details>
-> <summary>Shell: informal description @ ~/examples/project</summary>
->
-> ```sh
-> # Run tests
-> pytest
-> # Installation
-> pip install -e .
-> ```
->
-> </details>
+<details>
+<summary>Shell: informal description @ ~/examples/project</summary>
+
+```sh
+# Run tests
+pytest
+# Installation
+pip install -e .
+```
+
+</details>
 
 - Shell tool is the preferred way to run commands. However, it is only available if the project is expressly marked executable in the project list.
 - Do not use shell tool for reading, writing, and patching files. These operations are better handled by other tools.
@@ -112,19 +113,19 @@ To execute arbitrary shell scripts:
 
 If shell tool is not applicable, you can still run basic built-in file manipulation commands using script tool:
 
-> <details>
-> <summary>Script: informal description</summary>
->
-> ```sh
-> # Remove file
-> rm ~/examples/remove.txt
-> # Move file
-> mv ~/examples/location.md ~/examples/destination.md
-> # Inline search and replace (case-sensitive, Rust-style regex)
-> sd old new ~/examples/file.txt
-> ```
->
-> </details>
+<details>
+<summary>Script: informal description</summary>
+
+```sh
+# Remove file
+rm ~/examples/remove.txt
+# Move file
+mv ~/examples/location.md ~/examples/destination.md
+# Inline search and replace (case-sensitive, Rust-style regex)
+sd old new ~/examples/file.txt
+```
+
+</details>
 
 - Use script tool instead of shell tool when the project is not executable or when you need to work across projects in different sandboxes.
 - Script tool supports only `rm`, `mv`, and `sd` commands at the moment. Use them in the exact form shown above and without options, optionally interspersed with `#` comments.
