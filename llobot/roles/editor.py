@@ -15,9 +15,6 @@ from llobot.prompts import (
     Prompt,
     SystemPrompt,
     answering_prompt_section,
-    editing_prompt_section,
-    listings_prompt_section,
-    orchestrator_prompt_section,
     overviews_prompt_section,
     read_prompt,
     tools_prompt_section,
@@ -32,11 +29,8 @@ def editor_system_prompt() -> SystemPrompt:
     """
     return SystemPrompt(
         read_prompt('editor.md'),
-        orchestrator_prompt_section(),
-        listings_prompt_section(),
         tools_prompt_section(),
         answering_prompt_section(),
-        editing_prompt_section(),
         overviews_prompt_section(),
     )
 

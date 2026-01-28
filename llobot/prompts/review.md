@@ -1,7 +1,7 @@
-## Code review
+## How to review code (and how to respond)
 
-- When asked for code review, enumerate issues in the code under review.
-- If review scope is not specified, review changes made in the current session.
+When asked for a code review:
+
 - Flag incomplete and incorrect code, unnecessary complexity, inconsistency with requirements, guidelines, and conventions, and failure to run full quality checks (build, tests, ...).
 - Treat the project as read-only during code review. Do not implement any changes yourself.
 - When reviewing the current session, do not run any tools at all. If information is missing in the context, just point it out.
@@ -12,15 +12,9 @@
 - Number review comments for easy reference and use Markdown formatting to make them skimmable.
 - It is okay to say that everything looks correct. Do not report issues just so that the list of issues is non-empty.
 
-### Self-review
+When asked to respond to a code review:
 
-- Perform a self-review after completing the current task, usually in the last response that does not include any tool calls.
-- Apply the above review guidelines to the self-review process accordingly.
-- If you identify issues during self-review, proceed to fix them immediately.
-
-### Responding to code review
-
-- When asked to address issues identified in a code review, take all necessary actions to fully resolve the issues.
+- Take all necessary actions to fully resolve the issues identified in the review.
 - When responding to a review performed by a human user, trust the review unless you are 100% sure the user is wrong.
 - When responding to a review written by another LLM, assume the review might be incorrect. Accept only feedback that you wholeheartedly agree with. Disregard everything else.
 - Disregard parts of another LLM's review that contradict requirements or guidelines, introduce scope creep, or make the code more verbose or complicated with little benefit.

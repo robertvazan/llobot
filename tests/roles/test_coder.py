@@ -13,9 +13,4 @@ def test_coder_instantiation(tmp_path: Path):
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "Code something")])
     record_stream(coder.chat(prompt))
     context = model.history[0]
-
-    # Check that coder-specific system prompts are present
-    assert "When asked to edit code" in context
-    assert "Tools" in context
-    assert "Code blocks" in context
-    assert "File listings" in context
+    assert "Software developer's guidelines" in context

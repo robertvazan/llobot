@@ -1,6 +1,7 @@
-## Documentation
+## How to document code
 
-- IMPORTANT: When adding or modifying code, also add or update the related documentation.
+When adding or modifying code, also add or update the related documentation:
+
 - Document all internal APIs, not just public ones.
 - Use machine-readable formats for documentation (e.g., Javadoc, docstrings).
 - Add missing documentation and repair deficient documentation in the files you edit.

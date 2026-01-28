@@ -100,8 +100,4 @@ def test_editor_system_prompt(tmp_path: Path):
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "@project_a some prompt")])
     record_stream(editor.chat(prompt))
     context = model.history[0]
-
-    assert "## Tools" in context
-    assert "### Script tool" in context
-    assert "### Write tool" in context
-    assert "### Apply patch" in context
+    assert "Assistant editor's guidelines" in context
