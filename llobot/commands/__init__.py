@@ -10,8 +10,6 @@ project
     Command to select a project.
 model
     Command to select a model.
-knowledge
-    Function to load project knowledge.
 retrievals
     Commands and functions for document retrieval.
 unrecognized

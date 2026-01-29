@@ -27,7 +27,7 @@ def test_directory_project_simple(tmp_path: Path):
         prefix / 'file2.txt',
         prefix / 'subdir' / 'file3.py',
     }
-    assert {file.path for file in project._walk(prefix)} == expected_paths
+    assert {item.path for item in project.walk(prefix) if isinstance(item, ProjectFile)} == expected_paths
 
     expected_knowledge = Knowledge({
         prefix / 'file1.txt': 'content1\n',
@@ -98,7 +98,7 @@ def test_directory_project_custom_zones(tmp_path: Path):
     (tmp_path / "file1.txt").write_text("content1")
     project = DirectoryProject(tmp_path, prefix="myprefix")
     assert project.prefixes == {PurePosixPath("myprefix")}
-    assert {file.path for file in project._walk(PurePosixPath("myprefix"))} == {PurePosixPath("myprefix/file1.txt")}
+    assert {item.path for item in project.walk(PurePosixPath("myprefix")) if isinstance(item, ProjectFile)} == {PurePosixPath("myprefix/file1.txt")}
 
 def test_directory_project_filtering(tmp_path: Path):
     (tmp_path / "file1.txt").write_text("content1")
@@ -115,7 +115,7 @@ def test_directory_project_filtering(tmp_path: Path):
         blacklist=parse_pattern('**/blacklisted*')
     )
 
-    assert {file.path for file in project._walk(PurePosixPath('p'))} == {PurePosixPath('p/file1.txt')}
+    assert {item.path for item in project.walk(PurePosixPath('p')) if isinstance(item, ProjectFile) and project.tracked(item)} == {PurePosixPath('p/file1.txt')}
     assert project.read_all() == Knowledge({PurePosixPath('p/file1.txt'): 'content1\n'})
 
 def test_items(tmp_path: Path):

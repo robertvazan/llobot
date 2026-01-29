@@ -18,11 +18,11 @@ overviews
 from __future__ import annotations
 from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
-from llobot.environments.knowledge import KnowledgeEnv
+from llobot.environments.projects import ProjectEnv
 from llobot.environments.retrievals import RetrievalsEnv
 from llobot.environments.seen import SeenEnv
 from llobot.formats.knowledge import KnowledgeFormat, standard_knowledge_format
-from llobot.knowledge.indexes import KnowledgeIndex
+from llobot.knowledge import Knowledge
 from llobot.knowledge.ranking.rankers import KnowledgeRanker, standard_ranker
 from llobot.commands.retrievals.exact import handle_exact_retrieval_commands
 from llobot.commands.retrievals.overviews import assume_overview_retrieval_commands
@@ -54,22 +54,23 @@ def flush_retrieval_commands(
 
     retrievals = env[RetrievalsEnv]
     retrieved_paths = retrievals.get()
-    knowledge = env[KnowledgeEnv].get()
-    context = env[ContextEnv]
+    project = env[ProjectEnv].union
     seen_env = env[SeenEnv]
+    context = env[ContextEnv]
 
-    # Check what is already in context to avoid duplicates.
-    context_branch = context.build()
-    paths_to_add = set()
+    docs = {}
+
+    # We iterate over all retrieved paths. Read operation will return None
+    # for files that are unreadable or do not exist, effectively filtering them out.
     for path in retrieved_paths:
-        if path in knowledge:
-            formatted = knowledge_format.document_format.render(path, knowledge[path])
-            if formatted:
-                already_present = any(formatted in msg.content for msg in context_branch)
-                if not already_present:
-                    paths_to_add.add(path)
+        content = project.read(path)
+        if content is not None:
+            # We skip files that have already been seen in the context.
+            # Document format guarantees non-empty output, so we don't need to check it.
+            if path not in seen_env:
+                docs[path] = content
 
-    retrieved_knowledge = knowledge & KnowledgeIndex(paths_to_add)
+    retrieved_knowledge = Knowledge(docs)
     seen_env.update(retrieved_knowledge)
 
     ranking = ranker.rank(retrieved_knowledge)

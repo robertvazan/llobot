@@ -24,6 +24,10 @@ class DocumentFormat:
         """
         Renders a document into a string representation.
 
+        Implementations must ensure that this method never returns None
+        or an empty string, as it is used to populate context where
+        content presence is expected.
+
         Args:
             path: The path of the document.
             content: The content of the document.
@@ -45,6 +49,7 @@ class DocumentFormat:
             A chat thread containing the rendered document.
         """
         rendered = self.render(path, content)
+        # While render() contract forbids empty strings, we keep this check for robustness.
         if not rendered.strip():
             return ChatThread()
         return ChatThread([ChatMessage(ChatIntent.SYSTEM, rendered)])

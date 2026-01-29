@@ -8,7 +8,7 @@ from llobot.chats.message import ChatMessage
 from llobot.commands import handle_commands
 from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
-from llobot.environments.knowledge import KnowledgeEnv
+from llobot.environments.projects import ProjectEnv
 from llobot.environments.retrievals import RetrievalsEnv
 from llobot.knowledge.subsets.parsing import parse_pattern
 
@@ -37,7 +37,7 @@ def handle_exact_retrieval_command(text: str, env: Environment) -> bool:
     if text.startswith('~/'):
         text = '/' + text[2:]
 
-    knowledge_index = env[KnowledgeEnv].index()
+    knowledge_index = env[ProjectEnv].union.index()
     subset = parse_pattern(text)
     matches = list(knowledge_index & subset)
 

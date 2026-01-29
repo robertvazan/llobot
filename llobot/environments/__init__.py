@@ -11,12 +11,8 @@ projects
     Selected project.
 model
     Selected model.
-knowledge
-    Knowledge base for selected project.
 retrievals
     Document retrievals.
-cutoff
-    Knowledge cutoff timestamp.
 commands
     Unprocessed command queue.
 seen

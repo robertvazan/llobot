@@ -28,6 +28,7 @@ from __future__ import annotations
 from pathlib import Path, PurePosixPath
 from typing import Iterable
 from llobot.knowledge import Knowledge
+from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.projects.items import ProjectDirectory, ProjectFile, ProjectItem
 
 
@@ -93,28 +94,51 @@ class Project:
         """
         return False
 
-    def _walk(self, directory: PurePosixPath) -> Iterable[ProjectFile]:
-        """Recursively walks the project to find all tracked files."""
+    def walk(self, directory: PurePosixPath | None = None) -> Iterable[ProjectItem]:
+        """
+        Recursively walks the project to find all items.
+
+        It yields items in a consistent order (sorted by path). It does not
+        descend into untracked directories.
+
+        Args:
+            directory: The directory to start walking from. If None, walks
+                       from all prefixes.
+        """
+        if directory is None:
+            for prefix in sorted(list(self.prefixes)):
+                yield from self.walk(prefix)
+            return
+
         # Sort items for consistent order
         sorted_items = sorted(self.items(directory), key=lambda i: i.path)
 
         for item in sorted_items:
-            if self.tracked(item):
-                if isinstance(item, ProjectFile):
-                    yield item
-                elif isinstance(item, ProjectDirectory):
-                    yield from self._walk(item.path)
+            yield item
+            if isinstance(item, ProjectDirectory) and self.tracked(item):
+                yield from self.walk(item.path)
+
+    def index(self) -> KnowledgeIndex:
+        """
+        Returns a KnowledgeIndex of all tracked files in the project.
+        """
+        from llobot.knowledge.indexes import KnowledgeIndex
+        files = []
+        for item in self.walk():
+            if isinstance(item, ProjectFile) and self.tracked(item):
+                files.append(item.path)
+        return KnowledgeIndex(files)
 
     def read_all(self) -> Knowledge:
         """
         Reads all tracked files and returns them as a Knowledge object.
         """
         docs = {}
-        for prefix in self.prefixes:
-            for file in self._walk(prefix):
-                content = self.read(file.path)
+        for item in self.walk():
+            if isinstance(item, ProjectFile) and self.tracked(item):
+                content = self.read(item.path)
                 if content is not None:
-                    docs[file.path] = content
+                    docs[item.path] = content
         return Knowledge(docs)
 
     def __or__(self, other: Project) -> Project:

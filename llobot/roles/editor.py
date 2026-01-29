@@ -1,14 +1,13 @@
 from __future__ import annotations
 from functools import cache
 from typing import Iterable
-from llobot.commands.knowledge import populate_knowledge_env
 from llobot.commands.project import handle_project_commands
 from llobot.commands.retrievals import handle_retrieval_commands
 from llobot.crammers.index import IndexCrammer, standard_index_crammer
 from llobot.crammers.knowledge import KnowledgeCrammer, standard_knowledge_crammer
 from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
-from llobot.environments.knowledge import KnowledgeEnv
+from llobot.environments.projects import ProjectEnv
 from llobot.environments.seen import SeenEnv
 from llobot.models import Model
 from llobot.prompts import (
@@ -72,14 +71,13 @@ class Editor(Agent):
 
     def handle_setup(self, env: Environment):
         """
-        Handles project commands and populates the knowledge environment.
+        Handles project commands.
 
         Args:
             env: The environment to prepare.
         """
         super().handle_setup(env)
         handle_project_commands(env)
-        populate_knowledge_env(env)
 
     def handle_commands(self, env: Environment):
         """
@@ -100,7 +98,7 @@ class Editor(Agent):
         """
         super().stuff(env)
         builder = env[ContextEnv].builder
-        knowledge = env[KnowledgeEnv].get()
+        knowledge = env[ProjectEnv].union.read_all()
         self._index_crammer.cram(builder, knowledge)
         crammed_index = self._knowledge_crammer.cram(builder, knowledge)
 
