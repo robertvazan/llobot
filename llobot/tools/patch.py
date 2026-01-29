@@ -7,7 +7,7 @@ from llobot.chats.message import ChatMessage
 from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
-from llobot.environments.seen import SeenEnv
+from llobot.environments.knowledge import KnowledgeEnv
 from llobot.formats.paths import parse_path
 from llobot.tools.fenced import FencedTool
 from llobot.utils.text import normalize_document
@@ -36,9 +36,9 @@ class PatchTool(FencedTool):
 
         path = parse_path(path_str)
         project = env[ProjectEnv].union
-        seen_env = env[SeenEnv]
+        knowledge_env = env[KnowledgeEnv]
 
-        if path not in seen_env:
+        if path not in knowledge_env:
              raise PermissionError(f"Safety: File `~/{path}` must be read before it can be patched.")
 
         original_content = project.read(path)

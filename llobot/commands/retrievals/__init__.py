@@ -20,7 +20,7 @@ from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.retrievals import RetrievalsEnv
-from llobot.environments.seen import SeenEnv
+from llobot.environments.knowledge import KnowledgeEnv
 from llobot.formats.knowledge import KnowledgeFormat, standard_knowledge_format
 from llobot.knowledge import Knowledge
 from llobot.knowledge.ranking.rankers import KnowledgeRanker, standard_ranker
@@ -55,7 +55,7 @@ def flush_retrieval_commands(
     retrievals = env[RetrievalsEnv]
     retrieved_paths = retrievals.get()
     project = env[ProjectEnv].union
-    seen_env = env[SeenEnv]
+    knowledge_env = env[KnowledgeEnv]
     context = env[ContextEnv]
 
     docs = {}
@@ -67,11 +67,11 @@ def flush_retrieval_commands(
         if content is not None:
             # We skip files that have already been seen in the context.
             # Document format guarantees non-empty output, so we don't need to check it.
-            if path not in seen_env:
+            if path not in knowledge_env:
                 docs[path] = content
 
     retrieved_knowledge = Knowledge(docs)
-    seen_env.update(retrieved_knowledge)
+    knowledge_env.update(retrieved_knowledge)
 
     ranking = ranker.rank(retrieved_knowledge)
     retrievals_chat = knowledge_format.render_chat(retrieved_knowledge, ranking=ranking)

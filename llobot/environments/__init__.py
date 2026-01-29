@@ -15,7 +15,7 @@ retrievals
     Document retrievals.
 commands
     Unprocessed command queue.
-seen
+knowledge
     Files loaded into the context.
 context
     LLM context accumulator.

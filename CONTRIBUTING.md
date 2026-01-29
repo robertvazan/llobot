@@ -61,6 +61,7 @@ The project root directory is organized as follows:
 Llobot is designed to be modular and configurable with reasonable defaults.
 
 The core interaction is orchestrated by a [`Role`](llobot/roles/__init__.py). When a user sends a prompt (a thread of messages), the `Role` processes it by calling a sequence of functions from the [`commands`](llobot/commands/__init__.py) package. These functions parse `@mentions` from the prompt and perform various actions, for example retrieving documents from the knowledge base. These functions manipulate a shared [`Environment`](llobot/environments/__init__.py), which is a container for stateful components like the selected [`Project`](llobot/projects/__init__.py), the loaded [`Knowledge`](llobot/knowledge/__init__.py), and the [`ContextEnv`](llobot/environments/context.py) that accumulates messages for the assembled context.
+Files loaded into the context are tracked by [`KnowledgeEnv`](llobot/environments/knowledge.py) to prevent reloading and to enforce safety checks (e.g., preventing edits to unread files).
 
 Session persistence is keyed by the initial prompt. The session ID is a filename/URL-safe Base64-encoded SHA-256 hash of the UTF-8 bytes of the initial prompt, truncated to 40 characters. [`SessionHistory`](llobot/environments/history.py) stores and loads environment state under this hash. There are no explicit session messages and no session commands in the prompt.
 
@@ -80,6 +81,7 @@ Llobot follows several architectural patterns and conventions that are important
 - **Encapsulation**: Do not access private variables (variables starting with `_`) anywhere outside the class that defined them, not even in tests.
 - **Internal Imports**: All internal imports within the [`llobot`](llobot/__init__.py) package are absolute (e.g., `from llobot.chats.messages import ChatMessage`). Submodule symbols are not re-exported from package `__init__.py` files. Code should always import symbols directly from the submodule where they are defined.
 - **Docstrings**: All modules, classes, and functions have Google-style docstrings.
+- **Backward Compatibility**: Backward compatibility is NOT maintained before 1.x release. This applies to API, file formats, and persisted data. Contributors are encouraged to rename and refactor aggressively to improve the codebase.
 
 ## License
 

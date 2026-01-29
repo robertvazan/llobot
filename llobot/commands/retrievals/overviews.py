@@ -5,7 +5,7 @@ from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
 from llobot.environments.retrievals import RetrievalsEnv
-from llobot.environments.seen import SeenEnv
+from llobot.environments.knowledge import KnowledgeEnv
 from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.knowledge.subsets.standard import overviews_subset
 from llobot.knowledge.trees import coerce_tree
@@ -24,7 +24,7 @@ def assume_overview_retrieval_commands(
     them to the retrievals. This ensures that context for a file includes
     relevant documentation from its containing directories.
 
-    Overview files that are already present in the `SeenEnv` (i.e., already in
+    Overview files that are already present in the `KnowledgeEnv` (i.e., already in
     the context) are skipped and not added to retrievals.
 
     Args:
@@ -44,7 +44,7 @@ def assume_overview_retrieval_commands(
     index = project.index()
     all_overviews = index & overviews
     overview_tree = coerce_tree(all_overviews)
-    seen_env = env[SeenEnv]
+    knowledge_env = env[KnowledgeEnv]
 
     newly_added = set()
     current_retrievals = retrievals.get()
@@ -55,7 +55,7 @@ def assume_overview_retrieval_commands(
             for overview in parent_tree.file_paths:
                 if overview not in current_retrievals and overview not in newly_added:
                     # Only add if not already seen in context
-                    if overview not in seen_env:
+                    if overview not in knowledge_env:
                         retrievals.add(overview)
                         newly_added.add(overview)
 

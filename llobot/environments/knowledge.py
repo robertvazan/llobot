@@ -9,7 +9,7 @@ from llobot.formats.paths import coerce_path
 from llobot.knowledge import Knowledge
 from llobot.utils.fs import read_text, write_text
 
-class SeenEnv(PersistentEnv):
+class KnowledgeEnv(PersistentEnv):
     """
     Tracks files that have been loaded into the context.
 
@@ -18,10 +18,10 @@ class SeenEnv(PersistentEnv):
     and to enforce safety checks (e.g., preventing edits to files that haven't
     been read).
     """
-    _seen: dict[PurePosixPath, str]
+    _known: dict[PurePosixPath, str]
 
     def __init__(self):
-        self._seen = {}
+        self._known = {}
 
     def add(self, path: PurePosixPath | str, content: str):
         """
@@ -31,55 +31,55 @@ class SeenEnv(PersistentEnv):
             path: The path of the file.
             content: The content of the file.
         """
-        self._seen[coerce_path(path)] = content
+        self._known[coerce_path(path)] = content
 
     def update(self, knowledge: Knowledge):
         """
-        Updates the seen environment with all documents from a Knowledge object.
+        Updates the environment with all documents from a Knowledge object.
         """
         for path, content in knowledge:
-            self._seen[path] = content
+            self._known[path] = content
 
     def get(self, path: PurePosixPath | str) -> str | None:
         """
-        Gets the content of a file if it has been seen.
+        Gets the content of a file if it is known.
 
         Args:
             path: The path of the file.
 
         Returns:
-            The content if seen, `None` otherwise.
+            The content if known, `None` otherwise.
         """
-        return self._seen.get(coerce_path(path))
+        return self._known.get(coerce_path(path))
 
     def __contains__(self, path: PurePosixPath | str) -> bool:
         """
-        Checks if a file has been seen.
+        Checks if a file is known.
         """
-        return coerce_path(path) in self._seen
+        return coerce_path(path) in self._known
 
     def save(self, directory: Path):
         """
-        Saves the seen files to a 'seen' subdirectory.
+        Saves the known files to a 'knowledge' subdirectory.
         """
-        root = directory / 'seen'
+        root = directory / 'knowledge'
         if root.exists():
             shutil.rmtree(root)
 
-        for path, content in self._seen.items():
+        for path, content in self._known.items():
             # Paths are relative (e.g., "src/main.py").
             file_path = root / path
             write_text(file_path, content)
 
     def load(self, directory: Path):
         """
-        Loads the seen files from a 'seen' subdirectory.
+        Loads the known files from a 'knowledge' subdirectory.
         """
-        root = directory / 'seen'
+        root = directory / 'knowledge'
         if not root.exists():
             return
 
-        self._seen = {}
+        self._known = {}
         for file in root.rglob('*'):
             if file.is_file():
                 try:
@@ -87,11 +87,11 @@ class SeenEnv(PersistentEnv):
                     # Validate and coerce path
                     key = coerce_path(rel_path.as_posix())
                     content = read_text(file)
-                    self._seen[key] = content
+                    self._known[key] = content
                 except Exception:
                     # Ignore unreadable files or invalid paths
                     pass
 
 __all__ = [
-    'SeenEnv',
+    'KnowledgeEnv',
 ]

@@ -1,8 +1,8 @@
 from pathlib import PurePosixPath
-from llobot.environments.seen import SeenEnv
+from llobot.environments.knowledge import KnowledgeEnv
 
-def test_seen_env(tmp_path):
-    env = SeenEnv()
+def test_knowledge_env(tmp_path):
+    env = KnowledgeEnv()
 
     # Test initial state
     assert "file1.txt" not in env
@@ -25,7 +25,7 @@ def test_seen_env(tmp_path):
     save_dir = tmp_path / "session"
     env.save(save_dir)
 
-    env2 = SeenEnv()
+    env2 = KnowledgeEnv()
     env2.load(save_dir)
 
     assert "file1.txt" in env2
@@ -35,7 +35,7 @@ def test_seen_env(tmp_path):
     env.add("dir/file2.txt", "content2")
     env.save(save_dir)
 
-    env3 = SeenEnv()
+    env3 = KnowledgeEnv()
     env3.load(save_dir)
     assert env3.get("file1.txt") == "content1_updated"
     assert env3.get("dir/file2.txt") == "content2"

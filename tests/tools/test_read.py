@@ -5,7 +5,7 @@ from llobot.chats.message import ChatMessage
 from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
 from llobot.environments.projects import ProjectEnv
-from llobot.environments.seen import SeenEnv
+from llobot.environments.knowledge import KnowledgeEnv
 from llobot.formats.documents import standard_document_format
 from llobot.projects.directory import DirectoryProject
 from llobot.projects.library.predefined import PredefinedProjectLibrary
@@ -57,7 +57,7 @@ def test_read_tool_execute(env: Environment):
     assert "content" in output
 
     # Check seen env
-    seen = env[SeenEnv]
+    seen = env[KnowledgeEnv]
     assert "myproject/a.txt" in seen
     assert "myproject/README.md" in seen
 
@@ -80,14 +80,14 @@ def test_read_tool_execute_multiple(env: Environment):
     # Init should be included
     assert "File: ~/myproject/sub/__init__.py" in output
 
-def test_read_tool_deduplication_via_seen_env(env: Environment):
-    # Pre-populate seen env with the file content
-    env[SeenEnv].add("myproject/a.txt", normalize_document("content"))
+def test_read_tool_deduplication_via_knowledge_env(env: Environment):
+    # Pre-populate knowledge env with the file content
+    env[KnowledgeEnv].add("myproject/a.txt", normalize_document("content"))
 
-    # We do NOT add it to the context, to test that SeenEnv is sufficient to skip reading
+    # We do NOT add it to the context, to test that KnowledgeEnv is sufficient to skip reading
     # But wait, ReadTool logic is:
-    # if seen_env.get(p) == content_str: continue
-    # So if it's in SeenEnv, it should skip adding it to context.
+    # if knowledge_env.get(p) == content_str: continue
+    # So if it's in KnowledgeEnv, it should skip adding it to context.
 
     tool = ReadTool()
     content = """
@@ -100,7 +100,7 @@ def test_read_tool_deduplication_via_seen_env(env: Environment):
     log = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.STATUS)
     output = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.SYSTEM)
 
-    # It should say it's already in context (based on SeenEnv check)
+    # It should say it's already in context (based on KnowledgeEnv check)
     assert "File `~/myproject/a.txt` is already in the context." in log
     assert "content" not in output
 
@@ -108,8 +108,8 @@ def test_read_tool_overview_deduplication(env: Environment):
     # Pre-populate context with the overview content
     listing = standard_document_format().render(PurePosixPath("myproject/README.md"), normalize_document("# Readme"))
     env[ContextEnv].add(ChatMessage(ChatIntent.SYSTEM, listing))
-    # Also mark as seen
-    env[SeenEnv].add("myproject/README.md", normalize_document("# Readme"))
+    # Also mark as known
+    env[KnowledgeEnv].add("myproject/README.md", normalize_document("# Readme"))
 
     tool = ReadTool()
     content = """
