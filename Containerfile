@@ -61,9 +61,7 @@ ENV LANG=C.UTF-8 \
     TERM=xterm-256color \
     PATH="/home/${DEV_USER}/.local/bin:$PATH"
 
-ENV RIPGREP_CONFIG_PATH=/home/${DEV_USER}/.ripgreprc
-RUN echo '--no-require-git' > "$RIPGREP_CONFIG_PATH" && \
-    echo 'shopt -s globstar' >> ~/.bashrc && \
+RUN echo 'shopt -s globstar' >> ~/.bashrc && \
     echo 'PS1="(dev) \[\033[01;33m\]\w\[\033[00m\]\\$ "' >> ~/.bashrc
 
 # Configure pip and uv to use cache if provided.
