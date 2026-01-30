@@ -12,6 +12,8 @@ Crammer
 
 Specific Crammers
 -----------------
+CrammerChain
+    A sequence of crammers executed in order.
 ExampleCrammer
     Selects a set of recent examples that fit within a budget.
 DateCrammer
@@ -41,6 +43,15 @@ class Crammer(ValueTypeMixin):
             env: The environment containing context builder and other resources.
         """
         raise NotImplementedError
+
+    def __add__(self, other: Crammer) -> Crammer:
+        """
+        Combines this crammer with another one into a chain.
+        """
+        if not isinstance(other, Crammer):
+            return NotImplemented
+        from llobot.crammers.chain import CrammerChain
+        return CrammerChain(self, other)
 
 __all__ = [
     'Crammer',
