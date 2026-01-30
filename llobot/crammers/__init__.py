@@ -9,8 +9,8 @@ Crammers
 --------
 ExampleCrammer
     Selects a set of recent examples that fit within a budget.
-IndexCrammer
-    Formats file indexes, deciding whether to include them based on budget.
+TreeCrammer
+    Formats file trees, deciding whether to include them based on budget.
 KnowledgeCrammer
     Selects a subset of knowledge documents based on scores and budget.
 """

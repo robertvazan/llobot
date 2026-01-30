@@ -3,11 +3,9 @@ from functools import cache
 from typing import Iterable
 from llobot.commands.project import handle_project_commands
 from llobot.commands.retrievals import handle_retrieval_commands
-from llobot.crammers.index import IndexCrammer, standard_index_crammer
 from llobot.crammers.knowledge import KnowledgeCrammer, standard_knowledge_crammer
+from llobot.crammers.tree import TreeCrammer, standard_tree_crammer
 from llobot.environments import Environment
-from llobot.environments.context import ContextEnv
-from llobot.environments.projects import ProjectEnv
 from llobot.models import Model
 from llobot.prompts import (
     Prompt,
@@ -39,17 +37,17 @@ class Editor(Agent):
     The Editor role is designed to handle software development tasks that involve
     reading and modifying source code. It assembles a context for the LLM that
     includes a system prompt, relevant files from a knowledge base, and a file
-    index. It supports commands for project selection (`@project`), file
+    tree. It supports commands for project selection (`@project`), file
     retrieval (`@path/to/file`), and uses session IDs to persist state.
     """
     _knowledge_crammer: KnowledgeCrammer
-    _index_crammer: IndexCrammer
+    _tree_crammer: TreeCrammer
 
     def __init__(self, name: str, model: Model, *,
         prompt: str | Prompt = editor_system_prompt(),
         tools: Iterable[Tool] = standard_tools(),
         knowledge_crammer: KnowledgeCrammer = standard_knowledge_crammer(),
-        index_crammer: IndexCrammer = standard_index_crammer(),
+        tree_crammer: TreeCrammer = standard_tree_crammer(),
         **kwargs,
     ):
         """
@@ -61,12 +59,12 @@ class Editor(Agent):
             prompt: The system prompt. Defaults to `editor_system_prompt()`.
             tools: An iterable of tools available to the agent.
             knowledge_crammer: Crammer for knowledge documents.
-            index_crammer: Crammer for the file index.
+            tree_crammer: Crammer for the file tree.
             **kwargs: Additional arguments for the base `Agent` class.
         """
         super().__init__(name, model, prompt=prompt, tools=tools, **kwargs)
         self._knowledge_crammer = knowledge_crammer
-        self._index_crammer = index_crammer
+        self._tree_crammer = tree_crammer
 
     def handle_setup(self, env: Environment):
         """
@@ -90,15 +88,13 @@ class Editor(Agent):
 
     def stuff(self, env: Environment):
         """
-        Populates the context with system prompt, knowledge, and index.
+        Populates the context with system prompt, knowledge, and tree.
 
         Args:
             env: The environment to populate.
         """
         super().stuff(env)
-        builder = env[ContextEnv].builder
-        knowledge = env[ProjectEnv].union.read_all()
-        self._index_crammer.cram(builder, knowledge)
+        self._tree_crammer.cram(env)
         self._knowledge_crammer.cram(env)
 
 __all__ = [
