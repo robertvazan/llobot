@@ -10,7 +10,7 @@ from llobot.roles.agent import Agent
 from llobot.tools.write import WriteTool
 from llobot.environments.prompt import _hash_thread
 from llobot.chats.markdown import save_chat_to_markdown
-from llobot.roles.autonomy import HopAutonomy
+from llobot.roles.autonomy import HopAutonomy, NoAutonomy
 
 def test_agent_first_turn(tmp_path: Path):
     """Tests that Agent creates a new session and includes system prompt on first turn."""
@@ -253,6 +253,40 @@ def test_agent_autorun(tmp_path: Path):
     summaries = [m for m in status_messages if "tool calls executed" in m.content]
     assert len(summaries) == 2
     assert all("All 1 tool calls executed" in m.content for m in summaries)
+
+def test_agent_autonomy_command_persistence(tmp_path: Path):
+    """Tests that @autonomy command changes autonomy and persists it."""
+    model = MockModel('echo')
+
+    hop = HopAutonomy()
+
+    class AutonomyAwareAgent(Agent):
+        def handle_setup(self, env):
+            super().handle_setup(env)
+            # Autonomy commands are handled by default in Agent.handle_commands
+
+    agent = AutonomyAwareAgent(
+        'agent',
+        model,
+        session_history=tmp_path,
+        autonomy=NoAutonomy(),
+        autonomy_profiles={'hop': hop}
+    )
+
+    # Turn 1: Switch to 'hop' autonomy
+    prompt1 = ChatThread([ChatMessage(ChatIntent.PROMPT, "@autonomy:hop")])
+    record_stream(agent.chat(prompt1))
+
+    # Turn 2: Verify autonomy persists
+    # We will check if it persists by checking the saved file in session history
+    session_hash = _hash_thread(prompt1)
+    autonomy_file = tmp_path / session_hash / 'autonomy.txt'
+    assert autonomy_file.exists()
+    assert autonomy_file.read_text().strip() == 'hop'
+
+    # Also verify by running a new turn and checking if autorun is enabled in environment?
+    # Hard to check internal state directly without subclassing or mocking.
+    # But persistence test covers the core requirement.
 
 def test_project_command_summary(tmp_path: Path):
     """Tests that project selection command adds project summary to the context."""

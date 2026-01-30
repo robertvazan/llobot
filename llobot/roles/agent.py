@@ -8,8 +8,10 @@ from llobot.chats.stream import ChatStream
 from llobot.commands.run import handle_run_commands
 from llobot.commands.echo import handle_echo_commands
 from llobot.commands.model import handle_model_commands
+from llobot.commands.autonomy import handle_autonomy_commands
 from llobot.commands.unrecognized import handle_unrecognized_commands
 from llobot.environments import Environment
+from llobot.environments.autonomy import AutonomyEnv
 from llobot.environments.commands import CommandsEnv
 from llobot.environments.context import ContextEnv
 from llobot.environments.history import SessionHistory, coerce_session_history, standard_session_history
@@ -52,6 +54,7 @@ class Agent(Role):
     _model_library: ModelLibrary
     _tools: tuple[Tool, ...]
     _autonomy: Autonomy
+    _autonomy_profiles: dict[str, Autonomy]
 
     def __init__(self, name: str, model: Model, *,
         prompt: str | Prompt = '',
@@ -59,6 +62,7 @@ class Agent(Role):
         models: ModelLibrary | None = None,
         tools: Iterable[Tool] = (),
         autonomy: Autonomy | None = None,
+        autonomy_profiles: dict[str, Autonomy] | None = None,
         session_history: SessionHistory | Zoning | Path | str = standard_session_history(),
         prompt_format: PromptFormat = standard_prompt_format(),
         reminder_format: PromptFormat = ReminderPromptFormat(),
@@ -85,6 +89,7 @@ class Agent(Role):
         self._model_library = models or EmptyModelLibrary()
         self._tools = tuple(tools)
         self._autonomy = autonomy or NoAutonomy()
+        self._autonomy_profiles = autonomy_profiles or {}
         self._session_history = coerce_session_history(session_history)
         self._prompt_format = prompt_format
         self._reminder_format = reminder_format
@@ -202,6 +207,7 @@ class Agent(Role):
             env: The environment.
         """
         handle_echo_commands(env)
+        handle_autonomy_commands(env)
         if self._tools:
             handle_run_commands(env)
 
@@ -231,6 +237,7 @@ class Agent(Role):
         env = Environment()
         env[ProjectEnv].configure(self._project_library)
         env[ModelEnv].configure(self._model_library, self._model)
+        env[AutonomyEnv].configure(self._autonomy, self._autonomy_profiles)
         env[ToolEnv].register_all(self._tools)
 
         self.parse_prompt(env, prompt)
@@ -256,7 +263,7 @@ class Agent(Role):
             yield from context_env.record(model_stream)
 
             # Handle autorun if enabled and tools are available
-            if self._autonomy.autorun and self._tools:
+            if env[AutonomyEnv].get().autorun and self._tools:
                 execution_mark = builder.mark()
                 for message in builder.extension(generation_mark):
                     if message.intent == ChatIntent.RESPONSE:

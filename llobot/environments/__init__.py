@@ -11,6 +11,8 @@ projects
     Selected project.
 model
     Selected model.
+autonomy
+    Selected autonomy profile.
 retrievals
     Document retrievals.
 commands

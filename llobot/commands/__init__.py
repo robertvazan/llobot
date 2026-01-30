@@ -10,6 +10,8 @@ project
     Command to select a project.
 model
     Command to select a model.
+autonomy
+    Command to select an autonomy profile.
 retrievals
     Commands and functions for document retrieval.
 unrecognized
