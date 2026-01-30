@@ -196,7 +196,7 @@ def test_agent_no_autonomy(tmp_path: Path):
         model,
         tools=[WriteTool()],
         projects=library,
-        # Default is NoAutonomy
+        autonomy=NoAutonomy(),
         session_history=tmp_path / 'sessions'
     )
 

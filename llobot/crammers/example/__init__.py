@@ -3,9 +3,10 @@ Crammers for selecting few-shot examples.
 """
 from __future__ import annotations
 from functools import cache
+from llobot.crammers import Crammer
 from llobot.environments import Environment
 
-class ExampleCrammer:
+class ExampleCrammer(Crammer):
     """
     Base class for crammers that select few-shot examples.
 

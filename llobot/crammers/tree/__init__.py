@@ -3,9 +3,10 @@ Crammers for formatting and including file trees.
 """
 from __future__ import annotations
 from functools import cache
+from llobot.crammers import Crammer
 from llobot.environments import Environment
 
-class TreeCrammer:
+class TreeCrammer(Crammer):
     """
     Base class for crammers that format and add file trees to the context.
 

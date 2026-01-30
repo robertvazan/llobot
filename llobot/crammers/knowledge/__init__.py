@@ -12,9 +12,10 @@ ranked
 """
 from __future__ import annotations
 from functools import cache
+from llobot.crammers import Crammer
 from llobot.environments import Environment
 
-class KnowledgeCrammer:
+class KnowledgeCrammer(Crammer):
     """
     Base class for crammers that select knowledge documents.
 
