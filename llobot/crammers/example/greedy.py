@@ -33,17 +33,17 @@ class GreedyExampleCrammer(ExampleCrammer, ValueTypeMixin):
         Greedily adds recent examples from memory to the context until the budget is filled.
         """
         builder = env[ContextEnv].builder
-        builder.budget = builder.cost + self._budget
 
-        examples = env[MemoryEnv].examples.recent(env)
-
-        if builder.unused <= 0:
+        if self._budget <= 0:
             return
+
         initial_mark = builder.mark()
         selected_examples = []
         seen_prompts = set()
         skipped = 0
-        max_waste = int(builder.budget * (1 - self._fill))
+        max_waste = int(self._budget * (1 - self._fill))
+
+        examples = env[MemoryEnv].examples.recent(env)
 
         # Examples are provided most-recent-first.
         for example in examples:
@@ -53,14 +53,17 @@ class GreedyExampleCrammer(ExampleCrammer, ValueTypeMixin):
                 continue
             seen_prompts.add(prompt_content)
 
-            builder.mark()
+            example_mark = builder.mark()
             builder.add(example)
 
-            if builder.unused < 0:
-                builder.undo()
+            remaining = builder.remaining(initial_mark, self._budget)
+
+            if remaining < 0:
+                builder.undo(example_mark)
                 skipped += 1
                 # Hard budget limit hit.
-                if skipped > self._depth or builder.unused < max_waste:
+                current_remaining = builder.remaining(initial_mark, self._budget)
+                if skipped > self._depth or current_remaining < max_waste:
                     break
                 continue
 

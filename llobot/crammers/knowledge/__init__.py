@@ -3,7 +3,7 @@ Crammers for selecting knowledge documents to fit in a context budget.
 
 This package defines the `KnowledgeCrammer` base class and standard
 implementations for selecting a subset of documents from a `Knowledge` base
-that will fit within the remaining budget of a `ChatBuilder`.
+that will fit within the remaining budget.
 
 Submodules
 ----------

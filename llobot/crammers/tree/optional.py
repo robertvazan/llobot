@@ -29,17 +29,12 @@ class OptionalTreeCrammer(TreeCrammer):
         from llobot.crammers.tree.full import FullTreeCrammer
 
         builder = env[ContextEnv].builder
-        original_budget = builder.budget
+        mark = builder.mark()
 
-        try:
-            builder.budget = builder.cost + self._budget
-            builder.mark()
-            FullTreeCrammer().cram(env)
+        FullTreeCrammer().cram(env)
 
-            if builder.unused < 0:
-                builder.undo()
-        finally:
-            builder.budget = original_budget
+        if builder.remaining(mark, self._budget) < 0:
+            builder.undo(mark)
 
 __all__ = [
     'OptionalTreeCrammer',

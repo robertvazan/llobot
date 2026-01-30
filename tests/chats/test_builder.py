@@ -46,23 +46,28 @@ def test_build():
     assert isinstance(chat, ChatThread)
     assert chat.messages == (msg1, msg2)
 
-def test_budget():
-    """Tests budget and unused properties."""
+def test_remaining():
+    """Tests remaining calculation."""
     builder = ChatBuilder()
-    assert builder.budget == 0
-    assert builder.unused == 0 # No messages, no budget
+    start_mark = builder.mark()
 
-    builder.budget = 100
-    assert builder.budget == 100
-    assert builder.unused == 100
+    # Budget of 100
+    assert builder.remaining(start_mark, 100) == 100
 
     builder.add(ChatMessage(ChatIntent.PROMPT, "12345")) # cost = 5 + 4 = 9
     assert builder.cost == 9
-    assert builder.unused == 91
+    assert builder.remaining(start_mark, 100) == 91
 
+    mid_mark = builder.mark()
     builder.add(ChatMessage(ChatIntent.RESPONSE, "1234567890")) # cost = 10 + 4 = 14
+
     assert builder.cost == 23
-    assert builder.unused == 77
+    assert builder.remaining(start_mark, 100) == 77
+    assert builder.remaining(mid_mark, 100) == 86 # 100 - 14
+
+    # Test negative mark validation
+    with pytest.raises(ValueError):
+        builder.remaining(-1, 100)
 
 def test_mark_and_undo():
     """Tests mark and undo functionality."""
@@ -72,22 +77,20 @@ def test_mark_and_undo():
     msg3 = ChatMessage(ChatIntent.PROMPT, "p2")
 
     builder.add(msg1)
-    first_mark = builder.mark() # mark is at 1
-    assert first_mark == 1
+    mark1 = builder.mark() # mark is at 1
+    assert mark1 == 1
 
     builder.add(msg2)
     assert builder.messages == [msg1, msg2]
 
-    builder.undo() # reverts to mark at 1
+    builder.undo(mark1) # reverts to mark at 1
     assert builder.messages == [msg1]
 
-    # Test custom mark with undo(mark)
-    manual_mark = len(builder) # manual_mark is 1
     builder.add(msg2)
     builder.add(msg3)
     assert builder.messages == [msg1, msg2, msg3]
 
-    builder.undo(manual_mark)
+    builder.undo(mark1)
     assert builder.messages == [msg1]
 
     # Undo to beginning
@@ -106,14 +109,14 @@ def test_extension():
     msg3 = ChatMessage(ChatIntent.PROMPT, "p2")
 
     builder.add(msg1)
-    first_mark = builder.mark()
+    mark1 = builder.mark()
 
     builder.add(msg2)
-    extension = builder.extension()
+    extension = builder.extension(mark1)
     assert extension.messages == (msg2,)
 
     builder.add(msg3)
-    extension_all = builder.extension(first_mark)
+    extension_all = builder.extension(mark1)
     assert extension_all.messages == (msg2, msg3)
 
     extension_none = builder.extension(len(builder))

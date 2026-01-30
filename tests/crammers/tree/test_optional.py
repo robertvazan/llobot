@@ -69,13 +69,19 @@ def test_cram_empty(setup_env_fixture):
     crammer.cram(env)
     assert not env[ContextEnv].builder.build()
 
-def test_restores_budget(setup_env_fixture):
-    """Tests that the budget is restored after cramming."""
+def test_respects_budget(setup_env_fixture):
+    """Tests that the budget is respected."""
     crammer = OptionalTreeCrammer(budget=1000)
     env = setup_env_fixture(["file.txt"])
     builder = env[ContextEnv].builder
-    builder.budget = 500
 
+    # Original test was checking if budget on builder is restored.
+    # Now we check if crammer respects its budget.
     crammer.cram(env)
+    assert builder.cost > 0
 
-    assert builder.budget == 500
+    # If budget is too small
+    builder.undo(0)
+    crammer_small = OptionalTreeCrammer(budget=1)
+    crammer_small.cram(env)
+    assert builder.cost == 0

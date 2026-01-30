@@ -10,84 +10,80 @@ class ChatBuilder:
 
     The builder allows for incrementally adding messages or entire threads.
 
-    It supports a budget for content size, and speculative appends via `mark()`
-    and `undo()` methods. Code that relies on budget or mark is responsible for
-    restoring it if it calls other code that might change it.
+    It supports speculative appends via `mark()` and `undo()` methods.
+    Code that uses these methods is responsible for storing the mark.
     """
     _messages: list[ChatMessage]
-    _budget: int
-    _mark: int
 
     def __init__(self):
         """Initializes an empty ChatBuilder."""
         self._messages = []
-        self._budget = 0
-        self._mark = 0
 
     @property
     def messages(self) -> list[ChatMessage]:
         """A copy of the list of messages currently in the builder."""
         return self._messages.copy()
 
-    @property
-    def budget(self) -> int:
+    def remaining(self, mark: int, budget: int) -> int:
         """
-        The total character budget for the chat. Defaults to zero (unlimited).
-        """
-        return self._budget
+        Calculates the remaining budget after accounting for messages added since the mark.
 
-    @budget.setter
-    def budget(self, value: int):
-        self._budget = value
+        This method calculates the cost of all messages added after the specified
+        mark and subtracts it from the provided budget. The result can be negative
+        if the added messages exceed the budget.
 
-    @property
-    def unused(self) -> int:
+        Args:
+            mark: The message count from which to start calculating cost.
+            budget: The total budget available.
+
+        Returns:
+            The remaining budget.
+
+        Raises:
+            ValueError: If mark is negative.
         """
-        The remaining characters in the budget. Can be negative if over budget.
-        """
-        return self._budget - self.cost
+        if mark < 0:
+            raise ValueError("Mark cannot be negative")
+        cost = ChatThread(self._messages[mark:]).cost
+        return budget - cost
 
     def mark(self) -> int:
         """
-        Saves the current state of the builder.
+        Returns the current message count.
 
-        A subsequent call to `undo()` with no arguments will restore the builder
-        to this state.
+        The returned value can be passed to `undo()`, `extension()`, or
+        `remaining()` to reference the current state of the builder.
 
         Returns:
             The index of the marked position.
         """
-        self._mark = len(self._messages)
-        return self._mark
+        return len(self._messages)
 
-    def undo(self, mark: int | None = None):
+    def undo(self, mark: int):
         """
         Restores the builder to a previously marked state.
 
         Args:
-            mark: The message count to revert to. If `None`, reverts to the
-                  last position saved by `mark()`.
+            mark: The message count to revert to.
         """
-        target_len = mark if mark is not None else self._mark
-        if target_len < 0:
+        if mark < 0:
             raise ValueError("Mark cannot be negative")
-        if len(self._messages) > target_len:
-            self._messages = self._messages[:target_len]
+        if len(self._messages) > mark:
+            self._messages = self._messages[:mark]
 
-    def extension(self, mark: int | None = None) -> ChatThread:
+    def extension(self, mark: int) -> ChatThread:
         """
         Returns a ChatThread containing messages added since the mark.
 
         Args:
-            mark: The starting position. If `None`, uses the last position saved by `mark()`.
+            mark: The starting position.
 
         Returns:
             A ChatThread with new messages.
         """
-        start = mark if mark is not None else self._mark
-        if start < 0:
+        if mark < 0:
             raise ValueError("Mark cannot be negative")
-        return ChatThread(self._messages[start:])
+        return ChatThread(self._messages[mark:])
 
     def __str__(self) -> str:
         return str(self._messages)
