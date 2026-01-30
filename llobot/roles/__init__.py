@@ -11,6 +11,8 @@ Submodules
 
 agent
     Base class for roles that manage sessions and commands.
+autonomy
+    Autonomy interface and implementations for agents.
 chatbot
     A simple chatbot role.
 imitator
