@@ -25,6 +25,4 @@ paths
     Path parsing utilities.
 submessages
     Submessage formats for rendering a chat branch into one message.
-indexes
-    Formats for hierarchical knowledge presentation.
 """

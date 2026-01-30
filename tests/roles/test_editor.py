@@ -34,9 +34,11 @@ def test_editor_project_selection(tmp_path: Path):
     context = model.history[0]
 
     # The index should list files
-    assert "- README.md" in context
-    assert "- src/" in context
-    assert "- main.py" in context
+    assert "~/project_a:" in context
+    assert "README.md" in context
+    assert "src/" in context
+    assert "~/project_a/src:" in context
+    assert "main.py" in context
 
 def test_editor_file_retrieval(tmp_path: Path):
     """Tests that Editor retrieves specific files when mentioned."""
