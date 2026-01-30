@@ -3,10 +3,12 @@ Selected autonomy profile.
 """
 from __future__ import annotations
 from pathlib import Path
-from typing import Mapping
+from typing import TYPE_CHECKING, Mapping
 from llobot.environments.persistent import PersistentEnv
-from llobot.roles.autonomy import Autonomy, NoAutonomy
 from llobot.utils.fs import read_text, write_text
+
+if TYPE_CHECKING:
+    from llobot.roles.autonomy import Autonomy
 
 class AutonomyEnv(PersistentEnv):
     """
@@ -19,6 +21,7 @@ class AutonomyEnv(PersistentEnv):
     _selected_autonomy: Autonomy | None
 
     def __init__(self):
+        from llobot.roles.autonomy import NoAutonomy
         self._default = NoAutonomy()
         self._profiles = {}
         self._selected_name = None
