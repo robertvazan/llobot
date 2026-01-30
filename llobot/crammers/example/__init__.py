@@ -3,27 +3,21 @@ Crammers for selecting few-shot examples.
 """
 from __future__ import annotations
 from functools import cache
-from typing import Iterable
-from llobot.chats.thread import ChatThread
-from llobot.chats.builder import ChatBuilder
+from llobot.environments import Environment
 
 class ExampleCrammer:
     """
     Base class for crammers that select few-shot examples.
 
     An example crammer's goal is to select a subset of provided examples
-    that fit within the budget of a `ChatBuilder`.
+    that fit within the budget of the environment's context.
     """
-    def cram(self, builder: ChatBuilder, examples: Iterable[ChatThread]) -> list[ChatThread]:
+    def cram(self, env: Environment) -> None:
         """
-        Selects examples and adds them to the builder.
+        Selects examples from environment memory and adds them to the context.
 
         Args:
-            builder: The chat builder to add examples to.
-            examples: An iterable of candidate examples.
-
-        Returns:
-            A list of the examples that were successfully added to the builder.
+            env: The environment containing context builder and example memory.
         """
         raise NotImplementedError
 

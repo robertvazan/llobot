@@ -1,8 +1,9 @@
 from __future__ import annotations
-from typing import Iterable
-from llobot.chats.thread import ChatThread
 from llobot.chats.builder import ChatBuilder
 from llobot.crammers.example import ExampleCrammer
+from llobot.environments import Environment
+from llobot.environments.context import ContextEnv
+from llobot.environments.memory import MemoryEnv
 from llobot.utils.values import ValueTypeMixin
 
 class GreedyExampleCrammer(ExampleCrammer, ValueTypeMixin):
@@ -24,12 +25,15 @@ class GreedyExampleCrammer(ExampleCrammer, ValueTypeMixin):
         self._depth = depth
         self._fill = fill
 
-    def cram(self, builder: ChatBuilder, examples: Iterable[ChatThread]) -> list[ChatThread]:
+    def cram(self, env: Environment) -> None:
         """
-        Greedily adds recent examples to the builder until the budget is filled.
+        Greedily adds recent examples from memory to the context until the budget is filled.
         """
+        builder = env[ContextEnv].builder
+        examples = env[MemoryEnv].examples.recent(env)
+
         if builder.unused <= 0:
-            return []
+            return
         initial_mark = builder.mark()
         selected_examples = []
         seen_prompts = set()
@@ -68,8 +72,6 @@ class GreedyExampleCrammer(ExampleCrammer, ValueTypeMixin):
             final_builder.add(example)
 
         builder.add(final_builder.build())
-
-        return selected_examples
 
 __all__ = [
     'GreedyExampleCrammer',

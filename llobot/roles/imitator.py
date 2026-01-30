@@ -6,6 +6,7 @@ from llobot.commands.project import handle_project_commands
 from llobot.crammers.example import ExampleCrammer, standard_example_crammer
 from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
+from llobot.environments.memory import MemoryEnv
 from llobot.utils.fs import data_home
 from llobot.utils.zones import Zoning
 from llobot.memories.examples import ExampleMemory
@@ -56,6 +57,7 @@ class Imitator(Agent):
         Args:
             env: The environment to prepare.
         """
+        env[MemoryEnv].configure(self._examples)
         super().handle_setup(env)
         handle_project_commands(env)
 
@@ -67,7 +69,7 @@ class Imitator(Agent):
             env: The environment.
         """
         super().handle_commands(env)
-        handle_approve_commands(env, self._examples)
+        handle_approve_commands(env)
 
     def stuff(self, env: Environment):
         """
@@ -77,10 +79,7 @@ class Imitator(Agent):
             env: The environment to populate.
         """
         super().stuff(env)
-        builder = env[ContextEnv].builder
-        recent_examples = self._examples.recent(env)
-        self._crammer.cram(builder, recent_examples)
-        builder.add(self._reminder_format.render_chat(self._system))
+        self._crammer.cram(env)
 
 __all__ = [
     'Imitator',

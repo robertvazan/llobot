@@ -8,11 +8,11 @@ from llobot.chats.message import ChatMessage
 from llobot.commands import handle_commands
 from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
+from llobot.environments.memory import MemoryEnv
 from llobot.environments.prompt import PromptEnv
 from llobot.formats.mentions import strip_mentions
-from llobot.memories.examples import ExampleMemory
 
-def handle_approve_command(text: str, env: Environment, examples: ExampleMemory) -> bool:
+def handle_approve_command(text: str, env: Environment) -> bool:
     """
     A command to approve a correct prompt–response pair and save it as an example.
 
@@ -41,17 +41,17 @@ def handle_approve_command(text: str, env: Environment, examples: ExampleMemory)
         response_message = prior_responses[-1]
     example = ChatThread([initial_prompt, response_message])
 
-    examples.save(example, env)
+    env[MemoryEnv].examples.save(example, env)
     env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, "✅ Example saved."))
     prompt_env.swallow()
 
     return True
 
-def handle_approve_commands(env: Environment, examples: ExampleMemory):
+def handle_approve_commands(env: Environment):
     """
     Handles `@approve` commands in the environment.
     """
-    handle_commands(env, lambda text, env: handle_approve_command(text, env, examples))
+    handle_commands(env, handle_approve_command)
 
 __all__ = [
     'handle_approve_command',

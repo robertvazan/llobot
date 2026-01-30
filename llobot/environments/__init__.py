@@ -25,6 +25,8 @@ prompt
     Current prompt message.
 persistent
     Base class for persistent environment components.
+memory
+    Example memory.
 """
 from __future__ import annotations
 from pathlib import Path

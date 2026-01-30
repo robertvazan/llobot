@@ -6,6 +6,7 @@ from llobot.chats.thread import ChatThread
 from llobot.commands.approve import handle_approve_command
 from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
+from llobot.environments.memory import MemoryEnv
 from llobot.environments.prompt import PromptEnv
 from llobot.memories.examples import ExampleMemory
 
@@ -13,6 +14,7 @@ def test_approve_command(tmp_path: Path):
     history = standard_chat_history(tmp_path)
     examples = ExampleMemory('test-role', history=history)
     env = Environment()
+    env[MemoryEnv].configure(examples)
 
     # Setup prompt
     prompt_env = env[PromptEnv]
@@ -22,7 +24,7 @@ def test_approve_command(tmp_path: Path):
     ]))
 
     # Handle
-    assert handle_approve_command('approve', env, examples)
+    assert handle_approve_command('approve', env)
     assert env[PromptEnv].swallowed
 
     # Check context
@@ -46,6 +48,7 @@ def test_approve_command_full_chat(tmp_path: Path):
     history = standard_chat_history(tmp_path)
     examples = ExampleMemory('test-role', history=history)
     env = Environment()
+    env[MemoryEnv].configure(examples)
 
     # Setup prompt with intermediate conversation
     prompt_env = env[PromptEnv]
@@ -58,7 +61,7 @@ def test_approve_command_full_chat(tmp_path: Path):
     ]))
 
     # Handle
-    assert handle_approve_command('approve', env, examples)
+    assert handle_approve_command('approve', env)
     assert env[PromptEnv].swallowed
 
     # Check context
@@ -78,6 +81,7 @@ def test_approve_command_empty_stripped_prompt(tmp_path: Path):
     history = standard_chat_history(tmp_path)
     examples = ExampleMemory('test-role', history=history)
     env = Environment()
+    env[MemoryEnv].configure(examples)
 
     # Setup prompt that is empty after stripping
     prompt_env = env[PromptEnv]
@@ -88,7 +92,7 @@ def test_approve_command_empty_stripped_prompt(tmp_path: Path):
     ]))
 
     # Handle
-    assert handle_approve_command('approve', env, examples)
+    assert handle_approve_command('approve', env)
 
     # Check context
     assert env[ContextEnv].populated
