@@ -10,6 +10,7 @@ from llobot.commands.echo import handle_echo_commands
 from llobot.commands.model import handle_model_commands
 from llobot.commands.autonomy import handle_autonomy_commands
 from llobot.commands.unrecognized import handle_unrecognized_commands
+from llobot.crammers.date import DateCrammer, standard_date_crammer
 from llobot.environments import Environment
 from llobot.environments.autonomy import AutonomyEnv
 from llobot.environments.commands import CommandsEnv
@@ -55,6 +56,7 @@ class Agent(Role):
     _tools: tuple[Tool, ...]
     _autonomy: Autonomy
     _autonomy_profiles: Mapping[str, Autonomy]
+    _date_crammer: DateCrammer
 
     def __init__(self, name: str, model: Model, *,
         prompt: str | Prompt = '',
@@ -64,6 +66,7 @@ class Agent(Role):
         autonomy: Autonomy | None = None,
         autonomy_profiles: Mapping[str, Autonomy] | None = None,
         session_history: SessionHistory | Zoning | Path | str = standard_session_history(),
+        date_crammer: DateCrammer = standard_date_crammer(),
         prompt_format: PromptFormat = standard_prompt_format(),
         reminder_format: PromptFormat = ReminderPromptFormat(),
     ):
@@ -79,6 +82,7 @@ class Agent(Role):
             tools: An iterable of tools available to the agent.
             autonomy: The autonomy level of the agent. Defaults to LimitedAutonomy.
             session_history: Session history storage.
+            date_crammer: Crammer for adding date information to context.
             prompt_format: Format for the main system prompt.
             reminder_format: Format for reminder prompts.
         """
@@ -99,6 +103,7 @@ class Agent(Role):
                 'high': LimitedAutonomy(),
             }
         self._session_history = coerce_session_history(session_history)
+        self._date_crammer = date_crammer
         self._prompt_format = prompt_format
         self._reminder_format = reminder_format
 
@@ -190,6 +195,7 @@ class Agent(Role):
         """
         builder = env[ContextEnv].builder
         builder.add(self._prompt_format.render_chat(self._system))
+        self._date_crammer.cram(env)
 
     def remind(self, env: Environment):
         """

@@ -14,6 +14,8 @@ Specific Crammers
 -----------------
 ExampleCrammer
     Selects a set of recent examples that fit within a budget.
+DateCrammer
+    Adds current date to the context.
 TreeCrammer
     Formats file trees, deciding whether to include them based on budget.
 KnowledgeCrammer
