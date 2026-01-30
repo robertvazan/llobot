@@ -1,6 +1,9 @@
 from __future__ import annotations
-from llobot.chats.builder import ChatBuilder
 from llobot.crammers.knowledge import KnowledgeCrammer
+from llobot.environments import Environment
+from llobot.environments.context import ContextEnv
+from llobot.environments.knowledge import KnowledgeEnv
+from llobot.environments.projects import ProjectEnv
 from llobot.formats.knowledge import KnowledgeFormat, standard_knowledge_format
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
@@ -46,12 +49,15 @@ class RankedKnowledgeCrammer(KnowledgeCrammer, ValueTypeMixin):
         self._blacklist = blacklist
         self._knowledge_format = knowledge_format
 
-    def cram(self, builder: ChatBuilder, knowledge: Knowledge) -> KnowledgeIndex:
+    def cram(self, env: Environment) -> None:
         """
         Adds the highest-ranked documents that fit the budget.
         """
+        builder = env[ContextEnv].builder
+        knowledge = env[ProjectEnv].union.read_all()
+
         if builder.unused <= 0:
-            return KnowledgeIndex()
+            return
 
         # Rank and apply blacklist.
         ranking = self._ranker.rank(knowledge) - self._blacklist
@@ -68,7 +74,7 @@ class RankedKnowledgeCrammer(KnowledgeCrammer, ValueTypeMixin):
             selection_paths.append(path)
 
         if not selection_paths:
-            return KnowledgeIndex()
+            return
 
         # Phase 2: Iteratively refine selection to account for formatting overhead.
         while True:
@@ -80,7 +86,8 @@ class RankedKnowledgeCrammer(KnowledgeCrammer, ValueTypeMixin):
             builder.add(formatted)
 
             if builder.unused >= 0:
-                return candidate_knowledge.keys()
+                env[KnowledgeEnv].update(candidate_knowledge)
+                return
 
             overrun = -builder.unused
             builder.undo()
@@ -93,7 +100,7 @@ class RankedKnowledgeCrammer(KnowledgeCrammer, ValueTypeMixin):
                 removed_cost += len(knowledge[removed_path])
 
             if not selection_paths:
-                return KnowledgeIndex()
+                return
 
 __all__ = [
     'RankedKnowledgeCrammer',

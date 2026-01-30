@@ -13,13 +13,13 @@ from llobot.utils.values import ValueTypeMixin
 
 class MockProject(Project, ValueTypeMixin):
     def __init__(self, prefixes: set[str], files: dict[str, str | dict]):
-        self._prefixes = {PurePosixPath(p) for p in prefixes}
+        self._prefixes = frozenset(PurePosixPath(p) for p in prefixes)
         self._files = files
         self._tracked = True
 
     @property
     def prefixes(self) -> set[PurePosixPath]:
-        return self._prefixes
+        return set(self._prefixes)
 
     @property
     def summary(self) -> list[str]:

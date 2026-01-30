@@ -12,27 +12,24 @@ ranked
 """
 from __future__ import annotations
 from functools import cache
-from llobot.chats.builder import ChatBuilder
-from llobot.knowledge import Knowledge
-from llobot.knowledge.indexes import KnowledgeIndex
+from llobot.environments import Environment
 
 class KnowledgeCrammer:
     """
     Base class for crammers that select knowledge documents.
 
-    A knowledge crammer selects a subset of documents from a knowledge base
-    that fit within the remaining budget of a `ChatBuilder`.
+    A knowledge crammer selects a subset of documents from the currently selected
+    project that fit within the remaining budget of the context.
     """
-    def cram(self, builder: ChatBuilder, knowledge: Knowledge) -> KnowledgeIndex:
+    def cram(self, env: Environment) -> None:
         """
-        Selects knowledge documents and adds them to the builder.
+        Selects knowledge documents and adds them to the context.
+
+        It pulls knowledge from `ProjectEnv` and updates `KnowledgeEnv` with
+        the files that were added to the context.
 
         Args:
-            builder: The chat builder to add documents to.
-            knowledge: The knowledge base to select documents from.
-
-        Returns:
-            A `KnowledgeIndex` of the documents that were added.
+            env: The environment containing context, project, and knowledge state.
         """
         raise NotImplementedError
 

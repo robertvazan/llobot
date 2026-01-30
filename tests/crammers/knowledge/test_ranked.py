@@ -1,10 +1,30 @@
 from pathlib import PurePosixPath
-from llobot.chats.builder import ChatBuilder
+from unittest.mock import MagicMock
 from llobot.crammers.knowledge.ranked import RankedKnowledgeCrammer
+from llobot.environments import Environment
+from llobot.environments.context import ContextEnv
+from llobot.environments.knowledge import KnowledgeEnv
+from llobot.environments.projects import ProjectEnv
 from llobot.knowledge import Knowledge
 from llobot.knowledge.ranking import KnowledgeRanking
 from llobot.knowledge.ranking.lexicographical import LexicographicalRanker
 from llobot.knowledge.subsets.empty import EmptySubset
+
+def setup_env(knowledge: Knowledge, budget: int) -> Environment:
+    """Sets up an environment with mocked project and knowledge."""
+    env = Environment()
+
+    # Setup context
+    builder = env[ContextEnv].builder
+    builder.budget = budget
+
+    # Setup project to return provided knowledge
+    mock_project = MagicMock()
+    mock_project.read_all.return_value = knowledge
+    # Inject mock project into ProjectEnv cache
+    env[ProjectEnv].__dict__['union'] = mock_project
+
+    return env
 
 def test_cram_all_fit():
     """Tests cramming when all documents fit."""
@@ -16,14 +36,18 @@ def test_cram_all_fit():
         ranker=LexicographicalRanker(),
         blacklist=EmptySubset()
     )
-    builder = ChatBuilder()
-    builder.budget = 1000
+    env = setup_env(k, 1000)
 
-    added = crammer.cram(builder, k)
-    assert added == k.keys()
-    chat = builder.build()
+    crammer.cram(env)
+
+    # Check ContextEnv
+    chat = env[ContextEnv].build()
     assert any("File: ~/a.txt" in msg.content for msg in chat)
     assert any("File: ~/b.txt" in msg.content for msg in chat)
+
+    # Check KnowledgeEnv
+    assert "a.txt" in env[KnowledgeEnv]
+    assert "b.txt" in env[KnowledgeEnv]
 
 def test_cram_some_fit():
     """Tests cramming when only some documents fit."""
@@ -38,21 +62,21 @@ def test_cram_some_fit():
         ranker=LexicographicalRanker(),
         blacklist=EmptySubset()
     )
-    builder = ChatBuilder()
-    # Budget for roughly two files, but not three.
-    # A formatted file is about len(content) + 50 chars of overhead.
-    # So 3 files would be ~1650. Budget for two is ~1100.
-    builder.budget = 1200
+    # Budget for roughly two files
+    env = setup_env(k, 1200)
 
-    added = crammer.cram(builder, k)
-    assert len(added) == 2
-    assert PurePosixPath("a.txt") in added
-    assert PurePosixPath("b.txt") in added
-    assert PurePosixPath("c.txt") not in added
-    chat = builder.build()
+    crammer.cram(env)
+
+    # Check ContextEnv
+    chat = env[ContextEnv].build()
     assert any("File: ~/a.txt" in msg.content for msg in chat)
     assert any("File: ~/b.txt" in msg.content for msg in chat)
     assert not any("File: ~/c.txt" in msg.content for msg in chat)
+
+    # Check KnowledgeEnv
+    assert "a.txt" in env[KnowledgeEnv]
+    assert "b.txt" in env[KnowledgeEnv]
+    assert "c.txt" not in env[KnowledgeEnv]
 
 def test_cram_refinement():
     """Tests the iterative refinement phase of cramming."""
@@ -65,15 +89,19 @@ def test_cram_refinement():
         ranker=LexicographicalRanker(),
         blacklist=EmptySubset()
     )
-    builder = ChatBuilder()
     # Budget allows raw content, but not with formatting overhead.
-    # Two files raw: 1000. Formatted: ~1100.
-    builder.budget = 1050
+    env = setup_env(k, 1050)
 
-    added = crammer.cram(builder, k)
-    assert len(added) == 1
-    assert PurePosixPath("a.txt") in added
-    assert PurePosixPath("b.txt") not in added
+    crammer.cram(env)
+
+    # Check ContextEnv
+    chat = env[ContextEnv].build()
+    assert any("File: ~/a.txt" in msg.content for msg in chat)
+    assert not any("File: ~/b.txt" in msg.content for msg in chat)
+
+    # Check KnowledgeEnv
+    assert "a.txt" in env[KnowledgeEnv]
+    assert "b.txt" not in env[KnowledgeEnv]
 
 def test_cram_with_blacklist():
     """Tests that blacklisted documents are not included."""
@@ -85,10 +113,15 @@ def test_cram_with_blacklist():
         ranker=LexicographicalRanker(),
         blacklist=KnowledgeRanking([PurePosixPath("a.txt")]) # blacklist a.txt
     )
-    builder = ChatBuilder()
-    builder.budget = 1000
+    env = setup_env(k, 1000)
 
-    added = crammer.cram(builder, k)
-    assert len(added) == 1
-    assert PurePosixPath("b.txt") in added
-    assert PurePosixPath("a.txt") not in added
+    crammer.cram(env)
+
+    # Check ContextEnv
+    chat = env[ContextEnv].build()
+    assert any("File: ~/b.txt" in msg.content for msg in chat)
+    assert not any("File: ~/a.txt" in msg.content for msg in chat)
+
+    # Check KnowledgeEnv
+    assert "b.txt" in env[KnowledgeEnv]
+    assert "a.txt" not in env[KnowledgeEnv]

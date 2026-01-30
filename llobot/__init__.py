@@ -53,8 +53,8 @@ local imports.
 - models
 - projects
 - memories
-- crammers
 - environments
+- crammers
 - tools
 - commands
 - roles
