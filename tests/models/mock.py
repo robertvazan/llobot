@@ -14,12 +14,10 @@ class MockModel(Model, ValueTypeMixin):
     A model that records prompts and returns a canned response.
     """
     _name: str
-    _context_budget: int
     _response: str
     _history: list[ChatThread]
 
     def __init__(self, name: str, *,
-        context_budget: int = 100_000,
         response: str = "Mock response",
     ):
         """
@@ -27,11 +25,9 @@ class MockModel(Model, ValueTypeMixin):
 
         Args:
             name: The name for this model instance.
-            context_budget: The context budget to report.
             response: The response to return from generate().
         """
         self._name = name
-        self._context_budget = context_budget
         self._response = response
         self._history = []
 
@@ -42,10 +38,6 @@ class MockModel(Model, ValueTypeMixin):
     @property
     def identifier(self) -> str:
         return f'mock/{self._name}'
-
-    @property
-    def context_budget(self) -> int:
-        return self._context_budget
 
     @property
     def history(self) -> tuple[ChatThread, ...]:

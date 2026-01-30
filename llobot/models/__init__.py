@@ -47,15 +47,6 @@ class Model:
         """
         raise NotImplementedError
 
-    @property
-    def context_budget(self) -> int:
-        """
-        The number of characters to use for context stuffing.
-
-        This is a cost-benefit decision rather than an inherent model limit.
-        """
-        return 0
-
     def generate(self, prompt: ChatThread) -> ChatStream:
         """
         Generates a response to a prompt.

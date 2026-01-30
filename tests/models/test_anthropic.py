@@ -4,7 +4,7 @@ Tests for Anthropic model integration.
 from __future__ import annotations
 from llobot.models.anthropic import AnthropicModel
 
-def test_value_type():
+def test_value_type_anthropic():
     """
     Tests that AnthropicModel is a value type.
     """

@@ -16,7 +16,6 @@ class GeminiModel(Model, ValueTypeMixin):
     _name: str
     _model: str
     _client: genai.Client
-    _context_budget: int
     _thinking: int | None
     _binarization_format: BinarizationFormat
 
@@ -24,7 +23,6 @@ class GeminiModel(Model, ValueTypeMixin):
         model: str = 'gemini-2.5-pro',
         client: genai.Client | None = None,
         auth: str | None = None,
-        context_budget: int = 100_000,
         thinking: int | None = None,
         binarization_format: BinarizationFormat | None = None,
     ):
@@ -37,7 +35,6 @@ class GeminiModel(Model, ValueTypeMixin):
             client: An existing `genai.Client` instance. If not provided, a new one is created.
             auth: Your Google API key. If not provided, the `GOOGLE_API_KEY` environment
                   variable is used.
-            context_budget: The character budget for context stuffing.
             thinking: The budget in tokens to allocate for "thinking" (prompt construction).
             binarization_format: Format to use for prompt binarization. Defaults to standard.
         """
@@ -50,7 +47,6 @@ class GeminiModel(Model, ValueTypeMixin):
         else:
             # API key is taken from GOOGLE_API_KEY environment variable.
             self._client = genai.Client()
-        self._context_budget = context_budget
         self._thinking = thinking
         self._binarization_format = binarization_format or standard_binarization_format()
 
@@ -64,10 +60,6 @@ class GeminiModel(Model, ValueTypeMixin):
     @property
     def identifier(self) -> str:
         return f'google/{self._model}'
-
-    @property
-    def context_budget(self) -> int:
-        return self._context_budget
 
     def generate(self, prompt: ChatThread) -> ChatStream:
         def _stream() -> ChatStream:

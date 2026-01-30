@@ -8,15 +8,12 @@ from llobot.environments.projects import ProjectEnv
 from llobot.knowledge import Knowledge
 from llobot.knowledge.ranking import KnowledgeRanking
 from llobot.knowledge.ranking.lexicographical import LexicographicalRanker
+from llobot.knowledge.subsets import coerce_subset
 from llobot.knowledge.subsets.empty import EmptySubset
 
-def setup_env(knowledge: Knowledge, budget: int) -> Environment:
+def setup_env(knowledge: Knowledge) -> Environment:
     """Sets up an environment with mocked project and knowledge."""
     env = Environment()
-
-    # Setup context
-    builder = env[ContextEnv].builder
-    builder.budget = budget
 
     # Setup project to return provided knowledge
     mock_project = MagicMock()
@@ -34,9 +31,10 @@ def test_cram_all_fit():
     })
     crammer = RankedKnowledgeCrammer(
         ranker=LexicographicalRanker(),
-        blacklist=EmptySubset()
+        blacklist=EmptySubset(),
+        budget=1000
     )
-    env = setup_env(k, 1000)
+    env = setup_env(k)
 
     crammer.cram(env)
 
@@ -60,10 +58,10 @@ def test_cram_some_fit():
     # Lexicographical ranker will order them a, b, c
     crammer = RankedKnowledgeCrammer(
         ranker=LexicographicalRanker(),
-        blacklist=EmptySubset()
+        blacklist=EmptySubset(),
+        budget=1200
     )
-    # Budget for roughly two files
-    env = setup_env(k, 1200)
+    env = setup_env(k)
 
     crammer.cram(env)
 
@@ -87,10 +85,10 @@ def test_cram_refinement():
     # Lexicographical ranker will order them a, b
     crammer = RankedKnowledgeCrammer(
         ranker=LexicographicalRanker(),
-        blacklist=EmptySubset()
+        blacklist=EmptySubset(),
+        budget=1050
     )
-    # Budget allows raw content, but not with formatting overhead.
-    env = setup_env(k, 1050)
+    env = setup_env(k)
 
     crammer.cram(env)
 
@@ -111,9 +109,10 @@ def test_cram_with_blacklist():
     })
     crammer = RankedKnowledgeCrammer(
         ranker=LexicographicalRanker(),
-        blacklist=KnowledgeRanking([PurePosixPath("a.txt")]) # blacklist a.txt
+        blacklist=coerce_subset(PurePosixPath("a.txt")), # blacklist a.txt
+        budget=1000
     )
-    env = setup_env(k, 1000)
+    env = setup_env(k)
 
     crammer.cram(env)
 

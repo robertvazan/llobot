@@ -179,17 +179,16 @@ class Agent(Role):
 
     def stuff(self, env: Environment):
         """
-        Populates the context with the system prompt and sets the budget.
+        Populates the context with the system prompt.
 
         Subclasses should override this to add more content like knowledge
         documents or few-shot examples, but they should call `super().stuff(env)`
-        to ensure the budget is set and the base system prompt is added.
+        to ensure the base system prompt is added.
 
         Args:
             env: The environment to populate.
         """
         builder = env[ContextEnv].builder
-        builder.budget = env[ModelEnv].get().context_budget
         builder.add(self._prompt_format.render_chat(self._system))
 
     def remind(self, env: Environment):

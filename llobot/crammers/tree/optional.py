@@ -15,21 +15,26 @@ class OptionalTreeCrammer(TreeCrammer, ValueTypeMixin):
     to the builder. Otherwise, nothing is added.
     """
     _index_format: IndexFormat
+    _budget: int
 
-    def __init__(self, *, index_format: IndexFormat = standard_index_format()):
+    def __init__(self, *, index_format: IndexFormat = standard_index_format(), budget: int = 50_000):
         """
         Creates a new optional tree crammer.
 
         Args:
             index_format: Formatter to use for rendering the tree.
+            budget: The character budget for context stuffing.
         """
         self._index_format = index_format
+        self._budget = budget
 
     def cram(self, env: Environment) -> None:
         """
         Adds the full project tree to the builder if it fits.
         """
         builder = env[ContextEnv].builder
+        builder.budget = builder.cost + self._budget
+
         knowledge = env[ProjectEnv].union.read_all()
 
         if not knowledge:

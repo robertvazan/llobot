@@ -15,7 +15,6 @@ class AnthropicModel(Model, ValueTypeMixin):
     _name: str
     _model: str
     _client: Anthropic
-    _context_budget: int
     _max_tokens: int
     _cached: bool
     _thinking: int | None
@@ -25,7 +24,6 @@ class AnthropicModel(Model, ValueTypeMixin):
         model: str = 'claude-sonnet-4-0',
         client: Anthropic | None = None,
         auth: str | None = None,
-        context_budget: int = 100_000,
         max_tokens: int = 8_000,
         # No caching by default. It costs extra and not everyone takes advantage of it.
         cached: bool = False,
@@ -41,7 +39,6 @@ class AnthropicModel(Model, ValueTypeMixin):
             client: An existing `Anthropic` client instance. If not provided, a new one is created.
             auth: Your Anthropic API key. If not provided, the `ANTHROPIC_API_KEY` environment
                   variable is used.
-            context_budget: The character budget for context stuffing.
             max_tokens: The maximum number of tokens to generate.
             cached: Whether to use Anthropic's caching feature.
             thinking: The budget in tokens to allocate for "thinking" (prompt construction).
@@ -56,7 +53,6 @@ class AnthropicModel(Model, ValueTypeMixin):
         else:
             # API key is taken from ANTHROPIC_API_KEY environment variable.
             self._client = Anthropic()
-        self._context_budget = context_budget
         self._max_tokens = max_tokens
         self._cached = cached
         self._thinking = thinking
@@ -72,10 +68,6 @@ class AnthropicModel(Model, ValueTypeMixin):
     @property
     def identifier(self) -> str:
         return f'anthropic/{self._model}'
-
-    @property
-    def context_budget(self) -> int:
-        return self._context_budget
 
     def generate(self, prompt: ChatThread) -> ChatStream:
         def _stream() -> ChatStream:

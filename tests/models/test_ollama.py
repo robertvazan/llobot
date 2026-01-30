@@ -5,7 +5,7 @@ from __future__ import annotations
 from llobot.models.ollama import OllamaModel
 from llobot.models.ollama.endpoints import localhost_ollama_endpoint
 
-def test_value_type():
+def test_value_type_ollama():
     """
     Tests that OllamaModel is a value type.
     """

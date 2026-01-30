@@ -18,14 +18,12 @@ class OllamaModel(Model, ValueTypeMixin):
     _model: str
     _endpoint: str
     _num_ctx: int
-    _context_budget: int
     _binarization_format: BinarizationFormat
 
     def __init__(self, name: str, *,
         model: str,
         num_ctx: int,
         endpoint: str | None = None,
-        context_budget: int | None = None,
         binarization_format: BinarizationFormat | None = None,
     ):
         """
@@ -39,16 +37,12 @@ class OllamaModel(Model, ValueTypeMixin):
             model: The model ID to use with Ollama (e.g., 'qwen2:7b').
             num_ctx: The context window size for the model.
             endpoint: The URL of the Ollama API endpoint. Defaults to localhost.
-            context_budget: The character budget for context stuffing. Defaults
-                            to `2 * num_ctx`, with a cap of 100,000.
             binarization_format: Format to use for prompt binarization. Defaults to standard.
         """
         self._name = name
         self._model = model
         self._endpoint = endpoint or localhost_ollama_endpoint()
         self._num_ctx = num_ctx
-        # Default context budget to half the num_ctx, assuming about 4 characters per token.
-        self._context_budget = context_budget or min(100_000, 2 * num_ctx)
         self._binarization_format = binarization_format or standard_binarization_format()
 
     @property
@@ -58,10 +52,6 @@ class OllamaModel(Model, ValueTypeMixin):
     @property
     def identifier(self) -> str:
         return f'ollama/{self._model}'
-
-    @property
-    def context_budget(self) -> int:
-        return self._context_budget
 
     def generate(self, prompt: ChatThread) -> ChatStream:
         def _stream() -> ChatStream:

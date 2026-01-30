@@ -11,7 +11,8 @@ class ChatBuilder:
     The builder allows for incrementally adding messages or entire threads.
 
     It supports a budget for content size, and speculative appends via `mark()`
-    and `undo()` methods.
+    and `undo()` methods. Code that relies on budget or mark is responsible for
+    restoring it if it calls other code that might change it.
     """
     _messages: list[ChatMessage]
     _budget: int

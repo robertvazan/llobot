@@ -27,9 +27,9 @@ class Crammer(ValueTypeMixin):
     """
     Base interface for components that stuff information into the context.
 
-    Crammers are responsible for adding content to the `ContextEnv` within the
-    provided `Environment`. They should respect the context budget tracked by
-    the environment's `ChatBuilder`.
+    Crammers are responsible for adding content to the `ContextEnv` within the provided
+    `Environment`. They manage their own budget and use the environment's `ChatBuilder`
+    to track usage and enforce limits on their own output.
     """
     def cram(self, env: Environment) -> None:
         """

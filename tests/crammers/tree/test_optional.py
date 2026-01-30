@@ -24,9 +24,8 @@ class MockProjectLibrary(ProjectLibrary):
     def lookup(self, key: str) -> list[Project]:
         return [self._project]
 
-def setup_env(knowledge: Knowledge, budget: int) -> Environment:
+def setup_env(knowledge: Knowledge) -> Environment:
     env = Environment()
-    env[ContextEnv].builder.budget = budget
 
     # Configure ProjectEnv with a mock library and add a project
     project = MockProject(knowledge)
@@ -38,27 +37,27 @@ def setup_env(knowledge: Knowledge, budget: int) -> Environment:
 
 def test_cram_fits():
     """Tests that the tree is added when it fits the budget."""
-    crammer = OptionalTreeCrammer(index_format=MockIndexFormat())
+    crammer = OptionalTreeCrammer(index_format=MockIndexFormat(), budget=1000)
     knowledge = Knowledge({PurePosixPath("file.txt"): "content"})
-    env = setup_env(knowledge, 1000)
+    env = setup_env(knowledge)
 
     crammer.cram(env)
     assert "File tree" in env[ContextEnv].builder.build()
 
 def test_cram_does_not_fit():
     """Tests that the tree is not added when it exceeds the budget."""
-    crammer = OptionalTreeCrammer(index_format=MockIndexFormat())
+    crammer = OptionalTreeCrammer(index_format=MockIndexFormat(), budget=10)
     knowledge = Knowledge({PurePosixPath("file.txt"): "content"})
-    env = setup_env(knowledge, 10) # Too small
+    env = setup_env(knowledge)
 
     crammer.cram(env)
     assert not env[ContextEnv].builder.build()
 
 def test_cram_empty_knowledge():
     """Tests that nothing is added for empty knowledge."""
-    crammer = OptionalTreeCrammer()
+    crammer = OptionalTreeCrammer(budget=1000)
     knowledge = Knowledge()
-    env = setup_env(knowledge, 1000)
+    env = setup_env(knowledge)
 
     crammer.cram(env)
     assert not env[ContextEnv].builder.build()

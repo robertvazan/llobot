@@ -30,11 +30,13 @@ class RankedKnowledgeCrammer(KnowledgeCrammer, ValueTypeMixin):
     _ranker: KnowledgeRanker
     _blacklist: KnowledgeSubset
     _knowledge_format: KnowledgeFormat
+    _budget: int
 
     def __init__(self, *,
         ranker: KnowledgeRanker | None = None,
         blacklist: KnowledgeSubset = blacklist_subset(),
         knowledge_format: KnowledgeFormat = standard_knowledge_format(),
+        budget: int = 50_000,
     ):
         """
         Creates a new ranked knowledge crammer.
@@ -44,63 +46,71 @@ class RankedKnowledgeCrammer(KnowledgeCrammer, ValueTypeMixin):
                     `OverviewsFirstRanker` over `DescendingRanker`.
             blacklist: A subset of documents to exclude from the final context.
             knowledge_format: The format for rendering knowledge.
+            budget: The character budget for context stuffing.
         """
         self._ranker = ranker if ranker is not None else _default_ranker()
         self._blacklist = blacklist
         self._knowledge_format = knowledge_format
+        self._budget = budget
 
     def cram(self, env: Environment) -> None:
         """
         Adds the highest-ranked documents that fit the budget.
         """
         builder = env[ContextEnv].builder
-        knowledge = env[ProjectEnv].union.read_all()
+        original_budget = builder.budget
+        builder.budget = builder.cost + self._budget
 
-        if builder.unused <= 0:
-            return
+        try:
+            knowledge = env[ProjectEnv].union.read_all()
 
-        # Rank and apply blacklist.
-        ranking = self._ranker.rank(knowledge) - self._blacklist
-
-        # Phase 1: Initial selection based on raw content size.
-        # This is a rough first pass that ignores formatting overhead.
-        selection_paths = []
-        cost = 0
-        for path in ranking:
-            doc_cost = len(knowledge[path])
-            if cost + doc_cost > builder.unused:
-                break
-            cost += doc_cost
-            selection_paths.append(path)
-
-        if not selection_paths:
-            return
-
-        # Phase 2: Iteratively refine selection to account for formatting overhead.
-        while True:
-            selection_ranking = KnowledgeRanking(selection_paths)
-            candidate_knowledge = knowledge & selection_ranking
-
-            builder.mark()
-            formatted = self._knowledge_format.render_chat(candidate_knowledge, selection_ranking)
-            builder.add(formatted)
-
-            if builder.unused >= 0:
-                env[KnowledgeEnv].update(candidate_knowledge)
+            if builder.unused <= 0:
                 return
 
-            overrun = -builder.unused
-            builder.undo()
+            # Rank and apply blacklist.
+            ranking = self._ranker.rank(knowledge) - self._blacklist
 
-            # Remove documents from the end of the selection until we've removed
-            # enough content to likely cover the overrun.
-            removed_cost = 0
-            while removed_cost < overrun and selection_paths:
-                removed_path = selection_paths.pop()
-                removed_cost += len(knowledge[removed_path])
+            # Phase 1: Initial selection based on raw content size.
+            # This is a rough first pass that ignores formatting overhead.
+            selection_paths = []
+            cost = 0
+            for path in ranking:
+                doc_cost = len(knowledge[path])
+                if cost + doc_cost > builder.unused:
+                    break
+                cost += doc_cost
+                selection_paths.append(path)
 
             if not selection_paths:
                 return
+
+            # Phase 2: Iteratively refine selection to account for formatting overhead.
+            while True:
+                selection_ranking = KnowledgeRanking(selection_paths)
+                candidate_knowledge = knowledge & selection_ranking
+
+                builder.mark()
+                formatted = self._knowledge_format.render_chat(candidate_knowledge, selection_ranking)
+                builder.add(formatted)
+
+                if builder.unused >= 0:
+                    env[KnowledgeEnv].update(candidate_knowledge)
+                    return
+
+                overrun = -builder.unused
+                builder.undo()
+
+                # Remove documents from the end of the selection until we've removed
+                # enough content to likely cover the overrun.
+                removed_cost = 0
+                while removed_cost < overrun and selection_paths:
+                    removed_path = selection_paths.pop()
+                    removed_cost += len(knowledge[removed_path])
+
+                if not selection_paths:
+                    return
+        finally:
+            builder.budget = original_budget
 
 __all__ = [
     'RankedKnowledgeCrammer',

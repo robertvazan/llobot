@@ -34,14 +34,12 @@ class OpenAIModel(Model, ValueTypeMixin):
     _name: str
     _model: str
     _auth: str
-    _context_budget: int
     _reasoning_effort: str
     _binarization_format: BinarizationFormat
 
     def __init__(self, name: str, *,
         auth: str,
         model: str = 'gpt-5',
-        context_budget: int = 100_000,
         reasoning_effort: str = 'medium',
         binarization_format: BinarizationFormat | None = None,
     ):
@@ -52,14 +50,12 @@ class OpenAIModel(Model, ValueTypeMixin):
             name: The name for this model instance in llobot.
             auth: The API key for OpenAI.
             model: The model ID to use with the API. Defaults to 'gpt-5'.
-            context_budget: The character budget for context stuffing.
             reasoning_effort: Reasoning effort for the model. Defaults to 'medium'.
             binarization_format: Format to use for prompt binarization. Defaults to standard.
         """
         self._name = name
         self._model = model
         self._auth = auth
-        self._context_budget = context_budget
         self._reasoning_effort = reasoning_effort
         self._binarization_format = binarization_format or standard_binarization_format()
 
@@ -73,10 +69,6 @@ class OpenAIModel(Model, ValueTypeMixin):
     @property
     def identifier(self) -> str:
         return f'openai/{self._model}'
-
-    @property
-    def context_budget(self) -> int:
-        return self._context_budget
 
     def generate(self, prompt: ChatThread) -> ChatStream:
         def _stream() -> ChatStream:

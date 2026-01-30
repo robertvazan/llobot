@@ -4,7 +4,7 @@ Tests for Gemini model integration.
 from __future__ import annotations
 from llobot.models.gemini import GeminiModel
 
-def test_value_type():
+def test_value_type_gemini():
     """
     Tests that GeminiModel is a value type.
     """

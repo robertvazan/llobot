@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from llobot.models.openai import OpenAIModel
 
-def test_value_type():
+def test_value_type_openai():
     """
     Tests that OpenAIModel is a value type.
     """
