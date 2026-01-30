@@ -132,7 +132,9 @@ Llobot recognizes several commands in the form of `@mentions`. These can be plac
 - **`@<pattern>`**: Adds files matching a glob pattern. Example: `@tests/*.py`.
 - **`@autonomy:<profile>`**: Switches to the specified autonomy profile. Example: `@autonomy:step`.
 - **`@approve`**: Approves the previous response as a correct example and saves prompt-response pair to example memory for roles that support it. If any content is provided with the command, it is used instead of the last response.
-- **`@run`**: Executes tool calls proposed by the model in the last response.
+- **`@run`**: Executes tool calls proposed by the model in the last response. This is used when autonomy is disabled.
+
+Agents have limited autonomy by default. They will execute tool calls automatically until they reach a limit on time, turns, or context size.
 
 Mentions can be unquoted as in `@lib.rs` or quoted as in `` @`src/**/*.rs` ``. Quoted mentions are useful when including special symbols in the mention.
 

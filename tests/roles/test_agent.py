@@ -10,7 +10,7 @@ from llobot.roles.agent import Agent
 from llobot.tools.write import WriteTool
 from llobot.environments.prompt import _hash_thread
 from llobot.chats.markdown import save_chat_to_markdown
-from llobot.roles.autonomy import Autonomy, StepAutonomy, NoAutonomy
+from llobot.roles.autonomy import Autonomy, StepAutonomy, NoAutonomy, LimitedAutonomy
 
 def test_agent_first_turn(tmp_path: Path):
     """Tests that Agent creates a new session and includes system prompt on first turn."""
@@ -406,3 +406,9 @@ def test_agent_unrecognized_command_error(tmp_path: Path):
     # Verify that the prompt was swallowed (no response from model)
     response_msg = next((m for m in response_thread if m.intent == ChatIntent.RESPONSE), None)
     assert response_msg is None
+
+def test_agent_default_autonomy(tmp_path: Path):
+    """Tests that Agent defaults to LimitedAutonomy."""
+    model = MockModel('echo')
+    agent = Agent('agent', model, session_history=tmp_path)
+    assert isinstance(agent._autonomy, LimitedAutonomy)

@@ -77,7 +77,7 @@ class Agent(Role):
             projects: A project library or a precursor for one.
             models: A model library.
             tools: An iterable of tools available to the agent.
-            autonomy: The autonomy level of the agent.
+            autonomy: The autonomy level of the agent. Defaults to LimitedAutonomy.
             session_history: Session history storage.
             prompt_format: Format for the main system prompt.
             reminder_format: Format for reminder prompts.
@@ -88,7 +88,7 @@ class Agent(Role):
         self._project_library = projects or EmptyProjectLibrary()
         self._model_library = models or EmptyModelLibrary()
         self._tools = tuple(tools)
-        self._autonomy = autonomy or NoAutonomy()
+        self._autonomy = autonomy or LimitedAutonomy()
         if autonomy_profiles is not None:
             self._autonomy_profiles = autonomy_profiles
         else:
