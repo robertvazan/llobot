@@ -3,6 +3,7 @@ Selected autonomy profile.
 """
 from __future__ import annotations
 from pathlib import Path
+from typing import Mapping
 from llobot.environments.persistent import PersistentEnv
 from llobot.roles.autonomy import Autonomy, NoAutonomy
 from llobot.utils.fs import read_text, write_text
@@ -13,7 +14,7 @@ class AutonomyEnv(PersistentEnv):
     It can be persisted by saving the name of the selected profile.
     """
     _default: Autonomy
-    _profiles: dict[str, Autonomy]
+    _profiles: Mapping[str, Autonomy]
     _selected_name: str | None
     _selected_autonomy: Autonomy | None
 
@@ -23,7 +24,7 @@ class AutonomyEnv(PersistentEnv):
         self._selected_name = None
         self._selected_autonomy = None
 
-    def configure(self, default: Autonomy, profiles: dict[str, Autonomy]):
+    def configure(self, default: Autonomy, profiles: Mapping[str, Autonomy]):
         """
         Configures the default autonomy and available profiles.
 

@@ -2,20 +2,20 @@ from llobot.commands.autonomy import handle_autonomy_commands
 from llobot.environments import Environment
 from llobot.environments.commands import CommandsEnv
 from llobot.environments.autonomy import AutonomyEnv
-from llobot.roles.autonomy import NoAutonomy, HopAutonomy
+from llobot.roles.autonomy import Autonomy, NoAutonomy, StepAutonomy
 
 default_autonomy = NoAutonomy()
-hop_autonomy = HopAutonomy()
-profiles = {'hop': hop_autonomy}
+step_autonomy = StepAutonomy()
+profiles = {'step': step_autonomy}
 
 def test_handle_autonomy_command():
     env = Environment()
     env[AutonomyEnv].configure(default_autonomy, profiles)
-    env[CommandsEnv].add('autonomy:hop')
+    env[CommandsEnv].add('autonomy:step')
 
     handle_autonomy_commands(env)
 
-    assert env[AutonomyEnv].get() == hop_autonomy
+    assert env[AutonomyEnv].get() == step_autonomy
     assert not env[CommandsEnv].get()
 
 def test_handle_autonomy_command_not_found():

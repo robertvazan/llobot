@@ -5,7 +5,7 @@ from llobot.chats.message import ChatMessage
 from llobot.chats.stream import record_stream
 from llobot.chats.thread import ChatThread
 from llobot.roles.agent import Agent
-from llobot.roles.autonomy import HopAutonomy
+from llobot.roles.autonomy import StepAutonomy
 from llobot.tools.write import WriteTool
 from llobot.projects.directory import DirectoryProject
 from llobot.projects.library.predefined import PredefinedProjectLibrary
@@ -18,7 +18,7 @@ class ProjectAwareAgent(Agent):
         handle_project_commands(env)
 
 def test_agent_autorun(tmp_path: Path):
-    """Tests that Agent with HopAutonomy automatically executes tool calls."""
+    """Tests that Agent with StepAutonomy automatically executes tool calls."""
     # Setup project
     project = DirectoryProject(tmp_path / 'project', prefix="project", mutable=True)
     library = PredefinedProjectLibrary({'project': project})
@@ -47,7 +47,7 @@ def test_agent_autorun(tmp_path: Path):
         model,
         tools=[WriteTool()],
         projects=library,
-        autonomy=HopAutonomy(),
+        autonomy=StepAutonomy(),
         session_history=tmp_path / 'sessions'
     )
 
@@ -82,7 +82,7 @@ def test_agent_autorun_no_tools(tmp_path: Path):
         'agent',
         model,
         tools=[WriteTool()], # Tools are enabled
-        autonomy=HopAutonomy(),
+        autonomy=StepAutonomy(),
         session_history=tmp_path / 'sessions'
     )
 

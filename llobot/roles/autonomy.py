@@ -23,9 +23,9 @@ class NoAutonomy(Autonomy):
     def autorun(self) -> bool:
         return False
 
-class HopAutonomy(Autonomy):
+class StepAutonomy(Autonomy):
     """
-    Agent has limited autonomy to execute one hop of tool calls.
+    Agent has limited autonomy to execute all tool calls within one response.
     """
     @property
     def autorun(self) -> bool:
@@ -34,5 +34,5 @@ class HopAutonomy(Autonomy):
 __all__ = [
     'Autonomy',
     'NoAutonomy',
-    'HopAutonomy',
+    'StepAutonomy',
 ]

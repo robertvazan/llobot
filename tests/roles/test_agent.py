@@ -10,7 +10,7 @@ from llobot.roles.agent import Agent
 from llobot.tools.write import WriteTool
 from llobot.environments.prompt import _hash_thread
 from llobot.chats.markdown import save_chat_to_markdown
-from llobot.roles.autonomy import HopAutonomy, NoAutonomy
+from llobot.roles.autonomy import Autonomy, StepAutonomy, NoAutonomy
 
 def test_agent_first_turn(tmp_path: Path):
     """Tests that Agent creates a new session and includes system prompt on first turn."""
@@ -207,8 +207,8 @@ def test_agent_autorun(tmp_path: Path):
     # Let's subclass MockModel to return specific responses.
 
     class PresetModel(MockModel):
-        def generate(self, thread):
-            self._history.append(thread)
+        def generate(self, prompt):
+            self._history.append(prompt)
             yield ChatIntent.RESPONSE
             yield tool_call_1
             # Simulate a second response message
@@ -223,14 +223,14 @@ def test_agent_autorun(tmp_path: Path):
             from llobot.commands.project import handle_project_commands
             handle_project_commands(env)
 
-    # Create agent with HopAutonomy
+    # Create agent with StepAutonomy
     agent = ProjectAwareAgent(
         'agent',
         model,
         tools=[WriteTool()],
         session_history=tmp_path / 'sessions',
         projects=library,
-        autonomy=HopAutonomy()
+        autonomy=StepAutonomy()
     )
 
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "@project Do work")])
@@ -258,7 +258,8 @@ def test_agent_autonomy_command_persistence(tmp_path: Path):
     """Tests that @autonomy command changes autonomy and persists it."""
     model = MockModel('echo')
 
-    hop = HopAutonomy()
+    step = StepAutonomy()
+    profiles = {'step': step}
 
     class AutonomyAwareAgent(Agent):
         def handle_setup(self, env):
@@ -270,11 +271,11 @@ def test_agent_autonomy_command_persistence(tmp_path: Path):
         model,
         session_history=tmp_path,
         autonomy=NoAutonomy(),
-        autonomy_profiles={'hop': hop}
+        autonomy_profiles=profiles
     )
 
-    # Turn 1: Switch to 'hop' autonomy
-    prompt1 = ChatThread([ChatMessage(ChatIntent.PROMPT, "@autonomy:hop")])
+    # Turn 1: Switch to 'step' autonomy
+    prompt1 = ChatThread([ChatMessage(ChatIntent.PROMPT, "@autonomy:step")])
     record_stream(agent.chat(prompt1))
 
     # Turn 2: Verify autonomy persists
@@ -282,7 +283,7 @@ def test_agent_autonomy_command_persistence(tmp_path: Path):
     session_hash = _hash_thread(prompt1)
     autonomy_file = tmp_path / session_hash / 'autonomy.txt'
     assert autonomy_file.exists()
-    assert autonomy_file.read_text().strip() == 'hop'
+    assert autonomy_file.read_text().strip() == 'step'
 
     # Also verify by running a new turn and checking if autorun is enabled in environment?
     # Hard to check internal state directly without subclassing or mocking.

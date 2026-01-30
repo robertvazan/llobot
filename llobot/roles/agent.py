@@ -1,6 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Mapping
 from llobot.chats.thread import ChatThread
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
@@ -29,7 +29,7 @@ from llobot.projects.library import ProjectLibrary
 from llobot.projects.library.empty import EmptyProjectLibrary
 from llobot.prompts import Prompt
 from llobot.roles import Role
-from llobot.roles.autonomy import Autonomy, NoAutonomy
+from llobot.roles.autonomy import Autonomy, NoAutonomy, StepAutonomy
 from llobot.tools import Tool
 from llobot.tools.execution import execute_tool_calls
 from llobot.utils.text import quote_code
@@ -54,7 +54,7 @@ class Agent(Role):
     _model_library: ModelLibrary
     _tools: tuple[Tool, ...]
     _autonomy: Autonomy
-    _autonomy_profiles: dict[str, Autonomy]
+    _autonomy_profiles: Mapping[str, Autonomy]
 
     def __init__(self, name: str, model: Model, *,
         prompt: str | Prompt = '',
@@ -62,7 +62,7 @@ class Agent(Role):
         models: ModelLibrary | None = None,
         tools: Iterable[Tool] = (),
         autonomy: Autonomy | None = None,
-        autonomy_profiles: dict[str, Autonomy] | None = None,
+        autonomy_profiles: Mapping[str, Autonomy] | None = None,
         session_history: SessionHistory | Zoning | Path | str = standard_session_history(),
         prompt_format: PromptFormat = standard_prompt_format(),
         reminder_format: PromptFormat = ReminderPromptFormat(),
@@ -89,7 +89,13 @@ class Agent(Role):
         self._model_library = models or EmptyModelLibrary()
         self._tools = tuple(tools)
         self._autonomy = autonomy or NoAutonomy()
-        self._autonomy_profiles = autonomy_profiles or {}
+        if autonomy_profiles is not None:
+            self._autonomy_profiles = autonomy_profiles
+        else:
+            self._autonomy_profiles = {
+                'off': NoAutonomy(),
+                'step': StepAutonomy(),
+            }
         self._session_history = coerce_session_history(session_history)
         self._prompt_format = prompt_format
         self._reminder_format = reminder_format
