@@ -30,10 +30,16 @@ resolver
 """
 from __future__ import annotations
 from pathlib import PurePosixPath
-from typing import Callable, Iterator
+from typing import TYPE_CHECKING, Callable, Iterator
 from llobot.utils.fs import read_document
 from llobot.utils.values import ValueTypeMixin
 from llobot.formats.paths import coerce_path
+
+if TYPE_CHECKING:
+    from llobot.knowledge.indexes import KnowledgeIndex
+    from llobot.knowledge.ranking import KnowledgeRanking
+    from llobot.knowledge.scores import KnowledgeScores
+    from llobot.knowledge.subsets import KnowledgeSubset
 
 class Knowledge(ValueTypeMixin):
     """
@@ -45,19 +51,21 @@ class Knowledge(ValueTypeMixin):
     """
     _documents: dict[PurePosixPath, str]
 
-    def __init__(self, documents: dict[PurePosixPath, str] = {}):
+    def __init__(self, documents: dict[PurePosixPath, str] | None = None):
         """
         Initializes a new Knowledge object.
 
         Args:
             documents: A dictionary of paths and their content.
         """
+        if documents is None:
+            documents = {}
         self._documents = {coerce_path(p): c for p, c in documents.items()}
 
     def __repr__(self) -> str:
         return str(self.keys())
 
-    def keys(self) -> 'KnowledgeIndex':
+    def keys(self) -> KnowledgeIndex:
         """Returns a `KnowledgeIndex` of all paths in the collection."""
         from llobot.knowledge.indexes import KnowledgeIndex
         return KnowledgeIndex(self._documents.keys())
@@ -82,7 +90,7 @@ class Knowledge(ValueTypeMixin):
         """
         return self._documents.get(path, '')
 
-    def __iter__(self) -> Iterator[(PurePosixPath, str)]:
+    def __iter__(self) -> Iterator[tuple[PurePosixPath, str]]:
         return iter(self._documents.items())
 
     def transform(self, operation: Callable[[PurePosixPath, str], str]) -> Knowledge:
@@ -91,7 +99,7 @@ class Knowledge(ValueTypeMixin):
         """
         return Knowledge({path: operation(path, content) for path, content in self})
 
-    def __and__(self, subset: 'KnowledgeSubset' | str | PurePosixPath | 'KnowledgeIndex' | 'KnowledgeRanking' | 'KnowledgeScores') -> Knowledge:
+    def __and__(self, subset: KnowledgeSubset | str | PurePosixPath | KnowledgeIndex | KnowledgeRanking | KnowledgeScores) -> Knowledge:
         """
         Filters the knowledge, keeping only documents in the given subset.
         """
@@ -105,7 +113,7 @@ class Knowledge(ValueTypeMixin):
         """
         return Knowledge(self._documents | addition._documents)
 
-    def __sub__(self, subset: 'KnowledgeSubset' | str | PurePosixPath | 'KnowledgeIndex' | PurePosixPath | 'KnowledgeRanking' | 'KnowledgeScores') -> Knowledge:
+    def __sub__(self, subset: KnowledgeSubset | str | PurePosixPath | KnowledgeIndex | PurePosixPath | KnowledgeRanking | KnowledgeScores) -> Knowledge:
         """
         Filters the knowledge, removing documents in the given subset.
         """

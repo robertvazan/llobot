@@ -32,13 +32,15 @@ class KnowledgeRanking(ValueTypeMixin):
     """
     _paths: tuple[PurePosixPath, ...]
 
-    def __init__(self, paths: Iterable[PurePosixPath | str] = []):
+    def __init__(self, paths: Iterable[PurePosixPath | str] | None = None):
         """
         Initializes a new KnowledgeRanking.
 
         Args:
             paths: An iterable of paths or path strings.
         """
+        if paths is None:
+            paths = []
         self._paths = tuple(coerce_path(path) for path in paths)
 
     def __repr__(self) -> str:
@@ -93,9 +95,6 @@ def coerce_ranking(what: KnowledgeRankingPrecursor | Iterable[PurePosixPath | st
     """
     if isinstance(what, KnowledgeRanking):
         return what
-    # Local import to avoid cycles.
-    from llobot.knowledge import Knowledge
-    from llobot.knowledge.indexes import KnowledgeIndex
     from llobot.knowledge.ranking.trees import preorder_lexicographical_ranking
     if isinstance(what, (KnowledgeIndex, Knowledge)):
         return preorder_lexicographical_ranking(what)
@@ -108,8 +107,6 @@ def standard_ranking(index: KnowledgeRankingPrecursor) -> KnowledgeRanking:
     The standard order is pre-order lexicographical, but with ancestor
     overviews prioritized to appear before the documents they describe.
     """
-    # Local import to avoid cycles.
-    from llobot.knowledge import Knowledge
     from llobot.knowledge.ranking.rankers import standard_ranker
     if isinstance(index, Knowledge):
         return standard_ranker().rank(index)

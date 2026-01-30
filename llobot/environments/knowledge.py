@@ -7,6 +7,7 @@ from pathlib import Path, PurePosixPath
 from llobot.environments.persistent import PersistentEnv
 from llobot.formats.paths import coerce_path
 from llobot.knowledge import Knowledge
+from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.utils.fs import read_text, write_text
 
 class KnowledgeEnv(PersistentEnv):
@@ -57,6 +58,12 @@ class KnowledgeEnv(PersistentEnv):
         Checks if a file is known.
         """
         return coerce_path(path) in self._known
+
+    def keys(self) -> KnowledgeIndex:
+        """
+        Returns a KnowledgeIndex of all known file paths.
+        """
+        return KnowledgeIndex(self._known.keys())
 
     def save(self, directory: Path):
         """

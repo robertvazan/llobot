@@ -9,7 +9,7 @@ from llobot.knowledge.ranking import KnowledgeRanking
 from llobot.knowledge.ranking.overviews import OverviewsFirstRanker
 from llobot.knowledge.ranking.rankers import KnowledgeRanker
 from llobot.knowledge.ranking.sorting import DescendingRanker
-from llobot.knowledge.subsets import KnowledgeSubset
+from llobot.knowledge.subsets import KnowledgeSubset, coerce_subset
 from llobot.knowledge.subsets.standard import blacklist_subset
 from llobot.utils.values import ValueTypeMixin
 
@@ -63,8 +63,9 @@ class RankedKnowledgeCrammer(KnowledgeCrammer, ValueTypeMixin):
         if self._budget <= 0:
             return
 
-        # Rank and apply blacklist.
-        ranking = self._ranker.rank(knowledge) - self._blacklist
+        # Rank and apply blacklist and filter out already loaded files.
+        already_loaded = coerce_subset(env[KnowledgeEnv].keys())
+        ranking = self._ranker.rank(knowledge) - (self._blacklist | already_loaded)
 
         # Phase 1: Initial selection based on raw content size.
         # This is a rough first pass that ignores formatting overhead.

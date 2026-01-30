@@ -124,3 +124,31 @@ def test_cram_with_blacklist():
     # Check KnowledgeEnv
     assert "b.txt" in env[KnowledgeEnv]
     assert "a.txt" not in env[KnowledgeEnv]
+
+def test_cram_skips_existing():
+    """Tests that files already in KnowledgeEnv are skipped."""
+    k = Knowledge({
+        PurePosixPath("a.txt"): "aaa",
+        PurePosixPath("b.txt"): "bbb",
+    })
+    crammer = RankedKnowledgeCrammer(
+        ranker=LexicographicalRanker(),
+        blacklist=EmptySubset(),
+        budget=1000
+    )
+    env = setup_env(k)
+    # Pre-populate KnowledgeEnv
+    env[KnowledgeEnv].add(PurePosixPath("a.txt"), "aaa")
+
+    crammer.cram(env)
+
+    # Check ContextEnv
+    chat = env[ContextEnv].build()
+    # a.txt should NOT be added again
+    assert not any("File: ~/a.txt" in msg.content for msg in chat)
+    # b.txt SHOULD be added
+    assert any("File: ~/b.txt" in msg.content for msg in chat)
+
+    # Check KnowledgeEnv
+    assert "a.txt" in env[KnowledgeEnv]
+    assert "b.txt" in env[KnowledgeEnv]

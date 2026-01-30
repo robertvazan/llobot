@@ -1,9 +1,13 @@
 from __future__ import annotations
 from pathlib import PurePosixPath
-from typing import Iterable, Iterator
+from typing import TYPE_CHECKING, Iterable, Iterator
 from llobot.utils.values import ValueTypeMixin
+from llobot.knowledge import Knowledge
 from llobot.knowledge.subsets import KnowledgeSubset, coerce_subset
 from llobot.formats.paths import coerce_path
+
+if TYPE_CHECKING:
+    from llobot.knowledge.ranking import KnowledgeRanking
 
 class KnowledgeIndex(ValueTypeMixin):
     """
@@ -14,13 +18,15 @@ class KnowledgeIndex(ValueTypeMixin):
     """
     _paths: frozenset[PurePosixPath]
 
-    def __init__(self, paths: Iterable[PurePosixPath | str] = set()):
+    def __init__(self, paths: Iterable[PurePosixPath | str] | None = None):
         """
         Initializes a new `KnowledgeIndex`.
 
         Args:
             paths: An iterable of paths or path strings.
         """
+        if paths is None:
+            paths = []
         self._paths = frozenset(coerce_path(path) for path in paths)
 
     def __repr__(self) -> str:
@@ -38,7 +44,7 @@ class KnowledgeIndex(ValueTypeMixin):
     def __iter__(self) -> Iterator[PurePosixPath]:
         return iter(self._paths)
 
-    def sorted(self) -> 'KnowledgeRanking':
+    def sorted(self) -> KnowledgeRanking:
         """
         Returns a default sorted ranking of the paths in this index.
 
@@ -48,7 +54,7 @@ class KnowledgeIndex(ValueTypeMixin):
         from llobot.knowledge.ranking.trees import preorder_lexicographical_ranking
         return preorder_lexicographical_ranking(self)
 
-    def reversed(self) -> 'KnowledgeRanking':
+    def reversed(self) -> KnowledgeRanking:
         """
         Returns a reversed default sorted ranking of the paths in this index.
         """
@@ -93,7 +99,7 @@ class KnowledgeIndex(ValueTypeMixin):
         subtree = PurePosixPath(subtree)
         return KnowledgeIndex(path.relative_to(subtree) for path in self if path.is_relative_to(subtree))
 
-type KnowledgeIndexPrecursor = KnowledgeIndex | 'Knowledge' | 'KnowledgeRanking'
+type KnowledgeIndexPrecursor = KnowledgeIndex | Knowledge | KnowledgeRanking
 
 def coerce_index(what: KnowledgeIndexPrecursor) -> KnowledgeIndex:
     """
@@ -104,7 +110,6 @@ def coerce_index(what: KnowledgeIndexPrecursor) -> KnowledgeIndex:
     """
     if isinstance(what, KnowledgeIndex):
         return what
-    from llobot.knowledge import Knowledge
     if isinstance(what, Knowledge):
         return what.keys()
     from llobot.knowledge.ranking import KnowledgeRanking
