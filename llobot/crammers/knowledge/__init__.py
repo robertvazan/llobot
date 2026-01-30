@@ -2,8 +2,9 @@
 Crammers for selecting knowledge documents to fit in a context budget.
 
 This package defines the `KnowledgeCrammer` base class and standard
-implementations for selecting a subset of documents from a `Knowledge` base
-that will fit within the remaining budget.
+implementations for selecting a subset of documents from a `Knowledge` base.
+Some implementations select documents that fit within a remaining budget,
+while others may add specific documents regardless of the budget.
 
 Submodules
 ----------
@@ -11,6 +12,8 @@ ranked
     `RankedKnowledgeCrammer` that selects documents from a ranked list.
 full
     `FullKnowledgeCrammer` that adds all documents regardless of budget.
+tree
+    `RootKnowledgeCrammer` that adds overview files directly under project prefixes.
 """
 from __future__ import annotations
 from functools import cache
@@ -41,8 +44,8 @@ def standard_knowledge_crammer() -> KnowledgeCrammer:
     """
     Returns the standard knowledge crammer.
     """
-    from llobot.crammers.knowledge.ranked import RankedKnowledgeCrammer
-    return RankedKnowledgeCrammer()
+    from llobot.crammers.knowledge.tree import RootKnowledgeCrammer
+    return RootKnowledgeCrammer()
 
 __all__ = [
     'KnowledgeCrammer',
