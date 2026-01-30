@@ -5,12 +5,12 @@ from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
 from llobot.chats.stream import record_stream
 from llobot.chats.thread import ChatThread
-from llobot.environments.projects import ProjectEnv
 from tests.models.mock import MockModel
 from llobot.roles.agent import Agent
 from llobot.tools.write import WriteTool
 from llobot.environments.prompt import _hash_thread
 from llobot.chats.markdown import save_chat_to_markdown
+from llobot.roles.autonomy import HopAutonomy
 
 def test_agent_first_turn(tmp_path: Path):
     """Tests that Agent creates a new session and includes system prompt on first turn."""
@@ -173,6 +173,86 @@ def test_agent_run_command(tmp_path: Path):
     assert "✅ All 1 tool calls executed." in summary_msg.content
 
     assert (tmp_path / 'project/test.txt').read_text().strip() == 'content'
+
+def test_agent_autorun(tmp_path: Path):
+    """Tests that Agent executes tool calls automatically when autonomy is enabled."""
+    # Setup project
+    from llobot.projects.directory import DirectoryProject
+    project = DirectoryProject(tmp_path / 'project', prefix="project", mutable=True)
+    from llobot.projects.library.predefined import PredefinedProjectLibrary
+    library = PredefinedProjectLibrary({'project': project})
+
+    # Setup model that returns a tool call
+    tool_call_1 = dedent("""\
+        <details>
+        <summary>Write: ~/project/file1.txt</summary>
+
+        ```
+        content1
+        ```
+
+        </details>""")
+    tool_call_2 = dedent("""\
+        <details>
+        <summary>Write: ~/project/file2.txt</summary>
+
+        ```
+        content2
+        ```
+
+        </details>""")
+    # We want the model to return two messages, both with tool calls.
+    # MockModel 'echo' echoes the prompt. We can simulate response by making the model return preset response?
+    # MockModel doesn't support preset responses directly in 'echo' mode.
+    # Let's subclass MockModel to return specific responses.
+
+    class PresetModel(MockModel):
+        def generate(self, thread):
+            self._history.append(thread)
+            yield ChatIntent.RESPONSE
+            yield tool_call_1
+            # Simulate a second response message
+            yield ChatIntent.RESPONSE
+            yield tool_call_2
+
+    model = PresetModel('preset')
+
+    class ProjectAwareAgent(Agent):
+        def handle_setup(self, env):
+            super().handle_setup(env)
+            from llobot.commands.project import handle_project_commands
+            handle_project_commands(env)
+
+    # Create agent with HopAutonomy
+    agent = ProjectAwareAgent(
+        'agent',
+        model,
+        tools=[WriteTool()],
+        session_history=tmp_path / 'sessions',
+        projects=library,
+        autonomy=HopAutonomy()
+    )
+
+    prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "@project Do work")])
+    stream = agent.chat(prompt)
+    response_thread = record_stream(stream)
+
+    # Verify files were created
+    assert (tmp_path / 'project/file1.txt').read_text().strip() == 'content1'
+    assert (tmp_path / 'project/file2.txt').read_text().strip() == 'content2'
+
+    # Verify status messages
+    # We expect status messages for operations and summaries.
+    status_messages = [m for m in response_thread if m.intent == ChatIntent.STATUS]
+
+    # Check for logs
+    assert any("Written `~/project/file1.txt`" in m.content for m in status_messages)
+    assert any("Written `~/project/file2.txt`" in m.content for m in status_messages)
+
+    # Check for summaries (one for each response message execution)
+    summaries = [m for m in status_messages if "tool calls executed" in m.content]
+    assert len(summaries) == 2
+    assert all("All 1 tool calls executed" in m.content for m in summaries)
 
 def test_project_command_summary(tmp_path: Path):
     """Tests that project selection command adds project summary to the context."""

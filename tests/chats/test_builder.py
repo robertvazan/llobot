@@ -2,7 +2,7 @@ import pytest
 from llobot.chats.thread import ChatThread
 from llobot.chats.builder import ChatBuilder
 from llobot.chats.intent import ChatIntent
-from llobot.chats.message import ChatMessage, MESSAGE_OVERHEAD
+from llobot.chats.message import ChatMessage
 
 def test_add_message():
     """Tests adding individual ChatMessage objects."""
@@ -72,7 +72,9 @@ def test_mark_and_undo():
     msg3 = ChatMessage(ChatIntent.PROMPT, "p2")
 
     builder.add(msg1)
-    builder.mark() # mark is at 1
+    first_mark = builder.mark() # mark is at 1
+    assert first_mark == 1
+
     builder.add(msg2)
     assert builder.messages == [msg1, msg2]
 
@@ -80,17 +82,46 @@ def test_mark_and_undo():
     assert builder.messages == [msg1]
 
     # Test custom mark with undo(mark)
-    mark_pos = len(builder) # mark_pos is 1
+    manual_mark = len(builder) # manual_mark is 1
     builder.add(msg2)
     builder.add(msg3)
     assert builder.messages == [msg1, msg2, msg3]
 
-    builder.undo(mark_pos)
+    builder.undo(manual_mark)
     assert builder.messages == [msg1]
 
     # Undo to beginning
     builder.undo(0)
     assert builder.messages == []
+
+    # Test negative mark validation
+    with pytest.raises(ValueError):
+        builder.undo(-1)
+
+def test_extension():
+    """Tests extension functionality."""
+    builder = ChatBuilder()
+    msg1 = ChatMessage(ChatIntent.PROMPT, "p1")
+    msg2 = ChatMessage(ChatIntent.RESPONSE, "r1")
+    msg3 = ChatMessage(ChatIntent.PROMPT, "p2")
+
+    builder.add(msg1)
+    first_mark = builder.mark()
+
+    builder.add(msg2)
+    extension = builder.extension()
+    assert extension.messages == (msg2,)
+
+    builder.add(msg3)
+    extension_all = builder.extension(first_mark)
+    assert extension_all.messages == (msg2, msg3)
+
+    extension_none = builder.extension(len(builder))
+    assert len(extension_none) == 0
+
+    # Test negative mark validation
+    with pytest.raises(ValueError):
+        builder.extension(-1)
 
 def test_record_simple_text_stream():
     """Tests recording a simple stream of text chunks."""

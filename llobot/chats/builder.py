@@ -8,8 +8,7 @@ class ChatBuilder:
     """
     A mutable builder for constructing ChatThread instances.
 
-    The builder allows for incrementally adding messages or entire threads,
-    and it merges consecutive messages that have the same intent.
+    The builder allows for incrementally adding messages or entire threads.
 
     It supports a budget for content size, and speculative appends via `mark()`
     and `undo()` methods.
@@ -47,14 +46,18 @@ class ChatBuilder:
         """
         return self._budget - self.cost
 
-    def mark(self):
+    def mark(self) -> int:
         """
         Saves the current state of the builder.
 
         A subsequent call to `undo()` with no arguments will restore the builder
         to this state.
+
+        Returns:
+            The index of the marked position.
         """
         self._mark = len(self._messages)
+        return self._mark
 
     def undo(self, mark: int | None = None):
         """
@@ -65,8 +68,25 @@ class ChatBuilder:
                   last position saved by `mark()`.
         """
         target_len = mark if mark is not None else self._mark
+        if target_len < 0:
+            raise ValueError("Mark cannot be negative")
         if len(self._messages) > target_len:
             self._messages = self._messages[:target_len]
+
+    def extension(self, mark: int | None = None) -> ChatThread:
+        """
+        Returns a ChatThread containing messages added since the mark.
+
+        Args:
+            mark: The starting position. If `None`, uses the last position saved by `mark()`.
+
+        Returns:
+            A ChatThread with new messages.
+        """
+        start = mark if mark is not None else self._mark
+        if start < 0:
+            raise ValueError("Mark cannot be negative")
+        return ChatThread(self._messages[start:])
 
     def __str__(self) -> str:
         return str(self._messages)

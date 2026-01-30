@@ -30,7 +30,7 @@ class GreedyExampleCrammer(ExampleCrammer, ValueTypeMixin):
         """
         if builder.unused <= 0:
             return []
-        initial_mark = len(builder)
+        initial_mark = builder.mark()
         selected_examples = []
         seen_prompts = set()
         skipped = 0
