@@ -9,6 +9,8 @@ Submodules
 ----------
 ranked
     `RankedKnowledgeCrammer` that selects documents from a ranked list.
+full
+    `FullKnowledgeCrammer` that adds all documents regardless of budget.
 """
 from __future__ import annotations
 from functools import cache
