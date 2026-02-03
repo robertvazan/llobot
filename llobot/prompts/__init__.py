@@ -6,8 +6,11 @@ from llobot.utils.text import normalize_document, concat_documents
 
 def read_prompt(filename: str, *, package: str | None = None) -> str:
     if package is None:
-        frame = inspect.currentframe().f_back
-        package = frame.f_globals['__name__']
+        current_frame = inspect.currentframe()
+        assert current_frame is not None
+        caller_frame = current_frame.f_back
+        assert caller_frame is not None
+        package = caller_frame.f_globals['__name__']
     content = (resources.files(package) / filename).read_text()
     return normalize_document(content).strip()
 
@@ -143,6 +146,10 @@ def unit_tests_prompt_section() -> PromptSection:
 def review_prompt_section() -> PromptSection:
     return PromptSection(read_prompt('review.md'), coding_prompt_section())
 
+@cache
+def closing_prompt_section() -> PromptSection:
+    return PromptSection(read_prompt('closing.md'))
+
 __all__ = [
     'read_prompt',
     'Prompt',
@@ -156,4 +163,5 @@ __all__ = [
     'documentation_prompt_section',
     'unit_tests_prompt_section',
     'review_prompt_section',
+    'closing_prompt_section',
 ]

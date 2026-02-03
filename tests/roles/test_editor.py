@@ -103,3 +103,4 @@ def test_editor_system_prompt(tmp_path: Path):
     record_stream(editor.chat(prompt))
     context = model.history[0]
     assert "Assistant editor's guidelines" in context
+    assert "How to write closing remarks" in context

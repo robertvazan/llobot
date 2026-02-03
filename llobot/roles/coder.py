@@ -6,6 +6,7 @@ from llobot.prompts import (
     Prompt,
     read_prompt,
     answering_prompt_section,
+    closing_prompt_section,
     coding_prompt_section,
     documentation_prompt_section,
     overviews_prompt_section,
@@ -29,6 +30,7 @@ def coder_system_prompt() -> SystemPrompt:
         documentation_prompt_section(),
         unit_tests_prompt_section(),
         review_prompt_section(),
+        closing_prompt_section(),
     )
 
 class Coder(Editor):

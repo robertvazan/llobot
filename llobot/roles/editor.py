@@ -11,6 +11,7 @@ from llobot.prompts import (
     Prompt,
     SystemPrompt,
     answering_prompt_section,
+    closing_prompt_section,
     overviews_prompt_section,
     read_prompt,
     tools_prompt_section,
@@ -28,6 +29,7 @@ def editor_system_prompt() -> SystemPrompt:
         tools_prompt_section(),
         answering_prompt_section(),
         overviews_prompt_section(),
+        closing_prompt_section(),
     )
 
 class Editor(Agent):
