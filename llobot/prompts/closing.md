@@ -12,5 +12,7 @@ Keep your closing remarks light:
 - The purpose of closing remarks is to be a quicker alternative to full review of your work. Keep closing remarks brief while surfacing important information.
 - Trim down the template. Skip parts that are irrelevant, empty, trivial, or unimportant.
 - Use Markdown formatting. Keep everything brief, structured, and skimmable.
+- Do not give your closing remarks any title. Do not mention "closing remarks".
 - Limit closing remarks to a brief summary when the task is trivial and its impact is obvious.
 - Skip closing remarks entirely when answering a question or performing other read-only task.
+- When responding to a followup request or feedback, produce complete, updated closing remarks and note what has changed.
