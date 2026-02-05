@@ -123,7 +123,7 @@ def markdown_code_block(lang: str, document: str, *, backtick_count: int = 3) ->
     backticks = '`' * backtick_count
     return f'{backticks}{lang}\n{terminate_document(document)}{backticks}'
 
-def markdown_code_details(summary: str, lang: str, document: str, *, backtick_count: int = 3) -> str:
+def markdown_code_details(summary: str, lang: str, document: str, *, header: str = "", backtick_count: int = 3) -> str:
     """
     Wraps a document in HTML details/summary tags with a code block inside.
 
@@ -134,13 +134,15 @@ def markdown_code_details(summary: str, lang: str, document: str, *, backtick_co
         summary: The text to display for the summary tag.
         lang: The language for syntax highlighting in the code block.
         document: The content to be placed in the code block.
+        header: Optional text to display inside the details block before the code block.
         backtick_count: The minimum number of backticks for the code block fence.
 
     Returns:
         An HTML string with the details/summary and code block.
     """
     quoted = markdown_code_block(lang, document, backtick_count=backtick_count)
-    return f'<details>\n<summary>{summary}</summary>\n\n{quoted}\n\n</details>'
+    header_part = f"{header}\n\n" if header else ""
+    return f'<details>\n<summary>{summary}</summary>\n\n{header_part}{quoted}\n\n</details>'
 
 __all__ = [
     'terminate_document',

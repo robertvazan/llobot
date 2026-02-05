@@ -131,19 +131,25 @@ def test_markdown_code_block():
     assert markdown_code_block("python", "print('hello')", backtick_count=4) == "````python\nprint('hello')\n````"
 
 
-def test_markdown_code_details():
+def test_markdown_code_details_basic():
     # Basic details formatting
     expected = "<details>\n<summary>Test Summary</summary>\n\n```python\nprint('hello')\n```\n\n</details>"
     assert markdown_code_details("Test Summary", "python", "print('hello')") == expected
 
+def test_markdown_code_details_special_chars():
     # Complex summary with special characters
     expected = "<details>\n<summary>File: path/to/file.py (new)</summary>\n\n```python\nprint('hello')\n```\n\n</details>"
     assert markdown_code_details("File: path/to/file.py (new)", "python", "print('hello')") == expected
 
+def test_markdown_code_details_backticks():
     # Custom backtick count is passed through to quote()
     expected = "<details>\n<summary>Test Summary</summary>\n\n````python\nprint('hello')\n````\n\n</details>"
     assert markdown_code_details("Test Summary", "python", "print('hello')", backtick_count=4) == expected
 
+def test_markdown_code_details_header():
+    # With header
+    expected = "<details>\n<summary>Test Summary</summary>\n\nHeader text.\n\n```python\nprint('hello')\n```\n\n</details>"
+    assert markdown_code_details("Test Summary", "python", "print('hello')", header="Header text.") == expected
 
 def test_quote_code():
     # Basic quoting

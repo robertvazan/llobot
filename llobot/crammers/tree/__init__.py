@@ -1,5 +1,14 @@
 """
 Crammers for formatting and including file trees.
+
+Submodules
+----------
+balanced
+    `BalancedTreeCrammer` that prioritizes directories based on budget.
+full
+    `FullTreeCrammer` that includes the entire tree.
+optional
+    `OptionalTreeCrammer` that includes the full tree or nothing.
 """
 from __future__ import annotations
 from functools import cache
@@ -28,8 +37,8 @@ def standard_tree_crammer() -> TreeCrammer:
     """
     Returns the standard tree crammer.
     """
-    from llobot.crammers.tree.optional import OptionalTreeCrammer
-    return OptionalTreeCrammer()
+    from llobot.crammers.tree.balanced import BalancedTreeCrammer
+    return BalancedTreeCrammer()
 
 __all__ = [
     'TreeCrammer',
