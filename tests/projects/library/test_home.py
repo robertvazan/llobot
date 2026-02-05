@@ -7,7 +7,6 @@ from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.subsets.parsing import parse_pattern
 from llobot.projects.directory import DirectoryProject
 from llobot.projects.library.home import HomeProjectLibrary
-from llobot.projects.shallow import ShallowProject
 
 
 def test_home_project_library(tmp_path: Path):
@@ -65,9 +64,12 @@ def test_home_project_library_with_parents(tmp_path: Path):
     assert main_project.read_all() == Knowledge({PurePosixPath('p/sub/file2.txt'): '2\n'})
 
     parent_project = found[1]
-    assert isinstance(parent_project, ShallowProject)
+    assert isinstance(parent_project, DirectoryProject)
     assert parent_project.prefixes == {PurePosixPath('p')}
-    assert parent_project.read_all() == Knowledge({PurePosixPath('p/file1.txt'): '1\n'})
+    assert parent_project.read_all() == Knowledge({
+        PurePosixPath('p/file1.txt'): '1\n',
+        PurePosixPath('p/sub/file2.txt'): '2\n',
+    })
 
     # Test with no parents (stops at home)
     found_no_parents = lib.lookup('p')

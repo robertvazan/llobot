@@ -8,7 +8,6 @@ from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.projects import Project
 from llobot.projects.directory import DirectoryProject
 from llobot.projects.library import ProjectLibrary
-from llobot.projects.shallow import ShallowProject
 from llobot.utils.values import ValueTypeMixin
 
 
@@ -53,7 +52,7 @@ class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
             blacklist: A blacklist to pass to created `DirectoryProject` instances.
             mutable: If `True`, created projects allow write operations.
             executable: If `True`, created projects allow script execution.
-            parents: If `True`, the library also returns shallow projects for
+            parents: If `True`, the library also returns projects for
                 ancestor directories of any matched project. Defaults to `True`.
         """
         self._home = Path(home).expanduser().absolute()
@@ -102,8 +101,8 @@ class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
 
         Returns:
             A list containing a `DirectoryProject` for the matched path. If
-            `parents` is `True`, the list will also include `ShallowProject`
-            wrappers for all parent directories (up to the library home).
+            `parents` is `True`, the list will also include `DirectoryProject`
+            instances for all parent directories (up to the library home).
             Returns an empty list if no directory is found.
         """
         try:
@@ -124,7 +123,7 @@ class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
                 parent_dir = (self._home / current).absolute()
                 if not parent_dir.is_dir():
                     break
-                projects.append(ShallowProject(self._project(parent_dir, current)))
+                projects.append(self._project(parent_dir, current))
 
         return projects
 
