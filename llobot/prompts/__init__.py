@@ -123,6 +123,10 @@ def tools_prompt_section() -> PromptSection:
     return PromptSection(read_prompt('tools.md'))
 
 @cache
+def asking_prompt_section() -> PromptSection:
+    return PromptSection(read_prompt('asking.md'))
+
+@cache
 def answering_prompt_section() -> PromptSection:
     return PromptSection(read_prompt('answering.md'))
 
@@ -157,6 +161,7 @@ __all__ = [
     'PromptSection',
     'SystemPrompt',
     'tools_prompt_section',
+    'asking_prompt_section',
     'answering_prompt_section',
     'overviews_prompt_section',
     'coding_prompt_section',

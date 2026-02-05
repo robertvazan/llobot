@@ -5,6 +5,7 @@ from llobot.prompts import (
     SystemPrompt,
     Prompt,
     read_prompt,
+    asking_prompt_section,
     answering_prompt_section,
     closing_prompt_section,
     coding_prompt_section,
@@ -24,6 +25,7 @@ def coder_system_prompt() -> SystemPrompt:
     return SystemPrompt(
         read_prompt('coder.md'),
         tools_prompt_section(),
+        asking_prompt_section(),
         answering_prompt_section(),
         coding_prompt_section(),
         overviews_prompt_section(),

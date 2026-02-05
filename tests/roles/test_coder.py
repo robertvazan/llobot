@@ -14,4 +14,5 @@ def test_coder_instantiation(tmp_path: Path):
     record_stream(coder.chat(prompt))
     context = model.history[0]
     assert "Software developer's guidelines" in context
+    assert "How to ask questions" in context
     assert "How to write closing remarks" in context

@@ -10,6 +10,7 @@ from llobot.models import Model
 from llobot.prompts import (
     Prompt,
     SystemPrompt,
+    asking_prompt_section,
     answering_prompt_section,
     closing_prompt_section,
     overviews_prompt_section,
@@ -27,6 +28,7 @@ def editor_system_prompt() -> SystemPrompt:
     return SystemPrompt(
         read_prompt('editor.md'),
         tools_prompt_section(),
+        asking_prompt_section(),
         answering_prompt_section(),
         overviews_prompt_section(),
         closing_prompt_section(),
