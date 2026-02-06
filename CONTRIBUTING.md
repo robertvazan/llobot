@@ -21,11 +21,10 @@ Pull requests are generally welcome. If you would like to make large or controve
 
 The easiest way to get started is to build and run the development container. See [`Containerfile`](Containerfile). It creates the venv automatically.
 
-Quality gates that must pass before you can submit your changes:
+Quality gates that must pass:
 
-- Run `pytest` without parameters to ensure all tests pass
-- Run `pyright` on modified files to check that there are no new type errors (old ones are acceptable)
-- Self-review
+- Run `pytest` without parameters to ensure all tests pass.
+- Run `pyright` on modified files to check that there are no new type errors (old ones are acceptable).
 
 ## Terminology
 
@@ -60,28 +59,31 @@ The project root directory is organized as follows:
 
 Llobot is designed to be modular and configurable with reasonable defaults.
 
-The core interaction is orchestrated by a [`Role`](llobot/roles/__init__.py). When a user sends a prompt (a thread of messages), the `Role` processes it by calling a sequence of functions from the [`commands`](llobot/commands/__init__.py) package. These functions parse `@mentions` from the prompt and perform various actions, for example retrieving documents from the knowledge base. These functions manipulate a shared [`Environment`](llobot/environments/__init__.py), which is a container for stateful components like the selected [`Project`](llobot/projects/__init__.py), the loaded [`Knowledge`](llobot/knowledge/__init__.py), and the [`ContextEnv`](llobot/environments/context.py) that accumulates messages for the assembled context.
-Files loaded into the context are tracked by [`KnowledgeEnv`](llobot/environments/knowledge.py) to prevent reloading and to enforce safety checks (e.g., preventing edits to unread files).
+The core interaction is orchestrated by a [`Role`](llobot/roles/__init__.py). When a user sends a prompt (a thread of messages), the `Role` processes it in several stages:
 
-Session persistence is keyed by the initial prompt. The session ID is a filename/URL-safe Base64-encoded SHA-256 hash of the UTF-8 bytes of the initial prompt, truncated to 40 characters. [`SessionHistory`](llobot/environments/history.py) stores and loads environment state under this hash. There are no explicit session messages and no session commands in the prompt.
+1. **Command Processing**: The role calls functions from the [`commands`](llobot/commands/__init__.py) package to parse `@mentions`. These functions manipulate a shared [`Environment`](llobot/environments/__init__.py), selecting [`Project`s](llobot/projects/__init__.py) and backend [`Model`](llobot/models/__init__.py), retrieving files, etc. The environment is persisted in [`SessionHistory`](llobot/environments/history.py).
 
-The `Role` performs "context stuffing". It uses [`Crammer`s](llobot/crammers/__init__.py) to select the most relevant information (e.g., knowledge documents, few-shot examples from [`ExampleMemory`](llobot/memories/examples.py)) that fits within the [`Model`'s](llobot/models/__init__.py) context budget. This content is rendered into clean, human-readable Markdown by components from the [`formats`](llobot/formats/__init__.py) package.
+2. **Context Stuffing**: The role assembles the context using [`ContextEnv`](llobot/environments/context.py). It uses [`Crammer`s](llobot/crammers/__init__.py) to select relevant information (e.g.,  [`Knowledge`](llobot/knowledge/__init__.py), few-shot examples from [`ExampleMemory`](llobot/memories/examples.py)) that fits within the text length budget. This content is rendered into Markdown by components from the [`formats`](llobot/formats/__init__.py) package.
 
-Finally, the assembled context, represented as a [`ChatThread`](llobot/chats/thread.py), is sent to the backend [`Model`](llobot/models/__init__.py) (e.g., Ollama, OpenAI) for generation. The response is streamed back to the user.
+3. **Generation Loop**: The assembled context, represented as a [`ChatThread`](llobot/chats/thread.py), is sent to the backend [`Model`](llobot/models/__init__.py). The model returns a [`ChatStream`](llobot/chats/stream.py), which is an iterable of text chunks and intent markers.
+
+4. **Tool Execution**: If the model response contains tool calls, the role executes them using the [`tools`](llobot/tools/__init__.py) package. The results are added to the context, and the loop continues, sending the updated context back to the model for further generation, until the model stops calling tools or the autonomy limit is reached.
+
+Finally, the response stream is relayed to the user.
 
 ## Conventions
 
-Llobot follows several architectural patterns and conventions that are important for contributors to understand:
+Llobot follows several architectural patterns and conventions:
 
 - **Immutability and Builders**: Core data structures like [`Knowledge`](llobot/knowledge/__init__.py) and [`ChatThread`](llobot/chats/thread.py) are immutable. Some of them have associated mutable `Builder` classes (e.g., [`ChatBuilder`](llobot/chats/builder.py)). Algorithm classes like [`Model`](llobot/models/__init__.py) and [`Role`](llobot/roles/__init__.py) are also immutable.
 - **Value Types**: Most classes are immutable value types that inherit from [`ValueTypeMixin`](llobot/utils/values.py). This provides automatic implementations of `__eq__`, `__hash__`, and `__repr__` based on an object's attributes. Aside from benefiting testing and debugging, this importantly enables function caching (e.g., with `@lru_cache` or `@cache`) even when parameters are complex types.
-- **Composition**: Many components can be combined using the `|` (`__or__`) operator. This pattern is used in [`KnowledgeSubset`](llobot/knowledge/subsets/__init__.py), [`KnowledgeIndex`](llobot/knowledge/indexes.py), [`Project`](llobot/projects/__init__.py), and many others classes to create composite objects from simpler parts.
+- **Composition**: Many components can be combined using the `|` (`__or__`) operator. This pattern is used in [`KnowledgeSubset`](llobot/knowledge/subsets/__init__.py), [`KnowledgeIndex`](llobot/knowledge/indexes.py), [`Project`](llobot/projects/__init__.py), and many other classes to create composite objects from simpler parts.
 - **Coercion Functions**: Functions like [`coerce_subset()`](llobot/knowledge/subsets/__init__.py), [`coerce_index()`](llobot/knowledge/indexes.py), and [`coerce_zoning()`](llobot/utils/zones/__init__.py) provide API flexibility by accepting various input types (e.g., a `str` pattern, a `PurePosixPath`, or a [`Knowledge`](llobot/knowledge/__init__.py) object) and converting them into the required class (e.g., a `KnowledgeSubset`).
 - **Standard Factories**: Many components have a `standard_*()` factory function (e.g., [`standard_ranker()`](llobot/knowledge/ranking/rankers.py), [`standard_scorer()`](llobot/knowledge/scores/scorers.py)) that returns a default, shared instance. These are decorated with `@cache`, so that expensive objects are created only once.
-- **Encapsulation**: Do not access private variables (variables starting with `_`) anywhere outside the class that defined them, not even in tests.
+- **Encapsulation**: Private variables (starting with `_`) are never accessed outside the class that defines them, not even in tests.
 - **Internal Imports**: All internal imports within the [`llobot`](llobot/__init__.py) package are absolute (e.g., `from llobot.chats.messages import ChatMessage`). Submodule symbols are not re-exported from package `__init__.py` files. Code should always import symbols directly from the submodule where they are defined.
 - **Docstrings**: All modules, classes, and functions have Google-style docstrings.
-- **Backward Compatibility**: Backward compatibility is NOT maintained before 1.x release. This applies to API, file formats, and persisted data. Contributors are encouraged to rename and refactor aggressively to improve the codebase.
+- **Backward Compatibility**: Backward compatibility is NOT maintained before the 1.0 release. This applies to API, file formats, and persisted data. Contributors are encouraged to rename and refactor aggressively to improve the codebase.
 
 ## License
 

@@ -2,32 +2,28 @@
 
 # Llobot
 
-Llobot is a LLM library and a LLM tool that makes it easier to build simple conversational LLM applications or bots. To get started, define models, roles, and projects and then chat with them in any LLM frontend that supports OpenAI or Ollama protocol. Every role defines what the context looks like, including system prompt, knowledge (project files), and recent history. Recent history can be external (like git log), but llobot has special support for live examples, which are user-approved responses from previous conversations.
+Llobot is a Python LLM agent framework. To get started, define roles, start the server, and point [llms.py](https://llmspy.org/) or another frontend to it. Roles have associated models, projects, and tools. A role defines what the LLM sees and what it can do.
 
-Llobot also has some nice features:
+## Features
 
-- **Protocol implementations:** Llobot can connect to local models (Ollama) as well as cloud models (OpenAI, Anthropic Claude, Google Gemini). It can also act as a server and expose virtual models via Ollama and OpenAI protocols.
-- **Context stuffing:** Instead of relying on the LLM to fetch the necessary files in an agentic loop, knowledge can be stuffed into the context proactively, which has [several advantages](https://blog.machinezoo.com/Why_context_stuffing) over agentic retrieval.
-- **Live examples:** When you approve a LLM response (or a user-provided correction), it will be included in future contexts as an example to leverage [in-context learning](https://arxiv.org/abs/2005.14165). Simple LLM applications (translations, conversions) can be built by just accumulating correct examples.
-- **Commands and mentions:** Every role can define a set of `@mention` commands that users can add to prompts. Llobot offers built-in commands for project selection (`@project`), file retrieval (`@path/to/file`), and example approval (`@approve`).
-- **Modular instructions:** You can assemble your system prompt from reusable sections. Llobot includes some predefined sections.
-- **Knowledge management:** You can load, modify, and filter plaintext knowledge bases and source code.
-- **Context budget:** Llobot can select the most important information that fits in given context budget. Knowledge base can be prioritized using PageRank, file name patterns, and file size.
-- **Directory overviews:** Roles capable of editing files are by default instructed to create and maintain directory overview files, including `README.md`, docs in `__init__.py`, `mod.rs`, and similar files, and project information in `CONTRIBUTING.md`, `AGENTS.md`, etc. Overviews are added to the context before covered files to give the model basic understanding of the wider context.
-- **Clean context:** Llobot builds clean context consisting of several chat turns using readable Markdown for easier auditing.
-- **Cache-friendly:** Context is assembled in reproducible order from whole documents to minimize cache invalidations.
+Llobot differs from other LLM frameworks in several ways:
 
-There is currently no support for CLI, agentic loops, RAG, uploads, or URLs, although these features could be added in the future.
+- **Programmable:** While there are example roles bundled with Llobot, the primary use case is defining business-specific roles. Llobot provides basic building blocks as a modular and configurable Python API.
+- **Chat UI:** To ease role development, Llobot does not have any user interface. You can talk to roles in any chat UI that supports OpenAI or Ollama protocols. Roles may recognize commands with `@mention` syntax.
+- **Projects:** Instead of granting LLMs unrestricted access to your computer, Llobot usually only allows access to projects `@mentioned` in the prompt. Individual projects as well as the Llobot server itself can be sandboxed.
+- **Overviews:** By default, roles with file access are instructed to maintain per-directory overview files like `__init__.py` in Python or `README.md`. Judicious use of overview files can replace a lot of specialized LLM configuration (let me count: `AGENTS.md`, memory, skills, source maps, RAG, connectors, MCP servers, and search).
+- **Context stuffing:** By default, Llobot provides the model with a list of project files (up to some limit) and root overview files (`README.md`, `CONTRIBUTING.md`, project configuration). You can optionally preload the most referenced files or whole projects.
+- **Non-agentic roles:** Besides standard agents with tools, Llobot lets you define non-agentic roles. Plain chatbots just have a custom system prompt. Simple imitator roles have previously approved/corrected examples (input-output pairs) in the context.
 
 ## Setup
 
-Llobot is highly configurable, but let's consider a very basic example that mostly relies on defaults. Llobot is a Python library, so we need a short Python script to configure it. The script assumes you have llobot cloned locally under `~/Sources/llobot`.
+Llobot is highly configurable, but let's consider a very basic example that mostly relies on defaults. Llobot is a Python library, so we need a short Python script to configure it. The script assumes you have Llobot cloned locally under `~/Sources/llobot`.
 
 ```python
 import sys
 from pathlib import Path
 
-# Llobot is not in pip yet, so let's just add the repository to Python's module path.
+# Llobot is not in PyPI yet, so let's just add the repository to Python's module path.
 sys.path.insert(0, str(Path.home() / 'Sources' / 'llobot'))
 
 from llobot.models.anthropic import AnthropicModel
@@ -41,32 +37,33 @@ from llobot.roles.coder import Coder
 from llobot.roles.editor import Editor
 from llobot.roles.imitator import Imitator
 from llobot.roles.models import RoleModel
+from llobot.roles.router import Router
 
 # Backend models that respond to the assembled prompt.
-# You can @-mention them to override the default model.
+# You can @mention them to override the default model.
 models = NamedModelLibrary(
     # This will use qwen2.5-coder on localhost instance of Ollama.
     OllamaModel('local', model='qwen2.5-coder', num_ctx=24 * 1024),
     GeminiModel(
-        'cloud',
+        'flash',
         model='gemini-2.5-flash',
         auth='YOUR_GOOGLE_API_KEY'
     ),
     AnthropicModel(
-        'frontier',
+        'sonnet',
         model='claude-sonnet-4-5',
         auth='YOUR_ANTHROPIC_API_KEY'
     ),
 )
-default_model = models['local']
+default_model = models['sonnet']
 
 # Projects that will be used as knowledge bases.
 # HomeProjectLibrary looks up projects under given directory.
-# You can @-mention relative paths under this directory as projects.
+# You can @mention relative paths under this directory as projects.
 projects = HomeProjectLibrary('~/Sources')
 
 # Roles determine what goes in the context.
-# Lets use some standard roles that come with llobot.
+# Let's use some standard roles that come with Llobot.
 roles = [
     Coder('coder', default_model, projects=projects, models=models),
     Editor('editor', default_model, projects=projects, models=models),
@@ -77,28 +74,28 @@ roles = [
         models=models,
     ),
     Chatbot(
-        'reader',
+        'summary',
         default_model,
-        prompt="Respond with summary of the provided article. Then answer questions.",
+        prompt="Respond with a summary of the provided article. Then answer questions.",
     ),
 ]
 
-# Create virtual models for all roles.
-role_models = [RoleModel(role) for role in roles]
+# Router role that dispatches to whichever role you @mention.
+router = Router(roles)
 
 # Backend Ollama listens on 11434, so we will listen on 11435 to avoid conflicts.
-OllamaListener(*role_models, port=11435).listen()
+OllamaListener(RoleModel(router), port=11435).listen()
 ```
 
-Run this script and add `localhost:11435` as an additional Ollama endpoint to your UI frontend (like Open WebUI, which is [no longer open source](https://github.com/open-webui/open-webui/issues/13579), so feel free to look for alternatives). You should now see virtual models `coder`, `editor`, `translator`, and `reader` listed in the UI.
+Run this script and add `localhost:11435` as an additional Ollama endpoint to your UI frontend (like [llms.py](https://llmspy.org/). You should now see virtual model `llobot` listed in the UI.
 
 ## How to use
 
-You should now be able to issue queries against the bots. Select `coder` bot and submit this prompt:
+In the UI frontend, select the virtual `llobot` model and submit this prompt:
 
-> @llobot How do I connect to remote Ollama instance?
+> @coder @llobot How do I connect to remote Ollama instance?
 
-The `@llobot` mention is a command that tells the bot to use the `llobot` project as its knowledge base. If you wanted to work on `myproject`, you would write `@myproject`. The mention can be placed anywhere in the prompt. When you submit this prompt, you should get a response like this:
+The `@coder` mention selects the `coder` role. The `@llobot` mention selects the `llobot` project, which is resolved to `~/Sources/llobot` per above configuration. Mentions can be placed anywhere in the prompt. After the agent makes a few tool calls, you should get a response like this:
 
 > Use `remote_ollama_endpoint(host, port, path)` from `llobot.models.ollama.endpoints` module to get the endpoint URL, then pass it to the `OllamaModel` constructor as the `endpoint` argument. For example:
 >
@@ -107,49 +104,22 @@ The `@llobot` mention is a command that tells the bot to use the `llobot` projec
 > model = OllamaModel('my-remote-model', model='qwen2:7b', num_ctx=24 * 1024, endpoint=endpoint)
 > ```
 
-NB: Response this informative relies on using a large model. For comparison, response from 'qwen2.5-coder'. It's close, but it's not quite there.
-
-> To connect to a remote Ollama instance, you need to use the `remote_ollama_endpoint()` function from the `ollama/endpoints.py` module. Here's an example of how to do it:
->
-> ```python
-> from llobot.models.ollama.endpoints import remote_ollama_endpoint
->
-> # Replace 'host' and 'port' with the actual host and port of your Ollama instance.
-> endpoint = remote_ollama_endpoint(host='your-ollama-host', port=11434)
-> ```
->
-> This will give you an endpoint string that you can use to interact with the remote Ollama instance.
-
-If the context does not already include the file you need, just mention it in the prompt, for example as `@README.md`, and llobot will include it in the context in addition to default knowledge.
-
 ## Commands
 
 Llobot recognizes several commands in the form of `@mentions`. These can be placed anywhere in the prompt.
 
-- **`@<project>`**: Selects a project to use as a knowledge base. Example: `@myproject`.
-- **`@<model>`**: Selects a backend model for the response. Example: `@gemini`.
-- **`@<file>`**: Adds a specific file to the context. Initial path segments can be omitted. Example: `@README.md` or `@src/main.rs`.
-- **`@<pattern>`**: Adds files matching a glob pattern. Example: `@tests/*.py`.
-- **`@autonomy:<profile>`**: Switches to the specified autonomy profile. Example: `@autonomy:step`.
-- **`@approve`**: Approves the previous response as a correct example and saves prompt-response pair to example memory for roles that support it. If any content is provided with the command, it is used instead of the last response.
-- **`@run`**: Executes tool calls proposed by the model in the last response. This is used when autonomy is disabled.
-
-Agents have limited autonomy by default. They will execute tool calls automatically until they reach a limit on time, turns, or context size.
+- **`@<project>`**: Grants the role access to the project. Name is resolved using configured project library. Example: `@myproject`.
+- **`@<model>`**: Selects a different backend model for the response. Name is resolved using configured model library. Example: `@gemini`.
+- **`@<file>`**: Preloads a specific file to the context. The file must be present in one of the selected projects. Initial path segments can be omitted. Example: `@README.md`, `@src/main.rs`, or `@tests/*.py`.
+- **`@autonomy:<profile>`**: Switches to the specified autonomy profile, which limits consecutive tool calls. Default configuration defines `off`, `step`, `low`, or `high` profiles, defaulting to `high`. Example: `@autonomy:step`.
+- **`@approve`**: In roles that support examples (approved input-output pairs), this command approves the previous response as a correct example. It will be added to the context in the future. If any content is provided with the command, it is used instead of the last response.
+- **`@run`**: Executes the last batch of tool calls proposed by the model. This command is used when autonomy is disabled.
 
 Mentions can be unquoted as in `@lib.rs` or quoted as in `` @`src/**/*.rs` ``. Quoted mentions are useful when including special symbols in the mention.
 
-## Best practices
-
-Here are some practical tips for using llobot:
-
-- Llobot works best with cloud models, which have plenty of burst compute to handle reprocessing of large prompts. Cloud models are also smart enough to be useful.
-- Make every task meaningful on its own. Do not reference prior conversations. Even if examples from prior conversations are included in the context, you don't know how many of them actually fit in the context.
-- If the prompt absolutely depends on the model seeing a particular file, mention it in the prompt as `@file.ext` or `@path/to/file.ext`, whichever is sufficiently unique to match only one file. This ensures the document will be added to the assembled prompt regardless of how llobot prioritizes documents for context stuffing.
-- Instead of one large project, it is better to have several smaller ones. If you need to reference files across projects, just mention multiple projects in the prompt, for example `@project1` and `@project2`. By convention, project name is the first component of the file path.
-
 ## Status
 
-Experimental. Partially tested and documented. Unstable APIs. No release. Likely some bugs. But it works for me and I hope others might find it useful too.
+Llobot is fully tested, documented, and used in production, but there is no release or backward compatibility yet.
 
 ## Feedback
 
