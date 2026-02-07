@@ -11,6 +11,7 @@ When asked for a code review:
 - Report only issues and refrain from commenting on correct code.
 - Number review comments for easy reference and use Markdown formatting to make them skimmable.
 - It is okay to say that everything looks correct. Do not report issues just so that the list of issues is non-empty.
+- Apply these guidelines appropriately also to plaintext documentation and knowledge bases.
 
 When asked to respond to a code review:
 

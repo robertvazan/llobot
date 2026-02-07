@@ -105,3 +105,4 @@ def test_editor_system_prompt(tmp_path: Path):
     assert "Assistant editor's guidelines" in context
     assert "How to ask questions" in context
     assert "How to write closing remarks" in context
+    assert "How to review code" in context

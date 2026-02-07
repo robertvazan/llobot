@@ -15,6 +15,7 @@ from llobot.prompts import (
     closing_prompt_section,
     overviews_prompt_section,
     read_prompt,
+    review_prompt_section,
     tools_prompt_section,
 )
 from llobot.roles.agent import Agent
@@ -31,6 +32,7 @@ def editor_system_prompt() -> SystemPrompt:
         asking_prompt_section(),
         answering_prompt_section(),
         overviews_prompt_section(),
+        review_prompt_section(),
         closing_prompt_section(),
     )
 
