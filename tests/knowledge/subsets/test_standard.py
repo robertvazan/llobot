@@ -4,7 +4,6 @@ from llobot.knowledge.subsets.standard import (
     blacklist_subset,
     boilerplate_subset,
     overviews_subset,
-    whitelist_subset,
 )
 
 def test_ancillary_subset():
@@ -34,9 +33,3 @@ def test_overviews_subset():
     assert PurePosixPath('__init__.py') in overviews
     assert PurePosixPath('pom.xml') in overviews
     assert PurePosixPath('src/main.py') not in overviews
-
-def test_whitelist_subset():
-    whitelist = whitelist_subset()
-    assert PurePosixPath('src/main.py') in whitelist
-    assert PurePosixPath('README.md') in whitelist
-    assert PurePosixPath('image.png') not in whitelist

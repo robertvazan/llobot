@@ -36,6 +36,28 @@ def test_directory_project_simple(tmp_path: Path):
     })
     assert project.read_all() == expected_knowledge
 
+def test_directory_project_tracks_everything_by_default(tmp_path: Path):
+    (tmp_path / "file.txt").write_text("txt")
+    (tmp_path / "file.bin").write_bytes(b"\x00\x01") # Binary
+    (tmp_path / "script.sh").write_text("echo hi")
+
+    project = DirectoryProject(tmp_path, prefix="p")
+    prefix = PurePosixPath("p")
+
+    # Everything is tracked
+    files = {item.path for item in project.walk(prefix) if isinstance(item, ProjectFile) and project.tracked(item)}
+    assert files == {
+        prefix / "file.txt",
+        prefix / "file.bin",
+        prefix / "script.sh",
+    }
+
+    # But binary files are not readable
+    knowledge = project.read_all()
+    assert prefix / "file.txt" in knowledge
+    assert prefix / "script.sh" in knowledge
+    assert prefix / "file.bin" not in knowledge
+
 def test_directory_project_home_relative_prefix(tmp_path: Path, monkeypatch):
     """Test that directories under home get home-relative prefix by default."""
     # Create a fake home directory

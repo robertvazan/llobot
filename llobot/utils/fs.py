@@ -1,9 +1,10 @@
 """
 Filesystem utilities.
 
-This module provides functions for interacting with the filesystem, including
+This module provides functions for interactions with the filesystem, including
 path manipulation, file I/O, and path component extraction.
 """
+import re
 from pathlib import Path, PurePosixPath
 from llobot.utils.text import normalize_document
 
@@ -53,9 +54,14 @@ def write_text(path: Path, content: str):
     """
     write_bytes(path, content.encode('utf-8'))
 
+_CONTROL_CHARS_RE = re.compile(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]')
+
 def read_text(path: Path) -> str:
     """
     Reads text from a file.
+
+    It enforces strict UTF-8 decoding and rejects files with control characters
+    other than TAB, LF, and CR. It also normalizes newlines to LF.
 
     Args:
         path: The path to the file to read.
@@ -64,12 +70,20 @@ def read_text(path: Path) -> str:
         The content of the file as a string.
 
     Raises:
-        ValueError: If the file cannot be read.
+        ValueError: If the file cannot be read, is not valid UTF-8, or contains
+                    forbidden control characters.
     """
     try:
-        return path.read_text(encoding='utf-8')
+        # read_text() uses open() which defaults to universal newlines mode,
+        # so it translates \r\n and \r to \n.
+        content = path.read_text(encoding='utf-8', errors='strict')
     except Exception as ex:
-        raise ValueError(path) from ex
+        raise ValueError(f"Failed to read {path}: {ex}") from ex
+
+    if _CONTROL_CHARS_RE.search(content):
+        raise ValueError(f"Control characters found in {path}")
+
+    return content
 
 def read_document(path: Path) -> str:
     """

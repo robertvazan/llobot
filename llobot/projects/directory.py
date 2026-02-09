@@ -2,7 +2,8 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path, PurePosixPath
 from llobot.knowledge.subsets import KnowledgeSubset
-from llobot.knowledge.subsets.standard import blacklist_subset, whitelist_subset
+from llobot.knowledge.subsets.standard import blacklist_subset
+from llobot.knowledge.subsets.universal import UniversalSubset
 from llobot.projects import Project
 from llobot.projects.items import ProjectDirectory, ProjectFile, ProjectItem, ProjectLink
 from llobot.utils.fs import create_parents, read_document, write_text
@@ -61,7 +62,7 @@ class DirectoryProject(Project, ValueTypeMixin):
                 self._prefix = coerce_path(self._directory.name)
         validate_zone(self._prefix)
 
-        self._whitelist = whitelist or whitelist_subset()
+        self._whitelist = whitelist or UniversalSubset()
         self._blacklist = blacklist or blacklist_subset()
         self._mutable = mutable
         self._executable = executable
