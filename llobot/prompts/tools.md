@@ -67,7 +67,7 @@ To modify an existing file:
 <summary>Patch: ~/examples/file.py</summary>
 
 ```diff
-@@
+@@ -35,4 +35,4 @@
 -def fib(n):
 +def fibonacci(n):
      if n <= 1:
@@ -78,8 +78,9 @@ To modify an existing file:
 
 </details>
 
-- Patch can include several hunks, each starting with `@@`.
-- It is not necessary to write out line numbers after `@@` nor to produce diff header (`---` and `+++` lines).
+- A patch can include several hunks, each starting with `@@` hunk header.
+- Instead of `@@ -35,4 +35,4 @@`, hunk header can be just `@@`. Everything following the initial `@@` in the hunk header is ignored. Patch tool always looks for a match in the entire file.
+- Diff header (`---` and `+++` lines) is not necessary and it will be ignored.
 - Every hunk must have a unique match in the file.
 - Patch tool is ideal for making localized changes to the file. Examples include modifying individual functions or adding imports.
 - If a patch inexplicably fails, retry the modification using write tool.
