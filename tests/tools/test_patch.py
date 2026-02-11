@@ -227,23 +227,22 @@ def test_atomic_execution(env, tmp_path):
     # File should be unchanged
     assert (tmp_path / 'file.txt').read_text(encoding='utf-8') == "A\nB\nC\n"
 
-def test_strict_context_parsing(env, tmp_path):
-    """Ensures context lines must start with space, not be empty."""
-    (tmp_path / 'file.txt').write_text("A\n\nB\n", encoding='utf-8')
-    mark_known(env, "~/test/file.txt", "A\n\nB\n")
+def test_relaxed_context_parsing(env, tmp_path):
+    """Ensures context lines can be empty (treated as space + newline)."""
+    (tmp_path / 'file.txt').write_text("Prefix\n\nSuffix\n", encoding='utf-8')
+    mark_known(env, "~/test/file.txt", "Prefix\n\nSuffix\n")
 
-    # This diff has an empty line which should be rejected
+    # This diff has an empty line which should be accepted now
     diff = dedent("""
         @@
-        -A
+         Prefix
 
-        -B
-        +C
+        -Suffix
+        +Modified
     """)
     tool = PatchTool()
-    # The empty line will fall through to the invalid line check
-    with pytest.raises(ValueError, match="Invalid diff line"):
-        tool.execute_fenced(env, "Patch", "~/test/file.txt", diff)
+    tool.execute_fenced(env, "Patch", "~/test/file.txt", diff)
+    assert (tmp_path / 'file.txt').read_text(encoding='utf-8') == "Prefix\n\nModified\n"
 
 def test_execute_ignore_trailing_whitespace_in_diff(env, tmp_path):
     (tmp_path / 'file.txt').write_text("line1\n", encoding='utf-8')

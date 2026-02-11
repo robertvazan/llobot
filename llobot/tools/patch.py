@@ -39,7 +39,7 @@ class PatchTool(FencedTool):
         knowledge_env = env[KnowledgeEnv]
 
         if path not in knowledge_env:
-             raise PermissionError(f"Safety: File `~/{path}` must be read before it can be patched.")
+            raise PermissionError(f"Safety: File `~/{path}` must be read before it can be patched.")
 
         original_content = project.read(path)
         if original_content is None:
@@ -124,6 +124,11 @@ class PatchTool(FencedTool):
             if line.startswith(' '):
                 # Context
                 content = line[1:].rstrip() + '\n'
+                search_lines.append(content)
+                replace_lines.append(content)
+            elif line == '\n':
+                # Empty line treated as empty context line
+                content = '\n'
                 search_lines.append(content)
                 replace_lines.append(content)
             elif line.startswith('-'):
