@@ -22,10 +22,10 @@ class AnthropicModel(Model, ValueTypeMixin):
 
     def __init__(self, *,
         model: str,
+        max_tokens: int,
         name: str | None = None,
         client: Anthropic | None = None,
         auth: str | None = None,
-        max_tokens: int = 8_000,
         # No caching by default. It costs extra and not everyone takes advantage of it.
         cached: bool = False,
         effort: str | None = None,
@@ -40,7 +40,7 @@ class AnthropicModel(Model, ValueTypeMixin):
             client: An existing `Anthropic` client instance. If not provided, a new one is created.
             auth: Your Anthropic API key. If not provided, the `ANTHROPIC_API_KEY` environment
                   variable is used.
-            max_tokens: The maximum number of tokens to generate.
+            max_tokens: The maximum number of tokens to generate. Mandatory.
             cached: Whether to use Anthropic's caching feature.
             effort: The effort level for thinking (e.g., "max").
             binarization_format: Format to use for prompt binarization. Defaults to standard.

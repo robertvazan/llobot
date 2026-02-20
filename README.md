@@ -52,7 +52,8 @@ models = NamedModelLibrary(
     AnthropicModel(
         name='sonnet',
         model='claude-sonnet-4-5',
-        auth='YOUR_ANTHROPIC_API_KEY'
+        auth='YOUR_ANTHROPIC_API_KEY',
+        max_tokens=8_000,
     ),
 )
 default_model = models['sonnet']
