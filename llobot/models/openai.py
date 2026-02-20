@@ -3,8 +3,8 @@ Client for OpenAI models.
 """
 from __future__ import annotations
 from typing import Any, Iterable, cast
-from openai import OpenAI
-from openai.types.chat import ChatCompletionMessageParam, ChatCompletionReasoningEffort, ChatCompletionRole
+from openai import OpenAI, NOT_GIVEN
+from openai.types.shared.reasoning_effort import ReasoningEffort
 from llobot.formats.binarization import BinarizationFormat, standard_binarization_format
 from llobot.chats.thread import ChatThread
 from llobot.chats.intent import ChatIntent
@@ -13,7 +13,7 @@ from llobot.models import Model
 from llobot.chats.stream import ChatStream, buffer_stream
 from llobot.utils.values import ValueTypeMixin
 
-def _encode_role(intent: ChatIntent) -> ChatCompletionRole:
+def _encode_role(intent: ChatIntent) -> str:
     if intent == ChatIntent.RESPONSE:
         return 'assistant'
     else:
@@ -25,8 +25,8 @@ def _encode_message(message: ChatMessage) -> dict[str, str]:
         'content': message.content
     }
 
-def _encode_chat(chat: ChatThread) -> list[ChatCompletionMessageParam]:
-    return [cast(ChatCompletionMessageParam, _encode_message(message)) for message in chat]
+def _encode_chat(chat: ChatThread) -> list[dict[str, str]]:
+    return [_encode_message(message) for message in chat]
 
 class OpenAIModel(Model, ValueTypeMixin):
     """
@@ -35,14 +35,14 @@ class OpenAIModel(Model, ValueTypeMixin):
     _name: str
     _model: str
     _auth: str | None
-    _reasoning: ChatCompletionReasoningEffort | None
+    _reasoning: ReasoningEffort | None
     _binarization_format: BinarizationFormat
 
     def __init__(self, *,
         model: str,
         auth: str | None = None,
         name: str | None = None,
-        reasoning: ChatCompletionReasoningEffort | None = None,
+        reasoning: ReasoningEffort | None = None,
         binarization_format: BinarizationFormat | None = None,
     ):
         """
@@ -81,24 +81,24 @@ class OpenAIModel(Model, ValueTypeMixin):
             else:
                 client = OpenAI()
             sanitized_prompt = self._binarization_format.binarize_chat(prompt)
-            messages = _encode_chat(sanitized_prompt)
+            input_items = _encode_chat(sanitized_prompt)
             yield ChatIntent.RESPONSE
 
+            # Use Any typecast because OpenAI expects a specific internal list of types
             kwargs: dict[str, Any] = {}
             if self._reasoning is not None:
-                kwargs['reasoning_effort'] = self._reasoning
+                kwargs['reasoning'] = {"effort": self._reasoning}
 
-            completion = client.chat.completions.create(
+            stream = client.responses.create(
                 model=self._model,
-                messages=messages,
+                input=cast(Any, input_items),
                 stream=True,
                 **kwargs
             )
-            for chunk in completion:
-                if chunk.choices:
-                    content = chunk.choices[0].delta.content
-                    if content:
-                        yield content
+            for event in stream:
+                if event.type == 'response.output_text.delta':
+                    if event.delta:
+                        yield event.delta
         return buffer_stream(_stream())
 
 __all__ = [
