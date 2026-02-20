@@ -17,6 +17,7 @@ class GeminiModel(Model, ValueTypeMixin):
     _model: str
     _client: genai.Client
     _binarization_format: BinarizationFormat
+    _thinking_level: types.ThinkingLevel | None
 
     def __init__(self, *,
         model: str,
@@ -24,6 +25,7 @@ class GeminiModel(Model, ValueTypeMixin):
         client: genai.Client | None = None,
         auth: str | None = None,
         binarization_format: BinarizationFormat | None = None,
+        thinking_level: types.ThinkingLevel | str | None = None,
     ):
         """
         Initializes the Gemini model.
@@ -35,6 +37,8 @@ class GeminiModel(Model, ValueTypeMixin):
             auth: Your Google API key. If not provided, the `GOOGLE_API_KEY` environment
                   variable is used.
             binarization_format: Format to use for prompt binarization. Defaults to standard.
+            thinking_level: The thinking level for the model, either as `types.ThinkingLevel` enum
+                            or string (e.g., 'HIGH', 'LOW'). Defaults to None.
         """
         self._name = name if name is not None else model
         self._model = model
@@ -46,6 +50,10 @@ class GeminiModel(Model, ValueTypeMixin):
             # API key is taken from GOOGLE_API_KEY environment variable.
             self._client = genai.Client()
         self._binarization_format = binarization_format or standard_binarization_format()
+        if isinstance(thinking_level, str):
+            self._thinking_level = types.ThinkingLevel(thinking_level)
+        else:
+            self._thinking_level = thinking_level
 
     def _ephemeral_fields(self) -> Iterable[str]:
         return ['_client']
@@ -67,7 +75,10 @@ class GeminiModel(Model, ValueTypeMixin):
                     contents.append(types.UserContent(parts=[types.Part.from_text(text=message.content)]))
                 else:
                     contents.append(types.ModelContent(parts=[types.Part.from_text(text=message.content)]))
-            config = types.GenerateContentConfig()
+            config_kwargs = {}
+            if self._thinking_level is not None:
+                config_kwargs['thinking_config'] = types.ThinkingConfig(thinking_level=self._thinking_level)
+            config = types.GenerateContentConfig(**config_kwargs)
             yield ChatIntent.RESPONSE
             stream = self._client.models.generate_content_stream(
                 model=self._model,
