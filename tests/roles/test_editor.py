@@ -26,7 +26,7 @@ def setup_test_project(tmp_path: Path) -> tuple[Path, PredefinedProjectLibrary]:
 def test_editor_project_selection(tmp_path: Path):
     """Tests that Editor includes file index when a project is selected."""
     _, library = setup_test_project(tmp_path)
-    model = MockModel('echo')
+    model = MockModel(name='echo')
     editor = Editor('editor', model, projects=library, session_history=tmp_path / "sessions")
 
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "@project_a List files")])
@@ -43,7 +43,7 @@ def test_editor_project_selection(tmp_path: Path):
 def test_editor_file_retrieval(tmp_path: Path):
     """Tests that Editor retrieves specific files when mentioned."""
     _, library = setup_test_project(tmp_path)
-    model = MockModel('echo')
+    model = MockModel(name='echo')
     editor = Editor('editor', model, projects=library, session_history=tmp_path / "sessions")
 
     # Select project and retrieve a specific file
@@ -58,7 +58,7 @@ def test_editor_file_retrieval(tmp_path: Path):
 def test_editor_wildcard_retrieval(tmp_path: Path):
     """Tests that Editor retrieves files matching wildcard patterns."""
     _, library = setup_test_project(tmp_path)
-    model = MockModel('echo')
+    model = MockModel(name='echo')
     editor = Editor('editor', model, projects=library, session_history=tmp_path / "sessions")
 
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "@project_a @tests/*.py Read tests")])
@@ -79,7 +79,7 @@ def test_editor_overviews(tmp_path: Path):
 
     project_b = DirectoryProject(project_b_dir, prefix="project_b")
     library = PredefinedProjectLibrary({"project_b": project_b})
-    model = MockModel('echo')
+    model = MockModel(name='echo')
     editor = Editor('editor', model, projects=library, session_history=tmp_path / "sessions")
 
     # Access a file deep in the hierarchy
@@ -97,7 +97,7 @@ def test_editor_overviews(tmp_path: Path):
 def test_editor_system_prompt(tmp_path: Path):
     """Tests that Editor includes the tool usage instructions in its prompt."""
     _, library = setup_test_project(tmp_path)
-    model = MockModel('echo')
+    model = MockModel(name='echo')
     editor = Editor('editor', model, projects=library, session_history=tmp_path / "sessions")
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "@project_a some prompt")])
     record_stream(editor.chat(prompt))

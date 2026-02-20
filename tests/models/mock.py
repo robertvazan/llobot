@@ -17,14 +17,15 @@ class MockModel(Model, ValueTypeMixin):
     _response: str
     _history: list[ChatThread]
 
-    def __init__(self, name: str, *,
+    def __init__(self, *,
+        name: str = 'mock',
         response: str = "Mock response",
     ):
         """
         Initializes the mock model.
 
         Args:
-            name: The name for this model instance.
+            name: The name for this model instance. Defaults to 'mock'.
             response: The response to return from generate().
         """
         self._name = name

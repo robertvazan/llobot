@@ -10,7 +10,7 @@ from llobot.roles.models import RoleModel
 
 def test_role_model_wrapper():
     # Setup
-    base_model = MockModel('echo', response="Mock Response")
+    base_model = MockModel(name='echo', response="Mock Response")
     role = Chatbot('bot', base_model, prompt="SYS")
     role_model = RoleModel(role)
 
@@ -31,6 +31,12 @@ def test_role_model_wrapper():
     context = base_model.history[0]
     assert "SYS" in context
     assert "Hi" in context
+
+def test_role_model_custom_name():
+    role = Chatbot('bot', MockModel(name='echo'), prompt="SYS")
+    role_model = RoleModel(role, name='custom-bot')
+    assert role_model.name == 'custom-bot'
+    assert role_model.identifier == 'llobot/bot'
 
 def test_role_model_exception_handling():
     # Create a broken role

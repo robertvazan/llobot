@@ -20,9 +20,10 @@ class OllamaModel(Model, ValueTypeMixin):
     _num_ctx: int
     _binarization_format: BinarizationFormat
 
-    def __init__(self, name: str, *,
+    def __init__(self, *,
         model: str,
         num_ctx: int,
+        name: str | None = None,
         endpoint: str | None = None,
         binarization_format: BinarizationFormat | None = None,
     ):
@@ -33,13 +34,13 @@ class OllamaModel(Model, ValueTypeMixin):
         only a 2K-token default, which is useless for real applications.
 
         Args:
-            name: The name for this model instance in llobot.
             model: The model ID to use with Ollama (e.g., 'qwen2:7b').
             num_ctx: The context window size for the model.
+            name: The name for this model instance in llobot. Defaults to model ID.
             endpoint: The URL of the Ollama API endpoint. Defaults to localhost.
             binarization_format: Format to use for prompt binarization. Defaults to standard.
         """
-        self._name = name
+        self._name = name if name is not None else model
         self._model = model
         self._endpoint = endpoint or localhost_ollama_endpoint()
         self._num_ctx = num_ctx

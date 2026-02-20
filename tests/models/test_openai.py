@@ -17,6 +17,10 @@ def test_value_type_openai():
     assert hash(model1) == hash(model2)
     assert 'key1' not in repr(model1)
 
+def test_default_name():
+    model = OpenAIModel(model='gpt-4o', auth='key1')
+    assert model.name == 'gpt-4o'
+
 def test_missing_auth():
     """
     Tests that `auth` parameter is mandatory.

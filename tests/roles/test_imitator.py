@@ -14,7 +14,7 @@ def get_response_content(thread: ChatThread) -> str:
     return ""
 
 def test_imitator_approve(tmp_path: Path):
-    model = MockModel('echo', response="Say B")
+    model = MockModel(name='echo', response="Say B")
     # Imitator saves examples to example_history.
     imitator = Imitator('imitator', model,
                         example_history=tmp_path / "examples",
@@ -49,7 +49,7 @@ def test_imitator_approve(tmp_path: Path):
     assert "Say B" in context_new
 
 def test_imitator_approve_correction(tmp_path: Path):
-    model = MockModel('echo')
+    model = MockModel(name='echo')
     imitator = Imitator('imitator', model,
                         example_history=tmp_path / "examples",
                         session_history=tmp_path / "sessions")

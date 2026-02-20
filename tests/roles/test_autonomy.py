@@ -108,7 +108,7 @@ def test_agent_autorun(tmp_path: Path):
         ```
 
         </details>""")
-    model = MockModel('mock', response=file_tool_call_str)
+    model = MockModel(name='mock', response=file_tool_call_str)
 
     # We need an agent that handles project commands to ensure environment is set up correctly for tools,
     # although here we are using absolute paths so maybe it's fine.
@@ -152,7 +152,7 @@ def test_agent_autorun(tmp_path: Path):
 
 def test_agent_autorun_no_tools(tmp_path: Path):
     """Tests that autorun doesn't fail if no tools are detected in response."""
-    model = MockModel('mock', response="Just a chat response.")
+    model = MockModel(name='mock', response="Just a chat response.")
     agent = Agent(
         'agent',
         model,
@@ -189,7 +189,7 @@ def test_agent_no_autonomy(tmp_path: Path):
         ```
 
         </details>""")
-    model = MockModel('mock', response=file_tool_call_str)
+    model = MockModel(name='mock', response=file_tool_call_str)
 
     agent = ProjectAwareAgent(
         'agent',
@@ -230,7 +230,7 @@ def test_agent_limited_autonomy_loop(tmp_path: Path):
 
         </details>""")
     # It will loop.
-    model = MockModel('mock', response=file_tool_call_str)
+    model = MockModel(name='mock', response=file_tool_call_str)
 
     # Limit to 3 turns
     autonomy = LimitedAutonomy(turns=3)

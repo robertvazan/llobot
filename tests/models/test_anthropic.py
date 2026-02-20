@@ -18,6 +18,10 @@ def test_value_type_anthropic():
     assert hash(model1) != hash(model3)
     assert 'key1' not in repr(model1) # auth key should not be in repr
 
+def test_default_name():
+    model = AnthropicModel(model='claude-3-opus-20240229', auth='key1')
+    assert model.name == 'claude-3-opus-20240229'
+
 def test_identifier():
     model = AnthropicModel(name='claude', model='claude-3-opus-20240229', auth='key')
     assert model.identifier == 'anthropic/claude-3-opus-20240229'

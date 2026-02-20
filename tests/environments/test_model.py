@@ -6,9 +6,9 @@ from llobot.environments.model import ModelEnv
 from tests.models.mock import MockModel
 from llobot.models.library.named import NamedModelLibrary
 
-default_model = MockModel('default')
-m1 = MockModel('m1')
-m2 = MockModel('m2')
+default_model = MockModel(name='default')
+m1 = MockModel(name='m1')
+m2 = MockModel(name='m2')
 library = NamedModelLibrary(m1, m2)
 
 def test_get_default():

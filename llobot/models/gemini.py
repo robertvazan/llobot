@@ -19,8 +19,9 @@ class GeminiModel(Model, ValueTypeMixin):
     _thinking: int | None
     _binarization_format: BinarizationFormat
 
-    def __init__(self, name: str, *,
+    def __init__(self, *,
         model: str,
+        name: str | None = None,
         client: genai.Client | None = None,
         auth: str | None = None,
         thinking: int | None = None,
@@ -30,15 +31,15 @@ class GeminiModel(Model, ValueTypeMixin):
         Initializes the Gemini model.
 
         Args:
-            name: The name for this model instance in llobot.
             model: The model ID to use with the Gemini API. Mandatory.
+            name: The name for this model instance in llobot. Defaults to model ID.
             client: An existing `genai.Client` instance. If not provided, a new one is created.
             auth: Your Google API key. If not provided, the `GOOGLE_API_KEY` environment
                   variable is used.
             thinking: The budget in tokens to allocate for "thinking" (prompt construction).
             binarization_format: Format to use for prompt binarization. Defaults to standard.
         """
-        self._name = name
+        self._name = name if name is not None else model
         self._model = model
         if client:
             self._client = client

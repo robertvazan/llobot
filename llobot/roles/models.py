@@ -20,22 +20,25 @@ class RoleModel(Model, ValueTypeMixin):
     such as in listeners that expose models via standard protocols.
     """
     _role: Role
+    _name: str | None
     _format: SubmessageFormat
 
-    def __init__(self, role: Role, *, submessage_format: SubmessageFormat | None = None):
+    def __init__(self, role: Role, *, name: str | None = None, submessage_format: SubmessageFormat | None = None):
         """
         Initializes the RoleModel.
 
         Args:
             role: The role to wrap.
+            name: The name for this model instance. Defaults to role name.
             submessage_format: The submessage format to use. Defaults to the standard one.
         """
         self._role = role
+        self._name = name
         self._format = submessage_format or standard_submessage_format()
 
     @property
     def name(self) -> str:
-        return self._role.name
+        return self._name if self._name is not None else self._role.name
 
     @property
     def identifier(self) -> str:

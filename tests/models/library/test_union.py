@@ -4,10 +4,10 @@ from llobot.models.library.named import NamedModelLibrary
 from llobot.models.library.union import UnionModelLibrary
 
 def test_union_model_library():
-    m1 = MockModel('m1')
-    m2 = MockModel('m2')
-    m3 = MockModel('m3')
-    m2_override = MockModel('m2')
+    m1 = MockModel(name='m1')
+    m2 = MockModel(name='m2')
+    m3 = MockModel(name='m3')
+    m2_override = MockModel(name='m2')
 
     lib1 = NamedModelLibrary(m1, m2)
     lib2 = NamedModelLibrary(m2_override, m3)
@@ -19,10 +19,10 @@ def test_union_model_library():
     assert union.lookup('m4') is None
 
 def test_union_with_operator():
-    m1 = MockModel('m1')
-    m2 = MockModel('m2')
-    m3 = MockModel('m3')
-    m2_override = MockModel('m2')
+    m1 = MockModel(name='m1')
+    m2 = MockModel(name='m2')
+    m3 = MockModel(name='m3')
+    m2_override = MockModel(name='m2')
 
     lib1 = NamedModelLibrary(m1, m2)
     lib2 = NamedModelLibrary(m2_override, m3)
@@ -35,8 +35,8 @@ def test_union_with_operator():
     assert union.lookup('m4') is None
 
 def test_union_flattening():
-    lib1 = NamedModelLibrary(MockModel('m1'))
-    lib2 = NamedModelLibrary(MockModel('m2'))
+    lib1 = NamedModelLibrary(MockModel(name='m1'))
+    lib2 = NamedModelLibrary(MockModel(name='m2'))
     lib3 = EmptyModelLibrary()
 
     union1 = UnionModelLibrary(lib1, lib2)

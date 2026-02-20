@@ -43,14 +43,14 @@ from llobot.roles.router import Router
 # You can @mention them to override the default model.
 models = NamedModelLibrary(
     # This will use qwen2.5-coder on localhost instance of Ollama.
-    OllamaModel('local', model='qwen2.5-coder', num_ctx=24 * 1024),
+    OllamaModel(name='local', model='qwen2.5-coder', num_ctx=24 * 1024),
     GeminiModel(
-        'flash',
+        name='flash',
         model='gemini-2.5-flash',
         auth='YOUR_GOOGLE_API_KEY'
     ),
     AnthropicModel(
-        'sonnet',
+        name='sonnet',
         model='claude-sonnet-4-5',
         auth='YOUR_ANTHROPIC_API_KEY'
     ),
@@ -101,7 +101,7 @@ The `@coder` mention selects the `coder` role. The `@llobot` mention selects the
 >
 > ```python
 > endpoint = remote_ollama_endpoint('remote.host.com', 11434)
-> model = OllamaModel('my-remote-model', model='qwen2:7b', num_ctx=24 * 1024, endpoint=endpoint)
+> model = OllamaModel(name='my-remote-model', model='qwen2:7b', num_ctx=24 * 1024, endpoint=endpoint)
 > ```
 
 ## Commands

@@ -6,7 +6,7 @@ from tests.models.mock import MockModel
 from llobot.roles.chatbot import Chatbot
 
 def test_chatbot_chat():
-    model = MockModel('echo', response="canned")
+    model = MockModel(name='echo', response="canned")
     role = Chatbot('bot', model, prompt="System Prompt")
 
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "Hello")])

@@ -20,8 +20,9 @@ class AnthropicModel(Model, ValueTypeMixin):
     _thinking: int | None
     _binarization_format: BinarizationFormat
 
-    def __init__(self, name: str, *,
+    def __init__(self, *,
         model: str,
+        name: str | None = None,
         client: Anthropic | None = None,
         auth: str | None = None,
         max_tokens: int = 8_000,
@@ -34,8 +35,8 @@ class AnthropicModel(Model, ValueTypeMixin):
         Initializes the Anthropic model.
 
         Args:
-            name: The name for this model instance in llobot.
             model: The actual model ID to use with the Anthropic API. Mandatory.
+            name: The name for this model instance in llobot. Defaults to model ID.
             client: An existing `Anthropic` client instance. If not provided, a new one is created.
             auth: Your Anthropic API key. If not provided, the `ANTHROPIC_API_KEY` environment
                   variable is used.
@@ -44,7 +45,7 @@ class AnthropicModel(Model, ValueTypeMixin):
             thinking: The budget in tokens to allocate for "thinking" (prompt construction).
             binarization_format: Format to use for prompt binarization. Defaults to standard.
         """
-        self._name = name
+        self._name = name if name is not None else model
         self._model = model
         if client:
             self._client = client

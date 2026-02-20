@@ -38,9 +38,10 @@ class OpenAIModel(Model, ValueTypeMixin):
     _reasoning_effort: ChatCompletionReasoningEffort
     _binarization_format: BinarizationFormat
 
-    def __init__(self, name: str, *,
+    def __init__(self, *,
         model: str,
         auth: str,
+        name: str | None = None,
         reasoning_effort: ChatCompletionReasoningEffort = 'medium',
         binarization_format: BinarizationFormat | None = None,
     ):
@@ -48,13 +49,13 @@ class OpenAIModel(Model, ValueTypeMixin):
         Initializes the OpenAI model.
 
         Args:
-            name: The name for this model instance in llobot.
             model: The model ID to use with the API. Mandatory.
             auth: The API key for OpenAI.
+            name: The name for this model instance in llobot. Defaults to model ID.
             reasoning_effort: Reasoning effort for the model. Defaults to 'medium'.
             binarization_format: Format to use for prompt binarization. Defaults to standard.
         """
-        self._name = name
+        self._name = name if name is not None else model
         self._model = model
         self._auth = auth
         self._reasoning_effort = reasoning_effort

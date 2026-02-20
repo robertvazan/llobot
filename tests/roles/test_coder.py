@@ -7,7 +7,7 @@ from tests.models.mock import MockModel
 from llobot.roles.coder import Coder
 
 def test_coder_instantiation(tmp_path: Path):
-    model = MockModel('echo')
+    model = MockModel(name='echo')
     coder = Coder('coder', model, session_history=tmp_path)
 
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "Code something")])

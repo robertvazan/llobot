@@ -17,6 +17,10 @@ def test_value_type_gemini():
     assert hash(model1) == hash(model2)
     assert 'key1' not in repr(model1)
 
+def test_default_name():
+    model = GeminiModel(model='gemini-1.5-flash', auth='key1')
+    assert model.name == 'gemini-1.5-flash'
+
 def test_identifier():
     model = GeminiModel(name='gemini', model='gemini-1.5-flash', auth='key')
     assert model.identifier == 'google/gemini-1.5-flash'

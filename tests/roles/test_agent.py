@@ -14,7 +14,7 @@ from llobot.roles.autonomy import Autonomy, StepAutonomy, NoAutonomy, LimitedAut
 
 def test_agent_first_turn(tmp_path: Path):
     """Tests that Agent creates a new session and includes system prompt on first turn."""
-    model = MockModel('echo')
+    model = MockModel(name='echo')
     agent = Agent('agent', model, prompt="You are an agent.", session_history=tmp_path)
 
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "Hello")])
@@ -29,7 +29,7 @@ def test_agent_first_turn(tmp_path: Path):
 
 def test_agent_session_persistence(tmp_path: Path):
     """Tests that Agent can resume a session and load persisted state."""
-    model = MockModel('echo')
+    model = MockModel(name='echo')
 
     # Turn 1: create a session
     agent1 = Agent('agent', model, prompt="System", session_history=tmp_path)
@@ -58,7 +58,7 @@ def test_agent_session_persistence(tmp_path: Path):
 
 def test_agent_reminder(tmp_path: Path):
     """Tests that Agent includes a reminder prompt on first turn."""
-    model = MockModel('echo')
+    model = MockModel(name='echo')
     agent = Agent('agent', model, prompt="System.\n- IMPORTANT: Do this.", session_history=tmp_path)
 
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "Hi")])
@@ -72,7 +72,7 @@ def test_agent_reminder(tmp_path: Path):
 
 def test_agent_branching(tmp_path: Path):
     """Tests that Agent branches context correctly."""
-    model = MockModel('echo')
+    model = MockModel(name='echo')
     agent = Agent('agent', model, prompt="System", session_history=tmp_path)
 
     # Turn 1
@@ -101,7 +101,7 @@ def test_agent_branching(tmp_path: Path):
 
 def test_agent_missing_history(tmp_path: Path):
     """Tests that Agent raises FileNotFoundError when history is missing."""
-    model = MockModel('echo')
+    model = MockModel(name='echo')
     agent = Agent('agent', model, prompt="System", session_history=tmp_path)
 
     # Construct a prompt that looks like a second turn (P1, R1, P2)
@@ -117,7 +117,7 @@ def test_agent_missing_history(tmp_path: Path):
 
 def test_agent_run_command(tmp_path: Path):
     """Tests that Agent can execute tool calls with @run command."""
-    model = MockModel('echo')
+    model = MockModel(name='echo')
     # Agent needs a project to write files to.
     from llobot.projects.directory import DirectoryProject
     project = DirectoryProject(tmp_path / 'project', prefix="project", mutable=True)
@@ -215,7 +215,7 @@ def test_agent_autorun(tmp_path: Path):
             yield ChatIntent.RESPONSE
             yield tool_call_2
 
-    model = PresetModel('preset')
+    model = PresetModel(name='preset')
 
     class ProjectAwareAgent(Agent):
         def handle_setup(self, env):
@@ -256,7 +256,7 @@ def test_agent_autorun(tmp_path: Path):
 
 def test_agent_autonomy_command_persistence(tmp_path: Path):
     """Tests that @autonomy command changes autonomy and persists it."""
-    model = MockModel('echo')
+    model = MockModel(name='echo')
 
     step = StepAutonomy()
     profiles = {'step': step}
@@ -291,7 +291,7 @@ def test_agent_autonomy_command_persistence(tmp_path: Path):
 
 def test_project_command_summary(tmp_path: Path):
     """Tests that project selection command adds project summary to the context."""
-    model = MockModel('echo')
+    model = MockModel(name='echo')
 
     # Setup a project environment with a mock project
     from llobot.projects.marker import MarkerProject
@@ -315,7 +315,7 @@ def test_project_command_summary(tmp_path: Path):
     assert "- Marker `~/myproject`" in context
 
     # Verify that project summary is NOT included if projects didn't change (e.g. no @project command)
-    model = MockModel('echo')
+    model = MockModel(name='echo')
     agent = ProjectAwareAgent('agent', model, session_history=tmp_path, projects=library)
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "Hello")])
     record_stream(agent.chat(prompt))
@@ -327,7 +327,7 @@ def test_agent_stuffing_order_with_setup_message(tmp_path: Path):
     """
     Tests that context stuffing prepends system prompt even if setup added messages.
     """
-    model = MockModel('echo')
+    model = MockModel(name='echo')
 
     class SetupAgent(Agent):
         def handle_setup(self, env):
@@ -365,7 +365,7 @@ def test_agent_stuffing_order_with_setup_message(tmp_path: Path):
 
 def test_agent_exception_handling(tmp_path: Path):
     """Tests that Agent catches exceptions during command processing and reports them as status messages."""
-    model = MockModel('echo')
+    model = MockModel(name='echo')
 
     class BrokenAgent(Agent):
         def handle_commands(self, env):
@@ -389,7 +389,7 @@ def test_agent_exception_handling(tmp_path: Path):
 
 def test_agent_unrecognized_command_error(tmp_path: Path):
     """Tests that unrecognized commands result in a status message instead of crashing."""
-    model = MockModel('echo')
+    model = MockModel(name='echo')
     agent = Agent('agent', model, session_history=tmp_path)
 
     # @invalid is not a registered command, so handle_unrecognized_commands should raise ValueError,
@@ -409,6 +409,6 @@ def test_agent_unrecognized_command_error(tmp_path: Path):
 
 def test_agent_default_autonomy(tmp_path: Path):
     """Tests that Agent defaults to LimitedAutonomy."""
-    model = MockModel('echo')
+    model = MockModel(name='echo')
     agent = Agent('agent', model, session_history=tmp_path)
     assert isinstance(agent._autonomy, LimitedAutonomy)
