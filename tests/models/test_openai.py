@@ -37,3 +37,15 @@ def test_missing_model():
 def test_identifier():
     model = OpenAIModel(name='gpt4', auth='key', model='gpt-4o')
     assert model.identifier == 'openai/gpt-4o'
+
+def test_reasoning_parameter_equality():
+    """
+    Tests that reasoning parameter affects value equality.
+    """
+    # Default is None
+    model1 = OpenAIModel(model='gpt-4o')
+    # Explicitly set to 'high'
+    model2 = OpenAIModel(model='gpt-4o', reasoning='high')
+
+    assert model1 != model2
+    assert hash(model1) != hash(model2)

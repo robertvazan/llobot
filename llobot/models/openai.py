@@ -3,7 +3,7 @@ Client for OpenAI models.
 """
 from __future__ import annotations
 from typing import Iterable, cast
-from openai import OpenAI
+from openai import OpenAI, NOT_GIVEN
 from openai.types.chat import ChatCompletionMessageParam, ChatCompletionReasoningEffort, ChatCompletionRole
 from llobot.formats.binarization import BinarizationFormat, standard_binarization_format
 from llobot.chats.thread import ChatThread
@@ -35,14 +35,14 @@ class OpenAIModel(Model, ValueTypeMixin):
     _name: str
     _model: str
     _auth: str | None
-    _reasoning_effort: ChatCompletionReasoningEffort
+    _reasoning: ChatCompletionReasoningEffort | None
     _binarization_format: BinarizationFormat
 
     def __init__(self, *,
         model: str,
         auth: str | None = None,
         name: str | None = None,
-        reasoning_effort: ChatCompletionReasoningEffort = 'medium',
+        reasoning: ChatCompletionReasoningEffort | None = None,
         binarization_format: BinarizationFormat | None = None,
     ):
         """
@@ -52,13 +52,13 @@ class OpenAIModel(Model, ValueTypeMixin):
             model: The model ID to use with the API. Mandatory.
             auth: The API key for OpenAI. If None, uses OPENAI_API_KEY env var.
             name: The name for this model instance in llobot. Defaults to model ID.
-            reasoning_effort: Reasoning effort for the model. Defaults to 'medium'.
+            reasoning: Reasoning effort for the model. Defaults to None (use API default).
             binarization_format: Format to use for prompt binarization. Defaults to standard.
         """
         self._name = name if name is not None else model
         self._model = model
         self._auth = auth
-        self._reasoning_effort = reasoning_effort
+        self._reasoning = reasoning
         self._binarization_format = binarization_format or standard_binarization_format()
 
     def _ephemeral_fields(self) -> Iterable[str]:
@@ -83,11 +83,12 @@ class OpenAIModel(Model, ValueTypeMixin):
             sanitized_prompt = self._binarization_format.binarize_chat(prompt)
             messages = _encode_chat(sanitized_prompt)
             yield ChatIntent.RESPONSE
+
             completion = client.chat.completions.create(
                 model=self._model,
                 messages=messages,
                 stream=True,
-                reasoning_effort=self._reasoning_effort,
+                reasoning_effort=self._reasoning or NOT_GIVEN,
             )
             for chunk in completion:
                 if chunk.choices:
