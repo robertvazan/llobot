@@ -46,12 +46,12 @@ models = NamedModelLibrary(
     OllamaModel(name='local', model='qwen2.5-coder', num_ctx=24 * 1024),
     GeminiModel(
         name='flash',
-        model='gemini-2.5-flash',
+        model='gemini-3-flash-preview',
         auth='YOUR_GOOGLE_API_KEY'
     ),
     AnthropicModel(
         name='sonnet',
-        model='claude-sonnet-4-5',
+        model='claude-sonnet-4-6',
         auth='YOUR_ANTHROPIC_API_KEY',
         max_tokens=8_000,
     ),
