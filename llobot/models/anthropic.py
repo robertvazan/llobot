@@ -79,21 +79,13 @@ class AnthropicModel(Model, ValueTypeMixin):
                     'role': 'user' if message.intent == ChatIntent.PROMPT else 'assistant',
                     'content': message.content,
                 })
-            # Skip the last message, which is the user's prompt, because it tends to be frequently edited.
-            cacheable = sanitized_prompt[:-1]
-            if self._cached and cacheable:
-                breakpoints = [int(bp * cacheable.cost) for bp in (0.25, 0.5, 0.75, 1.0)]
-                cumulative = 0
-                for i, message in enumerate(cacheable):
-                    cumulative += message.cost
-                    if breakpoints and cumulative >= breakpoints[0]:
-                        messages[i]['content'] = [{'type': 'text', 'text': messages[i]['content'], 'cache_control': {'type': 'ephemeral'}}]
-                        breakpoints.pop(0)
             parameters = {
                 'model': self._model,
                 'max_tokens': self._max_tokens,
                 'messages': messages,
             }
+            if self._cached:
+                parameters['cache_control'] = {'type': 'ephemeral'}
             if self._thinking is not None:
                 parameters['thinking'] = {
                     "type": "enabled",
