@@ -159,3 +159,28 @@ def test_shell_tool_last_at_in_header(env: Environment):
     context = env[ContextEnv].build()
     msg = context[0]
     assert "Shell output: run @ my place @ ~/proj" in msg.content
+
+def test_shell_tool_sanitizes_output(env: Environment):
+    project = MockProject(
+        {PurePosixPath('proj')},
+        {PurePosixPath('proj')}
+    )
+    # Inject behavior to return control characters
+    # MockProject returns the first line of the script as output
+
+    env[ProjectEnv].configure(MockLibrary(project))
+    env[ProjectEnv].add('any')
+
+    tool = ShellTool()
+    # \x1b will be in the script, so it will be in the output.
+    source = wrap_script("echo \x1b[31mRed", "run color")
+
+    tool.execute(env, ToolReader(source))
+
+    context = env[ContextEnv].build()
+    msg = context[0]
+
+    # We expect the control characters to be escaped
+    assert "\\x1b[31mRed" in msg.content
+    # And ensure raw control characters are NOT present
+    assert "\x1b" not in msg.content

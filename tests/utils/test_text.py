@@ -174,3 +174,34 @@ def test_quote_code():
 
     # No padding needed if not starting/ending with backtick
     assert quote_code("foo`bar") == "``foo`bar``"
+
+
+def test_sanitize_text():
+    from llobot.utils.text import sanitize_text
+
+    # Basic ASCII
+    assert sanitize_text("hello") == "hello"
+
+    # Newlines and tabs preserved
+    assert sanitize_text("hello\n\tworld") == "hello\n\tworld"
+
+    # ANSI escapes
+    # \x1b becomes literal \x1b
+    assert sanitize_text("\x1b[31mRed\x1b[0m") == "\\x1b[31mRed\\x1b[0m"
+
+    # Null byte
+    assert sanitize_text("null\x00") == "null\\x00"
+
+    # Carriage return
+    assert sanitize_text("line\r") == "line\\r"
+
+    # Bell
+    assert sanitize_text("ding\x07") == "ding\\x07"
+
+    # C1 Control characters (e.g. \x80, \x9f)
+    assert sanitize_text("\x80start\x9fend") == "\\x80start\\x9fend"
+
+    # Unicode characters should be preserved
+    assert sanitize_text("€") == "€"
+    assert sanitize_text("ñ") == "ñ"
+    assert sanitize_text("あ") == "あ"

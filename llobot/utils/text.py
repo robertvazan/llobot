@@ -3,6 +3,28 @@ from __future__ import annotations
 import re
 from typing import Iterable
 
+# Matches C0 controls (excluding \t and \n), DEL, and C1 controls.
+_CONTROL_CHAR_RE = re.compile(r'[\x00-\x08\x0b-\x1f\x7f\x80-\x9f]')
+
+def sanitize_text(text: str) -> str:
+    """
+    Sanitizes text by escaping control characters.
+
+    Preserves newlines (\\n) and tabs (\\t). Other control characters
+    (C0 and C1 control sets + DEL) are replaced with their Python string literal
+    representation (e.g., \\x1b for ESC).
+
+    Args:
+        text: The input text.
+
+    Returns:
+        Sanitized text.
+    """
+    def replace(match):
+        return match.group().encode('unicode_escape').decode('ascii')
+
+    return _CONTROL_CHAR_RE.sub(replace, text)
+
 def terminate_document(text: str) -> str:
     """
     Adds a terminal newline to the text if it doesn't have one.
@@ -144,17 +166,6 @@ def markdown_code_details(summary: str, lang: str, document: str, *, header: str
     header_part = f"{header}\n\n" if header else ""
     return f'<details>\n<summary>{summary}</summary>\n\n{header_part}{quoted}\n\n</details>'
 
-__all__ = [
-    'terminate_document',
-    'normalize_document',
-    'join_documents',
-    'concat_documents',
-    'dashed_name',
-    'markdown_code_block',
-    'markdown_code_details',
-    'quote_code',
-]
-
 def quote_code(text: str) -> str:
     """
     Quotes text as an inline Markdown code span.
@@ -182,3 +193,15 @@ def quote_code(text: str) -> str:
     if text.startswith('`') or text.endswith('`'):
         return f'{fence} {text} {fence}'
     return f'{fence}{text}{fence}'
+
+__all__ = [
+    'sanitize_text',
+    'terminate_document',
+    'normalize_document',
+    'join_documents',
+    'concat_documents',
+    'dashed_name',
+    'markdown_code_block',
+    'markdown_code_details',
+    'quote_code',
+]

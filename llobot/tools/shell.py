@@ -12,7 +12,7 @@ from llobot.environments.projects import ProjectEnv
 from llobot.formats.paths import parse_path
 from llobot.projects import Project
 from llobot.tools.fenced import FencedTool
-from llobot.utils.text import markdown_code_details
+from llobot.utils.text import markdown_code_details, sanitize_text
 
 _SHELL_HEADER_RE = re.compile(r'^(?P<description>.*)\s+@\s+(?P<path>~/.+)$')
 
@@ -38,10 +38,11 @@ class ShellTool(FencedTool):
         path = self._determine_path(project, path_str)
 
         output = project.execute(path, script)
+        sanitized_output = sanitize_text(output)
 
         # Always include path in summary
         result_header = f"{description} @ ~/{path}"
-        formatted = markdown_code_details(f"Shell output: {result_header}", "", output)
+        formatted = markdown_code_details(f"Shell output: {result_header}", "", sanitized_output)
         env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, formatted))
         return True
 
