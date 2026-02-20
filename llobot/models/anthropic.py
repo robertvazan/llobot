@@ -17,7 +17,7 @@ class AnthropicModel(Model, ValueTypeMixin):
     _client: Anthropic
     _max_tokens: int
     _cached: bool
-    _thinking: int | None
+    _effort: str | None
     _binarization_format: BinarizationFormat
 
     def __init__(self, *,
@@ -28,7 +28,7 @@ class AnthropicModel(Model, ValueTypeMixin):
         max_tokens: int = 8_000,
         # No caching by default. It costs extra and not everyone takes advantage of it.
         cached: bool = False,
-        thinking: int | None = None,
+        effort: str | None = None,
         binarization_format: BinarizationFormat | None = None,
     ):
         """
@@ -42,7 +42,7 @@ class AnthropicModel(Model, ValueTypeMixin):
                   variable is used.
             max_tokens: The maximum number of tokens to generate.
             cached: Whether to use Anthropic's caching feature.
-            thinking: The budget in tokens to allocate for "thinking" (prompt construction).
+            effort: The effort level for thinking (e.g., "max").
             binarization_format: Format to use for prompt binarization. Defaults to standard.
         """
         self._name = name if name is not None else model
@@ -56,7 +56,7 @@ class AnthropicModel(Model, ValueTypeMixin):
             self._client = Anthropic()
         self._max_tokens = max_tokens
         self._cached = cached
-        self._thinking = thinking
+        self._effort = effort
         self._binarization_format = binarization_format or standard_binarization_format()
 
     def _ephemeral_fields(self) -> Iterable[str]:
@@ -86,11 +86,9 @@ class AnthropicModel(Model, ValueTypeMixin):
             }
             if self._cached:
                 parameters['cache_control'] = {'type': 'ephemeral'}
-            if self._thinking is not None:
-                parameters['thinking'] = {
-                    "type": "enabled",
-                    "budget_tokens": self._thinking
-                }
+            parameters['thinking'] = {'type': 'adaptive'}
+            if self._effort is not None:
+                parameters['output_config'] = {'effort': self._effort}
             yield ChatIntent.RESPONSE
             with self._client.messages.stream(**parameters) as stream:
                 yield from stream.text_stream
