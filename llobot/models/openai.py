@@ -2,8 +2,8 @@
 Client for OpenAI models.
 """
 from __future__ import annotations
-from typing import Iterable, cast
-from openai import OpenAI, NOT_GIVEN
+from typing import Any, Iterable, cast
+from openai import OpenAI
 from openai.types.chat import ChatCompletionMessageParam, ChatCompletionReasoningEffort, ChatCompletionRole
 from llobot.formats.binarization import BinarizationFormat, standard_binarization_format
 from llobot.chats.thread import ChatThread
@@ -84,11 +84,15 @@ class OpenAIModel(Model, ValueTypeMixin):
             messages = _encode_chat(sanitized_prompt)
             yield ChatIntent.RESPONSE
 
+            kwargs: dict[str, Any] = {}
+            if self._reasoning is not None:
+                kwargs['reasoning_effort'] = self._reasoning
+
             completion = client.chat.completions.create(
                 model=self._model,
                 messages=messages,
                 stream=True,
-                reasoning_effort=self._reasoning or NOT_GIVEN,
+                **kwargs
             )
             for chunk in completion:
                 if chunk.choices:
