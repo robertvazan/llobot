@@ -68,9 +68,9 @@ class GeminiModel(Model, ValueTypeMixin):
             sanitized_prompt = self._binarization_format.binarize_chat(prompt)
             for message in sanitized_prompt:
                 if message.intent == ChatIntent.PROMPT:
-                    contents.append(types.UserContent(parts=[types.Part(text=message.content)]))
+                    contents.append(types.UserContent(parts=[types.Part.from_text(text=message.content)]))
                 else:
-                    contents.append(types.ModelContent(parts=[types.Part(text=message.content)]))
+                    contents.append(types.ModelContent(parts=[types.Part.from_text(text=message.content)]))
             config = types.GenerateContentConfig()
             if self._thinking is not None:
                 config.thinking_config = types.ThinkingConfig(thinking_budget=self._thinking)
