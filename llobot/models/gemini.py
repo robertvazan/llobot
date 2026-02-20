@@ -20,7 +20,7 @@ class GeminiModel(Model, ValueTypeMixin):
     _binarization_format: BinarizationFormat
 
     def __init__(self, name: str, *,
-        model: str = 'gemini-2.5-pro',
+        model: str,
         client: genai.Client | None = None,
         auth: str | None = None,
         thinking: int | None = None,
@@ -31,7 +31,7 @@ class GeminiModel(Model, ValueTypeMixin):
 
         Args:
             name: The name for this model instance in llobot.
-            model: The model ID to use with the Gemini API. Defaults to 'gemini-2.5-pro'.
+            model: The model ID to use with the Gemini API. Mandatory.
             client: An existing `genai.Client` instance. If not provided, a new one is created.
             auth: Your Google API key. If not provided, the `GOOGLE_API_KEY` environment
                   variable is used.

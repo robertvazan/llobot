@@ -21,7 +21,7 @@ class AnthropicModel(Model, ValueTypeMixin):
     _binarization_format: BinarizationFormat
 
     def __init__(self, name: str, *,
-        model: str = 'claude-sonnet-4-0',
+        model: str,
         client: Anthropic | None = None,
         auth: str | None = None,
         max_tokens: int = 8_000,
@@ -35,7 +35,7 @@ class AnthropicModel(Model, ValueTypeMixin):
 
         Args:
             name: The name for this model instance in llobot.
-            model: The actual model ID to use with the Anthropic API. Defaults to 'claude-sonnet-4-0'.
+            model: The actual model ID to use with the Anthropic API. Mandatory.
             client: An existing `Anthropic` client instance. If not provided, a new one is created.
             auth: Your Anthropic API key. If not provided, the `ANTHROPIC_API_KEY` environment
                   variable is used.

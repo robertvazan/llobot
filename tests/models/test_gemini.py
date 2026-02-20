@@ -3,6 +3,7 @@ Tests for Gemini model integration.
 """
 from __future__ import annotations
 from llobot.models.gemini import GeminiModel
+import pytest
 
 def test_value_type_gemini():
     """
@@ -19,3 +20,10 @@ def test_value_type_gemini():
 def test_identifier():
     model = GeminiModel(name='gemini', model='gemini-1.5-flash', auth='key')
     assert model.identifier == 'google/gemini-1.5-flash'
+
+def test_missing_model():
+    """
+    Tests that `model` parameter is mandatory.
+    """
+    with pytest.raises(TypeError):
+        GeminiModel(name='gemini', auth='key') # type: ignore[reportCallIssue]

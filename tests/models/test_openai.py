@@ -22,7 +22,14 @@ def test_missing_auth():
     Tests that `auth` parameter is mandatory.
     """
     with pytest.raises(TypeError):
-        OpenAIModel(name='gpt4')
+        OpenAIModel(name='gpt4', model='gpt-4o') # type: ignore[reportCallIssue]
+
+def test_missing_model():
+    """
+    Tests that `model` parameter is mandatory.
+    """
+    with pytest.raises(TypeError):
+        OpenAIModel(name='gpt4', auth='key') # type: ignore[reportCallIssue]
 
 def test_identifier():
     model = OpenAIModel(name='gpt4', auth='key', model='gpt-4o')

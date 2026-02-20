@@ -3,6 +3,7 @@ Tests for Anthropic model integration.
 """
 from __future__ import annotations
 from llobot.models.anthropic import AnthropicModel
+import pytest
 
 def test_value_type_anthropic():
     """
@@ -20,3 +21,10 @@ def test_value_type_anthropic():
 def test_identifier():
     model = AnthropicModel(name='claude', model='claude-3-opus-20240229', auth='key')
     assert model.identifier == 'anthropic/claude-3-opus-20240229'
+
+def test_missing_model():
+    """
+    Tests that `model` parameter is mandatory.
+    """
+    with pytest.raises(TypeError):
+        AnthropicModel(name='claude', auth='key') # type: ignore[reportCallIssue]

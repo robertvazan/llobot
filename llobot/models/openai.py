@@ -2,8 +2,9 @@
 Client for OpenAI models.
 """
 from __future__ import annotations
-from typing import Iterable
+from typing import Iterable, cast
 from openai import OpenAI
+from openai.types.chat import ChatCompletionMessageParam, ChatCompletionReasoningEffort, ChatCompletionRole
 from llobot.formats.binarization import BinarizationFormat, standard_binarization_format
 from llobot.chats.thread import ChatThread
 from llobot.chats.intent import ChatIntent
@@ -12,7 +13,7 @@ from llobot.models import Model
 from llobot.chats.stream import ChatStream, buffer_stream
 from llobot.utils.values import ValueTypeMixin
 
-def _encode_role(intent: ChatIntent) -> str:
+def _encode_role(intent: ChatIntent) -> ChatCompletionRole:
     if intent == ChatIntent.RESPONSE:
         return 'assistant'
     else:
@@ -24,8 +25,8 @@ def _encode_message(message: ChatMessage) -> dict[str, str]:
         'content': message.content
     }
 
-def _encode_chat(chat: ChatThread) -> list[dict[str, str]]:
-    return [_encode_message(message) for message in chat]
+def _encode_chat(chat: ChatThread) -> list[ChatCompletionMessageParam]:
+    return [cast(ChatCompletionMessageParam, _encode_message(message)) for message in chat]
 
 class OpenAIModel(Model, ValueTypeMixin):
     """
@@ -34,13 +35,13 @@ class OpenAIModel(Model, ValueTypeMixin):
     _name: str
     _model: str
     _auth: str
-    _reasoning_effort: str
+    _reasoning_effort: ChatCompletionReasoningEffort
     _binarization_format: BinarizationFormat
 
     def __init__(self, name: str, *,
+        model: str,
         auth: str,
-        model: str = 'gpt-5',
-        reasoning_effort: str = 'medium',
+        reasoning_effort: ChatCompletionReasoningEffort = 'medium',
         binarization_format: BinarizationFormat | None = None,
     ):
         """
@@ -48,8 +49,8 @@ class OpenAIModel(Model, ValueTypeMixin):
 
         Args:
             name: The name for this model instance in llobot.
+            model: The model ID to use with the API. Mandatory.
             auth: The API key for OpenAI.
-            model: The model ID to use with the API. Defaults to 'gpt-5'.
             reasoning_effort: Reasoning effort for the model. Defaults to 'medium'.
             binarization_format: Format to use for prompt binarization. Defaults to standard.
         """
