@@ -16,7 +16,6 @@ class GeminiModel(Model, ValueTypeMixin):
     _name: str
     _model: str
     _client: genai.Client
-    _thinking: int | None
     _binarization_format: BinarizationFormat
 
     def __init__(self, *,
@@ -24,7 +23,6 @@ class GeminiModel(Model, ValueTypeMixin):
         name: str | None = None,
         client: genai.Client | None = None,
         auth: str | None = None,
-        thinking: int | None = None,
         binarization_format: BinarizationFormat | None = None,
     ):
         """
@@ -36,7 +34,6 @@ class GeminiModel(Model, ValueTypeMixin):
             client: An existing `genai.Client` instance. If not provided, a new one is created.
             auth: Your Google API key. If not provided, the `GOOGLE_API_KEY` environment
                   variable is used.
-            thinking: The budget in tokens to allocate for "thinking" (prompt construction).
             binarization_format: Format to use for prompt binarization. Defaults to standard.
         """
         self._name = name if name is not None else model
@@ -48,7 +45,6 @@ class GeminiModel(Model, ValueTypeMixin):
         else:
             # API key is taken from GOOGLE_API_KEY environment variable.
             self._client = genai.Client()
-        self._thinking = thinking
         self._binarization_format = binarization_format or standard_binarization_format()
 
     def _ephemeral_fields(self) -> Iterable[str]:
@@ -72,8 +68,6 @@ class GeminiModel(Model, ValueTypeMixin):
                 else:
                     contents.append(types.ModelContent(parts=[types.Part.from_text(text=message.content)]))
             config = types.GenerateContentConfig()
-            if self._thinking is not None:
-                config.thinking_config = types.ThinkingConfig(thinking_budget=self._thinking)
             yield ChatIntent.RESPONSE
             stream = self._client.models.generate_content_stream(
                 model=self._model,

@@ -31,3 +31,10 @@ def test_missing_model():
     """
     with pytest.raises(TypeError):
         GeminiModel(name='gemini', auth='key') # type: ignore[reportCallIssue]
+
+def test_thinking_removed():
+    """
+    Tests that `thinking` parameter is no longer accepted.
+    """
+    with pytest.raises(TypeError):
+        GeminiModel(model='gemini-1.5-flash', auth='key', thinking=1000) # type: ignore[reportCallIssue]
