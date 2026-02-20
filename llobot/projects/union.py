@@ -158,12 +158,12 @@ def union_project(*projects: Project) -> Project:
     - `EmptyProject` instances are filtered out.
     """
     from llobot.projects.empty import EmptyProject
-    projects = [p for p in projects if not isinstance(p, EmptyProject)]
-    if not projects:
+    filtered = [p for p in projects if not isinstance(p, EmptyProject)]
+    if not filtered:
         return EmptyProject()
-    if len(projects) == 1:
-        return projects[0]
-    return UnionProject(*projects)
+    if len(filtered) == 1:
+        return filtered[0]
+    return UnionProject(*filtered)
 
 __all__ = [
     'UnionProject',

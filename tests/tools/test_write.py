@@ -70,7 +70,7 @@ def test_write_tool_slice_extra_whitespace(env: Environment):
     assert reader.success_count == 1
 
     project = env[ProjectEnv].union
-    assert 'print("hello")' in project.read(PurePosixPath("myproject/bar.py"))
+    assert 'print("hello")' in (project.read(PurePosixPath("myproject/bar.py")) or "")
 
 def test_write_tool_no_match(env: Environment):
     tool = WriteTool()
@@ -130,7 +130,7 @@ def test_write_tool_nested_fences(env: Environment):
     tool.execute(env, reader)
 
     project = env[ProjectEnv].union
-    assert '```python\nprint("hello")\n```' in project.read(PurePosixPath("myproject/foo.md"))
+    assert '```python\nprint("hello")\n```' in (project.read(PurePosixPath("myproject/foo.md")) or "")
 
 def test_write_tool_conflicting_fence(env: Environment):
     tool = WriteTool()
@@ -168,7 +168,7 @@ def test_write_tool_midline_fence(env: Environment):
     tool.execute(env, reader)
 
     project = env[ProjectEnv].union
-    assert "text with ``` backticks" in project.read(PurePosixPath("myproject/foo.md"))
+    assert "text with ``` backticks" in (project.read(PurePosixPath("myproject/foo.md")) or "")
 
 def test_write_tool_file_alias_warning(env: Environment):
     tool = WriteTool()

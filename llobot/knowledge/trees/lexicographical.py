@@ -1,7 +1,11 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
 from llobot.knowledge.ranking import KnowledgeRankingPrecursor
 from llobot.knowledge.ranking.lexicographical import rank_lexicographically
 from llobot.knowledge.trees.ranked import ranked_tree
+
+if TYPE_CHECKING:
+    from llobot.knowledge.trees import KnowledgeTree
 
 def lexicographical_tree(index: KnowledgeRankingPrecursor) -> 'KnowledgeTree':
     """

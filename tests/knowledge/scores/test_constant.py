@@ -1,4 +1,5 @@
 from pathlib import PurePosixPath
+from typing import Any, cast
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.scores.constant import constant_scores, ConstantScorer
@@ -37,7 +38,7 @@ def test_constant_scorer_default():
 def test_constant_scores_invalid_type():
     from llobot.knowledge.scores import KnowledgeScores
     try:
-        constant_scores(KnowledgeScores({PurePosixPath('a.txt'): 1.0}))
+        constant_scores(cast(Any, KnowledgeScores({PurePosixPath('a.txt'): 1.0})))
         assert False, "Should have raised TypeError"
     except TypeError:
         pass

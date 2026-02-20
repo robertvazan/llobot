@@ -1,4 +1,5 @@
 import pytest
+from typing import Any, cast
 from llobot.chats.thread import ChatThread
 from llobot.chats.builder import ChatBuilder
 from llobot.chats.intent import ChatIntent
@@ -32,7 +33,7 @@ def test_add_type_error():
     """Tests that adding an invalid type raises TypeError."""
     builder = ChatBuilder()
     with pytest.raises(TypeError):
-        builder.add(123)
+        builder.add(cast(Any, 123))
 
 def test_build():
     """Tests building a ChatThread from a builder."""

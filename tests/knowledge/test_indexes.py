@@ -2,6 +2,7 @@
 Tests for `llobot.knowledge.indexes`.
 """
 from pathlib import PurePosixPath
+from typing import Any, cast
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex, coerce_index
 from llobot.knowledge.ranking import KnowledgeRanking
@@ -67,7 +68,7 @@ def test_coerce_index():
 def test_coerce_index_invalid_type():
     from llobot.knowledge.scores import KnowledgeScores
     try:
-        coerce_index(KnowledgeScores({PurePosixPath('a.txt'): 1.0}))
+        coerce_index(cast(Any, KnowledgeScores({PurePosixPath('a.txt'): 1.0})))
         assert False, "Should have raised TypeError"
     except TypeError:
         pass

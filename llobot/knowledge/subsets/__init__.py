@@ -44,7 +44,13 @@ universal
 """
 from __future__ import annotations
 from pathlib import PurePosixPath
-from typing import Iterable
+from typing import Iterable, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from llobot.knowledge import Knowledge
+    from llobot.knowledge.indexes import KnowledgeIndex
+    from llobot.knowledge.ranking import KnowledgeRanking
+    from llobot.knowledge.scores import KnowledgeScores
 
 class KnowledgeSubset:
     """
@@ -97,7 +103,7 @@ class KnowledgeSubset:
         return ['_memory']
 
 
-def coerce_subset(material: KnowledgeSubset | str | PurePosixPath | 'KnowledgeIndex' | 'KnowledgeRanking' | 'KnowledgeScores' | 'Knowledge') -> KnowledgeSubset:
+def coerce_subset(material: KnowledgeSubset | str | PurePosixPath | KnowledgeIndex | KnowledgeRanking | KnowledgeScores | Knowledge) -> KnowledgeSubset:
     """
     Coerces various objects into a KnowledgeSubset.
 

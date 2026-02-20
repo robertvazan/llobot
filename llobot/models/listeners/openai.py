@@ -6,7 +6,7 @@ import traceback
 import json
 import logging
 import time
-from typing import Iterable
+from typing import Iterable, cast
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from llobot.chats.thread import ChatThread
 from llobot.chats.builder import ChatBuilder
@@ -112,7 +112,8 @@ class _OpenAIServer(ThreadingHTTPServer):
 
 class _OpenAIHttpHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        models: dict[str, Model] = self.server.models
+        server = cast(_OpenAIServer, self.server)
+        models = server.models
         if self.path == '/v1/models':
             data = _encode_list(models.values())
             self.send_response(200)
@@ -122,7 +123,8 @@ class _OpenAIHttpHandler(BaseHTTPRequestHandler):
         else:
             self.send_error(404)
     def do_POST(self):
-        models: dict[str, Model] = self.server.models
+        server = cast(_OpenAIServer, self.server)
+        models = server.models
         if self.path == '/v1/chat/completions':
             try:
                 content_length = int(self.headers.get('Content-Length', 0))

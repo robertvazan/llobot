@@ -2,6 +2,8 @@ from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
 from llobot.chats.stream import record_stream
 from llobot.chats.thread import ChatThread
+from llobot.roles import Role
+from typing import cast
 from tests.models.mock import MockModel
 from llobot.roles.chatbot import Chatbot
 from llobot.roles.models import RoleModel
@@ -38,7 +40,7 @@ def test_role_model_exception_handling():
         def chat(self, prompt):
             raise ValueError("Something went wrong")
 
-    role_model = RoleModel(BrokenRole())
+    role_model = RoleModel(cast(Role, BrokenRole()))
 
     prompt = ChatThread([ChatMessage(ChatIntent.PROMPT, "Hi")])
     stream = role_model.generate(prompt)

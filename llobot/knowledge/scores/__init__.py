@@ -31,12 +31,15 @@ normal
 from __future__ import annotations
 import math
 from pathlib import PurePosixPath
-from typing import Iterator
+from typing import Iterator, TYPE_CHECKING
 from llobot.utils.values import ValueTypeMixin
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex, coerce_index
 from llobot.knowledge.subsets import KnowledgeSubset, coerce_subset
 from llobot.formats.paths import coerce_path
+
+if TYPE_CHECKING:
+    from llobot.knowledge.ranking import KnowledgeRanking
 
 class KnowledgeScores(ValueTypeMixin):
     """
@@ -48,14 +51,16 @@ class KnowledgeScores(ValueTypeMixin):
     """
     _scores: dict[PurePosixPath, float]
 
-    def __init__(self, scores: dict[PurePosixPath, float] = {}):
+    def __init__(self, scores: dict[PurePosixPath, float] | None = None):
         """
         Initializes a `KnowledgeScores` object.
 
         Args:
-            scores: A dictionary of paths and their corresponding scores.
+            scores: A dictionary of paths and their corresponding scores. Defaults to empty.
                     Scores that are zero or non-finite are filtered out.
         """
+        if scores is None:
+            scores = {}
         self._scores = {coerce_path(path): float(score) for path, score in scores.items() if math.isfinite(score) and score != 0}
 
     def __repr__(self) -> str:
@@ -77,7 +82,7 @@ class KnowledgeScores(ValueTypeMixin):
     def __getitem__(self, path: PurePosixPath) -> float:
         return self._scores.get(path, 0)
 
-    def __iter__(self) -> Iterator[(PurePosixPath, float)]:
+    def __iter__(self) -> Iterator[tuple[PurePosixPath, float]]:
         return iter(self._scores.items())
 
     def _coerce_operand(self, other: int | float | KnowledgeScores | Knowledge) -> KnowledgeScores:
@@ -112,7 +117,7 @@ class KnowledgeScores(ValueTypeMixin):
         """Reverse add. See `__add__`."""
         return self + other
 
-    def __sub__(self, other: int | float | KnowledgeScores | Knowledge | KnowledgeSubset | str | KnowledgeIndex | 'KnowledgeRanking') -> KnowledgeScores:
+    def __sub__(self, other: int | float | KnowledgeScores | Knowledge | KnowledgeSubset | str | KnowledgeIndex | KnowledgeRanking) -> KnowledgeScores:
         """
         Subtracts scores or filters paths.
 
@@ -161,7 +166,7 @@ class KnowledgeScores(ValueTypeMixin):
         """Reverse divide. See `__truediv__`."""
         return self._coerce_operand(other) / self
 
-    def __and__(self, subset: KnowledgeSubset | str | KnowledgeIndex | 'KnowledgeRanking' | Knowledge) -> KnowledgeScores:
+    def __and__(self, subset: KnowledgeSubset | str | KnowledgeIndex | KnowledgeRanking | Knowledge) -> KnowledgeScores:
         """
         Filters scores, keeping only paths present in the given subset.
 
@@ -182,7 +187,7 @@ class KnowledgeScores(ValueTypeMixin):
         """Calculates the sum of all scores."""
         return sum(self._scores.values())
 
-def coerce_scores(what: KnowledgeScores | Knowledge | KnowledgeIndex | 'KnowledgeRanking') -> KnowledgeScores:
+def coerce_scores(what: KnowledgeScores | Knowledge | KnowledgeIndex | KnowledgeRanking) -> KnowledgeScores:
     """
     Coerces various objects into `KnowledgeScores`.
 

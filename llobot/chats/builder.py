@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import overload
 from llobot.chats.thread import ChatThread
 from llobot.chats.intent import ChatIntent
 from llobot.chats.message import ChatMessage
@@ -98,6 +99,12 @@ class ChatBuilder:
     def cost(self) -> int:
         """The total estimated cost of all messages currently in the builder."""
         return self.build().cost
+
+    @overload
+    def __getitem__(self, key: int) -> ChatMessage: ...
+
+    @overload
+    def __getitem__(self, key: slice) -> ChatThread: ...
 
     def __getitem__(self, key: int | slice) -> ChatMessage | ChatThread:
         if isinstance(key, slice):

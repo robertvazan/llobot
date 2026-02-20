@@ -38,7 +38,7 @@ def test_add_operator_not_implemented():
     t1 = TrivialCrammer()
     assert t1.__add__(1) is NotImplemented
     with pytest.raises(TypeError):
-        t1 + 1
+        t1 + 1  # pyright: ignore[reportUnusedExpression]
 
 def test_cram_executes_in_order():
     c1 = Mock(spec=Crammer)

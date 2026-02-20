@@ -24,7 +24,7 @@ The easiest way to get started is to build and run the development container. Se
 Quality gates that must pass:
 
 - Run `pytest` without parameters to ensure all tests pass.
-- Run `pyright` on modified files to check that there are no new type errors (old ones are acceptable).
+- Run `pyright` without parameters to ensure no type errors.
 
 ## Terminology
 

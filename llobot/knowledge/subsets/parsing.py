@@ -120,7 +120,12 @@ def load_subset(filename: str, *, package: str | None = None) -> KnowledgeSubset
         A `KnowledgeSubset` from the patterns in the file.
     """
     if package is None:
-        frame = inspect.currentframe().f_back
+        frame = inspect.currentframe()
+        if frame is None:
+            raise RuntimeError("Cannot infer package from stack frame.")
+        frame = frame.f_back
+        if frame is None:
+            raise RuntimeError("Cannot infer package from stack frame.")
         package = frame.f_globals['__name__']
     content = (resources.files(package) / filename).read_text()
     return parse_subset(content)

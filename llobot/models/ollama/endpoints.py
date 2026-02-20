@@ -11,8 +11,18 @@ def remote_ollama_endpoint(host: str, port: int = 11434, *, path: str = '/api') 
     return f'https://{host}:{port}{path}'
 
 def concise_ollama_endpoint(endpoint: str) -> str:
+    """
+    Returns a concise representation of the endpoint (host:port).
+
+    If the port is 11434, it is omitted.
+    If the endpoint cannot be parsed or has no hostname, the original string is returned.
+    """
     parts = urlparse(endpoint)
-    return f'{parts.hostname}:{parts.port}' if parts.port != 11434 else parts.hostname
+    if not parts.hostname:
+        return endpoint
+    if parts.port == 11434 or parts.port is None:
+        return parts.hostname
+    return f'{parts.hostname}:{parts.port}'
 
 __all__ = [
     'localhost_ollama_endpoint',

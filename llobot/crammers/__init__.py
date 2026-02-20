@@ -24,6 +24,7 @@ KnowledgeCrammer
     Selects a subset of knowledge documents based on scores and budget.
 """
 from __future__ import annotations
+from types import NotImplementedType
 from llobot.environments import Environment
 from llobot.utils.values import ValueTypeMixin
 
@@ -44,7 +45,7 @@ class Crammer(ValueTypeMixin):
         """
         raise NotImplementedError
 
-    def __add__(self, other: Crammer) -> Crammer:
+    def __add__(self, other: object) -> Crammer | NotImplementedType:
         """
         Combines this crammer with another one into a chain.
         """

@@ -79,7 +79,7 @@ class ExampleMemory:
         # Replace the last example if it has the same prompt.
         for zone in zones:
             last_time, last_chat = self._history.last(zone)
-            if last_chat and len(last_chat) > 0 and len(chat) > 0 and last_chat[0].content == chat[0].content:
+            if last_time is not None and last_chat is not None and len(last_chat) > 0 and len(chat) > 0 and last_chat[0].content == chat[0].content:
                 self._history.remove(zone, last_time)
 
         time = current_time()

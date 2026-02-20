@@ -68,6 +68,11 @@ class DirectoryProject(Project, ValueTypeMixin):
         self._executable = executable
 
     @property
+    def directory(self) -> Path:
+        """The underlying filesystem directory path."""
+        return self._directory
+
+    @property
     def prefixes(self) -> set[PurePosixPath]:
         return {self._prefix}
 
@@ -141,7 +146,7 @@ class DirectoryProject(Project, ValueTypeMixin):
         """
         return self._mutable and self._to_local_path(path) is not None
 
-    def write(self, path: PurePosixPath, content: str):
+    def write(self, path: PurePosixPath, content: str) -> None:
         """
         Writes content to a file in the project directory.
 
@@ -161,7 +166,7 @@ class DirectoryProject(Project, ValueTypeMixin):
         real_path = self._directory / local_path
         write_text(real_path, content)
 
-    def remove(self, path: PurePosixPath):
+    def remove(self, path: PurePosixPath) -> None:
         """
         Removes a file from the project directory.
 
@@ -182,7 +187,7 @@ class DirectoryProject(Project, ValueTypeMixin):
         real_path = self._directory / local_path
         real_path.unlink()
 
-    def move(self, source: PurePosixPath, destination: PurePosixPath):
+    def move(self, source: PurePosixPath, destination: PurePosixPath) -> None:
         """
         Moves a file within the project directory using a filesystem move.
 

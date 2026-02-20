@@ -1,8 +1,12 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
 from llobot.knowledge.ranking import KnowledgeRankingPrecursor, coerce_ranking
 from llobot.knowledge.ranking.overviews import rank_overviews_first
 from llobot.knowledge.subsets import KnowledgeSubset
 from llobot.knowledge.trees.ranked import ranked_tree
+
+if TYPE_CHECKING:
+    from llobot.knowledge.trees import KnowledgeTree
 
 def overviews_first_tree(
     ranking: KnowledgeRankingPrecursor,

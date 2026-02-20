@@ -13,7 +13,7 @@ class UnionModelLibrary(ModelLibrary, ValueTypeMixin):
     The first library to return a non-`None` model for a given key wins.
     It flattens nested unions for efficiency.
     """
-    _libraries: tuple[ModelLibrary, ...]
+    _members: tuple[ModelLibrary, ...]
 
     def __init__(self, *libraries: ModelLibrary):
         """
@@ -25,10 +25,15 @@ class UnionModelLibrary(ModelLibrary, ValueTypeMixin):
         flattened = []
         for library in libraries:
             if isinstance(library, UnionModelLibrary):
-                flattened.extend(library._libraries)
+                flattened.extend(library._members)
             else:
                 flattened.append(library)
-        self._libraries = tuple(flattened)
+        self._members = tuple(flattened)
+
+    @property
+    def members(self) -> tuple[ModelLibrary, ...]:
+        """Returns the tuple of member libraries in this union."""
+        return self._members
 
     def lookup(self, key: str) -> Model | None:
         """
@@ -42,7 +47,7 @@ class UnionModelLibrary(ModelLibrary, ValueTypeMixin):
         Returns:
             The `Model` instance if found in any library, otherwise `None`.
         """
-        for library in self._libraries:
+        for library in self._members:
             model = library.lookup(key)
             if model is not None:
                 return model

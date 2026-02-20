@@ -162,7 +162,7 @@ class Project:
         """
         return False
 
-    def write(self, path: PurePosixPath, content: str):
+    def write(self, path: PurePosixPath, content: str) -> None:
         """
         Writes content to a file at the given path.
 
@@ -178,7 +178,7 @@ class Project:
             raise PermissionError(f"Path is not mutable: ~/{path}")
         raise NotImplementedError(f"Project type {self.__class__.__name__} does not support writing.")
 
-    def remove(self, path: PurePosixPath):
+    def remove(self, path: PurePosixPath) -> None:
         """
         Removes a file at the given path.
 
@@ -193,7 +193,7 @@ class Project:
             raise PermissionError(f"Path is not mutable: ~/{path}")
         raise NotImplementedError(f"Project type {self.__class__.__name__} does not support removing files.")
 
-    def move(self, source: PurePosixPath, destination: PurePosixPath):
+    def move(self, source: PurePosixPath, destination: PurePosixPath) -> None:
         """
         Moves a file from a source path to a destination path.
 

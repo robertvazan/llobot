@@ -144,7 +144,7 @@ class KnowledgeTree(ValueTypeMixin):
     @property
     def all_trees(self) -> list[KnowledgeTree]:
         """All subtrees in depth-first prefix order, starting with self."""
-        result = [self]
+        result: list[KnowledgeTree] = [self]
         for subtree in self._subtrees:
             result.extend(subtree.all_trees)
         return result
@@ -166,6 +166,10 @@ def standard_tree(index: KnowledgeTreePrecursor) -> KnowledgeTree:
     The standard tree has overview files listed before their siblings.
     """
     from llobot.knowledge.trees.overviews import overviews_first_tree
+    if isinstance(index, KnowledgeTree):
+        # KnowledgeTree is not a KnowledgeRankingPrecursor, so we must convert it.
+        # We convert it to a ranking of all its paths.
+        return overviews_first_tree(KnowledgeRanking(index.all_paths))
     return overviews_first_tree(index)
 
 def coerce_tree(material: KnowledgeTreePrecursor) -> KnowledgeTree:

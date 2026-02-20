@@ -117,7 +117,7 @@ def last_history_path(directory: Path | str, suffix: str = '', cutoff: datetime 
     Returns:
         The path to the most recent history file, or None if none are found.
     """
-    return next(recent_history_paths(directory, suffix, cutoff), None)
+    return next(iter(recent_history_paths(directory, suffix, cutoff)), None)
 
 __all__ = [
     'format_history_filename',

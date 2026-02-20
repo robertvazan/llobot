@@ -7,7 +7,7 @@ name = "llobot"
 version = "0.1.0"
 description = "Llobot is a LLM library and a LLM tool that makes it easier to build simple conversational LLM applications or bots."
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 license = { file = "LICENSE" }
 authors = [
   { name = "Robert Važan" },
@@ -35,5 +35,5 @@ dev = [
 include = ["llobot", "tests"]
 venvPath = "."
 venv = ".venv"
-pythonVersion = "3.12"
+pythonVersion = "3.13"
 typeCheckingMode = "standard"

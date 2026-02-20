@@ -1,4 +1,5 @@
 from pathlib import PurePosixPath
+from typing import Any, cast
 from llobot.knowledge import Knowledge
 from llobot.knowledge.indexes import KnowledgeIndex
 from llobot.knowledge.scores import KnowledgeScores
@@ -61,7 +62,7 @@ def test_directory_count_scores_from_index():
 
 def test_directory_count_scores_invalid_type():
     try:
-        directory_count_scores(KnowledgeScores({PurePosixPath('a.txt'): 1.0}))
+        directory_count_scores(cast(Any, KnowledgeScores({PurePosixPath('a.txt'): 1.0})))
         assert False, "Should have raised TypeError"
     except TypeError:
         pass

@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any, cast
 import pytest
 from llobot.projects import coerce_project
 from llobot.projects.directory import DirectoryProject
@@ -13,10 +14,12 @@ def test_coerce_project(tmp_path: Path):
 
     assert coerce_project(tmp_path) == p_dir
     assert coerce_project(str(tmp_path)) == p_dir
-    assert coerce_project('~/dummy')._directory == (Path.home() / 'dummy').absolute()
+    p_dummy = coerce_project('~/dummy')
+    assert isinstance(p_dummy, DirectoryProject)
+    assert p_dummy.directory == (Path.home() / 'dummy').absolute()
 
     assert coerce_project('my-prefix') == MarkerProject('my-prefix')
     assert coerce_project('my/prefix') == MarkerProject('my/prefix')
 
     with pytest.raises(TypeError):
-        coerce_project(123)
+        coerce_project(cast(Any, 123))

@@ -5,7 +5,7 @@ from __future__ import annotations
 import traceback
 import json
 import logging
-from typing import Iterable
+from typing import Iterable, cast
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from llobot.chats.thread import ChatThread
 from llobot.chats.builder import ChatBuilder
@@ -81,7 +81,8 @@ class _OllamaServer(ThreadingHTTPServer):
 
 class _OllamaHttpHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        models: dict[str, Model] = self.server.models
+        server = cast(_OllamaServer, self.server)
+        models = server.models
         if self.path == '/api/tags':
             data = _encode_list(models.values())
             self.send_response(200)
@@ -92,7 +93,8 @@ class _OllamaHttpHandler(BaseHTTPRequestHandler):
             self.send_error(404)
 
     def do_POST(self):
-        models: dict[str, Model] = self.server.models
+        server = cast(_OllamaServer, self.server)
+        models = server.models
         if self.path == '/api/chat':
             try:
                 content_length = int(self.headers.get('Content-Length', 0))

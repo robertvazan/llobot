@@ -73,10 +73,10 @@ class KnowledgeGraph(ValueTypeMixin):
         """
         return self._graph.get(source, KnowledgeIndex())
 
-    def __iter__(self) -> Iterator[(PurePosixPath, KnowledgeIndex)]:
+    def __iter__(self) -> Iterator[tuple[PurePosixPath, KnowledgeIndex]]:
         return iter(self._graph.items())
 
-    def links(self) -> Iterator[(PurePosixPath, PurePosixPath)]:
+    def links(self) -> Iterator[tuple[PurePosixPath, PurePosixPath]]:
         """
         Iterates over all links (edges) in the graph.
 

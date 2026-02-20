@@ -43,7 +43,7 @@ class ModelEnv(PersistentEnv):
             The matching model that was found, or `None`.
         """
         found = self._library.lookup(key)
-        if found:
+        if found is not None:
             self._selected_key = key
             self._selected_model = found
         return found
@@ -58,9 +58,9 @@ class ModelEnv(PersistentEnv):
         Raises:
             ValueError: If no model is selected and no default is configured.
         """
-        if self._selected_model:
+        if self._selected_model is not None:
             return self._selected_model
-        if self._default:
+        if self._default is not None:
             return self._default
         raise ValueError("No model selected and no default model configured.")
 

@@ -61,7 +61,9 @@ def test_script_tool_execution(env: Environment):
     # Usually it doesn't add newline if it wasn't there, but let's be safe and check ignoring whitespace if needed.
     # The failure showed 'b\n' vs 'b'. So read() is returning 'b\n'.
     # This means something (maybe just FS behavior or library) appended newline.
-    assert project.read(PurePosixPath("test/c.txt")).strip() == "b"
+    content = project.read(PurePosixPath("test/c.txt"))
+    assert content is not None
+    assert content.strip() == "b"
 
 def test_script_tool_comments_and_empty_lines(env: Environment):
     tool = ScriptTool()

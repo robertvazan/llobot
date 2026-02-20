@@ -1,6 +1,10 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
 from llobot.knowledge.ranking import KnowledgeRanking
 from llobot.knowledge.trees.builder import KnowledgeTreeBuilder
+
+if TYPE_CHECKING:
+    from llobot.knowledge.trees import KnowledgeTree
 
 def ranked_tree(ranking: KnowledgeRanking) -> 'KnowledgeTree':
     """

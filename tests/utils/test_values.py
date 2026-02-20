@@ -8,7 +8,7 @@ def test_value_type_mixin():
             self.a = a
             self._b = b # private field
             self.c = c
-            self._cache = None # ephemeral
+            self._cache: str | None = None # ephemeral
 
         def _ephemeral_fields(self) -> list[str]:
             return ['_cache']

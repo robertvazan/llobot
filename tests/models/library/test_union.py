@@ -42,9 +42,10 @@ def test_union_flattening():
     union1 = UnionModelLibrary(lib1, lib2)
     union2 = UnionModelLibrary(union1, lib3)
 
-    assert len(union2._libraries) == 3
-    assert union2._libraries == (lib1, lib2, lib3)
+    assert len(union2.members) == 3
+    assert union2.members == (lib1, lib2, lib3)
 
     union3 = lib1 | lib2 | lib3
-    assert len(union3._libraries) == 3
-    assert union3._libraries == (lib1, lib2, lib3)
+    assert isinstance(union3, UnionModelLibrary)
+    assert len(union3.members) == 3
+    assert union3.members == (lib1, lib2, lib3)

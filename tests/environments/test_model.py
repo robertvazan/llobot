@@ -29,7 +29,6 @@ def test_select_and_get():
 def test_get_no_default_or_selection():
     env = Environment()
     model_env = env[ModelEnv]
-    model_env.configure(library, None)
     with pytest.raises(ValueError, match="No model selected and no default model configured."):
         model_env.get()
 

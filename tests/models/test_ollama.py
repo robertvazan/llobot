@@ -3,7 +3,7 @@ Tests for Ollama model integration.
 """
 from __future__ import annotations
 from llobot.models.ollama import OllamaModel
-from llobot.models.ollama.endpoints import localhost_ollama_endpoint
+from llobot.models.ollama.endpoints import localhost_ollama_endpoint, concise_ollama_endpoint
 
 def test_value_type_ollama():
     """
@@ -20,3 +20,11 @@ def test_value_type_ollama():
 def test_identifier():
     model = OllamaModel(name='local', model='qwen2:7b', num_ctx=8192)
     assert model.identifier == 'ollama/qwen2:7b'
+
+def test_concise_endpoint():
+    assert concise_ollama_endpoint('http://localhost:11434/api') == 'localhost'
+    assert concise_ollama_endpoint('http://localhost:8080/api') == 'localhost:8080'
+    assert concise_ollama_endpoint('http://example.com/api') == 'example.com'
+    assert concise_ollama_endpoint('https://example.com') == 'example.com'
+    assert concise_ollama_endpoint('invalid') == 'invalid'
+    assert concise_ollama_endpoint('file:///tmp/x') == 'file:///tmp/x'

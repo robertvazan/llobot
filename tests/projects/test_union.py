@@ -30,6 +30,8 @@ class MockProject(Project, ValueTypeMixin):
         try:
             for part in path.parts:
                 if part != '.':
+                    if not isinstance(node, dict):
+                        return None
                     node = node[part]
         except (KeyError, TypeError):
             return None
