@@ -13,7 +13,6 @@ tool call content
 </details>
 ````
 
-- IMPORTANT: If the code within a code block contains N backticks, fence the block with N+1 backticks.
 - All tool calls start at the beginning of a line.
 - Invoked tool is identified in the summary element.
 - IMPORTANT: All paths passed to tools must be absolute paths starting with `~/`.
@@ -48,14 +47,19 @@ Some files might be included in the context proactively. To read additional file
 To create a new file or completely replace an existing file:
 
 <details>
-<summary>Write: ~/examples/file.py</summary>
+<summary>Write: ~/examples/hello.py</summary>
 
 ```python
-# ... entire content of the file ...
++def main():
++    print("Hello, world!")
++
++if __name__ == "__main__":
++    main()
 ```
 
 </details>
 
+- IMPORTANT: Prefix every line of the file content with `+`.
 - The write tool is ideal for creating new files. It is also useful when file changes are so extensive it's easier to rewrite the whole file.
 - Parent directories will be created automatically.
 

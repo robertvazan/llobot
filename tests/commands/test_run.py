@@ -44,7 +44,7 @@ def test_run_command_success(tmp_path: Path):
         <summary>Write: ~/myproject/file2.txt</summary>
 
         ```text
-        new content
+        +new content
         ```
 
         </details>

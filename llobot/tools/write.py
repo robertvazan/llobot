@@ -16,13 +16,21 @@ class WriteTool(FencedTool):
     """
     Tool that parses document listings in the format:
     <details>
-    <summary>Write: ~/path/to/file</summary>
+    <summary>Write: ~/path/to/hello.py</summary>
 
-    ```lang
-    content
+    ```python
+    +def main():
+    +    print("Hello, world!")
+    +
+    +if __name__ == "__main__":
+    +    main()
     ```
 
     </details>
+
+    Lines inside the block are expected to be prefixed with `+`. If any line
+    lacks the prefix, the tool will still process the file but will add a warning
+    to the context.
     """
     def match_fenced(self, env: Environment, name: str, header: str, content: str) -> bool:
         return name in {'Write', 'File'}
@@ -41,13 +49,20 @@ class WriteTool(FencedTool):
         if project.read(path) is not None and path not in knowledge_env:
             raise PermissionError(f"Safety: File `~/{path}` must be read before it can be overwritten.")
 
-        project.write(path, normalize_document(content))
+        lines = content.splitlines()
+
+        if any(not line.startswith('+') for line in lines):
+            env[ContextEnv].add(ChatMessage(ChatIntent.SYSTEM, "Warning: Prefix every line in the write tool call with a '+'."))
+
+        new_content = '\n'.join(line[1:] if line.startswith('+') else line for line in lines)
+
+        project.write(path, normalize_document(new_content))
 
         # Store exact content as requested.
         # This ensures that if normalization changed the content, the next read
         # will retrieve the normalized version from disk (which won't match this
         # unnormalized version) and correctly reload the file into context.
-        knowledge_env.add(path, content)
+        knowledge_env.add(path, new_content)
 
         env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"✅ Written `~/{path}`"))
         return True

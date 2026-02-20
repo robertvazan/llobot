@@ -35,8 +35,8 @@ def test_write_tool_execution(env: Environment):
         <summary>Write: ~/myproject/foo.txt</summary>
 
         ```
-        content
-        of the file
+        +content
+        +of the file
         ```
 
         </details>
@@ -51,6 +51,28 @@ def test_write_tool_execution(env: Environment):
 
     messages = env[ContextEnv].build().messages
     assert any("Written `~/myproject/foo.txt`" in m.content for m in messages)
+    assert not any("Warning: Prefix every line" in m.content for m in messages)
+
+def test_write_tool_unprefixed_warning(env: Environment):
+    tool = WriteTool()
+    text = dedent("""
+        <details>
+        <summary>Write: ~/myproject/foo.txt</summary>
+
+        ```
+        content
+        +of the file
+        ```
+
+        </details>
+    """).strip()
+
+    reader = ToolReader(text)
+    tool.execute(env, reader)
+    assert reader.success_count == 1
+
+    messages = env[ContextEnv].build().messages
+    assert any("Warning: Prefix every line in the write tool call with a '+'." in m.content for m in messages)
 
 def test_write_tool_slice_extra_whitespace(env: Environment):
     tool = WriteTool()
@@ -59,7 +81,7 @@ def test_write_tool_slice_extra_whitespace(env: Environment):
           <summary>  Write:   ~/myproject/bar.py   </summary>
 
         ````python
-        print("hello")
+        +print("hello")
         ````
 
         </details>
@@ -118,9 +140,9 @@ def test_write_tool_nested_fences(env: Environment):
         <summary>Write: ~/myproject/foo.md</summary>
 
         ````markdown
-        ```python
-        print("hello")
-        ```
+        +```python
+        +print("hello")
+        +```
         ````
 
         </details>
@@ -139,9 +161,9 @@ def test_write_tool_conflicting_fence(env: Environment):
         <summary>Write: ~/myproject/foo.md</summary>
 
         ```markdown
-        Start
+        +Start
         ```
-        End
+        +End
         ```
 
         </details>
@@ -158,7 +180,7 @@ def test_write_tool_midline_fence(env: Environment):
         <summary>Write: ~/myproject/foo.md</summary>
 
         ```markdown
-        Here is some text with ``` backticks in the middle.
+        +Here is some text with ``` backticks in the middle.
         ```
 
         </details>
@@ -177,7 +199,7 @@ def test_write_tool_file_alias_warning(env: Environment):
         <summary>File: ~/myproject/foo.txt</summary>
 
         ```
-        content
+        +content
         ```
 
         </details>
