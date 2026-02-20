@@ -34,13 +34,13 @@ class OpenAIModel(Model, ValueTypeMixin):
     """
     _name: str
     _model: str
-    _auth: str
+    _auth: str | None
     _reasoning_effort: ChatCompletionReasoningEffort
     _binarization_format: BinarizationFormat
 
     def __init__(self, *,
         model: str,
-        auth: str,
+        auth: str | None = None,
         name: str | None = None,
         reasoning_effort: ChatCompletionReasoningEffort = 'medium',
         binarization_format: BinarizationFormat | None = None,
@@ -50,7 +50,7 @@ class OpenAIModel(Model, ValueTypeMixin):
 
         Args:
             model: The model ID to use with the API. Mandatory.
-            auth: The API key for OpenAI.
+            auth: The API key for OpenAI. If None, uses OPENAI_API_KEY env var.
             name: The name for this model instance in llobot. Defaults to model ID.
             reasoning_effort: Reasoning effort for the model. Defaults to 'medium'.
             binarization_format: Format to use for prompt binarization. Defaults to standard.
@@ -74,9 +74,12 @@ class OpenAIModel(Model, ValueTypeMixin):
 
     def generate(self, prompt: ChatThread) -> ChatStream:
         def _stream() -> ChatStream:
-            client = OpenAI(
-                api_key=self._auth
-            )
+            if self._auth is not None:
+                client = OpenAI(
+                    api_key=self._auth
+                )
+            else:
+                client = OpenAI()
             sanitized_prompt = self._binarization_format.binarize_chat(prompt)
             messages = _encode_chat(sanitized_prompt)
             yield ChatIntent.RESPONSE

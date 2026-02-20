@@ -21,12 +21,11 @@ def test_default_name():
     model = OpenAIModel(model='gpt-4o', auth='key1')
     assert model.name == 'gpt-4o'
 
-def test_missing_auth():
+def test_optional_auth():
     """
-    Tests that `auth` parameter is mandatory.
+    Tests that `auth` parameter is optional.
     """
-    with pytest.raises(TypeError):
-        OpenAIModel(name='gpt4', model='gpt-4o') # type: ignore[reportCallIssue]
+    OpenAIModel(name='gpt4', model='gpt-4o')
 
 def test_missing_model():
     """
