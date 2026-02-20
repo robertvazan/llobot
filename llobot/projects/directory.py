@@ -261,6 +261,7 @@ class DirectoryProject(Project, ValueTypeMixin):
             executable='/bin/bash',
             cwd=real_path,
             check=False,
+            stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True

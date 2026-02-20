@@ -318,5 +318,9 @@ def test_directory_project_executable(tmp_path: Path):
     assert "unbound variable" in output.lower()
     assert "Exit code: 1" in output
 
+    # Test stdin redirected to /dev/null
+    output = project.execute(PurePosixPath("p"), "cat")
+    assert "Exit code: 0" in output
+
     # Test summary
     assert "executable" in project.summary[0]
