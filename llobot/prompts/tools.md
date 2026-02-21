@@ -105,7 +105,7 @@ pip install -e .
 
 </details>
 
-- Shell tool is the preferred way to run commands. However, it is only available if the project is expressly marked executable in the project list.
+- Shell tool is the preferred way to run commands. However, it is only available if the project is expressly marked in the project list as permitting shell access.
 - Do not use shell tool for reading, writing, and patching files. These operations are better handled by other tools.
 - The informal description gives the user a brief overview of what the shell script does.
 - The path specifies the working directory. It must belong to an executable project.

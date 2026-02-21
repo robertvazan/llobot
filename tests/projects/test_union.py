@@ -225,4 +225,5 @@ def test_union_project_properties():
     p1 = MockProject({"p1"}, {})
     p2 = MockProject({"p2"}, {})
     union = union_project(p1, p2)
+    assert isinstance(union, UnionProject)
     assert union.members == (p1, p2)

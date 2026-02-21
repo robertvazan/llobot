@@ -259,11 +259,11 @@ def test_directory_project_summary(tmp_path: Path):
 
     # Test read-only
     project = DirectoryProject(project_dir, prefix="p", mutable=False)
-    assert "Directory `~/p`, read-only" in project.summary[0]
+    assert "Directory `~/p`, read-only, no shell access" in project.summary[0]
 
     # Test mutable
     project = DirectoryProject(project_dir, prefix="p", mutable=True)
-    assert "Directory `~/p`, mutable" in project.summary[0]
+    assert "Directory `~/p`, mutable, no shell access" in project.summary[0]
 
     # Test mapped path (when real path differs from expected home-relative path)
     # Assuming project_dir is not at ~/p
@@ -323,7 +323,8 @@ def test_directory_project_executable(tmp_path: Path):
     assert "Exit code: 0" in output
 
     # Test summary
-    assert "executable" in project.summary[0]
+    assert "shell access" in project.summary[0]
+    assert "no sandbox" in project.summary[0]
 
 def test_directory_project_properties(tmp_path: Path):
     project = DirectoryProject(

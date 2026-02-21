@@ -109,7 +109,10 @@ class DirectoryProject(Project, ValueTypeMixin):
         else:
             parts.append("read-only")
         if self._executable:
-            parts.append("executable")
+            parts.append("shell access")
+            parts.append("no sandbox")
+        else:
+            parts.append("no shell access")
 
         expected_path = Path.home() / self._prefix
         if self._directory != expected_path:
