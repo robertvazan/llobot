@@ -13,7 +13,7 @@ class UnionProject(Project, ValueTypeMixin):
     The member projects are expected to have non-overlapping prefixes. The union
     project routes method calls to the appropriate member based on path prefixes.
     """
-    _projects: tuple[Project, ...]
+    _members: tuple[Project, ...]
     _routing: dict[PurePosixPath, Project]
 
     def __init__(self, *projects: Project):
@@ -30,13 +30,13 @@ class UnionProject(Project, ValueTypeMixin):
         flattened = []
         for p in projects:
             if isinstance(p, UnionProject):
-                flattened.extend(p._projects)
+                flattened.extend(p._members)
             else:
                 flattened.append(p)
-        self._projects = tuple(flattened)
+        self._members = tuple(flattened)
 
         self._routing = {}
-        for p in self._projects:
+        for p in self._members:
             for prefix in p.prefixes:
                 if prefix in self._routing and self._routing[prefix] != p:
                     raise ValueError(f"Duplicate prefix '{prefix}' in UnionProject")
@@ -46,13 +46,18 @@ class UnionProject(Project, ValueTypeMixin):
         return ['_routing']
 
     @property
+    def members(self) -> tuple[Project, ...]:
+        """The member projects included in the union."""
+        return self._members
+
+    @property
     def prefixes(self) -> set[PurePosixPath]:
         return set(self._routing.keys())
 
     @property
     def summary(self) -> list[str]:
         result = []
-        for p in self._projects:
+        for p in self._members:
             result.extend(p.summary)
         return result
 

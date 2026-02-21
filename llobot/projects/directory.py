@@ -73,6 +73,31 @@ class DirectoryProject(Project, ValueTypeMixin):
         return self._directory
 
     @property
+    def prefix(self) -> PurePosixPath:
+        """The path prefix for all items in the project."""
+        return self._prefix
+
+    @property
+    def whitelist(self) -> KnowledgeSubset:
+        """The custom whitelist subset for this project."""
+        return self._whitelist
+
+    @property
+    def blacklist(self) -> KnowledgeSubset:
+        """The custom blacklist subset for this project."""
+        return self._blacklist
+
+    @property
+    def is_mutable(self) -> bool:
+        """Whether the project allows write operations."""
+        return self._mutable
+
+    @property
+    def is_executable(self) -> bool:
+        """Whether the project allows script execution."""
+        return self._executable
+
+    @property
     def prefixes(self) -> set[PurePosixPath]:
         return {self._prefix}
 

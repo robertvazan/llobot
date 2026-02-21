@@ -324,3 +324,18 @@ def test_directory_project_executable(tmp_path: Path):
 
     # Test summary
     assert "executable" in project.summary[0]
+
+def test_directory_project_properties(tmp_path: Path):
+    project = DirectoryProject(
+        tmp_path,
+        prefix="myprefix",
+        whitelist=SuffixSubset(".txt"),
+        blacklist=parse_pattern('**/blacklisted*'),
+        mutable=True,
+        executable=True,
+    )
+    assert project.prefix == PurePosixPath("myprefix")
+    assert project.whitelist == SuffixSubset(".txt")
+    assert project.blacklist == parse_pattern('**/blacklisted*')
+    assert project.is_mutable is True
+    assert project.is_executable is True

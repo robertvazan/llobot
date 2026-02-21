@@ -16,19 +16,29 @@ class FilteredProjectLibrary(ProjectLibrary, ValueTypeMixin):
     before being passed to the underlying library. Invalid paths are rejected.
     A blacklisting library can be created by negating the subset.
     """
-    _library: ProjectLibrary
+    _unfiltered: ProjectLibrary
     _whitelist: KnowledgeSubset
 
-    def __init__(self, library: ProjectLibrary, *, whitelist: KnowledgeSubset = UniversalSubset()):
+    def __init__(self, unfiltered: ProjectLibrary, *, whitelist: KnowledgeSubset = UniversalSubset()):
         """
         Initializes a new `FilteredProjectLibrary`.
 
         Args:
-            library: The underlying project library to query.
+            unfiltered: The underlying project library to query.
             whitelist: The subset to check keys against. Defaults to matching all.
         """
-        self._library = library
+        self._unfiltered = unfiltered
         self._whitelist = whitelist
+
+    @property
+    def unfiltered(self) -> ProjectLibrary:
+        """The underlying project library."""
+        return self._unfiltered
+
+    @property
+    def whitelist(self) -> KnowledgeSubset:
+        """The subset to check keys against."""
+        return self._whitelist
 
     def lookup(self, key: str) -> list[Project]:
         """
@@ -47,7 +57,7 @@ class FilteredProjectLibrary(ProjectLibrary, ValueTypeMixin):
             return []
 
         if path in self._whitelist:
-            return self._library.lookup(key)
+            return self._unfiltered.lookup(key)
         return []
 
 __all__ = ['FilteredProjectLibrary']

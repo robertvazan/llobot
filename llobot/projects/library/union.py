@@ -8,7 +8,7 @@ class UnionProjectLibrary(ProjectLibrary, ValueTypeMixin):
     """
     A project library that merges results from multiple underlying libraries.
     """
-    _libraries: tuple[ProjectLibrary, ...]
+    _members: tuple[ProjectLibrary, ...]
 
     def __init__(self, *libraries: ProjectLibrary):
         """
@@ -20,10 +20,15 @@ class UnionProjectLibrary(ProjectLibrary, ValueTypeMixin):
         flattened = []
         for library in libraries:
             if isinstance(library, UnionProjectLibrary):
-                flattened.extend(library._libraries)
+                flattened.extend(library._members)
             else:
                 flattened.append(library)
-        self._libraries = tuple(flattened)
+        self._members = tuple(flattened)
+
+    @property
+    def members(self) -> tuple[ProjectLibrary, ...]:
+        """The combined member libraries."""
+        return self._members
 
     def lookup(self, key: str) -> list[Project]:
         """
@@ -38,7 +43,7 @@ class UnionProjectLibrary(ProjectLibrary, ValueTypeMixin):
         """
         # Using a dict to deduplicate projects by value.
         # Projects are value types, so this works.
-        found = {p: None for lib in self._libraries for p in lib.lookup(key)}
+        found = {p: None for lib in self._members for p in lib.lookup(key)}
         return list(found.keys())
 
 __all__ = ['UnionProjectLibrary']

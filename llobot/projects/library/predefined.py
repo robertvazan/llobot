@@ -30,6 +30,11 @@ class PredefinedProjectLibrary(ProjectLibrary, ValueTypeMixin):
         """
         self._projects = {k: coerce_project(p) for k, p in projects.items()}
 
+    @property
+    def projects(self) -> dict[str, Project]:
+        """The mapping of keys to projects."""
+        return dict(self._projects)
+
     def lookup(self, key: str) -> list[Project]:
         """
         Looks up projects that match the given key.

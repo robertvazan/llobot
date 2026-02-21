@@ -92,7 +92,7 @@ def test_home_project_library_with_filters(tmp_path: Path):
 
 def test_home_project_library_default_home():
     lib = HomeProjectLibrary()
-    assert lib._home == Path.home().absolute()
+    assert lib._directory == Path.home().absolute()
 
 
 def test_home_project_library_mutable(tmp_path: Path):
@@ -140,3 +140,21 @@ def test_home_project_library_executable(tmp_path: Path):
     assert not noexec_project.executable(PurePosixPath('project4'))
     with pytest.raises(PermissionError):
         noexec_project.execute(PurePosixPath('project4'), 'echo hello')
+
+def test_home_project_library_properties(tmp_path: Path):
+    whitelist = parse_pattern('*.txt')
+    blacklist = parse_pattern('*.bin')
+    lib = HomeProjectLibrary(
+        tmp_path,
+        whitelist=whitelist,
+        blacklist=blacklist,
+        mutable=True,
+        executable=True,
+        parents=False,
+    )
+    assert lib.directory == tmp_path.absolute()
+    assert lib.whitelist == whitelist
+    assert lib.blacklist == blacklist
+    assert lib.is_mutable is True
+    assert lib.is_executable is True
+    assert lib.parents is False

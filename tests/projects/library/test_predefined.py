@@ -29,3 +29,8 @@ def test_equality():
     assert library1 == library2
     assert library1 != library3
     assert hash(library1) == hash(library2)
+
+def test_predefined_project_library_properties():
+    p1 = MarkerProject('z1')
+    library = PredefinedProjectLibrary({'k1': p1})
+    assert library.projects == {'k1': p1}

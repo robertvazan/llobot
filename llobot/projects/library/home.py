@@ -26,7 +26,7 @@ class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
       home-relative computation cannot be used, the fallback equals the lookup
       key.
     """
-    _home: Path
+    _directory: Path
     _whitelist: KnowledgeSubset | None
     _blacklist: KnowledgeSubset | None
     _mutable: bool
@@ -35,7 +35,7 @@ class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
 
     def __init__(
         self,
-        home: str | Path = '~',
+        directory: str | Path = '~',
         *,
         whitelist: KnowledgeSubset | None = None,
         blacklist: KnowledgeSubset | None = None,
@@ -47,7 +47,7 @@ class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
         Initializes a new `HomeProjectLibrary`.
 
         Args:
-            home: The base directory to look for projects in. Defaults to `~`.
+            directory: The base directory to look for projects in. Defaults to `~`.
             whitelist: A whitelist to pass to created `DirectoryProject` instances.
             blacklist: A blacklist to pass to created `DirectoryProject` instances.
             mutable: If `True`, created projects allow write operations.
@@ -55,12 +55,42 @@ class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
             parents: If `True`, the library also returns projects for
                 ancestor directories of any matched project. Defaults to `True`.
         """
-        self._home = Path(home).expanduser().absolute()
+        self._directory = Path(directory).expanduser().absolute()
         self._whitelist = whitelist
         self._blacklist = blacklist
         self._mutable = mutable
         self._executable = executable
         self._parents = parents
+
+    @property
+    def directory(self) -> Path:
+        """The base directory to look for projects in."""
+        return self._directory
+
+    @property
+    def whitelist(self) -> KnowledgeSubset | None:
+        """The whitelist passed to created projects."""
+        return self._whitelist
+
+    @property
+    def blacklist(self) -> KnowledgeSubset | None:
+        """The blacklist passed to created projects."""
+        return self._blacklist
+
+    @property
+    def is_mutable(self) -> bool:
+        """Whether created projects allow write operations."""
+        return self._mutable
+
+    @property
+    def is_executable(self) -> bool:
+        """Whether created projects allow script execution."""
+        return self._executable
+
+    @property
+    def parents(self) -> bool:
+        """Whether the library returns projects for ancestor directories."""
+        return self._parents
 
     def _default_prefix(self, directory: Path, zone: PurePosixPath) -> PurePosixPath:
         """
@@ -110,7 +140,7 @@ class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
         except Exception:
             return []
 
-        project_dir = (self._home / zone).absolute()
+        project_dir = (self._directory / zone).absolute()
         if not project_dir.is_dir():
             return []
 
@@ -120,7 +150,7 @@ class HomeProjectLibrary(ProjectLibrary, ValueTypeMixin):
             current = zone
             while current.parent != PurePosixPath('.'):
                 current = current.parent
-                parent_dir = (self._home / current).absolute()
+                parent_dir = (self._directory / current).absolute()
                 if not parent_dir.is_dir():
                     break
                 projects.append(self._project(parent_dir, current))

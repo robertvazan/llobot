@@ -22,7 +22,7 @@ def test_union_project_library_flattening():
     lib3 = PredefinedProjectLibrary({})
     union1 = UnionProjectLibrary(lib1, lib2)
     union2 = UnionProjectLibrary(union1, lib3)
-    assert union2._libraries == (lib1, lib2, lib3)
+    assert union2._members == (lib1, lib2, lib3)
 
 def test_union_deduplicates():
     p1 = MarkerProject('p1')
@@ -30,3 +30,9 @@ def test_union_deduplicates():
     lib2 = PredefinedProjectLibrary({'p1': p1})
     union = UnionProjectLibrary(lib1, lib2)
     assert union.lookup('p1') == [p1]
+
+def test_union_project_library_properties():
+    lib1 = PredefinedProjectLibrary({})
+    lib2 = PredefinedProjectLibrary({})
+    union = UnionProjectLibrary(lib1, lib2)
+    assert union.members == (lib1, lib2)

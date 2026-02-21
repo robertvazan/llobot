@@ -98,7 +98,7 @@ def test_union_project_flattening():
     union1 = union_project(p1, p2)
     union2 = union_project(union1, p3)
     assert isinstance(union2, UnionProject)
-    assert union2._projects == (p1, p2, p3)
+    assert union2._members == (p1, p2, p3)
 
 def test_union_duplicate_prefix_fails():
     p1 = MockProject(prefixes={'p'}, files={'f1': 'content'})
@@ -220,3 +220,9 @@ def test_union_project_execution(tmp_path: Path):
     # Execute in p2 should fail
     with pytest.raises(PermissionError):
         union.execute(PurePosixPath("p2"), "echo hi")
+
+def test_union_project_properties():
+    p1 = MockProject({"p1"}, {})
+    p2 = MockProject({"p2"}, {})
+    union = union_project(p1, p2)
+    assert union.members == (p1, p2)

@@ -19,3 +19,10 @@ def test_filtered_project_library():
     # Invalid paths
     assert filtered_lib.lookup("/absolute/path") == []
     assert filtered_lib.lookup("path/with/../..") == []
+
+def test_filtered_project_library_properties():
+    lib = PredefinedProjectLibrary({})
+    whitelist = PatternSubset("allowed/*")
+    filtered_lib = FilteredProjectLibrary(lib, whitelist=whitelist)
+    assert filtered_lib.unfiltered is lib
+    assert filtered_lib.whitelist == whitelist
