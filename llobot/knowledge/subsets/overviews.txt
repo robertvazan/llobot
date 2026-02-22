@@ -60,6 +60,7 @@ AI_INSTRUCTIONS.md
 package-info.java # Java package documentation
 module-info.java # Java module documentation
 __init__.py # Python package initialization
+__main__.py # Python package entry point
 mod.rs # Rust module definition
 lib.rs # Rust library root
 main.rs # Rust binary root
