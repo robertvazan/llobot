@@ -24,6 +24,8 @@ gemini
     Client for Google Gemini models.
 openai
     Client for OpenAI models.
+retrying
+    Wrapper for models that retries on failure.
 """
 from __future__ import annotations
 from llobot.chats.thread import ChatThread
