@@ -42,28 +42,25 @@ from llobot.roles.router import Router
 # Backend models that respond to the assembled prompt.
 # You can @mention them to override the default model.
 models = NamedModelLibrary(
-    # This will use qwen2.5-coder on localhost instance of Ollama.
-    OllamaModel(name='local', model='qwen2.5-coder', num_ctx=24 * 1024),
     GeminiModel(
-        name='flash',
-        model='gemini-3-flash-preview',
+        name='gemini',
+        model='gemini-3-pro-preview',
         auth='YOUR_GOOGLE_API_KEY'
     ),
-    AnthropicModel(
-        name='sonnet',
-        model='claude-sonnet-4-6',
-        auth='YOUR_ANTHROPIC_API_KEY',
-        max_tokens=8_000,
+    OllamaModel(
+        name='qwen',
+        model='qwen2.5-coder',
+        num_ctx=24 * 1024
     ),
 )
-default_model = models['sonnet']
+default_model = models['gemini']
 
 # Projects that will be used as knowledge bases.
 # HomeProjectLibrary looks up projects under given directory.
 # You can @mention relative paths under this directory as projects.
 projects = HomeProjectLibrary('~/Sources')
 
-# Roles determine what goes in the context.
+# Roles determine what goes in the context and what tools are available.
 # Let's use some standard roles that come with Llobot.
 roles = [
     Coder('coder', default_model, projects=projects, models=models),
