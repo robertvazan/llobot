@@ -18,7 +18,7 @@ def test_mention_tool_warns_and_skips():
     context = env[ContextEnv].build()
     assert len(context) == 1
     message = context[0]
-    assert message.intent == ChatIntent.STATUS
+    assert message.intent == ChatIntent.SYSTEM
     assert "Mentions like `@mention` are not supported" in message.content
 
 def test_quoted_mention():

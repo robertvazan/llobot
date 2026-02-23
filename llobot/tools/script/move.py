@@ -38,7 +38,7 @@ class ScriptMove(ScriptItem):
             msg += f" (overwriting `~/{destination}`)"
 
         project.move(source, destination)
-        context_env.add(ChatMessage(ChatIntent.STATUS, msg))
+        context_env.add(ChatMessage(ChatIntent.SYSTEM, msg))
         return True
 
 __all__ = [

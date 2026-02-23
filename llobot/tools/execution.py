@@ -42,7 +42,7 @@ def execute_tool_calls(env: Environment, source: str) -> int:
             except Exception as e:
                 # If execution failed (meaning tool matched and advanced/skipped but threw exception)
                 if reader.position > start_pos:
-                    env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"❌ Error executing tool: {quote_code(str(e))}"))
+                    env[ContextEnv].add(ChatMessage(ChatIntent.SYSTEM, f"❌ Error executing tool: {quote_code(str(e))}"))
                     # Continue parsing from the new position
                     break
                 else:

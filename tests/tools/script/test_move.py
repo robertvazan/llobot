@@ -40,7 +40,7 @@ def test_move_tool_overwrite(env: Environment):
     project.write(PurePosixPath("myproject/b.txt"), "old content")
     tool = ScriptMove()
     tool.execute(env, "mv ~/myproject/a.txt ~/myproject/b.txt")
-    log = "\n".join(m.content for m in env[ContextEnv].build().messages if m.intent == ChatIntent.STATUS)
+    log = "\n".join(m.content for m in env[ContextEnv].build().messages if m.intent == ChatIntent.SYSTEM)
     assert "Moved `~/myproject/a.txt` to `~/myproject/b.txt` (overwriting `~/myproject/b.txt`)" in log
     assert project.read(PurePosixPath("myproject/b.txt")) == "content\n"
 

@@ -28,7 +28,7 @@ def test_unrecognized_tool_reports_error():
     context = env[ContextEnv].build()
     assert len(context) == 1
     message = context[0]
-    assert message.intent == ChatIntent.STATUS
+    assert message.intent == ChatIntent.SYSTEM
     assert "Unrecognized tool 'Unknown' or invalid block format. Header: `some header`" in message.content
 
 def test_unrecognized_tool_ignores_non_fenced_blocks():

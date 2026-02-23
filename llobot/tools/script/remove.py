@@ -29,7 +29,7 @@ class ScriptRemove(ScriptItem):
 
         project = env[ProjectEnv].union
         project.remove(path)
-        env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"✅ Removed `~/{path}`"))
+        env[ContextEnv].add(ChatMessage(ChatIntent.SYSTEM, f"✅ Removed `~/{path}`"))
         return True
 
 __all__ = [

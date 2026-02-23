@@ -97,11 +97,11 @@ def test_read_tool_deduplication_via_knowledge_env(env: Environment):
 
     context_env = env[ContextEnv]
     context_messages = context_env.build().messages
-    log = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.STATUS)
+    log = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.SYSTEM)
     output = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.SYSTEM)
 
     # It should say it's already in context (based on KnowledgeEnv check)
-    assert "File `~/myproject/a.txt` is already in the context." in log
+    assert "File `~/myproject/a.txt` is already in the context." in output
     assert "content" not in output
 
 def test_read_tool_overview_deduplication(env: Environment):

@@ -111,7 +111,7 @@ def test_execute_simple_replace(env):
     # Check that status message was added
     messages = env[ContextEnv].messages
     assert len(messages) == 1
-    assert messages[0].intent == ChatIntent.STATUS
+    assert messages[0].intent == ChatIntent.SYSTEM
     assert "Replaced 1 matches" in messages[0].content
 
 

@@ -43,7 +43,7 @@ class ShellTool(FencedTool):
         # Always include path in summary
         result_header = f"{description} @ ~/{path}"
         formatted = markdown_code_details(f"Shell output: {result_header}", "", sanitized_output)
-        env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, formatted))
+        env[ContextEnv].add(ChatMessage(ChatIntent.SYSTEM, formatted))
         return True
 
     def _determine_path(self, project: Project, path_str: str | None) -> PurePosixPath:

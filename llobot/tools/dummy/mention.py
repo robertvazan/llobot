@@ -57,7 +57,7 @@ class DummyMentionTool(DummyTool):
         # Skip the whole line
         reader.skip(len(line))
 
-        env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"⚠️ Mentions like {quote_code(mention)} are not supported in model responses."))
+        env[ContextEnv].add(ChatMessage(ChatIntent.SYSTEM, f"⚠️ Mentions like {quote_code(mention)} are not supported in model responses."))
 
 __all__ = [
     'DummyMentionTool',

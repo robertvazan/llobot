@@ -83,7 +83,7 @@ class ReadTool(FencedTool):
                 raise ValueError(f"File not found: ~/{path}")
 
             if knowledge_env.get(path) == content_str:
-                context_env.add(ChatMessage(ChatIntent.STATUS, f"File `~/{path}` is already in the context."))
+                context_env.add(ChatMessage(ChatIntent.SYSTEM, f"File `~/{path}` is already in the context."))
                 continue
 
             listing = self._format.render(path, content_str)

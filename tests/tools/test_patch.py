@@ -69,11 +69,11 @@ def test_execute_simple_replacement(env, tmp_path):
 
     context_env = env[ContextEnv]
     context_messages = context_env.build().messages
-    log = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.STATUS)
+    log = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.SYSTEM)
     system_messages = [m for m in context_messages if m.intent == ChatIntent.SYSTEM]
 
     assert "Applied 1 hunks to `~/test/file.txt`." in log
-    assert not system_messages
+    # assert not system_messages # Now the log IS a system message
 
 def test_execute_with_context(env, tmp_path):
     (tmp_path / 'file.txt').write_text("A\nB\nC\nD\n", encoding='utf-8')
@@ -111,7 +111,7 @@ def test_execute_multiple_hunks(env, tmp_path):
 
     context_env = env[ContextEnv]
     context_messages = context_env.build().messages
-    log = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.STATUS)
+    log = "\n".join(m.content for m in context_messages if m.intent == ChatIntent.SYSTEM)
 
     assert "Applied 2 hunks to `~/test/file.txt`." in log
 

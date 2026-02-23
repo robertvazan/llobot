@@ -121,7 +121,7 @@ class ScriptReplace(ScriptItem):
             raise ValueError(f"Pattern not found in `~/{path}`: {pattern}")
 
         project.write(path, normalize_document(new_content))
-        env[ContextEnv].add(ChatMessage(ChatIntent.STATUS, f"✅ Replaced {count} matches in `~/{path}`"))
+        env[ContextEnv].add(ChatMessage(ChatIntent.SYSTEM, f"✅ Replaced {count} matches in `~/{path}`"))
 
         return True
 

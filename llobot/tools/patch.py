@@ -93,7 +93,7 @@ class PatchTool(FencedTool):
         project.write(path, new_content)
 
         context_env = env[ContextEnv]
-        context_env.add(ChatMessage(ChatIntent.STATUS, f"✅ Applied {len(hunks)} hunks to `~/{path}`."))
+        context_env.add(ChatMessage(ChatIntent.SYSTEM, f"✅ Applied {len(hunks)} hunks to `~/{path}`."))
 
         return True
 

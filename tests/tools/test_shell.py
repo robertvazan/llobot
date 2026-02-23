@@ -76,7 +76,7 @@ def test_shell_tool_explicit_path(env: Environment):
     context = env[ContextEnv].build()
     assert len(context) == 1
     msg = context[0]
-    assert msg.intent == ChatIntent.STATUS
+    assert msg.intent == ChatIntent.SYSTEM
     assert "Shell output: run echo @ ~/proj" in msg.content
     assert "Output from proj" in msg.content
 

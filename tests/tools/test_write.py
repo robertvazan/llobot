@@ -214,4 +214,4 @@ def test_write_tool_file_alias_warning(env: Environment):
 
     messages = env[ContextEnv].build().messages
     assert any(m.intent == ChatIntent.SYSTEM and "Warning: Use 'Write' tool" in m.content for m in messages)
-    assert any(m.intent == ChatIntent.STATUS and "Written `~/myproject/foo.txt`" in m.content for m in messages)
+    assert any(m.intent == ChatIntent.SYSTEM and "Written `~/myproject/foo.txt`" in m.content for m in messages)

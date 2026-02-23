@@ -1,4 +1,5 @@
 from __future__ import annotations
+from llobot.chats.intent import ChatIntent
 from llobot.environments import Environment
 from llobot.environments.context import ContextEnv
 from llobot.environments.tools import ToolEnv
@@ -45,6 +46,7 @@ def test_execute_tool_calls_success():
 
     context = env[ContextEnv].build()
     assert len(context) == 1
+    assert context[0].intent == ChatIntent.STATUS
     assert "✅ All 2 tool calls executed." in context[0].content
 
 def test_execute_tool_calls_partial_failure():
@@ -60,7 +62,9 @@ def test_execute_tool_calls_partial_failure():
     context = env[ContextEnv].build()
     # 1 failure status + 1 summary status
     assert len(context) == 2
+    assert context[0].intent == ChatIntent.SYSTEM
     assert "Error executing tool: `oops`" in context[0].content
+    assert context[1].intent == ChatIntent.STATUS
     assert "❌ 2 of 3 tool calls executed." in context[1].content
 
 def test_execute_tool_calls_none():
