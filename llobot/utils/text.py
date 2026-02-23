@@ -124,6 +124,38 @@ def dashed_name(name: str) -> str:
     """
     return _DASHED_NAME_RE.sub(' ', name).strip().replace(' ', '-')
 
+def truncate_lines(text: str, limit: int) -> str:
+    """
+    Truncates text to a maximum number of lines, removing lines from the middle.
+
+    If the number of lines exceeds the limit, lines are removed from the middle
+    of the text, and a message indicating the number of skipped lines is inserted.
+    The first half of the limit (rounded down) is kept from the beginning, and
+    the rest is kept from the end.
+
+    Args:
+        text: The input text.
+        limit: The maximum number of lines.
+
+    Returns:
+        The truncated text with a notice about skipped lines.
+    """
+    lines = text.splitlines(keepends=True)
+    if len(lines) <= limit:
+        return text
+
+    head_limit = limit // 2
+    tail_limit = limit - head_limit
+
+    head = lines[:head_limit]
+    tail = lines[-tail_limit:] if tail_limit > 0 else []
+
+    skipped = len(lines) - len(head) - len(tail)
+
+    marker = f"... skipped {skipped} lines for brevity ...\n"
+
+    return "".join(head) + marker + "".join(tail)
+
 # Language can be an empty string. Code block without language will be produced in that case.
 def markdown_code_block(lang: str, document: str, *, backtick_count: int = 3) -> str:
     """
@@ -201,6 +233,7 @@ __all__ = [
     'join_documents',
     'concat_documents',
     'dashed_name',
+    'truncate_lines',
     'markdown_code_block',
     'markdown_code_details',
     'quote_code',

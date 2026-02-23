@@ -1,5 +1,5 @@
 import pytest
-from llobot.utils.text import terminate_document, normalize_document, join_documents, concat_documents, dashed_name, markdown_code_block, markdown_code_details
+from llobot.utils.text import terminate_document, normalize_document, join_documents, concat_documents, dashed_name, truncate_lines, markdown_code_block, markdown_code_details
 from llobot.utils.text import quote_code
 
 
@@ -107,6 +107,38 @@ def test_dashed_name():
     assert dashed_name("hello") == "hello"
     assert dashed_name("hello123world") == "hello123world"
 
+
+def test_truncate_lines():
+    # No truncation needed
+    assert truncate_lines("one\ntwo\n", 2) == "one\ntwo\n"
+    assert truncate_lines("one\ntwo\n", 3) == "one\ntwo\n"
+
+    # Basic truncation
+    # limit=2 -> head=1, tail=1.
+    text = "one\ntwo\nthree\n"
+    expected = "one\n... skipped 1 lines for brevity ...\nthree\n"
+    assert truncate_lines(text, 2) == expected
+
+    # Odd limit
+    # limit=3 -> head=1, tail=2
+    text = "1\n2\n3\n4\n"
+    expected = "1\n... skipped 1 lines for brevity ...\n3\n4\n"
+    assert truncate_lines(text, 3) == expected
+
+    # Truncation with no newline at end of some lines
+    # splitlines(keepends=True) keeps the structure
+    text = "one\ntwo\nthree"
+    # limit=2 -> head=1 ('one\n'), tail=1 ('three')
+    expected = "one\n... skipped 1 lines for brevity ...\nthree"
+    assert truncate_lines(text, 2) == expected
+
+    # Large truncation
+    lines = [f"line {i}" for i in range(100)]
+    text = "\n".join(lines) + "\n"
+    truncated = truncate_lines(text, 20)
+    assert "skipped 80 lines" in truncated
+    assert truncated.startswith("line 0\n")
+    assert truncated.endswith("line 99\n")
 
 def test_markdown_code_block():
     # Basic quoting

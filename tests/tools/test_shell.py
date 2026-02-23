@@ -41,12 +41,13 @@ def env() -> Environment:
     return Environment()
 
 def wrap_script(script: str, header: str = "desc @ ~/proj") -> str:
+    indented_script = script.replace('\n', '\n        ')
     return dedent(f"""
         <details>
         <summary>Shell: {header}</summary>
 
         ```sh
-        {script}
+        {indented_script}
         ```
         </details>
     """).strip()
@@ -184,3 +185,33 @@ def test_shell_tool_sanitizes_output(env: Environment):
     assert "\\x1b[31mRed" in msg.content
     # And ensure raw control characters are NOT present
     assert "\x1b" not in msg.content
+
+def test_shell_tool_truncates_output(env: Environment):
+    # Create a project that echoes the whole script, not just first line
+    class EchoProject(MockProject):
+        def execute(self, path: PurePosixPath, script: str) -> str:
+            return script
+
+    project = EchoProject(
+        {PurePosixPath('proj')},
+        {PurePosixPath('proj')}
+    )
+    env[ProjectEnv].configure(MockLibrary(project))
+    env[ProjectEnv].add('any')
+
+    tool = ShellTool()
+    # Create 500 lines of output
+    lines = [f"line {i}" for i in range(500)]
+    script_content = "\n".join(lines)
+    source = wrap_script(script_content, "run heavy")
+
+    tool.execute(env, ToolReader(source))
+
+    context = env[ContextEnv].build()
+    msg = context[0]
+
+    assert "line 0" in msg.content
+    assert "line 499" in msg.content
+    assert "... skipped 100 lines for brevity ..." in msg.content
+    # Check that middle lines are missing
+    assert "line 250" not in msg.content
