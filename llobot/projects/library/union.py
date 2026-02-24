@@ -6,7 +6,10 @@ from llobot.utils.values import ValueTypeMixin
 
 class UnionProjectLibrary(ProjectLibrary, ValueTypeMixin):
     """
-    A project library that merges results from multiple underlying libraries.
+    A project library that combines multiple libraries with precedence.
+
+    Libraries are checked from right to left. The first library that returns a
+    match for a given key shadows any subsequent libraries (those to its left).
     """
     _members: tuple[ProjectLibrary, ...]
 
@@ -32,18 +35,21 @@ class UnionProjectLibrary(ProjectLibrary, ValueTypeMixin):
 
     def lookup(self, key: str) -> list[Project]:
         """
-        Looks up projects in all member libraries and returns a merged,
-        deduplicated list of results.
+        Looks up projects in member libraries.
+
+        Members are checked from right to left (last added has highest priority).
+        The first member that returns a non-empty list determines the result.
 
         Args:
             key: The lookup key.
 
         Returns:
-            A list of unique matching projects.
+            A list of matching projects from the winning library.
         """
-        # Using a dict to deduplicate projects by value.
-        # Projects are value types, so this works.
-        found = {p: None for lib in self._members for p in lib.lookup(key)}
-        return list(found.keys())
+        for library in reversed(self._members):
+            found = library.lookup(key)
+            if found:
+                return found
+        return []
 
 __all__ = ['UnionProjectLibrary']
