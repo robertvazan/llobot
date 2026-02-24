@@ -2,7 +2,7 @@
 
 # Llobot
 
-Llobot is a Python LLM agent framework. To get started, define roles, start the server, and point [llms.py](https://llmspy.org/) or another frontend to it. Roles have associated models, projects, and tools. A role defines what the LLM sees and what it can do.
+Llobot is a Python LLM agent framework. To get started, define roles, start the server, and point some LLM frontend to it. Roles have associated models, projects, and tools. A role defines what the LLM sees and what it can do.
 
 ## Features
 
@@ -85,11 +85,19 @@ router = Router(roles)
 OllamaListener(RoleModel(router), port=11435).listen()
 ```
 
-Run this script and add `localhost:11435` as an additional Ollama endpoint to your UI frontend (like [llms.py](https://llmspy.org/). You should now see virtual model `llobot` listed in the UI.
+## Frontend
+
+Llobot does not have its own UI. You instead point third party LLM frontend at Llobot's listener (`localhost:11435` in this case, Ollama protocol). Here are the frontends I have explored so far:
+
+- [Open WebUI](https://github.com/open-webui/open-webui) - This is the only one I know that works. Unfortunately, it is [not really open source anymore](https://github.com/open-webui/open-webui/issues/13579). The last open source version was 0.6.5, which is what I am running. The biggest issue is that the frontend hangs when messages grow too large.
+- [AnythingLLM](https://github.com/Mintplex-Labs/anything-llm) - No good. It adds its own system prompt (cannot be disabled). You can configure only one Ollama endpoint.
+- [llms.py](https://llmspy.org/) - No good. [I wasn't able to get it working](https://github.com/ServiceStack/llms/discussions/39) in a container. It currently supports only OpenAI endpoint while Llobot presently supports only Ollama listeners.
+
+The trouble with many frontends is that they are trying to be fully featured agents and end up adulterating the prompt in the process. If I cannot find a reusable frontend for headless agents like Llobot, I might have to implement a custom frontend for Llobot. Open WebUI 0.6.5 will serve as a good-enough frontend until then.
 
 ## How to use
 
-In the UI frontend, select the virtual `llobot` model and submit this prompt:
+After you start the above script and configure the UI frontend, select the virtual `llobot` model in the UI and submit this prompt:
 
 > @coder @llobot How do I connect to remote Ollama instance?
 
