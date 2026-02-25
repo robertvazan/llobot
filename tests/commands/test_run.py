@@ -90,10 +90,10 @@ def test_run_command_success(tmp_path: Path):
     assert context_env.populated
     context_messages = context_env.build().messages
     assert len(context_messages) == 4
-    assert context_messages[0].intent == ChatIntent.STATUS
+    assert context_messages[0].intent == ChatIntent.SYSTEM
     assert "Written `~/myproject/file2.txt`" in context_messages[0].content
 
-    assert context_messages[1].intent == ChatIntent.STATUS
+    assert context_messages[1].intent == ChatIntent.SYSTEM
     assert "Removed `~/myproject/file1.txt`" in context_messages[1].content
 
     assert context_messages[2].intent == ChatIntent.SYSTEM

@@ -139,13 +139,13 @@ def test_agent_autorun(tmp_path: Path):
     assert response
     assert "Write:" in response.content
 
-    # Check status messages
-    status_messages = [m for m in response_thread if m.intent == ChatIntent.STATUS]
-    # Expect 2 status messages: one for log ("Written..."), one for summary ("✅ All 1 tool calls...")
-    assert len(status_messages) == 2
+    # Check log messages (SYSTEM)
+    log_messages = [m for m in response_thread if m.intent == ChatIntent.SYSTEM and "Written" in m.content]
+    assert len(log_messages) == 1
 
-    summary_msg = status_messages[-1]
-    assert "✅ All 1 tool calls executed." in summary_msg.content
+    # Check status messages (Summary)
+    status_messages = [m for m in response_thread if m.intent == ChatIntent.STATUS]
+    assert any("All 1 tool calls executed" in m.content for m in status_messages)
 
     # Check side effect
     assert (tmp_path / 'project/test.txt').read_text().strip() == 'content'

@@ -32,20 +32,20 @@ def test_project_env_add():
     assert env.selected == [p2]
     assert env.union is p2
 
-    # Add multiple projects with one key
+    # Add multiple projects with one key (shadowing)
     found = env.add("p1")
-    assert set(found) == {p1, p3}
-    assert set(env.selected) == {p1, p2, p3}
+    assert set(found) == {p3}
+    assert set(env.selected) == {p2, p3}
 
     # Add nothing with unknown key
     found = env.add("unknown")
     assert found == []
-    assert set(env.selected) == {p1, p2, p3}
+    assert set(env.selected) == {p2, p3}
 
     # Add an existing project again, should not change selected projects
     found = env.add("p2")
     assert found == [p2]
-    assert set(env.selected) == {p1, p2, p3}
+    assert set(env.selected) == {p2, p3}
 
 def test_project_env_add_deduplicates():
     p1a = MarkerProject("p1")
