@@ -162,14 +162,11 @@ def test_agent_run_command(tmp_path: Path):
     stream = agent.chat(prompt2)
     response_thread = record_stream(stream)
 
-    # Expect two status messages: one for log, one for summary
+    # Expect one status message: summary
     status_messages = [m for m in response_thread if m.intent == ChatIntent.STATUS]
-    assert len(status_messages) == 2
+    assert len(status_messages) == 1
 
-    log_msg = status_messages[0]
-    assert "Written `~/project/test.txt`" in log_msg.content
-
-    summary_msg = status_messages[1]
+    summary_msg = status_messages[0]
     assert "✅ All 1 tool calls executed." in summary_msg.content
 
     assert (tmp_path / 'project/test.txt').read_text().strip() == 'content'
@@ -244,10 +241,6 @@ def test_agent_autorun(tmp_path: Path):
     # Verify status messages
     # We expect status messages for operations and summaries.
     status_messages = [m for m in response_thread if m.intent == ChatIntent.STATUS]
-
-    # Check for logs
-    assert any("Written `~/project/file1.txt`" in m.content for m in status_messages)
-    assert any("Written `~/project/file2.txt`" in m.content for m in status_messages)
 
     # Check for summaries (one for each response message execution)
     summaries = [m for m in status_messages if "tool calls executed" in m.content]

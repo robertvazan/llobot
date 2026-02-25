@@ -132,18 +132,13 @@ def test_agent_autorun(tmp_path: Path):
 
     # We expect:
     # 1. The response from the model (containing the tool call)
-    # 2. Status messages from tool execution (Log + Summary)
+    # 2. Status message from tool execution (Summary)
 
     # Check response
     response = next((m for m in response_thread if m.intent == ChatIntent.RESPONSE), None)
     assert response
     assert "Write:" in response.content
 
-    # Check log messages (SYSTEM)
-    log_messages = [m for m in response_thread if m.intent == ChatIntent.SYSTEM and "Written" in m.content]
-    assert len(log_messages) == 1
-
-    # Check status messages (Summary)
     status_messages = [m for m in response_thread if m.intent == ChatIntent.STATUS]
     assert any("All 1 tool calls executed" in m.content for m in status_messages)
 
