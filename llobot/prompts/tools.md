@@ -59,7 +59,7 @@ To create a new file or completely replace an existing file:
 
 </details>
 
-- IMPORTANT: Prefix every line of the file content with `+`.
+- Prefix every line of the file content with `+`. Content starts immediately after the `+` without any white space in-between.
 - The write tool is ideal for creating new files. It is also useful when file changes are so extensive it's easier to rewrite the whole file.
 - Parent directories will be created automatically.
 
